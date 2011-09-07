@@ -1,0 +1,17 @@
+inertial.frame           = EME2000
+earth.frame              = ITRF2008 with tides
+
+gravity.field.degree     = 10
+gravity.field.order      = 10
+
+orbit.equinoctial.date   = 2004-01-01T23:30:00.000
+orbit.equinoctial.a      = 42167290.0
+orbit.equinoctial.ex     = 1.0e-4
+orbit.equinoctial.ey     = 2.0e-5
+orbit.equinoctial.hx     =  0.00044
+orbit.equinoctial.hy     = -0.00012
+orbit.equinoctial.lambda = 104.99
+
+simulation.start.date     = 2004-01-01T00:00:00.000
+simulation.cycle.duration = 50.0
+simulation.cycle.number   = 3
