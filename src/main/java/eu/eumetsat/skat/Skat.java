@@ -71,8 +71,11 @@ public class Skat {
     /** Orbit propagator. */
     private final Propagator propagator;
 
-    /** InertialFrame. */
+    /** Inertial frame. */
     private final Frame inertialFrame;
+
+    /** Earth frame. */
+    private final Frame earthFrame;
 
     /** Start date. */
     private final AbsoluteDate startDate;
@@ -155,7 +158,7 @@ public class Skat {
 
         // set up frames
         inertialFrame = parser.getInertialFrame(ParameterKey.INERTIAL_FRAME);
-        final Frame earthFrame = parser.getEarthFrame(ParameterKey.EARTH_FRAME);
+        earthFrame    = parser.getEarthFrame(ParameterKey.EARTH_FRAME);
 
         // set up Earth model
         earth = new OneAxisEllipsoid(Constants.WGS84_EARTH_EQUATORIAL_RADIUS,
