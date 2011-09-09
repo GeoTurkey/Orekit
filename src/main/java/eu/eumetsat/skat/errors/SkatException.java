@@ -1,5 +1,5 @@
 /* Copyright 2011 Eumetsat. */
-package eu.eumetsat.skat;
+package eu.eumetsat.skat.errors;
 
 import java.text.MessageFormat;
 import java.util.Locale;
@@ -7,6 +7,7 @@ import java.util.Locale;
 import org.apache.commons.math.exception.util.ExceptionContext;
 import org.apache.commons.math.exception.util.ExceptionContextProvider;
 import org.apache.commons.math.exception.util.Localizable;
+
 
 /** This class is the base class for all specific exceptions thrown by
  * the Skat classes.

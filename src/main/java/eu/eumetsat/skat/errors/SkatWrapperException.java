@@ -1,5 +1,6 @@
 /* Copyright 2011 Eumetsat. */
-package eu.eumetsat.skat;
+package eu.eumetsat.skat.errors;
+
 
 /** This class is a wrapper for checked exceptions.
  * <p>

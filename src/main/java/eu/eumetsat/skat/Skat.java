@@ -3,7 +3,9 @@
 package eu.eumetsat.skat;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintStream;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -46,15 +48,19 @@ import org.orekit.utils.Constants;
 import eu.eumetsat.skat.errors.SkatException;
 import eu.eumetsat.skat.errors.SkatMessages;
 import eu.eumetsat.skat.utils.KeyValueFileParser;
+import eu.eumetsat.skat.utils.ParameterKey;
 
-/** Feasibility check application for blind-optimization based station keeping.
+/** Station-Keeping Analysis Tool (SKAT).
  * <p>
- * This feasibility check is based on longitude window escape time. It attempts
- * to compute a maneuver that push the escape time at the latest possible date,
- * which is equivalent to stay in the station keeping window as long as possible.
+ * This tool is a station-keeping simulator prototype for both LEO and GEO orbits.
+ * It's aim is to perform very long term simulation, up to the full lifetime
+ * of a spacecraft.
  * </p>
  */
-public class LatestEscapeTimeStationKeeping {
+public class Skat {
+
+    /** Output file. */
+    private final PrintStream output;
 
     /** Initial orbit. */
     private final SpacecraftState initialState;
@@ -88,15 +94,20 @@ public class LatestEscapeTimeStationKeeping {
             DataProvidersManager.getInstance().addProvider(new DirectoryCrawler(orekitData));
 
             // read input file
-            final File input = getResourceFile("/reference-use-cases/longitude-maneuver.in");
+            if (args.length != 1) {
+                System.err.println("usage: java eu.eumetsat.skat.Skat input-file");
+                System.exit(1);
+            }
+            final File input = new File(args[0]);
 
             // build the simulator
-            LatestEscapeTimeStationKeeping stationKeeping =
-                    new LatestEscapeTimeStationKeeping(input);
+            Skat stationKeeping = new Skat(input.getParentFile(), new FileInputStream(input));
 
             // perform simulation
-            final File output = new File(input.getParentFile(), "longitude-maneuver.dat");
-            stationKeeping.run(output);
+            stationKeeping.run();
+
+            // close the output stream
+            stationKeeping.close();
 
         } catch (ParseException pe) {
             System.err.println(pe.getLocalizedMessage());
@@ -117,7 +128,7 @@ public class LatestEscapeTimeStationKeeping {
     private static File getResourceFile(final String name)
         throws SkatException {
         try {
-            URL resourceURL = Skat.class.getResource(name);
+            URL resourceURL = LatestEscapeTimeStationKeeping.class.getResource(name);
             if (resourceURL == null) {
                 throw new SkatException(SkatMessages.UNABLE_TO_FIND_RESOURCE, name);
             }
@@ -128,18 +139,19 @@ public class LatestEscapeTimeStationKeeping {
     }
 
     /** Simple constructor.
-     * @param input parameters input
+     * @param folder for input-output files
+     * @param input main input file
      * @exception SkatException if some data cannot be set up
      * @exception OrekitException if orekit cannot be initialized properly (gravity field, UTC ...)
      * @exception ParseException if gravity field cannot be read
      * @exception IOException if gravity field cannot be read
      */
-    public LatestEscapeTimeStationKeeping(File input)
+    public Skat(final File inputOutputFolder, final InputStream input)
             throws SkatException, OrekitException, ParseException, IOException {
 
         final KeyValueFileParser<ParameterKey> parser =
-                new KeyValueFileParser<ParameterKey>(ParameterKey.class);
-            TimeScale utc = TimeScalesFactory.getUTC();
+            new KeyValueFileParser<ParameterKey>(ParameterKey.class);
+        TimeScale utc = TimeScalesFactory.getUTC();
 
         // set up frames
         inertialFrame = parser.getInertialFrame(ParameterKey.INERTIAL_FRAME);
@@ -203,9 +215,15 @@ public class LatestEscapeTimeStationKeeping {
         cycleDuration = parser.getDouble(ParameterKey.SIMULATION_CYCLE_DURATION) * Constants.JULIAN_DAY;
         cyclesNumber  = parser.getInt(ParameterKey.SIMULATION_CYCLE_NUMBER);
 
+        // open the output stream
+        output = new PrintStream(new File(inputOutputFolder, parser.getString(ParameterKey.OUTPUT_FILE_NAME)));
+
     }
 
-    public void run(final File output) throws IOException, OrekitException {
+    /** Run the simulation.
+     * @throws OrekitException if some computation cannot be performed
+     */
+    public void run() throws OrekitException {
 
         propagator.resetInitialState(initialState);
         SpacecraftState startCycleState = propagator.propagate(startDate);
@@ -213,7 +231,7 @@ public class LatestEscapeTimeStationKeeping {
         BrentOptimizer optimizer = new BrentOptimizer(1.0e-6, 1.0e-5);
         EscapeTime escapeTime = new EscapeTime(propagator, earth);
 
-        PrintHandler stepHandler = new PrintHandler(output, earth);
+        PrintHandler stepHandler = new PrintHandler();
         for (int i = 0; i < cyclesNumber; ++i) {
             escapeTime.setInitialState(startCycleState);
             escapeTime.setTargetDate(initialState.getDate().shiftedBy(cycleDuration));
@@ -227,21 +245,17 @@ public class LatestEscapeTimeStationKeeping {
                                                           stepHandler);
         }
 
-        stepHandler.close();
-
     }
 
-    private static class PrintHandler implements OrekitFixedStepHandler {
+    /** Close the output stream.
+     */
+    public void close() {
+        output.close();
+    }
+
+    private class PrintHandler implements OrekitFixedStepHandler {
 
         private static final long serialVersionUID = 7991738543062196382L;
-
-        private PrintStream out;
-        private BodyShape earth;
-
-        public PrintHandler(File file, BodyShape earth) throws IOException {
-            out = new PrintStream(file);
-            this.earth = earth;
-        }
 
         public void handleStep(SpacecraftState currentState, boolean isLast)
                 throws PropagationException {
@@ -252,9 +266,9 @@ public class LatestEscapeTimeStationKeeping {
                 GeodeticPoint gp = earth.transform(position, earth.getBodyFrame(), currentState.getDate());
 
                 // print it
-                out.println(currentState.getDate() + " " + FastMath.toDegrees(gp.getLongitude()));
+                output.println(currentState.getDate() + " " + FastMath.toDegrees(gp.getLongitude()));
                 if (isLast) {
-                    out.println("&");
+                    output.println("&");
                 }
 
             } catch (OrekitException oe) {
@@ -262,40 +276,6 @@ public class LatestEscapeTimeStationKeeping {
             }
         }
 
-        public void close() {
-            out.close();
-        }
-
     };
-
-    /** Input parameter keys. */
-    private static enum ParameterKey {
-
-        INERTIAL_FRAME,
-        EARTH_FRAME,
-        GRAVITY_FIELD_DEGREE,
-        GRAVITY_FIELD_ORDER,
-
-        ORBIT_CIRCULAR_DATE,
-        ORBIT_CIRCULAR_A,
-        ORBIT_CIRCULAR_EX,
-        ORBIT_CIRCULAR_EY,
-        ORBIT_CIRCULAR_I,
-        ORBIT_CIRCULAR_RAAN,
-        ORBIT_CIRCULAR_ALPHA,
-
-        ORBIT_EQUINOCTIAL_DATE,
-        ORBIT_EQUINOCTIAL_A,
-        ORBIT_EQUINOCTIAL_EX,
-        ORBIT_EQUINOCTIAL_EY,
-        ORBIT_EQUINOCTIAL_HX,
-        ORBIT_EQUINOCTIAL_HY,
-        ORBIT_EQUINOCTIAL_LAMBDA,
-
-        SIMULATION_START_DATE,
-        SIMULATION_CYCLE_DURATION,
-        SIMULATION_CYCLE_NUMBER;
-
-    }
 
 }

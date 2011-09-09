@@ -1,6 +1,6 @@
 /* Copyright 2011 Eumetsat.
  */
-package eu.eumetsat.skat;
+package eu.eumetsat.skat.errors;
 
 import java.util.Locale;
 import java.util.MissingResourceException;
