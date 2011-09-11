@@ -5,7 +5,6 @@ package eu.eumetsat.skat;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.PrintStream;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -32,8 +31,10 @@ import org.orekit.forces.gravity.potential.GravityFieldFactory;
 import org.orekit.forces.gravity.potential.PotentialCoefficientsProvider;
 import org.orekit.frames.Frame;
 import org.orekit.frames.LOFType;
+import org.orekit.orbits.CartesianOrbit;
 import org.orekit.orbits.CircularOrbit;
 import org.orekit.orbits.EquinoctialOrbit;
+import org.orekit.orbits.KeplerianOrbit;
 import org.orekit.orbits.Orbit;
 import org.orekit.orbits.PositionAngle;
 import org.orekit.propagation.Propagator;
@@ -44,6 +45,7 @@ import org.orekit.time.AbsoluteDate;
 import org.orekit.time.TimeScale;
 import org.orekit.time.TimeScalesFactory;
 import org.orekit.utils.Constants;
+import org.orekit.utils.PVCoordinates;
 
 import eu.eumetsat.skat.errors.SkatException;
 import eu.eumetsat.skat.errors.SkatMessages;
@@ -101,10 +103,9 @@ public class Skat {
                 System.err.println("usage: java eu.eumetsat.skat.Skat input-file");
                 System.exit(1);
             }
-            final File input = new File(args[0]);
 
             // build the simulator
-            Skat stationKeeping = new Skat(input.getParentFile(), new FileInputStream(input));
+            Skat stationKeeping = new Skat(new File(args[0]));
 
             // perform simulation
             stationKeeping.run();
@@ -142,18 +143,19 @@ public class Skat {
     }
 
     /** Simple constructor.
-     * @param folder for input-output files
      * @param input main input file
      * @exception SkatException if some data cannot be set up
      * @exception OrekitException if orekit cannot be initialized properly (gravity field, UTC ...)
      * @exception ParseException if gravity field cannot be read
      * @exception IOException if gravity field cannot be read
      */
-    public Skat(final File inputOutputFolder, final InputStream input)
+    public Skat(final File input)
             throws SkatException, OrekitException, ParseException, IOException {
 
+        // parse input file
         final KeyValueFileParser<ParameterKey> parser =
             new KeyValueFileParser<ParameterKey>(ParameterKey.class);
+        parser.parseInput(new FileInputStream(input));
         TimeScale utc = TimeScalesFactory.getUTC();
 
         // set up frames
@@ -176,13 +178,35 @@ public class Skat {
                                                            gravityField.getS(degree, order, false));
         // set up orbit
         final Orbit initialOrbit;
-        if (parser.containsKey(ParameterKey.ORBIT_CIRCULAR_DATE)) {
+        if (parser.containsKey(ParameterKey.ORBIT_CARTESIAN_DATE)) {
+            final Vector3D position = parser.getVector(ParameterKey.ORBIT_CARTESIAN_PX,
+                                                       ParameterKey.ORBIT_CARTESIAN_PY,
+                                                       ParameterKey.ORBIT_CARTESIAN_PZ);
+            final Vector3D velocity = parser.getVector(ParameterKey.ORBIT_CARTESIAN_VX,
+                                                       ParameterKey.ORBIT_CARTESIAN_VY,
+                                                       ParameterKey.ORBIT_CARTESIAN_VZ);
+            initialOrbit = new CartesianOrbit(new PVCoordinates(position, velocity),
+                                              inertialFrame,
+                                              parser.getDate(ParameterKey.ORBIT_CARTESIAN_DATE, utc),
+                                              gravityField.getMu());
+        } else if (parser.containsKey(ParameterKey.ORBIT_KEPLERIAN_DATE)) {
+            initialOrbit = new KeplerianOrbit(parser.getDouble(ParameterKey.ORBIT_KEPLERIAN_A),
+                                              parser.getDouble(ParameterKey.ORBIT_KEPLERIAN_E),
+                                              parser.getAngle(ParameterKey.ORBIT_KEPLERIAN_I),
+                                              parser.getAngle(ParameterKey.ORBIT_KEPLERIAN_PA),
+                                              parser.getAngle(ParameterKey.ORBIT_KEPLERIAN_RAAN),
+                                              parser.getAngle(ParameterKey.ORBIT_KEPLERIAN_MEAN_ANOMALY),
+                                              PositionAngle.MEAN,
+                                              inertialFrame,
+                                              parser.getDate(ParameterKey.ORBIT_KEPLERIAN_DATE, utc),
+                                              gravityField.getMu());
+        } else if (parser.containsKey(ParameterKey.ORBIT_CIRCULAR_DATE)) {
             initialOrbit = new CircularOrbit(parser.getDouble(ParameterKey.ORBIT_CIRCULAR_A),
                                              parser.getDouble(ParameterKey.ORBIT_CIRCULAR_EX),
                                              parser.getDouble(ParameterKey.ORBIT_CIRCULAR_EY),
                                              parser.getAngle(ParameterKey.ORBIT_CIRCULAR_I),
                                              parser.getAngle(ParameterKey.ORBIT_CIRCULAR_RAAN),
-                                             parser.getAngle(ParameterKey.ORBIT_CIRCULAR_ALPHA),
+                                             parser.getAngle(ParameterKey.ORBIT_CIRCULAR_MEAN_LATITUDE_ARGUMENT),
                                              PositionAngle.MEAN,
                                              inertialFrame,
                                              parser.getDate(ParameterKey.ORBIT_CIRCULAR_DATE, utc),
@@ -193,7 +217,7 @@ public class Skat {
                                                 parser.getDouble(ParameterKey.ORBIT_EQUINOCTIAL_EY),
                                                 parser.getDouble(ParameterKey.ORBIT_EQUINOCTIAL_HX),
                                                 parser.getDouble(ParameterKey.ORBIT_EQUINOCTIAL_HY),
-                                                parser.getAngle(ParameterKey.ORBIT_EQUINOCTIAL_LAMBDA),
+                                                parser.getAngle(ParameterKey.ORBIT_EQUINOCTIAL_MEAN_LONGITUDE_ARGUMENT),
                                                 PositionAngle.MEAN,
                                                 inertialFrame,
                                                 parser.getDate(ParameterKey.ORBIT_EQUINOCTIAL_DATE, utc),
@@ -201,10 +225,10 @@ public class Skat {
         }
         initialState = new SpacecraftState(initialOrbit);
 
-        // set up propagator, using a 10m propagation tolerance in position
+        // set up propagator
         final double minStep = 0.01;
         final double maxStep = Constants.JULIAN_DAY;
-        final double dP      = 10.0;
+        final double dP      = parser.getDouble(ParameterKey.SIMULATION_POSITION_TOLERANCE);
         final double[][] tolerance = NumericalPropagator.tolerances(dP, initialOrbit, initialOrbit.getType());
         final AdaptiveStepsizeIntegrator integrator = new DormandPrince853Integrator(minStep, maxStep, tolerance[0], tolerance[1]);
         integrator.setInitialStepSize(initialOrbit.getKeplerianPeriod() / 100.0);
@@ -219,7 +243,8 @@ public class Skat {
         cyclesNumber  = parser.getInt(ParameterKey.SIMULATION_CYCLE_NUMBER);
 
         // open the output stream
-        output = new PrintStream(new File(inputOutputFolder, parser.getString(ParameterKey.OUTPUT_FILE_NAME)));
+        output = new PrintStream(new File(input.getParentFile(),
+                                          parser.getString(ParameterKey.OUTPUT_FILE_NAME)));
 
     }
 
