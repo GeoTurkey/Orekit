@@ -5,9 +5,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.orekit.errors.OrekitException;
-import org.orekit.propagation.SpacecraftState;
+import org.orekit.time.AbsoluteDate;
 
-import eu.eumetsat.skat.CycleComponent;
+import eu.eumetsat.skat.scenario.ScenarioComponent;
+import eu.eumetsat.skat.scenario.ScenarioState;
 
 
 /**
@@ -25,7 +26,7 @@ import eu.eumetsat.skat.CycleComponent;
  * @see StationKeepingGoal
  * @author Luc Maisonobe
  */
-public class ControlLoop implements CycleComponent {
+public class ControlLoop implements ScenarioComponent {
 
     /** Station-keeping goals. */
     private List<ScaledGoal> goals;
@@ -69,20 +70,18 @@ public class ControlLoop implements CycleComponent {
         parameters.add(parameter);
     }
 
-    /** Optimize the control parameters to achieve the goals.
+    /** {@inheritDoc}
+     * <p>
+     * Optimize the control parameters to achieve the goals.
+     * </p>
      * <p>
      * At the end of the optimization the {@link
      * #addControlParameter(ControlParameter) control parameters} values
      * will be set to the optimal values that best fulfill the {@link
      * #addGoal(StationKeepingGoal) station keeping goals}.
      * </p>
-     * @param initialState spacecraft state at cycle start
-     * @param duration cycle duration to simulate
-     * @return theoretical state at cycle end
-     * @exception OrekitException if simulation cannot be performed
      */
-    public SpacecraftState run(final SpacecraftState initialState,
-                               final double duration)
+    public ScenarioState apply(final ScenarioState origin, final AbsoluteDate target)
         throws OrekitException {
         // TODO
         return null;

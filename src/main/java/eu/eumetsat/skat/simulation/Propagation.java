@@ -1,9 +1,10 @@
 package eu.eumetsat.skat.simulation;
 
 import org.orekit.errors.OrekitException;
-import org.orekit.propagation.SpacecraftState;
+import org.orekit.time.AbsoluteDate;
 
-import eu.eumetsat.skat.CycleComponent;
+import eu.eumetsat.skat.scenario.ScenarioComponent;
+import eu.eumetsat.skat.scenario.ScenarioState;
 
 /**
  * Class for simple propagation of a station-keeping cycle.
@@ -14,10 +15,10 @@ import eu.eumetsat.skat.CycleComponent;
  * </p>
  * @author Luc Maisonobe
  */
-public class Propagation implements CycleComponent {
+public class Propagation implements ScenarioComponent {
 
     /** {@inheritDoc} */
-    public SpacecraftState run(final SpacecraftState initialState, final double duration)
+    public ScenarioState apply(final ScenarioState initialState, final AbsoluteDate target)
         throws OrekitException {
         // TODO Auto-generated method stub
         return null;

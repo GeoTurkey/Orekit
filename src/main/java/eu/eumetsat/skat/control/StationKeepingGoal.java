@@ -13,11 +13,6 @@ package eu.eumetsat.skat.control;
  */
 public interface StationKeepingGoal {
 
-    /** Get the name of the goal.
-     * @return name of the goal
-     */
-    String getName();
-
     /** Get the target vector of the goal.
      * @return target vector of the goal
      */

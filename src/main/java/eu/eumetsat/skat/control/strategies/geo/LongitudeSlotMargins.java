@@ -20,7 +20,7 @@ import eu.eumetsat.skat.control.StationKeepingGoal;
  * Station-keeping goal attempting to balance East-West margins
  * throughout a cycle.
  * <p>
- * This goal is a scalar goal whose value is:
+ * This goal value is:
  * <pre>
  *   (l<sub>E</sub> - max(l(t))) - (min(l(t)) - l<sub>W</sub>)
  * </pre>
@@ -86,13 +86,8 @@ public class LongitudeSlotMargins
     }
 
     /** {@inheritDoc} */
-    public String getName() {
-        return "longitude slot margins";
-    }
-
-    /** {@inheritDoc} */
     public double getTarget() {
-        return target ;
+        return target;
     }
 
     /** {@inheritDoc} */
