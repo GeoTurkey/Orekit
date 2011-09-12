@@ -1,6 +1,6 @@
 /* Copyright 2011 Eumetsat */
 
-package eu.eumetsat.skat.control.strategies.geo;
+package eu.eumetsat.skat.strategies.geo;
 
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math.util.FastMath;
@@ -83,6 +83,11 @@ public class LongitudeSlotMargins
         this.target       = target;
         this.samplingStep = samplingStep;
         this.earth        = earth;
+    }
+
+    /** {@inheritDoc} */
+    public String getName() {
+        return "longitude margins";
     }
 
     /** {@inheritDoc} */

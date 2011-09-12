@@ -1,6 +1,6 @@
 /* Copyright 2011 Eumetsat */
 
-package eu.eumetsat.skat.control.strategies.geo;
+package eu.eumetsat.skat.strategies.geo;
 
 import org.orekit.errors.PropagationException;
 import org.orekit.propagation.sampling.OrekitStepHandler;
@@ -16,6 +16,11 @@ public class EccentricityCircle
 
     /** Serializable UID. */
     private static final long serialVersionUID = 2605474503798176086L;
+
+    /** {@inheritDoc} */
+    public String getName() {
+        return "eccentricity circle";
+    }
 
     /** {@inheritDoc} */
     public double getTarget() {

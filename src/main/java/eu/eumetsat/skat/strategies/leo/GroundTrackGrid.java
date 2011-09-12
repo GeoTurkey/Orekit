@@ -1,6 +1,6 @@
 /* Copyright 2011 Eumetsat */
 
-package eu.eumetsat.skat.control.strategies.leo;
+package eu.eumetsat.skat.strategies.leo;
 
 import org.orekit.errors.PropagationException;
 import org.orekit.propagation.sampling.OrekitStepHandler;
@@ -17,6 +17,11 @@ public class GroundTrackGrid
 
     /** Serializable UID. */
     private static final long serialVersionUID = 2042987246037436750L;
+
+    /** {@inheritDoc} */
+    public String getName() {
+        return "ground track";
+    }
 
     /** {@inheritDoc} */
     public double getTarget() {
