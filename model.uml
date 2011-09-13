@@ -767,7 +767,7 @@ It is updated by the apply methods of all scenario components.</body>
             </ownedEnd>
           </packagedElement>
         </packagedElement>
-        <packagedElement xmi:type="uml:Package" xmi:id="_E3i5gN1hEeCO1uZVwIAJVg" name="simulation" clientDependency="_FKsfB91hEeCO1uZVwIAJVg _FKsfCN1hEeCO1uZVwIAJVg _FKtGEN1hEeCO1uZVwIAJVg _FKtGEd1hEeCO1uZVwIAJVg _FKtGEt1hEeCO1uZVwIAJVg _FKtGE91hEeCO1uZVwIAJVg _FKtGFN1hEeCO1uZVwIAJVg _FKtGFd1hEeCO1uZVwIAJVg _FKtGFt1hEeCO1uZVwIAJVg _FKtGF91hEeCO1uZVwIAJVg _FKtGGN1hEeCO1uZVwIAJVg _FKtGGd1hEeCO1uZVwIAJVg">
+        <packagedElement xmi:type="uml:Package" xmi:id="_E3i5gN1hEeCO1uZVwIAJVg" name="realization" clientDependency="_FKsfB91hEeCO1uZVwIAJVg _FKsfCN1hEeCO1uZVwIAJVg _FKtGEN1hEeCO1uZVwIAJVg _FKtGEd1hEeCO1uZVwIAJVg _FKtGEt1hEeCO1uZVwIAJVg _FKtGE91hEeCO1uZVwIAJVg _FKtGFN1hEeCO1uZVwIAJVg _FKtGFd1hEeCO1uZVwIAJVg _FKtGFt1hEeCO1uZVwIAJVg _FKtGF91hEeCO1uZVwIAJVg _FKtGGN1hEeCO1uZVwIAJVg _FKtGGd1hEeCO1uZVwIAJVg">
           <packagedElement xmi:type="uml:Class" xmi:id="_E3lVwN1hEeCO1uZVwIAJVg" name="TunableManeuver" clientDependency="_FCvc4N1hEeCO1uZVwIAJVg">
             <eAnnotations xmi:id="_E3lVwd1hEeCO1uZVwIAJVg" source="http://www.topcased.org/documentation">
               <details xmi:id="_E3lVwt1hEeCO1uZVwIAJVg" key="documentation" value=" Class for maneuver simulation.&#xA; &lt;p>&#xA; This class performs an impulse maneuver with tunable date and&#xA; velocity increment&#xA; &lt;/p>&#xA; @author Luc Maisonobe&#xA;"/>

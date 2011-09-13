@@ -12,62 +12,62 @@ import eu.eumetsat.skat.scenario.ScenarioState;
 
 
 /**
- * Class representing a control loop between {@link ControlParametersSet control
- * parameters} and {@link StationKeepingGoal station-keeping goals}.
+ * Class representing a control loop between {@link SKParametersList control
+ * parameters} and {@link SKControl station-keeping controls}.
  * <p>
  * This loop is mainly an optimization loop that adjust the control parameters
  * in order to minimize an objective function J defined as:<br>
- *   J = &sum;(((goal<sub>i</sub>.{@link StationKeepingGoal#getAchievedValue() getAchievedValue()}
- *             - goal<sub>i</sub>.{@link StationKeepingGoal#getTarget() getTarget()})
+ *   J = &sum;(((control<sub>i</sub>.{@link SKControl#getAchievedValue() getAchievedValue()}
+ *             - control<sub>i</sub>.{@link SKControl#getTarget() getTarget()})
  *             / scale<sub>i</sub>)<sup>2</sup>)<br>
- * the sum being computed across all scaled goals.
+ * the sum being computed across all scaled controls.
  * </p>
- * @see ControlParametersSet
- * @see StationKeepingGoal
+ * @see SKParametersList
+ * @see SKControl
  * @author Luc Maisonobe
  */
 public class ControlLoop implements ScenarioComponent {
 
-    /** Station-keeping goals. */
-    private List<ScaledGoal> goals;
+    /** Station-keeping controls. */
+    private List<ScaledControl> controls;
 
     /** Tunable control parameters. */
-    private List<ControlParameter> parameters;
+    private List<SKParameter> parameters;
 
     /** Simple constructor.
      * <p>
-     * Creates an empty control loop, with neither goals nor control parameters.
-     * They must be added later on by {@link #addGoal(double, StationKeepingGoal)}
-     * and {@link #addControlParametersSet(ControlParametersSet)}.
+     * Creates an empty control loop, with neither controls nor control parameters.
+     * They must be added later on by {@link #addControl(double, SKControl)}
+     * and {@link #addControlParametersSet(SKParametersList)}.
      * </p>
      */
     public ControlLoop() {
-        goals      = new ArrayList<ScaledGoal>();
-        parameters = new ArrayList<ControlParameter>();
+        controls      = new ArrayList<ScaledControl>();
+        parameters = new ArrayList<SKParameter>();
     }
 
-    /** Add a scaled goal.
+    /** Add a scaled control.
      * <p>
-     * The scale of the goal is a scalar parameter with the same physical unit
-     * as the goal itself (radians, meters, seconds ...). It's purpose is to
-     * allow mixing goals in a global scalar objective function by computing<br>
-     *   J = &sum;(((goal<sub>i</sub>.{@link StationKeepingGoal#getAchievedValue() getAchievedValue()}
-     *             - goal<sub>i</sub>.{@link StationKeepingGoal#getTarget() getTarget()})
+     * The scale of the control is a scalar parameter with the same physical unit
+     * as the control itself (radians, meters, seconds ...). It's purpose is to
+     * allow mixing controls in a global scalar objective function by computing<br>
+     *   J = &sum;(((control<sub>i</sub>.{@link SKControl#getAchievedValue() getAchievedValue()}
+     *             - control<sub>i</sub>.{@link SKControl#getTarget() getTarget()})
      *             / scale<sub>i</sub>)<sup>2</sup>)<br>
-     * the sum being computed across all scaled goals.
+     * the sum being computed across all scaled controls.
      * </p>
-     * @param scale scale of the goal
-     * @param goal goal to add
+     * @param scale scale of the control
+     * @param control control to add
      */
-    public void addGoal(final double scale, final StationKeepingGoal goal) {
-        goals.add(new ScaledGoal(scale, goal));
+    public void addControl(final double scale, final SKControl control) {
+        controls.add(new ScaledControl(scale, control));
     }
 
     /** Add the tunable parameters from a control parameters set.
      * @param parametersSet control parameters set to use
      */
-    public void addControlParametersSet(final ControlParametersSet parametersSet) {
-        for (final ControlParameter parameter : parametersSet.getParameters()) {
+    public void addControlParametersSet(final SKParametersList parametersSet) {
+        for (final SKParameter parameter : parametersSet.getParameters()) {
             if (parameter.isTunable()) {
                 parameters.add(parameter);
             }
@@ -76,13 +76,13 @@ public class ControlLoop implements ScenarioComponent {
 
     /** {@inheritDoc}
      * <p>
-     * Optimize the control parameters to achieve the goals.
+     * Optimize the control parameters to achieve the controls.
      * </p>
      * <p>
      * At the end of the optimization the {@link
-     * #addControlParametersSet(ControlParametersSet) control parameters} values
+     * #addControlParametersSet(SKParametersList) control parameters} values
      * will be set to the optimal values that best fulfill the {@link
-     * #addGoal(StationKeepingGoal) station keeping goals}.
+     * #addControl(double, SKControl) station keeping controls}.
      * </p>
      */
     public ScenarioState apply(final ScenarioState origin, final AbsoluteDate target)

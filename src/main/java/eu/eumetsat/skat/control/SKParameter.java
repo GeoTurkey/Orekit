@@ -6,8 +6,8 @@ package eu.eumetsat.skat.control;
  * <p>
  * Station-keeping control parameters are the tuning parameters
  * used at each station-keeping cycle to get the associated
- * {@link StationKeepingGoal station-keeping goal} as close to
- * its {@link StationKeepingGoal#getTarget() target} as possible.
+ * {@link SKControl station-keeping control} as close to
+ * its {@link SKControl#getTarget() target} as possible.
  * They correspond typically to maneuver amplitudes or dates.
  * </p>
  * <p>
@@ -19,7 +19,7 @@ package eu.eumetsat.skat.control;
  * </p>
  * @author Luc Maisonobe
  */
-public abstract class ControlParameter {
+public abstract class SKParameter {
 
     /** Name of the parameter. */
     private final String name;
@@ -43,7 +43,7 @@ public abstract class ControlParameter {
      * @param value current value of the parameter
      * @param tunable tunable flag
      */
-    protected ControlParameter(final String name,
+    protected SKParameter(final String name,
                                final double min, final double max,
                                final double value, final boolean tunable) {
         this.name    = name;

@@ -15,7 +15,7 @@ import org.orekit.propagation.sampling.OrekitFixedStepHandler;
 import org.orekit.time.AbsoluteDate;
 import org.orekit.utils.Constants;
 
-import eu.eumetsat.skat.errors.OrekitWrapperException;
+import eu.eumetsat.skat.utils.OrekitWrapperException;
 
 public class EscapeTime implements UnivariateRealFunction {
 

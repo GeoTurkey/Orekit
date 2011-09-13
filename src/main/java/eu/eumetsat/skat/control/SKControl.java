@@ -3,27 +3,27 @@ package eu.eumetsat.skat.control;
 
 
 /**
- * Interface representing a station-keeping goal that should be achieved.
+ * Interface representing a station-keeping control that should be achieved.
  * <p>
- * Station-keeping goals can be for example to ensure that spacecraft
+ * Station-keeping controls can be for example to ensure that spacecraft
  * remains within its allowed slot with as large margins as possible.
  * </p>
- * @see ControlParametersSet
+ * @see SKParametersList
  * @author Luc Maisonobe
  */
-public interface StationKeepingGoal {
+public interface SKControl {
 
-    /** Get the name of the goal.
-     * @return name of the goal
+    /** Get the name of the control.
+     * @return name of the control
      */
     String getName();
 
-    /** Get the target vector of the goal.
-     * @return target vector of the goal
+    /** Get the target vector of the control.
+     * @return target vector of the control
      */
     double getTarget();
 
-    /** Get the achieved value of the goal.
+    /** Get the achieved value of the control.
      * <p>
      * The achieved value will change at the end
      * of each attempted simulation, depending
@@ -32,7 +32,7 @@ public interface StationKeepingGoal {
      * engine in order to reach a value as close to the
      * {@link #getTarget target} as possible.
      * </p>
-     * @return achieved value of the goal
+     * @return achieved value of the control
      */
     double getAchievedValue();
 

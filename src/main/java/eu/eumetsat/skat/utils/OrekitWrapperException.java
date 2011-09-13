@@ -1,5 +1,5 @@
 /* Copyright 2011 Eumetsat. */
-package eu.eumetsat.skat.errors;
+package eu.eumetsat.skat.utils;
 
 import org.orekit.errors.OrekitException;
 

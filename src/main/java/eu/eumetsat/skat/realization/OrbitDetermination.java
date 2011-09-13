@@ -1,4 +1,4 @@
-package eu.eumetsat.skat.simulation;
+package eu.eumetsat.skat.realization;
 
 import org.apache.commons.math.linear.RealMatrix;
 import org.apache.commons.math.random.CorrelatedRandomVectorGenerator;

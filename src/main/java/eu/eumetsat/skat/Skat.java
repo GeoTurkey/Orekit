@@ -47,8 +47,8 @@ import org.orekit.time.TimeScalesFactory;
 import org.orekit.utils.Constants;
 import org.orekit.utils.PVCoordinates;
 
-import eu.eumetsat.skat.errors.SkatException;
-import eu.eumetsat.skat.errors.SkatMessages;
+import eu.eumetsat.skat.utils.SkatException;
+import eu.eumetsat.skat.utils.SkatMessages;
 import eu.eumetsat.skat.utils.KeyValueFileParser;
 import eu.eumetsat.skat.utils.ParameterKey;
 

@@ -43,9 +43,9 @@ import org.orekit.time.TimeScale;
 import org.orekit.time.TimeScalesFactory;
 import org.orekit.utils.Constants;
 
-import eu.eumetsat.skat.errors.SkatException;
-import eu.eumetsat.skat.errors.SkatMessages;
 import eu.eumetsat.skat.utils.KeyValueFileParser;
+import eu.eumetsat.skat.utils.SkatException;
+import eu.eumetsat.skat.utils.SkatMessages;
 
 /** Feasibility check application for blind-optimization based station keeping.
  * <p>

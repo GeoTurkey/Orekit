@@ -6,13 +6,13 @@ import org.orekit.errors.PropagationException;
 import org.orekit.propagation.sampling.OrekitStepHandler;
 import org.orekit.propagation.sampling.OrekitStepInterpolator;
 
-import eu.eumetsat.skat.control.StationKeepingGoal;
+import eu.eumetsat.skat.control.SKControl;
 
 /**
- * Station-keeping goal attempting to follow a specified eccentricity circle.
+ * Station-keeping control attempting to follow a specified eccentricity circle.
  */
 public class EccentricityCircle
-    implements StationKeepingGoal, OrekitStepHandler {
+    implements SKControl, OrekitStepHandler {
 
     /** Serializable UID. */
     private static final long serialVersionUID = 2605474503798176086L;

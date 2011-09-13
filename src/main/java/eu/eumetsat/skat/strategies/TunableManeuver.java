@@ -1,4 +1,4 @@
-package eu.eumetsat.skat.simulation;
+package eu.eumetsat.skat.strategies;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -11,8 +11,8 @@ import org.orekit.propagation.events.DateDetector;
 import org.orekit.propagation.events.EventDetector;
 import org.orekit.time.AbsoluteDate;
 
-import eu.eumetsat.skat.control.ControlParameter;
-import eu.eumetsat.skat.control.ControlParametersSet;
+import eu.eumetsat.skat.control.SKParameter;
+import eu.eumetsat.skat.control.SKParametersList;
 
 /**
  * Class for maneuver simulation.
@@ -22,7 +22,7 @@ import eu.eumetsat.skat.control.ControlParametersSet;
  * </p>
  * @author Luc Maisonobe
  */
-public class TunableManeuver implements ControlParametersSet, EventDetector {
+public class TunableManeuver implements SKParametersList, EventDetector {
 
     /** Serializable UID. */
     private static final long serialVersionUID = 7193368247300270766L;
@@ -34,13 +34,13 @@ public class TunableManeuver implements ControlParametersSet, EventDetector {
     private double isp;
 
     /** Tunable velocity increment. */
-    private final ControlParameter velocityIncrement;
+    private final SKParameter velocityIncrement;
 
     /** Reference date of the maneuver. */
     private final AbsoluteDate reference;
 
     /** Tunable date offset. */
-    private final ControlParameter dateOffset;
+    private final SKParameter dateOffset;
 
     /** Current impulse maneuver (with already set parameters). */
     private ImpulseManeuver current;
@@ -123,7 +123,7 @@ public class TunableManeuver implements ControlParametersSet, EventDetector {
     }
 
     /** Local class for control parameters invalidating maneuver at parameter changes. */
-    private class ManeuverParameter extends ControlParameter {
+    private class ManeuverParameter extends SKParameter {
 
         /** Simple constructor.
          * @param name name of the parameter
@@ -146,8 +146,8 @@ public class TunableManeuver implements ControlParametersSet, EventDetector {
     }
 
     /** {@inheritDoc} */
-    public List<ControlParameter> getParameters() {
-        final List<ControlParameter> list = new ArrayList<ControlParameter>(2);
+    public List<SKParameter> getParameters() {
+        final List<SKParameter> list = new ArrayList<SKParameter>(2);
         list.add(dateOffset);
         list.add(velocityIncrement);
         return list;

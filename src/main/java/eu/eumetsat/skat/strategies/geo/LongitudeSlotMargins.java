@@ -14,13 +14,13 @@ import org.orekit.propagation.sampling.OrekitStepHandler;
 import org.orekit.propagation.sampling.OrekitStepInterpolator;
 import org.orekit.time.AbsoluteDate;
 
-import eu.eumetsat.skat.control.StationKeepingGoal;
+import eu.eumetsat.skat.control.SKControl;
 
 /**
- * Station-keeping goal attempting to balance East-West margins
+ * Station-keeping control attempting to balance East-West margins
  * throughout a cycle.
  * <p>
- * This goal value is:
+ * This control value is:
  * <pre>
  *   (l<sub>E</sub> - max(l(t))) - (min(l(t)) - l<sub>W</sub>)
  * </pre>
@@ -30,18 +30,18 @@ import eu.eumetsat.skat.control.StationKeepingGoal;
  * are evaluated for the complete cycle duration.
  * </p>
  * <p>
- * The previous definition implies that setting the target of this goal
+ * The previous definition implies that setting the target of this control
  * to zero attempts to have a longitude excursion covered by the satellite
  * during the station-keeping cycle that is well balanced near the center
  * of the longitude slot, the same margin being available on both sides.
- * Setting the target of this goal to a non-zero value attempts to have
+ * Setting the target of this control to a non-zero value attempts to have
  * a shifted longitude excursion, the shift being towards West if the target
  * value is positive, and towards East otherwise.
  * </p>
  * @author Luc Maisonobe
  */
 public class LongitudeSlotMargins
-    implements StationKeepingGoal, OrekitStepHandler {
+    implements SKControl, OrekitStepHandler {
 
     /** Serializable UID. */
     private static final long serialVersionUID = -2359037806639947135L;

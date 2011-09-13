@@ -4,23 +4,23 @@ package eu.eumetsat.skat.control;
 import java.util.List;
 
 /**
- * Interface for objects that provides {@link ControlParameter control parameters}.
+ * Interface for objects that provides {@link SKParameter control parameters}.
  * <p>
  * Station-keeping control parameters are the tuning parameters
  * used at each station-keeping cycle to get the associated
- * {@link StationKeepingGoal station-keeping goal} as close to
- * its {@link StationKeepingGoal#getTarget() target} as possible.
+ * {@link SKControl station-keeping control} as close to
+ * its {@link SKControl#getTarget() target} as possible.
  * They correspond typically to maneuver amplitudes or dates.
  * </p>
- * @see StationKeepingGoal
- * @see ControlParameter
+ * @see SKControl
+ * @see SKParameter
  * @author Luc Maisonobe
  */
-public interface ControlParametersSet {
+public interface SKParametersList {
 
     /** Get the control parameters.
      * @return control parameters
      */
-    List<ControlParameter> getParameters();
+    List<SKParameter> getParameters();
 
 }

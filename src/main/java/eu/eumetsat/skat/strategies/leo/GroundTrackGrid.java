@@ -6,14 +6,14 @@ import org.orekit.errors.PropagationException;
 import org.orekit.propagation.sampling.OrekitStepHandler;
 import org.orekit.propagation.sampling.OrekitStepInterpolator;
 
-import eu.eumetsat.skat.control.StationKeepingGoal;
+import eu.eumetsat.skat.control.SKControl;
 
 /**
- * Station-keeping goal attempting to follow a specified ground-track
+ * Station-keeping control attempting to follow a specified ground-track
  * at a specified latitude.
  */
 public class GroundTrackGrid
-    implements StationKeepingGoal, OrekitStepHandler {
+    implements SKControl, OrekitStepHandler {
 
     /** Serializable UID. */
     private static final long serialVersionUID = 2042987246037436750L;
