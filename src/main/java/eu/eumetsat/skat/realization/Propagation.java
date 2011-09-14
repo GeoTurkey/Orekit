@@ -18,7 +18,7 @@ import eu.eumetsat.skat.scenario.ScenarioState;
 public class Propagation implements ScenarioComponent {
 
     /** {@inheritDoc} */
-    public ScenarioState apply(final ScenarioState initialState, final AbsoluteDate target)
+    public ScenarioState updateState(final ScenarioState initialState, final AbsoluteDate target)
         throws OrekitException {
         // TODO Auto-generated method stub
         return null;

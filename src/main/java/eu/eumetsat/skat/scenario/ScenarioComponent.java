@@ -17,13 +17,20 @@ import org.orekit.time.AbsoluteDate;
  */
 public interface ScenarioComponent {
 
-    /** Apply the scenario component.
+    /** Update a scenario state by applying component process.
+     * <p>
+     * The exact meaning of the date depends on component. For orbit
+     * determination component, it may be the current date. For propagation
+     * it may be a target date. For control loop it may be end of station keeping
+     * cycle.
+     * </p>
      * @param original original state of the scenario
-     * @param target target date for end of simulation
-     * @return achieved state
+     * @param date date of the update (it's exact meaning depends
+     * on component)
+     * @return updated state
      * @exception OrekitException if simulation cannot be performed
      */
-    ScenarioState apply(ScenarioState original, AbsoluteDate target)
+    ScenarioState updateState(ScenarioState original, AbsoluteDate target)
         throws OrekitException;
 
 }

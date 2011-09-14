@@ -85,7 +85,7 @@ public class ControlLoop implements ScenarioComponent {
      * #addControl(double, SKControl) station keeping controls}.
      * </p>
      */
-    public ScenarioState apply(final ScenarioState origin, final AbsoluteDate target)
+    public ScenarioState updateState(final ScenarioState origin, final AbsoluteDate target)
         throws OrekitException {
         // TODO
         return null;

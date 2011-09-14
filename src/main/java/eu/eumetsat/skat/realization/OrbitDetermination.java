@@ -51,7 +51,7 @@ public class OrbitDetermination implements ScenarioComponent {
     }
 
     /** {@inheritDoc} */
-    public ScenarioState apply(final ScenarioState original, AbsoluteDate target)
+    public ScenarioState updateState(final ScenarioState original, AbsoluteDate target)
         throws OrekitException {
 
         // get the real state vector

@@ -13,7 +13,7 @@ import eu.eumetsat.skat.scenario.ScenarioState;
 public class ManeuverRealizationError implements ScenarioComponent {
 
     /** {@inheritDoc} */
-    public ScenarioState apply(final ScenarioState original, AbsoluteDate target)
+    public ScenarioState updateState(final ScenarioState original, AbsoluteDate target)
         throws OrekitException {
         // TODO
         return null;
