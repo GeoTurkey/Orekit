@@ -44,4 +44,22 @@ public class EccentricityCircle
         // TODO
     }
 
+    /** {@inheritDoc} */
+    public boolean isConstrained() {
+        // TODO
+        return false;
+    }
+
+    /** {@inheritDoc} */
+    public double getMin() {
+        // TODO
+        return Double.NaN;
+    }
+
+    /** {@inheritDoc} */
+    public double getMax() {
+        // TODO
+        return Double.NaN;
+    }
+
 }

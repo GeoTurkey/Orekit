@@ -100,6 +100,24 @@ public class LongitudeSlotMargins
     }
 
     /** {@inheritDoc} */
+    public boolean isConstrained() {
+        // TODO
+        return false;
+    }
+
+    /** {@inheritDoc} */
+    public double getMin() {
+        // TODO
+        return Double.NaN;
+    }
+
+    /** {@inheritDoc} */
+    public double getMax() {
+        // TODO
+        return Double.NaN;
+    }
+
+    /** {@inheritDoc} */
     public void handleStep(OrekitStepInterpolator interpolator, boolean isLast)
         throws PropagationException {
 

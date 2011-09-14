@@ -19,7 +19,7 @@ package eu.eumetsat.skat.control;
  * </p>
  * @author Luc Maisonobe
  */
-public abstract class SKParameter {
+public abstract class SKParameter implements Constrainable {
 
     /** Name of the parameter. */
     private final String name;
@@ -53,14 +53,19 @@ public abstract class SKParameter {
         setTunable(tunable);
     }
 
-    /** Get the name of the parameter.
-     * @return name of the parameter
+    /** Check if a constraint is enabled.
+     * @return true if a constraint is enabled.
      */
-    public String getName() {
-        return name;
+    public boolean isConstrained() {
+        return (getMin() == Double.NEGATIVE_INFINITY) &&
+               (getMax() == Double.POSITIVE_INFINITY);
     }
 
     /** Get the minimal allowed value for the parameter.
+     * <p>
+     * If no constraint is enabled (i.e. if {@link #isConstrained()}
+     * returns false, this method should return {@code Double.NEGATIVE_INFINITY}.
+     * </p>
      * @return minimal allowed value
      */
     public double getMin() {
@@ -68,10 +73,21 @@ public abstract class SKParameter {
     }
 
     /** Get the maximal allowed value for the parameter.
+     * <p>
+     * If no constraint is enabled (i.e. if {@link #isConstrained()}
+     * returns false, this method should return {@code Double.POSITIVE_INFINITY}.
+     * </p>
      * @return maximal allowed value
      */
     public double getMax() {
         return max;
+    }
+
+    /** Get the name of the parameter.
+     * @return name of the parameter
+     */
+    public String getName() {
+        return name;
     }
 
     /** Get the current value of the parameter.

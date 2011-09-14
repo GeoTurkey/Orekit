@@ -229,98 +229,31 @@
             <eAnnotations xmi:id="_E3CjMd1hEeCO1uZVwIAJVg" source="http://www.topcased.org/documentation">
               <details xmi:id="_E3CjMt1hEeCO1uZVwIAJVg" key="documentation" value=" Base class representing a station-keeping control parameter.&#xA; &lt;p>&#xA; Station-keeping control parameters are the tuning parameters&#xA; used at each station-keeping cycle to get the associated&#xA; {@link StationKeepingGoal station-keeping goal} as close to&#xA; its {@link StationKeepingGoal#getTarget() target} as possible.&#xA; They correspond typically to maneuver amplitudes or dates.&#xA; &lt;/p>&#xA; &lt;p>&#xA; This abstract class implements the commons properties management&#xA; (name, min value, ...). The only thing left to the specific&#xA; implementations is the behavior at parameter setting, since the&#xA; new set value must be provided in an implementation-specific way&#xA; to the orbit propagation.&#xA; &lt;/p>&#xA; @author Luc Maisonobe&#xA;"/>
             </eAnnotations>
-            <ownedBehavior xmi:type="uml:OpaqueBehavior" xmi:id="_E_0EtN1hEeCO1uZVwIAJVg" name="getName" specification="_E_0EsN1hEeCO1uZVwIAJVg">
-              <ownedParameter xmi:id="_E_0Etd1hEeCO1uZVwIAJVg" type="_E9voId1hEeCO1uZVwIAJVg"/>
-              <language>JAVA</language>
-              <body>
-        return name;
-    </body>
-            </ownedBehavior>
-            <ownedBehavior xmi:type="uml:OpaqueBehavior" xmi:id="_E_1S0N1hEeCO1uZVwIAJVg" name="getMin" specification="_E_0rwN1hEeCO1uZVwIAJVg">
-              <ownedParameter xmi:id="_E_1S0d1hEeCO1uZVwIAJVg" type="_E_Z1BN1hEeCO1uZVwIAJVg"/>
-              <language>JAVA</language>
-              <body>
-        return min;
-    </body>
-            </ownedBehavior>
-            <ownedBehavior xmi:type="uml:OpaqueBehavior" xmi:id="_E_154N1hEeCO1uZVwIAJVg" name="getMax" specification="_E_1S0t1hEeCO1uZVwIAJVg">
-              <ownedParameter xmi:id="_E_154d1hEeCO1uZVwIAJVg" type="_E_Z1BN1hEeCO1uZVwIAJVg"/>
-              <language>JAVA</language>
-              <body>
-        return max;
-    </body>
-            </ownedBehavior>
-            <ownedBehavior xmi:type="uml:OpaqueBehavior" xmi:id="_E_2g8N1hEeCO1uZVwIAJVg" name="getValue" specification="_E_154t1hEeCO1uZVwIAJVg">
-              <ownedParameter xmi:id="_E_2g8d1hEeCO1uZVwIAJVg" type="_E_Z1BN1hEeCO1uZVwIAJVg"/>
-              <language>JAVA</language>
-              <body>
-        return value;
-    </body>
-            </ownedBehavior>
-            <ownedBehavior xmi:type="uml:OpaqueBehavior" xmi:id="_E_3vEN1hEeCO1uZVwIAJVg" name="setValue" specification="_E_3IAN1hEeCO1uZVwIAJVg">
-              <ownedParameter xmi:id="_E_3vEd1hEeCO1uZVwIAJVg" name="value" type="_E_Z1BN1hEeCO1uZVwIAJVg"/>
-              <language>JAVA</language>
-              <body>
-        this.value = value;
-        valueChanged();
-    </body>
-            </ownedBehavior>
-            <ownedBehavior xmi:type="uml:OpaqueBehavior" xmi:id="_E_4WJN1hEeCO1uZVwIAJVg" name="isTunable" specification="_E_4WIN1hEeCO1uZVwIAJVg">
-              <ownedParameter xmi:id="_E_4WJd1hEeCO1uZVwIAJVg" type="_E_3vEt1hEeCO1uZVwIAJVg"/>
-              <language>JAVA</language>
-              <body>@link ControlLoop control loop}.
-     * &lt;/p&amp;gt;
-     * @return true if the parameter can be tuned,
-     * false if its value is fixed
-     */
-    public boolean isTunable() {
-        return tunable;
-    </body>
-            </ownedBehavior>
-            <ownedBehavior xmi:type="uml:OpaqueBehavior" xmi:id="_E_6LUN1hEeCO1uZVwIAJVg" name="setTunable" specification="_E_5kQN1hEeCO1uZVwIAJVg">
-              <ownedParameter xmi:id="_E_6LUd1hEeCO1uZVwIAJVg" name="tunable" type="_E_3vEt1hEeCO1uZVwIAJVg"/>
-              <language>JAVA</language>
-              <body>
-        this.tunable = tunable;
-    </body>
-            </ownedBehavior>
-            <ownedOperation xmi:id="_E_0EsN1hEeCO1uZVwIAJVg" name="getName" visibility="public" method="_E_0EtN1hEeCO1uZVwIAJVg">
+            <ownedOperation xmi:id="_E_0EsN1hEeCO1uZVwIAJVg" name="getName" visibility="public">
               <eAnnotations xmi:id="_E_0Esd1hEeCO1uZVwIAJVg" source="http://www.topcased.org/documentation">
                 <details xmi:id="_E_0Est1hEeCO1uZVwIAJVg" key="documentation" value="Get the name of the parameter.&#xA; @return name of the parameter&#xA; "/>
               </eAnnotations>
               <ownedParameter xmi:id="_E_0Es91hEeCO1uZVwIAJVg" type="_E9voId1hEeCO1uZVwIAJVg" direction="return"/>
             </ownedOperation>
-            <ownedOperation xmi:id="_E_0rwN1hEeCO1uZVwIAJVg" name="getMin" visibility="public" method="_E_1S0N1hEeCO1uZVwIAJVg">
-              <eAnnotations xmi:id="_E_0rwd1hEeCO1uZVwIAJVg" source="http://www.topcased.org/documentation">
-                <details xmi:id="_E_0rwt1hEeCO1uZVwIAJVg" key="documentation" value="Get the minimal allowed value for the parameter.&#xA; @return minimal allowed value&#xA; "/>
-              </eAnnotations>
-              <ownedParameter xmi:id="_E_0rw91hEeCO1uZVwIAJVg" type="_E_Z1BN1hEeCO1uZVwIAJVg" direction="return"/>
-            </ownedOperation>
-            <ownedOperation xmi:id="_E_1S0t1hEeCO1uZVwIAJVg" name="getMax" visibility="public" method="_E_154N1hEeCO1uZVwIAJVg">
-              <eAnnotations xmi:id="_E_1S091hEeCO1uZVwIAJVg" source="http://www.topcased.org/documentation">
-                <details xmi:id="_E_1S1N1hEeCO1uZVwIAJVg" key="documentation" value="Get the maximal allowed value for the parameter.&#xA; @return maximal allowed value&#xA; "/>
-              </eAnnotations>
-              <ownedParameter xmi:id="_E_1S1d1hEeCO1uZVwIAJVg" type="_E_Z1BN1hEeCO1uZVwIAJVg" direction="return"/>
-            </ownedOperation>
-            <ownedOperation xmi:id="_E_154t1hEeCO1uZVwIAJVg" name="getValue" visibility="public" method="_E_2g8N1hEeCO1uZVwIAJVg">
+            <ownedOperation xmi:id="_E_154t1hEeCO1uZVwIAJVg" name="getValue" visibility="public">
               <eAnnotations xmi:id="_E_15491hEeCO1uZVwIAJVg" source="http://www.topcased.org/documentation">
                 <details xmi:id="_E_155N1hEeCO1uZVwIAJVg" key="documentation" value="Get the current value of the parameter.&#xA; @return current value of the parameter&#xA; "/>
               </eAnnotations>
               <ownedParameter xmi:id="_E_155d1hEeCO1uZVwIAJVg" type="_E_Z1BN1hEeCO1uZVwIAJVg" direction="return"/>
             </ownedOperation>
-            <ownedOperation xmi:id="_E_3IAN1hEeCO1uZVwIAJVg" name="setValue" visibility="public" method="_E_3vEN1hEeCO1uZVwIAJVg">
+            <ownedOperation xmi:id="_E_3IAN1hEeCO1uZVwIAJVg" name="setValue" visibility="public">
               <eAnnotations xmi:id="_E_3IAd1hEeCO1uZVwIAJVg" source="http://www.topcased.org/documentation">
                 <details xmi:id="_E_3IAt1hEeCO1uZVwIAJVg" key="documentation" value="Set the current value of the parameter.&#xA; @parem value current value of the parameter&#xA; "/>
               </eAnnotations>
               <ownedParameter xmi:id="_E_3IA91hEeCO1uZVwIAJVg" name="value" type="_E_Z1BN1hEeCO1uZVwIAJVg"/>
             </ownedOperation>
-            <ownedOperation xmi:id="_E_4WIN1hEeCO1uZVwIAJVg" name="isTunable" visibility="public" method="_E_4WJN1hEeCO1uZVwIAJVg">
+            <ownedOperation xmi:id="_E_4WIN1hEeCO1uZVwIAJVg" name="isTunable" visibility="public">
               <eAnnotations xmi:id="_E_4WId1hEeCO1uZVwIAJVg" source="http://www.topcased.org/documentation">
                 <details xmi:id="_E_4WIt1hEeCO1uZVwIAJVg" key="documentation" value="Check if the parameter can be tuned.&#xA; &lt;p>&#xA; A tunable parameter can be automatically tuned by the&#xA; station-keeping {@link ControlLoop control loop}.&#xA; &lt;/p>&#xA; @return true if the parameter can be tuned,&#xA; false if its value is fixed&#xA; "/>
               </eAnnotations>
               <ownedParameter xmi:id="_E_4WI91hEeCO1uZVwIAJVg" type="_E_3vEt1hEeCO1uZVwIAJVg" direction="return"/>
             </ownedOperation>
-            <ownedOperation xmi:id="_E_5kQN1hEeCO1uZVwIAJVg" name="setTunable" visibility="public" method="_E_6LUN1hEeCO1uZVwIAJVg">
+            <ownedOperation xmi:id="_E_5kQN1hEeCO1uZVwIAJVg" name="setTunable" visibility="public">
               <eAnnotations xmi:id="_E_5kQd1hEeCO1uZVwIAJVg" source="http://www.topcased.org/documentation">
                 <details xmi:id="_E_5kQt1hEeCO1uZVwIAJVg" key="documentation" value="Set the tunable flag.&#xA; @param tunable if true, the parameter becomes tunable&#xA; "/>
               </eAnnotations>
@@ -331,6 +264,8 @@
             <eAnnotations xmi:id="_E3KfAd1hEeCO1uZVwIAJVg" source="http://www.topcased.org/documentation">
               <details xmi:id="_E3KfAt1hEeCO1uZVwIAJVg" key="documentation" value=" Interface representing a station-keeping goal that should be achieved.&#xA; &lt;p>&#xA; Station-keeping goals can be for example to ensure that spacecraft&#xA; remains within its allowed slot with as large margins as possible.&#xA; &lt;/p>&#xA; @see ControlParametersSet&#xA; @author Luc Maisonobe&#xA;"/>
             </eAnnotations>
+            <generalization xmi:id="_LUUi0N7ZEeCkStxwmGS-Mw" general="_9b7-EN7VEeCzQIF1TbkANw"/>
+            <generalization xmi:id="_PDXncN7ZEeCkStxwmGS-Mw" general="_9b7-EN7VEeCzQIF1TbkANw"/>
             <ownedOperation xmi:id="_E_8AgN1hEeCO1uZVwIAJVg" name="getName">
               <eAnnotations xmi:id="_E_8nkN1hEeCO1uZVwIAJVg" source="http://www.topcased.org/documentation">
                 <details xmi:id="_E_8nkd1hEeCO1uZVwIAJVg" key="documentation" value="Get the name of the goal.&#xA; @return name of the goal&#xA; "/>
@@ -394,6 +329,20 @@
               <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_faSi9d1iEeCO1uZVwIAJVg" value="*"/>
               <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_faSi9t1iEeCO1uZVwIAJVg" value="1"/>
             </ownedEnd>
+          </packagedElement>
+          <packagedElement xmi:type="uml:Interface" xmi:id="_9b7-EN7VEeCzQIF1TbkANw" name="Constrainable">
+            <ownedOperation xmi:id="_E_0rwN1hEeCO1uZVwIAJVg" name="getMin" visibility="public">
+              <eAnnotations xmi:id="_E_0rwd1hEeCO1uZVwIAJVg" source="http://www.topcased.org/documentation">
+                <details xmi:id="_E_0rwt1hEeCO1uZVwIAJVg" key="documentation" value="Get the minimal allowed value for the parameter.&#xA; @return minimal allowed value&#xA; "/>
+              </eAnnotations>
+              <ownedParameter xmi:id="_E_0rw91hEeCO1uZVwIAJVg" type="_E_Z1BN1hEeCO1uZVwIAJVg" direction="return"/>
+            </ownedOperation>
+            <ownedOperation xmi:id="_Z40Y8N7XEeCkStxwmGS-Mw" name="getMax">
+              <ownedParameter xmi:id="_bFJCIN7XEeCkStxwmGS-Mw" name="return" type="_E_Z1BN1hEeCO1uZVwIAJVg" direction="return"/>
+            </ownedOperation>
+            <ownedOperation xmi:id="_7EghwN7XEeCkStxwmGS-Mw" name="isConstrained">
+              <ownedParameter xmi:id="_8zkEkN7XEeCkStxwmGS-Mw" name="return" type="_E_3vEt1hEeCO1uZVwIAJVg" direction="return"/>
+            </ownedOperation>
           </packagedElement>
         </packagedElement>
         <packagedElement xmi:type="uml:Package" xmi:id="_E3eBAN1hEeCO1uZVwIAJVg" name="scenario" clientDependency="_FKsfAt1hEeCO1uZVwIAJVg _FKsfA91hEeCO1uZVwIAJVg _FKsfBN1hEeCO1uZVwIAJVg _FKsfBd1hEeCO1uZVwIAJVg _FKsfBt1hEeCO1uZVwIAJVg">
@@ -1884,4 +1833,26 @@ It is updated by the apply methods of all scenario components.</body>
   <packagedElement xmi:type="uml:DataType" xmi:id="_E_3vEt1hEeCO1uZVwIAJVg" name="boolean"/>
   <packagedElement xmi:type="uml:DataType" xmi:id="_FDK6sN1hEeCO1uZVwIAJVg" name="int"/>
   <packagedElement xmi:type="uml:DataType" xmi:id="_FG7ZUN1hEeCO1uZVwIAJVg" name="Key"/>
+  <packagedElement xmi:type="uml:Component" xmi:id="_h0tAgd7OEeCzQIF1TbkANw">
+    <nestedClassifier xmi:type="uml:Component" xmi:id="__V5bQN7TEeCzQIF1TbkANw" name="Orekit" clientDependency="_1vJG8N7UEeCzQIF1TbkANw"/>
+    <nestedClassifier xmi:type="uml:Component" xmi:id="_bZUpwN7UEeCzQIF1TbkANw" name="Apache Commons Math"/>
+    <packagedElement xmi:type="uml:Package" xmi:id="_3S19EN7OEeCzQIF1TbkANw" name="eu.eumetsat.skat">
+      <packagedElement xmi:type="uml:Package" xmi:id="_02fZ8N7PEeCzQIF1TbkANw" name="realization" clientDependency="_X8jn8N7UEeCzQIF1TbkANw"/>
+      <packagedElement xmi:type="uml:Package" xmi:id="_-WE50N7PEeCzQIF1TbkANw" name="scenario" clientDependency="_wW9BoN7REeCzQIF1TbkANw _5bLbMN7REeCzQIF1TbkANw"/>
+      <packagedElement xmi:type="uml:Package" xmi:id="__dtQQN7PEeCzQIF1TbkANw" name="strategies" clientDependency="_XQZFgN7UEeCzQIF1TbkANw">
+        <packagedElement xmi:type="uml:Package" xmi:id="_JWky0N7QEeCzQIF1TbkANw" name="geo" clientDependency="_ArXEQN7SEeCzQIF1TbkANw"/>
+        <packagedElement xmi:type="uml:Package" xmi:id="_KPrlEN7QEeCzQIF1TbkANw" name="leo" clientDependency="_DzmnkN7SEeCzQIF1TbkANw"/>
+      </packagedElement>
+      <packagedElement xmi:type="uml:Package" xmi:id="_BDlB4N7QEeCzQIF1TbkANw" name="utils"/>
+      <packagedElement xmi:type="uml:Package" xmi:id="_yLJ1EN7PEeCzQIF1TbkANw" name="control" clientDependency="_00GbAN7UEeCzQIF1TbkANw"/>
+    </packagedElement>
+    <packagedElement xmi:type="uml:Dependency" xmi:id="_wW9BoN7REeCzQIF1TbkANw" name="" supplier="_yLJ1EN7PEeCzQIF1TbkANw" client="_-WE50N7PEeCzQIF1TbkANw"/>
+    <packagedElement xmi:type="uml:Dependency" xmi:id="_5bLbMN7REeCzQIF1TbkANw" name="" supplier="_02fZ8N7PEeCzQIF1TbkANw" client="_-WE50N7PEeCzQIF1TbkANw"/>
+    <packagedElement xmi:type="uml:Dependency" xmi:id="_ArXEQN7SEeCzQIF1TbkANw" name="" supplier="_yLJ1EN7PEeCzQIF1TbkANw" client="_JWky0N7QEeCzQIF1TbkANw"/>
+    <packagedElement xmi:type="uml:Dependency" xmi:id="_DzmnkN7SEeCzQIF1TbkANw" name="" supplier="_yLJ1EN7PEeCzQIF1TbkANw" client="_KPrlEN7QEeCzQIF1TbkANw"/>
+    <packagedElement xmi:type="uml:Dependency" xmi:id="_XQZFgN7UEeCzQIF1TbkANw" name="" supplier="__V5bQN7TEeCzQIF1TbkANw" client="__dtQQN7PEeCzQIF1TbkANw"/>
+    <packagedElement xmi:type="uml:Dependency" xmi:id="_X8jn8N7UEeCzQIF1TbkANw" name="" supplier="__V5bQN7TEeCzQIF1TbkANw" client="_02fZ8N7PEeCzQIF1TbkANw"/>
+    <packagedElement xmi:type="uml:Dependency" xmi:id="_00GbAN7UEeCzQIF1TbkANw" name="" supplier="_bZUpwN7UEeCzQIF1TbkANw" client="_yLJ1EN7PEeCzQIF1TbkANw"/>
+    <packagedElement xmi:type="uml:Dependency" xmi:id="_1vJG8N7UEeCzQIF1TbkANw" name="" supplier="_bZUpwN7UEeCzQIF1TbkANw" client="__V5bQN7TEeCzQIF1TbkANw"/>
+  </packagedElement>
 </uml:Model>

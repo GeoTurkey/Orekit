@@ -11,7 +11,7 @@ package eu.eumetsat.skat.control;
  * @see SKParametersList
  * @author Luc Maisonobe
  */
-public interface SKControl {
+public interface SKControl extends Constrainable {
 
     /** Get the name of the control.
      * @return name of the control
