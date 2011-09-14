@@ -1,5 +1,4 @@
 /* Copyright 2011 Eumetsat */
-
 package eu.eumetsat.skat.strategies.geo;
 
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;

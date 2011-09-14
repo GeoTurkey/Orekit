@@ -1,5 +1,4 @@
 /* Copyright 2011 Eumetsat */
-
 package eu.eumetsat.skat.strategies.leo;
 
 import org.orekit.errors.PropagationException;
