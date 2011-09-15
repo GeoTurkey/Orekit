@@ -38,7 +38,7 @@ public class ControlLoop implements ScenarioComponent {
      * <p>
      * Creates an empty control loop, with neither controls nor control parameters.
      * They must be added later on by {@link #addControl(double, SKControl)}
-     * and {@link #addControlParametersSet(SKParametersList)}.
+     * and {@link #addControlParametersList(SKParametersList)}.
      * </p>
      */
     public ControlLoop() {
@@ -63,11 +63,11 @@ public class ControlLoop implements ScenarioComponent {
         controls.add(new ScaledControl(scale, control));
     }
 
-    /** Add the tunable parameters from a control parameters set.
-     * @param parametersSet control parameters set to use
+    /** Add the tunable parameters from a control parameters list.
+     * @param parametersList control parameters list to use
      */
-    public void addControlParametersSet(final SKParametersList parametersSet) {
-        for (final SKParameter parameter : parametersSet.getParameters()) {
+    public void addControlParametersList(final SKParametersList parametersList) {
+        for (final SKParameter parameter : parametersList.getParameters()) {
             if (parameter.isTunable()) {
                 parameters.add(parameter);
             }
@@ -80,7 +80,7 @@ public class ControlLoop implements ScenarioComponent {
      * </p>
      * <p>
      * At the end of the optimization the {@link
-     * #addControlParametersSet(SKParametersList) control parameters} values
+     * #addControlParametersList(SKParametersList) control parameters} values
      * will be set to the optimal values that best fulfill the {@link
      * #addControl(double, SKControl) station keeping controls}.
      * </p>
