@@ -8,13 +8,18 @@ import org.orekit.propagation.SpacecraftState;
 
 /**
  * Container for scenario states, containing real and estimated spacecraft
- * state as well as maneuvers.
+ * state as well as theoreticalManeuvers.
  * <p>
  * The real state in the pair represents the true state of the satellite
  * as simulated using appropriate propagation models, using the
  * maneuvers really performed. The estimated state represents what the
  * ground system thinks the real state is, after orbit determination
  * and applying theoretical maneuver without errors.
+ * </p>
+ * <p>
+ * There are also two types of maneuvers, the theoretical ones computed
+ * by the station-keeping ground system, and the ones really performed by
+ * the spacecraft.
  * </p>
  * <p>
  * Instances of this class are guaranteed to be immutable
@@ -29,20 +34,26 @@ public class ScenarioState {
     /** Estimated state. */
     private final SpacecraftState estimatedState;
 
-    /** Maneuvers. */
-    private final List<ImpulseManeuver> maneuvers;
+    /** Theoretical maneuvers. */
+    private final List<ImpulseManeuver> theoreticalManeuvers;
+
+    /** Performed maneuvers. */
+    private final List<ImpulseManeuver> performedManeuvers;
 
     /** Simple constructor.
      * @param realState real state
      * @param estimatedState estimated state
-     * @param maneuvers list of scheduled maneuvers
+     * @param theoreticalManeuvers list of scheduled theoretical maneuvers
+     * @param performedManeuvers list of performed maneuvers
      */
     public ScenarioState(final SpacecraftState realState,
                          final SpacecraftState estimatedState,
-                         final List<ImpulseManeuver> maneuvers) {
-        this.realState      = realState;
-        this.estimatedState = estimatedState;
-        this.maneuvers      = maneuvers;
+                         final List<ImpulseManeuver> theoreticalManeuvers,
+                         final List<ImpulseManeuver> performedManeuvers) {
+        this.realState            = realState;
+        this.estimatedState       = estimatedState;
+        this.theoreticalManeuvers = theoreticalManeuvers;
+        this.performedManeuvers   = performedManeuvers;
     }
 
     /** Get the real state.
@@ -59,11 +70,18 @@ public class ScenarioState {
         return estimatedState;
     }
 
-    /** Get the scheduled maneuvers.
-     * @return scheduled maneuvers
+    /** Get the scheduled theoretical maneuvers.
+     * @return scheduled theoretical maneuvers
      */
-    public List<ImpulseManeuver> getManeuvers() {
-        return maneuvers;
+    public List<ImpulseManeuver> getTheoreticalManeuvers() {
+        return theoreticalManeuvers;
+    }
+
+    /** Get the performed maneuvers.
+     * @return performed maneuvers
+     */
+    public List<ImpulseManeuver> getPerformedManeuvers() {
+        return performedManeuvers;
     }
 
 }

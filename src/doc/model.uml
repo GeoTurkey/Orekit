@@ -348,7 +348,7 @@
         <packagedElement xmi:type="uml:Package" xmi:id="_E3eBAN1hEeCO1uZVwIAJVg" name="scenario" clientDependency="_FKsfAt1hEeCO1uZVwIAJVg _FKsfA91hEeCO1uZVwIAJVg _FKsfBN1hEeCO1uZVwIAJVg _FKsfBd1hEeCO1uZVwIAJVg _FKsfBt1hEeCO1uZVwIAJVg">
           <ownedComment xmi:id="_5lGl0N1pEeCO1uZVwIAJVg" annotatedElement="_E3iScN1hEeCO1uZVwIAJVg">
             <body>scenario state contains all the properties of current cycle (orbit, maneuvers ...)
-It is updated by the apply methods of all scenario components.</body>
+It is updated by the updateState methods of all scenario components.</body>
           </ownedComment>
           <ownedComment xmi:id="_a2H9wN1uEeCO1uZVwIAJVg" annotatedElement="_E3hEUN1hEeCO1uZVwIAJVg">
             <body>as Scenario implements ScenarioComponent by itself, recursive scenario building is possible</body>
@@ -469,11 +469,14 @@ It is updated by the apply methods of all scenario components.</body>
               </eAnnotations>
               <ownedParameter xmi:id="_FCj2s91hEeCO1uZVwIAJVg" type="_E9aQ8d1hEeCO1uZVwIAJVg" direction="return"/>
             </ownedOperation>
-            <ownedOperation xmi:id="_FClr4N1hEeCO1uZVwIAJVg" name="getManeuvers" visibility="public" method="_FClr5N1hEeCO1uZVwIAJVg">
+            <ownedOperation xmi:id="_FClr4N1hEeCO1uZVwIAJVg" name="getTheoreticalManeuvers" visibility="public" method="_FClr5N1hEeCO1uZVwIAJVg">
               <eAnnotations xmi:id="_FClr4d1hEeCO1uZVwIAJVg" source="http://www.topcased.org/documentation">
                 <details xmi:id="_FClr4t1hEeCO1uZVwIAJVg" key="documentation" value="Get the scheduled maneuvers.&#xA; @return scheduled maneuvers&#xA; "/>
               </eAnnotations>
               <ownedParameter xmi:id="_FClr491hEeCO1uZVwIAJVg" type="_E_ZN891hEeCO1uZVwIAJVg" direction="return"/>
+            </ownedOperation>
+            <ownedOperation xmi:id="_7jm7cOA-EeC0rbAAcgLFmg" name="getPerformedManeuvers">
+              <ownedParameter xmi:id="_95LrsOA-EeC0rbAAcgLFmg" name="return" type="_E_ZN891hEeCO1uZVwIAJVg" direction="return"/>
             </ownedOperation>
           </packagedElement>
           <packagedElement xmi:type="uml:Usage" xmi:id="_FKsfAt1hEeCO1uZVwIAJVg" supplier="_E9UxYN1hEeCO1uZVwIAJVg" client="_E3eBAN1hEeCO1uZVwIAJVg"/>
@@ -481,7 +484,7 @@ It is updated by the apply methods of all scenario components.</body>
           <packagedElement xmi:type="uml:Usage" xmi:id="_FKsfBN1hEeCO1uZVwIAJVg" supplier="_E_ZN8N1hEeCO1uZVwIAJVg" client="_E3eBAN1hEeCO1uZVwIAJVg"/>
           <packagedElement xmi:type="uml:Usage" xmi:id="_FKsfBd1hEeCO1uZVwIAJVg" supplier="_FCgMUN1hEeCO1uZVwIAJVg" client="_E3eBAN1hEeCO1uZVwIAJVg"/>
           <packagedElement xmi:type="uml:Usage" xmi:id="_FKsfBt1hEeCO1uZVwIAJVg" supplier="_E9Zp4t1hEeCO1uZVwIAJVg" client="_E3eBAN1hEeCO1uZVwIAJVg"/>
-          <packagedElement xmi:type="uml:Association" xmi:id="_73AMcN1oEeCO1uZVwIAJVg" name="A_&lt;scenarioComponent>_&lt;scenarioState>" memberEnd="_73AMcd1oEeCO1uZVwIAJVg _73AMdN1oEeCO1uZVwIAJVg" navigableOwnedEnd="_73AMdN1oEeCO1uZVwIAJVg">
+          <packagedElement xmi:type="uml:Association" xmi:id="_73AMcN1oEeCO1uZVwIAJVg" name="updates" memberEnd="_73AMcd1oEeCO1uZVwIAJVg _73AMdN1oEeCO1uZVwIAJVg" navigableOwnedEnd="_73AMdN1oEeCO1uZVwIAJVg">
             <ownedEnd xmi:id="_73AMcd1oEeCO1uZVwIAJVg" name="scenarioComponent" type="_E3eoEN1hEeCO1uZVwIAJVg" association="_73AMcN1oEeCO1uZVwIAJVg">
               <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_73AMct1oEeCO1uZVwIAJVg" value="1"/>
               <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_73AMc91oEeCO1uZVwIAJVg" value="1"/>

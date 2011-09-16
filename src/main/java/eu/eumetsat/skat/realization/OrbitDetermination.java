@@ -76,7 +76,9 @@ public class OrbitDetermination implements ScenarioComponent {
                 new SpacecraftState(estimatedOrbit, realState.getAttitude(),
                                     realState.getMass());
 
-        return new ScenarioState(realState, estimatedState, original.getManeuvers());
+        return new ScenarioState(realState, estimatedState,
+                                 original.getTheoreticalManeuvers(),
+                                 original.getPerformedManeuvers());
 
     }
 
