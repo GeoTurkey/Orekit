@@ -23,7 +23,7 @@ public class GroundTrackGrid
     }
 
     /** {@inheritDoc} */
-    public double getTarget() {
+    public double getTargetValue() {
         // TODO
         return Double.NaN;
     }

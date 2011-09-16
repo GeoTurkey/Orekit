@@ -22,7 +22,7 @@ public class EccentricityCircle
     }
 
     /** {@inheritDoc} */
-    public double getTarget() {
+    public double getTargetValue() {
         // TODO
         return Double.NaN;
     }

@@ -18,10 +18,10 @@ public interface SKControl extends Constrainable {
      */
     String getName();
 
-    /** Get the target vector of the control.
-     * @return target vector of the control
+    /** Get the target value of the control.
+     * @return target value of the control
      */
-    double getTarget();
+    double getTargetValue();
 
     /** Get the achieved value of the control.
      * <p>

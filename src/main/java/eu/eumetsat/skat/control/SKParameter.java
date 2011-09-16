@@ -7,7 +7,7 @@ package eu.eumetsat.skat.control;
  * Station-keeping control parameters are the tuning parameters
  * used at each station-keeping cycle to get the associated
  * {@link SKControl station-keeping control} as close to
- * its {@link SKControl#getTarget() target} as possible.
+ * its {@link SKControl#getTargetValue() target} as possible.
  * They correspond typically to maneuver amplitudes or dates.
  * </p>
  * <p>

@@ -40,12 +40,12 @@ class ScaledControl {
      * <p>
      * The scaled residual squared is equal to:
      * ((control.{@link StationKeepingControl#getAchievedValue() getAchievedValue()}
-     *  - control.{@link StationKeepingControl#getTarget() getTarget()})
+     *  - control.{@link StationKeepingControl#getTargetValue() getTarget()})
      *  / scale)<sup>2</sup>
      * </p>
      */
     public double getScaledResidualSquared() {
-        final double residual = control.getAchievedValue() - control.getTarget();
+        final double residual = control.getAchievedValue() - control.getTargetValue();
         final double scaledResidual = residual / scale;
         return scaledResidual * scaledResidual;
     }

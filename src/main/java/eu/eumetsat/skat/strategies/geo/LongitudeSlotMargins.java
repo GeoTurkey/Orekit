@@ -90,7 +90,7 @@ public class LongitudeSlotMargins
     }
 
     /** {@inheritDoc} */
-    public double getTarget() {
+    public double getTargetValue() {
         return target;
     }
 

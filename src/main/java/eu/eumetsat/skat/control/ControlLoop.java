@@ -18,7 +18,7 @@ import eu.eumetsat.skat.scenario.ScenarioState;
  * This loop is mainly an optimization loop that adjust the control parameters
  * in order to minimize an objective function J defined as:<br>
  *   J = &sum;(((control<sub>i</sub>.{@link SKControl#getAchievedValue() getAchievedValue()}
- *             - control<sub>i</sub>.{@link SKControl#getTarget() getTarget()})
+ *             - control<sub>i</sub>.{@link SKControl#getTargetValue() getTarget()})
  *             / scale<sub>i</sub>)<sup>2</sup>)<br>
  * the sum being computed across all scaled controls.
  * </p>
@@ -38,7 +38,7 @@ public class ControlLoop implements ScenarioComponent {
      * <p>
      * Creates an empty control loop, with neither controls nor control parameters.
      * They must be added later on by {@link #addControl(double, SKControl)}
-     * and {@link #addControlParametersList(SKParametersList)}.
+     * and {@link #addParametersList(SKParametersList)}.
      * </p>
      */
     public ControlLoop() {
@@ -52,7 +52,7 @@ public class ControlLoop implements ScenarioComponent {
      * as the control itself (radians, meters, seconds ...). It's purpose is to
      * allow mixing controls in a global scalar objective function by computing<br>
      *   J = &sum;(((control<sub>i</sub>.{@link SKControl#getAchievedValue() getAchievedValue()}
-     *             - control<sub>i</sub>.{@link SKControl#getTarget() getTarget()})
+     *             - control<sub>i</sub>.{@link SKControl#getTargetValue() getTarget()})
      *             / scale<sub>i</sub>)<sup>2</sup>)<br>
      * the sum being computed across all scaled controls.
      * </p>
@@ -66,7 +66,7 @@ public class ControlLoop implements ScenarioComponent {
     /** Add the tunable parameters from a control parameters list.
      * @param parametersList control parameters list to use
      */
-    public void addControlParametersList(final SKParametersList parametersList) {
+    public void addParametersList(final SKParametersList parametersList) {
         for (final SKParameter parameter : parametersList.getParameters()) {
             if (parameter.isTunable()) {
                 parameters.add(parameter);
@@ -80,7 +80,7 @@ public class ControlLoop implements ScenarioComponent {
      * </p>
      * <p>
      * At the end of the optimization the {@link
-     * #addControlParametersList(SKParametersList) control parameters} values
+     * #addParametersList(SKParametersList) control parameters} values
      * will be set to the optimal values that best fulfill the {@link
      * #addControl(double, SKControl) station keeping controls}.
      * </p>
