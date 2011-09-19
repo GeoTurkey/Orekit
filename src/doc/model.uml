@@ -521,11 +521,11 @@ It is updated by the updateState methods of all scenario components.</body>
               </eAnnotations>
               <ownedParameter xmi:id="_FCT_E91hEeCO1uZVwIAJVg" name="component" type="_E3eoEN1hEeCO1uZVwIAJVg"/>
             </ownedOperation>
-            <ownedOperation xmi:id="_FCbT0N1hEeCO1uZVwIAJVg" name="apply" visibility="public" method="_FCb6491hEeCO1uZVwIAJVg">
+            <ownedOperation xmi:id="_FCbT0N1hEeCO1uZVwIAJVg" name="updateState" visibility="public" method="_FCb6491hEeCO1uZVwIAJVg">
               <eAnnotations xmi:id="_FCbT0d1hEeCO1uZVwIAJVg" source="http://www.topcased.org/documentation">
                 <details xmi:id="_FCbT0t1hEeCO1uZVwIAJVg" key="documentation" value="{@inheritDoc}&#xA; &lt;p>The scenario will be run in loops until the target date&#xA; is reached. At each iteration of the loop, the target date of&#xA; the iteration will be set according to the cycle duration set at&#xA; construction.&lt;/p>&#xA; "/>
               </eAnnotations>
-              <ownedParameter xmi:id="_FCb64N1hEeCO1uZVwIAJVg" name="origin" type="_E3iScN1hEeCO1uZVwIAJVg"/>
+              <ownedParameter xmi:id="_FCb64N1hEeCO1uZVwIAJVg" name="original" type="_E3iScN1hEeCO1uZVwIAJVg"/>
               <ownedParameter xmi:id="_FCb64d1hEeCO1uZVwIAJVg" name="target" type="_E9bfEN1hEeCO1uZVwIAJVg"/>
               <ownedParameter xmi:id="_FCb64t1hEeCO1uZVwIAJVg" type="_E3iScN1hEeCO1uZVwIAJVg" direction="return"/>
             </ownedOperation>
