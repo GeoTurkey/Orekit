@@ -193,12 +193,12 @@
                 x2="104" y1="17" y2="1"/>
             <text x="6" y="19" clip-path="url(#clipPath2)" stroke="none"
                 font-weight="bold" xml:space="preserve">package </text>
-            <text font-size="13" x="66" y="19"
+            <text font-size="11" x="66" y="19"
                 clip-path="url(#clipPath3)" stroke="none" xml:space="preserve">utils</text>
             <rect x="62" y="91" clip-path="url(#clipPath4)"
                 fill="rgb(237,247,200)" width="380" height="223" stroke="none"/>
         </g>
-        <g font-size="13" stroke-linecap="butt" fill="rgb(106,88,75)"
+        <g font-size="11" stroke-linecap="butt" fill="rgb(106,88,75)"
             stroke="rgb(106,88,75)" font-weight="bold" stroke-width="0.1">
             <text xml:space="preserve" x="181" y="106"
                 clip-path="url(#clipPath5)" stroke="none">KeyValueFileParser</text>
@@ -273,11 +273,11 @@
             stroke-linecap="butt" stroke="rgb(238,233,247)">
             <rect x="545" y="86" clip-path="url(#clipPath38)"
                 width="354" height="251" stroke="none"/>
-            <text font-size="13" x="659" y="101"
+            <text font-size="11" x="659" y="101"
                 clip-path="url(#clipPath39)" fill="rgb(70,13,110)"
                 stroke="none" xml:space="preserve">&lt;&lt;enumeration&gt;&gt;</text>
         </g>
-        <g font-size="13" stroke-linecap="butt" fill="rgb(70,13,110)"
+        <g font-size="11" stroke-linecap="butt" fill="rgb(70,13,110)"
             stroke="rgb(70,13,110)" font-weight="bold" stroke-width="1.1">
             <text xml:space="preserve" x="669" y="120"
                 clip-path="url(#clipPath40)" stroke="none">ParameterKey</text>
@@ -316,7 +316,7 @@
                 fill="none" width="39" stroke-dasharray="6.6,3.3"
                 height="29" stroke="black"/>
         </g>
-        <g stroke-width="1.1" stroke-dasharray="6.6,3.3" font-size="13" stroke-linecap="butt">
+        <g stroke-width="1.1" stroke-dasharray="6.6,3.3" font-size="11" stroke-linecap="butt">
             <text xml:space="preserve" x="437" y="89"
                 clip-path="url(#clipPath54)" stroke="none">Key</text>
             <rect x="0" y="0" clip-path="url(#clipPath1)" fill="none"
