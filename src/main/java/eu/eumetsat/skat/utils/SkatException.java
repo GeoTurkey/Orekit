@@ -187,4 +187,62 @@ public class SkatException extends Exception {
 
     }
 
+    /** Create an {@link java.lang.IllegalArgumentException} for an internal error.
+     * @param specifier format specifier (to be translated)
+     * @param parts parts to insert in the format (no translation)
+     * @return an {@link java.lang.IllegalArgumentException}
+     */
+    public static IllegalArgumentException createIllegalArgumentException(final Localizable specifier,
+                                                                          final Object ... parts) {
+
+        return new IllegalArgumentException() {
+
+            /** Serializable UID. */
+            private static final long serialVersionUID = 4573516034997263356L;
+
+            /** {@inheritDoc} */
+            @Override
+            public String getMessage() {
+                return buildMessage(Locale.US, specifier, parts);
+            }
+
+            /** {@inheritDoc} */
+            @Override
+            public String getLocalizedMessage() {
+                return buildMessage(Locale.getDefault(), specifier, parts);
+            }
+
+        };
+
+    }
+
+    /** Create an {@link java.lang.IllegalStateException} for an internal error.
+     * @param specifier format specifier (to be translated)
+     * @param parts parts to insert in the format (no translation)
+     * @return an {@link java.lang.IllegalStateException}
+     */
+    public static IllegalStateException createIllegalStateException(final Localizable specifier,
+                                                                    final Object ... parts) {
+
+        return new IllegalStateException() {
+
+            /** Serializable UID. */
+            private static final long serialVersionUID = 4573516034997263356L;
+
+            /** {@inheritDoc} */
+            @Override
+            public String getMessage() {
+                return buildMessage(Locale.US, specifier, parts);
+            }
+
+            /** {@inheritDoc} */
+            @Override
+            public String getLocalizedMessage() {
+                return buildMessage(Locale.getDefault(), specifier, parts);
+            }
+
+        };
+
+    }
+
 }

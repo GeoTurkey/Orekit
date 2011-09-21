@@ -260,16 +260,16 @@
                 <path d="M597 479 L892 479 L892 534 L597 534 L597 479 Z"/>
             </clipPath>
             <clipPath clipPathUnits="userSpaceOnUse" id="clipPath84">
-                <path d="M684 559 L797 559 L797 600 L684 600 L684 559 Z"/>
+                <path d="M684 559 L808 559 L808 600 L684 600 L684 559 Z"/>
             </clipPath>
             <clipPath clipPathUnits="userSpaceOnUse" id="clipPath85">
-                <path d="M691 561 L790 561 L790 578 L691 578 L691 561 Z"/>
+                <path d="M691 561 L801 561 L801 578 L691 578 L691 561 Z"/>
             </clipPath>
             <clipPath clipPathUnits="userSpaceOnUse" id="clipPath86">
-                <path d="M686 576 L795 576 L795 588 L686 588 L686 576 Z"/>
+                <path d="M686 576 L806 576 L806 588 L686 588 L686 576 Z"/>
             </clipPath>
             <clipPath clipPathUnits="userSpaceOnUse" id="clipPath87">
-                <path d="M686 586 L795 586 L795 598 L686 598 L686 586 Z"/>
+                <path d="M686 586 L806 586 L806 598 L686 598 L686 586 Z"/>
             </clipPath>
             <clipPath clipPathUnits="userSpaceOnUse" id="clipPath88">
                 <path d="M432 65 L474 65 L474 97 L432 97 L432 65 Z"/>
@@ -296,10 +296,10 @@
                 <path d="M354 471 L377 471 L377 484 L354 484 L354 471 Z"/>
             </clipPath>
             <clipPath clipPathUnits="userSpaceOnUse" id="clipPath96">
-                <path d="M722 521 L763 521 L763 575 L722 575 L722 521 Z"/>
+                <path d="M725 521 L766 521 L766 575 L725 575 L725 521 Z"/>
             </clipPath>
             <clipPath clipPathUnits="userSpaceOnUse" id="clipPath97">
-                <path d="M735 534 L750 534 L750 551 L735 551 L735 534 Z"/>
+                <path d="M738 534 L753 534 L753 551 L738 551 L738 534 Z"/>
             </clipPath>
         </defs>
         <g font-size="11" fill="white" stroke-linejoin="round"
@@ -510,18 +510,18 @@
             <rect x="596" y="440" clip-path="url(#clipPath70)"
                 fill="none" width="296" height="94"/>
             <rect x="685" y="560" clip-path="url(#clipPath84)"
-                fill="rgb(237,247,200)" width="111" height="39" stroke="none"/>
+                fill="rgb(237,247,200)" width="122" height="39" stroke="none"/>
         </g>
         <g font-size="13" stroke-linecap="butt" fill="rgb(106,88,75)"
             stroke="rgb(106,88,75)" font-weight="bold" stroke-width="1.1">
             <text xml:space="preserve" x="692" y="575"
-                clip-path="url(#clipPath85)" stroke="none">CsvFileWriter</text>
+                clip-path="url(#clipPath85)" stroke="none">CsvFileMonitor</text>
             <line clip-path="url(#clipPath86)" fill="none" x1="687"
-                x2="794" y1="577" y2="577" stroke-width="0.1"/>
+                x2="805" y1="577" y2="577" stroke-width="0.1"/>
             <line clip-path="url(#clipPath87)" fill="none" x1="687"
-                x2="794" y1="587" y2="587" stroke-width="0.1"/>
+                x2="805" y1="587" y2="587" stroke-width="0.1"/>
             <rect x="685" y="560" clip-path="url(#clipPath84)"
-                fill="none" width="110" height="38"/>
+                fill="none" width="121" height="38"/>
         </g>
         <g fill="white" stroke-width="1.1" font-size="11"
             stroke-linecap="butt" stroke="white">
@@ -559,12 +559,12 @@
         </g>
         <g font-size="11" stroke-linecap="butt" fill="rgb(110,44,18)"
             stroke-dasharray="8,7" stroke="rgb(110,44,18)" stroke-width="1.1">
-            <line clip-path="url(#clipPath96)" fill="none" x1="742"
-                x2="742" y1="560" y2="535"/>
+            <line clip-path="url(#clipPath96)" fill="none" x1="745"
+                x2="745" y1="560" y2="535"/>
             <polygon fill="white" clip-path="url(#clipPath97)"
-                points=" 742 535 748 549 736 549" stroke="none"/>
+                points=" 745 535 751 549 739 549" stroke="none"/>
             <polygon fill="none" stroke-dasharray="none"
-                clip-path="url(#clipPath97)" points=" 742 535 748 549 736 549"/>
+                clip-path="url(#clipPath97)" points=" 745 535 751 549 739 549"/>
         </g>
     </g>
 </svg>

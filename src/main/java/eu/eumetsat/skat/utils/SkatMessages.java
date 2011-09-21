@@ -32,10 +32,13 @@ public enum SkatMessages implements Localizable {
     // CHECKSTYLE: stop JavadocVariable check
 
     INTERNAL_ERROR("internal error, contact maintenance at {0}"),
-    UNABLE_TO_FIND_RESOURCE("unable to find resource {0}"),
-    NOT_INERTIAL_FRAME("frame {0} is not pseudo-inertial"),
+    MONITORING_ALREADY_STARTED("cannot monitor {0}, monitoring already started"),
     NOT_EARTH_FRAME("frame {0} is not an Earth frame"),
-    UNKNOWN_FRAME("unknown frame {0}");
+    NOT_INERTIAL_FRAME("frame {0} is not pseudo-inertial"),
+    UNABLE_TO_FIND_RESOURCE("unable to find resource {0}"),
+    UNKNOWN_FRAME("unknown frame {0}"),
+    VALUE_ALREADY_MONITORED("value {0} is already monitored"),
+    VALUE_NOT_MONITORED("value {0} is not monitored");
 
     // CHECKSTYLE: resume JavadocVariable check
 

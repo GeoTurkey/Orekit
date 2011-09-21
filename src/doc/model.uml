@@ -1871,7 +1871,7 @@ It is updated by the updateState methods of all scenario components.</body>
               <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_B9OgJt6jEeCJNKrGCyr87w" value="1"/>
             </ownedEnd>
           </packagedElement>
-          <packagedElement xmi:type="uml:Class" xmi:id="_mmUtcORVEeCC7oKz25Mm0Q" name="CsvFileWriter" clientDependency="_sk5ksORVEeCC7oKz25Mm0Q">
+          <packagedElement xmi:type="uml:Class" xmi:id="_mmUtcORVEeCC7oKz25Mm0Q" name="CsvFileMonitor" clientDependency="_sk5ksORVEeCC7oKz25Mm0Q">
             <interfaceRealization xmi:id="_sk5ksORVEeCC7oKz25Mm0Q" name="InterfaceRealization1" supplier="_mNd0gN6iEeCJNKrGCyr87w" client="_mmUtcORVEeCC7oKz25Mm0Q" contract="_mNd0gN6iEeCJNKrGCyr87w"/>
           </packagedElement>
         </packagedElement>

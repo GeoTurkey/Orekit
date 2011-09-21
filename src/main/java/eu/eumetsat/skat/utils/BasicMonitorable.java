@@ -8,8 +8,7 @@ import java.util.Set;
 import org.apache.commons.math.exception.DimensionMismatchException;
 import org.orekit.time.AbsoluteDate;
 
-/** Basic implementation of the {@link Monitorable monitorable}
- * time-dependent values.
+/** Basic implementation of the {@link Monitorable monitorable} time-dependent values.
  * @author Luc Maisonobe
  */
 public class BasicMonitorable implements Monitorable {
@@ -65,8 +64,7 @@ public class BasicMonitorable implements Monitorable {
      * @exception DimensionMismatchException if current value dimension
      * does not match the dimension specified at construction
      */
-    protected void setDateAndValue(final AbsoluteDate currentDate,
-                                   final double[] currentValue)
+    public void setDateAndValue(final AbsoluteDate currentDate, final double[] currentValue)
         throws DimensionMismatchException {
 
         // safety check
