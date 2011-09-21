@@ -653,6 +653,9 @@ It is updated by the updateState methods of all scenario components.</body>
           <packagedElement xmi:type="uml:CallEvent" xmi:id="_1GTGseBzEeCdstVTjind5Q" name="CallEvent6"/>
         </packagedElement>
         <packagedElement xmi:type="uml:Package" xmi:id="_E3i5gN1hEeCO1uZVwIAJVg" name="realization" clientDependency="_FKsfB91hEeCO1uZVwIAJVg _FKsfCN1hEeCO1uZVwIAJVg _FKtGEN1hEeCO1uZVwIAJVg _FKtGEd1hEeCO1uZVwIAJVg _FKtGEt1hEeCO1uZVwIAJVg _FKtGE91hEeCO1uZVwIAJVg _FKtGFN1hEeCO1uZVwIAJVg _FKtGFd1hEeCO1uZVwIAJVg _FKtGFt1hEeCO1uZVwIAJVg _FKtGF91hEeCO1uZVwIAJVg _FKtGGN1hEeCO1uZVwIAJVg _FKtGGd1hEeCO1uZVwIAJVg">
+          <ownedComment xmi:id="_4zpvoORMEeCkjrkI4Jl04g" annotatedElement="_FEMOYt1hEeCO1uZVwIAJVg">
+            <body>a single instance of RandomGenerator is shared by all objects</body>
+          </ownedComment>
           <packagedElement xmi:type="uml:Class" xmi:id="_E3nK8N1hEeCO1uZVwIAJVg" name="OrbitDetermination" clientDependency="_FELAQN1hEeCO1uZVwIAJVg">
             <eAnnotations xmi:id="_E3nK8d1hEeCO1uZVwIAJVg" source="http://www.topcased.org/documentation">
               <details xmi:id="_E3nK8t1hEeCO1uZVwIAJVg" key="documentation" value=" Class for orbit-determination simulation.&#xA; &lt;p>&#xA; This class simulate orbit determination. It starts from the real orbit&#xA; and compute an estimated orbit by adding errors. The added error&#xA; vector is Gaussian, zero-mean and its covariance is specified by a&#xA; matrix set at construction time.&#xA; &lt;/p>&#xA; @author Luc Maisonobe&#xA;"/>
@@ -758,19 +761,8 @@ It is updated by the updateState methods of all scenario components.</body>
           <packagedElement xmi:type="uml:Class" xmi:id="_LqCEAN6gEeCJNKrGCyr87w" name="ManeuverSplitter" clientDependency="_XPAjEN6gEeCJNKrGCyr87w">
             <interfaceRealization xmi:id="_XPAjEN6gEeCJNKrGCyr87w" name="InterfaceRealization1" supplier="_E3eoEN1hEeCO1uZVwIAJVg" client="_LqCEAN6gEeCJNKrGCyr87w" contract="_E3eoEN1hEeCO1uZVwIAJVg"/>
           </packagedElement>
-          <packagedElement xmi:type="uml:Class" xmi:id="_OyKSkN6gEeCJNKrGCyr87w" name="ManeuverRealizationError" clientDependency="_YB5_oN6gEeCJNKrGCyr87w">
+          <packagedElement xmi:type="uml:Class" xmi:id="_OyKSkN6gEeCJNKrGCyr87w" name="ManeuverMagnitudeError" clientDependency="_YB5_oN6gEeCJNKrGCyr87w">
             <interfaceRealization xmi:id="_YB5_oN6gEeCJNKrGCyr87w" name="InterfaceRealization1" supplier="_E3eoEN1hEeCO1uZVwIAJVg" client="_OyKSkN6gEeCJNKrGCyr87w" contract="_E3eoEN1hEeCO1uZVwIAJVg"/>
-          </packagedElement>
-          <packagedElement xmi:type="uml:Interface" xmi:id="_dhPWIN6gEeCJNKrGCyr87w" name="Monitorable"/>
-          <packagedElement xmi:type="uml:Association" xmi:id="_hDk0cN6gEeCJNKrGCyr87w" name="A_&lt;orbitDetermination>_&lt;monitorable>" memberEnd="_hDk0cd6gEeCJNKrGCyr87w _hDk0dN6gEeCJNKrGCyr87w">
-            <ownedEnd xmi:id="_hDk0cd6gEeCJNKrGCyr87w" name="orbitDetermination" type="_E3nK8N1hEeCO1uZVwIAJVg" association="_hDk0cN6gEeCJNKrGCyr87w">
-              <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_hDk0ct6gEeCJNKrGCyr87w" value="1"/>
-              <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_hDk0c96gEeCJNKrGCyr87w" value="1"/>
-            </ownedEnd>
-            <ownedEnd xmi:id="_hDk0dN6gEeCJNKrGCyr87w" name="monitorable" type="_dhPWIN6gEeCJNKrGCyr87w" aggregation="shared" association="_hDk0cN6gEeCJNKrGCyr87w">
-              <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_hDk0dd6gEeCJNKrGCyr87w" value="*"/>
-              <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_hDk0dt6gEeCJNKrGCyr87w"/>
-            </ownedEnd>
           </packagedElement>
           <packagedElement xmi:type="uml:Association" xmi:id="_i2u0IN6gEeCJNKrGCyr87w" name="A_&lt;propagation>_&lt;monitorable>" memberEnd="_i2u0Id6gEeCJNKrGCyr87w _i2u0JN6gEeCJNKrGCyr87w">
             <ownedEnd xmi:id="_i2u0Id6gEeCJNKrGCyr87w" name="propagation" type="_E3oZEN1hEeCO1uZVwIAJVg" association="_i2u0IN6gEeCJNKrGCyr87w">
@@ -802,17 +794,6 @@ It is updated by the updateState methods of all scenario components.</body>
               <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_kKrIRt6gEeCJNKrGCyr87w"/>
             </ownedEnd>
           </packagedElement>
-          <packagedElement xmi:type="uml:Interface" xmi:id="_mNd0gN6iEeCJNKrGCyr87w" name="Monitor"/>
-          <packagedElement xmi:type="uml:Association" xmi:id="_B9OgIN6jEeCJNKrGCyr87w" name="A_&lt;monitor>_&lt;monitorable>" memberEnd="_B9OgId6jEeCJNKrGCyr87w _B9OgJN6jEeCJNKrGCyr87w" navigableOwnedEnd="_B9OgJN6jEeCJNKrGCyr87w">
-            <ownedEnd xmi:id="_B9OgId6jEeCJNKrGCyr87w" name="monitor" type="_mNd0gN6iEeCJNKrGCyr87w" association="_B9OgIN6jEeCJNKrGCyr87w">
-              <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_B9OgIt6jEeCJNKrGCyr87w" value="1"/>
-              <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_B9OgI96jEeCJNKrGCyr87w" value="1"/>
-            </ownedEnd>
-            <ownedEnd xmi:id="_B9OgJN6jEeCJNKrGCyr87w" name="monitorable" type="_dhPWIN6gEeCJNKrGCyr87w" association="_B9OgIN6jEeCJNKrGCyr87w">
-              <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_B9OgJd6jEeCJNKrGCyr87w" value="1"/>
-              <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_B9OgJt6jEeCJNKrGCyr87w" value="1"/>
-            </ownedEnd>
-          </packagedElement>
           <packagedElement xmi:type="uml:Association" xmi:id="_2PCc8OBeEeCxMfzvkTl0-w" name="A_&lt;orbitDetermination>_&lt;correlatedRandomVectorGenerator>" memberEnd="_2PCc8eBeEeCxMfzvkTl0-w _2PCc9OBeEeCxMfzvkTl0-w">
             <ownedEnd xmi:id="_2PCc8eBeEeCxMfzvkTl0-w" name="orbitDetermination" type="_E3nK8N1hEeCO1uZVwIAJVg" association="_2PCc8OBeEeCxMfzvkTl0-w">
               <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_2PCc8uBeEeCxMfzvkTl0-w" value="1"/>
@@ -841,6 +822,19 @@ It is updated by the updateState methods of all scenario components.</body>
             <ownedEnd xmi:id="_8h7XU-BeEeCxMfzvkTl0-w" name="randomGenerator" type="_FEMOYt1hEeCO1uZVwIAJVg" aggregation="shared" association="_8h6wQOBeEeCxMfzvkTl0-w">
               <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_8h7XVOBeEeCxMfzvkTl0-w" value="1"/>
               <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_8h7XVeBeEeCxMfzvkTl0-w" value="1"/>
+            </ownedEnd>
+          </packagedElement>
+          <packagedElement xmi:type="uml:Class" xmi:id="_8SLhceRLEeCkjrkI4Jl04g" name="ManeuverDateError" clientDependency="_g9FjIORMEeCkjrkI4Jl04g">
+            <interfaceRealization xmi:id="_g9FjIORMEeCkjrkI4Jl04g" name="InterfaceRealization1" supplier="_E3eoEN1hEeCO1uZVwIAJVg" client="_8SLhceRLEeCkjrkI4Jl04g" contract="_E3eoEN1hEeCO1uZVwIAJVg"/>
+          </packagedElement>
+          <packagedElement xmi:type="uml:Association" xmi:id="_i5EusORMEeCkjrkI4Jl04g" name="A_&lt;maneuverDateError>_&lt;randomGenerator>" memberEnd="_i5EuseRMEeCkjrkI4Jl04g _i5EutORMEeCkjrkI4Jl04g">
+            <ownedEnd xmi:id="_i5EuseRMEeCkjrkI4Jl04g" name="maneuverDateError" type="_8SLhceRLEeCkjrkI4Jl04g" association="_i5EusORMEeCkjrkI4Jl04g">
+              <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_i5EusuRMEeCkjrkI4Jl04g" value="1"/>
+              <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_i5Eus-RMEeCkjrkI4Jl04g" value="1"/>
+            </ownedEnd>
+            <ownedEnd xmi:id="_i5EutORMEeCkjrkI4Jl04g" name="randomGenerator" type="_FEMOYt1hEeCO1uZVwIAJVg" aggregation="shared" association="_i5EusORMEeCkjrkI4Jl04g">
+              <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_i5EuteRMEeCkjrkI4Jl04g" value="1"/>
+              <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_i5EutuRMEeCkjrkI4Jl04g" value="1"/>
             </ownedEnd>
           </packagedElement>
         </packagedElement>
@@ -1826,6 +1820,60 @@ It is updated by the updateState methods of all scenario components.</body>
               <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_hButhuBlEeCxMfzvkTl0-w" value="1"/>
             </ownedEnd>
           </packagedElement>
+          <packagedElement xmi:type="uml:Interface" xmi:id="_dhPWIN6gEeCJNKrGCyr87w" name="Monitorable">
+            <ownedOperation xmi:id="_wNeKseRREeCC7oKz25Mm0Q" name="register">
+              <ownedParameter xmi:id="_N90OAORSEeCC7oKz25Mm0Q" name="monitor" visibility="public" type="_mNd0gN6iEeCJNKrGCyr87w">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_N90OAeRSEeCC7oKz25Mm0Q" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_N90OAuRSEeCC7oKz25Mm0Q" value="1"/>
+              </ownedParameter>
+            </ownedOperation>
+            <ownedOperation xmi:id="_z9hqAORTEeCC7oKz25Mm0Q" name="getName">
+              <ownedParameter xmi:id="_1f-7QORTEeCC7oKz25Mm0Q" visibility="public" type="_E9voId1hEeCO1uZVwIAJVg" direction="return">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_1f-7QeRTEeCC7oKz25Mm0Q" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_1f-7QuRTEeCC7oKz25Mm0Q" value="1"/>
+              </ownedParameter>
+            </ownedOperation>
+            <ownedOperation xmi:id="_qcPhAORTEeCC7oKz25Mm0Q" name="getDate">
+              <ownedParameter xmi:id="_u_zLwORTEeCC7oKz25Mm0Q" visibility="public" type="_E9bfEN1hEeCO1uZVwIAJVg" direction="return">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_u_zLweRTEeCC7oKz25Mm0Q" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_u_zLwuRTEeCC7oKz25Mm0Q" value="1"/>
+              </ownedParameter>
+            </ownedOperation>
+            <ownedOperation xmi:id="_xgbx8ORSEeCC7oKz25Mm0Q" name="getValue">
+              <ownedParameter xmi:id="_26xTsuRSEeCC7oKz25Mm0Q" visibility="public" type="_26xTseRSEeCC7oKz25Mm0Q" isUnique="false" direction="return">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_26xTs-RSEeCC7oKz25Mm0Q" value="*"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_26xTtORSEeCC7oKz25Mm0Q" value="1"/>
+              </ownedParameter>
+            </ownedOperation>
+          </packagedElement>
+          <packagedElement xmi:type="uml:Interface" xmi:id="_mNd0gN6iEeCJNKrGCyr87w" name="Monitor">
+            <ownedOperation xmi:id="_yrPNoORREeCC7oKz25Mm0Q" name="valueChanged">
+              <ownedParameter xmi:id="_XrZGkORSEeCC7oKz25Mm0Q" name="monitorable" visibility="public" type="_dhPWIN6gEeCJNKrGCyr87w">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_XrZGkeRSEeCC7oKz25Mm0Q" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_XrZGkuRSEeCC7oKz25Mm0Q" value="1"/>
+              </ownedParameter>
+            </ownedOperation>
+            <ownedOperation xmi:id="_BvUTAORhEeCC7oKz25Mm0Q" name="startMonitoring">
+              <ownedParameter xmi:id="_M0oakORhEeCC7oKz25Mm0Q" name="monitorable" visibility="public" type="_dhPWIN6gEeCJNKrGCyr87w">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_M0oakeRhEeCC7oKz25Mm0Q" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_M0oakuRhEeCC7oKz25Mm0Q" value="1"/>
+              </ownedParameter>
+            </ownedOperation>
+            <ownedOperation xmi:id="_DGNNcORhEeCC7oKz25Mm0Q" name="stopMonitoring"/>
+          </packagedElement>
+          <packagedElement xmi:type="uml:Association" xmi:id="_B9OgIN6jEeCJNKrGCyr87w" name="A_&lt;monitor>_&lt;monitorable>" memberEnd="_B9OgId6jEeCJNKrGCyr87w _B9OgJN6jEeCJNKrGCyr87w">
+            <ownedEnd xmi:id="_B9OgId6jEeCJNKrGCyr87w" name="monitors" type="_mNd0gN6iEeCJNKrGCyr87w" aggregation="shared" association="_B9OgIN6jEeCJNKrGCyr87w">
+              <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_B9OgIt6jEeCJNKrGCyr87w" value="*"/>
+              <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_B9OgI96jEeCJNKrGCyr87w"/>
+            </ownedEnd>
+            <ownedEnd xmi:id="_B9OgJN6jEeCJNKrGCyr87w" name="notifies" type="_dhPWIN6gEeCJNKrGCyr87w" association="_B9OgIN6jEeCJNKrGCyr87w">
+              <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_B9OgJd6jEeCJNKrGCyr87w" value="1"/>
+              <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_B9OgJt6jEeCJNKrGCyr87w" value="1"/>
+            </ownedEnd>
+          </packagedElement>
+          <packagedElement xmi:type="uml:Class" xmi:id="_mmUtcORVEeCC7oKz25Mm0Q" name="CsvFileWriter" clientDependency="_sk5ksORVEeCC7oKz25Mm0Q">
+            <interfaceRealization xmi:id="_sk5ksORVEeCC7oKz25Mm0Q" name="InterfaceRealization1" supplier="_mNd0gN6iEeCJNKrGCyr87w" client="_mmUtcORVEeCC7oKz25Mm0Q" contract="_mNd0gN6iEeCJNKrGCyr87w"/>
+          </packagedElement>
         </packagedElement>
         <packagedElement xmi:type="uml:Usage" xmi:id="_FKqCwN1hEeCO1uZVwIAJVg" supplier="_E9IkIN1hEeCO1uZVwIAJVg" client="_E1Ai4d1hEeCO1uZVwIAJVg"/>
         <packagedElement xmi:type="uml:Usage" xmi:id="_FKqCwd1hEeCO1uZVwIAJVg" supplier="_E9ODsN1hEeCO1uZVwIAJVg" client="_E1Ai4d1hEeCO1uZVwIAJVg"/>
@@ -2073,5 +2121,9 @@ It is updated by the updateState methods of all scenario components.</body>
     <packagedElement xmi:type="uml:Dependency" xmi:id="_X8jn8N7UEeCzQIF1TbkANw" name="" supplier="__V5bQN7TEeCzQIF1TbkANw" client="_02fZ8N7PEeCzQIF1TbkANw"/>
     <packagedElement xmi:type="uml:Dependency" xmi:id="_00GbAN7UEeCzQIF1TbkANw" name="" supplier="_bZUpwN7UEeCzQIF1TbkANw" client="_yLJ1EN7PEeCzQIF1TbkANw"/>
     <packagedElement xmi:type="uml:Dependency" xmi:id="_1vJG8N7UEeCzQIF1TbkANw" name="" supplier="_bZUpwN7UEeCzQIF1TbkANw" client="__V5bQN7TEeCzQIF1TbkANw"/>
+  </packagedElement>
+  <packagedElement xmi:type="uml:Model" xmi:id="_26xTsORSEeCC7oKz25Mm0Q" name="Java Types View">
+    <packagedElement xmi:type="uml:PrimitiveType" xmi:id="_26xTseRSEeCC7oKz25Mm0Q" name="double"/>
+    <packagedElement xmi:type="uml:PrimitiveType" xmi:id="_1_1DgORUEeCC7oKz25Mm0Q" name="void"/>
   </packagedElement>
 </uml:Model>
