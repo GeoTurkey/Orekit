@@ -15,6 +15,7 @@ import org.junit.Test;
 import org.orekit.Utils;
 import org.orekit.errors.OrekitException;
 import org.orekit.time.AbsoluteDate;
+import org.orekit.utils.Constants;
 
 
 public class CsvFileMonitorTest {
@@ -70,11 +71,11 @@ public class CsvFileMonitorTest {
         mass.register(monitor);
         position.register(monitor);
         velocity.register(monitor);
-        AbsoluteDate t0 = AbsoluteDate.J2000_EPOCH.shiftedBy(10.0);
+        AbsoluteDate t0 = AbsoluteDate.J2000_EPOCH.shiftedBy(10.0 * Constants.JULIAN_DAY);
         mass.setDateAndValue(t0,     new double[] { 1000.0 });
         velocity.setDateAndValue(t0, new double[] { 44444.44, 55555.55, 66666.66 });
         position.setDateAndValue(t0, new double[] { 11111.11, 22222.22, 33333.33 });
-        AbsoluteDate t1 = AbsoluteDate.J2000_EPOCH.shiftedBy(20.0);
+        AbsoluteDate t1 = AbsoluteDate.J2000_EPOCH.shiftedBy(20.0 * Constants.JULIAN_DAY);
         velocity.setDateAndValue(t1, new double[] { 11111.11, 22222.22, 33333.33 });
         position.setDateAndValue(t1, new double[] { 44444.44, 55555.55, 66666.66 });
         monitor.stopMonitoring();
@@ -90,13 +91,13 @@ public class CsvFileMonitorTest {
         mass.register(monitor);
         position.register(monitor);
         velocity.register(monitor);
-        AbsoluteDate t0 = AbsoluteDate.J2000_EPOCH.shiftedBy(10.0);
+        AbsoluteDate t0 = AbsoluteDate.J2000_EPOCH.shiftedBy(10.0 * Constants.JULIAN_DAY);
         mass.setDateAndValue(t0,     new double[] { 1000.0 });
         velocity.setDateAndValue(t0, new double[] { 44444.44, 55555.55, 66666.66 });
         position.setDateAndValue(t0, new double[] { 11111.11, 22222.22, 33333.33 });
-        AbsoluteDate t1 = AbsoluteDate.J2000_EPOCH.shiftedBy(10.7);
+        AbsoluteDate t1 = AbsoluteDate.J2000_EPOCH.shiftedBy(10.000008 * Constants.JULIAN_DAY);
         velocity.setDateAndValue(t1, new double[] { 77777.77, 88888.88, 99999.99 });
-        AbsoluteDate t2 = AbsoluteDate.J2000_EPOCH.shiftedBy(20.0);
+        AbsoluteDate t2 = AbsoluteDate.J2000_EPOCH.shiftedBy(20.0 * Constants.JULIAN_DAY);
         velocity.setDateAndValue(t2, new double[] { 11111.11, 22222.22, 33333.33 });
         position.setDateAndValue(t2, new double[] { 44444.44, 55555.55, 66666.66 });
         monitor.stopMonitoring();
@@ -127,7 +128,7 @@ public class CsvFileMonitorTest {
         mass.register(monitor);
         position.register(monitor);
         velocity.register(monitor);
-        AbsoluteDate t0 = AbsoluteDate.J2000_EPOCH.shiftedBy(10.0);
+        AbsoluteDate t0 = AbsoluteDate.J2000_EPOCH.shiftedBy(10.0 * Constants.JULIAN_DAY);
         mass.setDateAndValue(t0,     new double[] { 1000.0 });
         velocity.setDateAndValue(t0, new double[] { 44444.44, 55555.55, 66666.66 });
         position.setDateAndValue(t0, new double[] { 11111.11, 22222.22, 33333.33 });

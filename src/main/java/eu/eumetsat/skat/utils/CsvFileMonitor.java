@@ -16,6 +16,7 @@ import org.orekit.errors.OrekitException;
 import org.orekit.time.AbsoluteDate;
 import org.orekit.time.TimeScale;
 import org.orekit.time.TimeScalesFactory;
+import org.orekit.utils.Constants;
 
 /** Monitor for time-dependent values writing their evolution in a csv or tsv file.
  * <p>
@@ -130,7 +131,7 @@ public class CsvFileMonitor implements Monitor {
     public void startMonitoring(Monitorable monitorable)
         throws IllegalArgumentException, IllegalStateException {
 
-        // retrienve monitorable meta-data
+        // retrieve monitorable meta-data
         final String name = monitorable.getName();
         final int n       = monitorable.getValue().length;
 
@@ -204,7 +205,7 @@ public class CsvFileMonitor implements Monitor {
     private void writeCompletedLine() {
 
         // write the date offset column
-        out.print(format.format(currentDate.durationFrom(referenceDate)));
+        out.print(format.format(currentDate.durationFrom(referenceDate) / Constants.JULIAN_DAY));
 
         // write the values fields
         for (final String field : currentFields) {
