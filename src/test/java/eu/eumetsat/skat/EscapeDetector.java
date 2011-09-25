@@ -40,8 +40,8 @@ public class EscapeDetector extends AbstractDetector {
 
     }
 
-    public int eventOccurred(SpacecraftState s, boolean increasing) {
-        return STOP;
+    public Action eventOccurred(SpacecraftState s, boolean increasing) {
+        return Action.STOP;
     }
 
 }

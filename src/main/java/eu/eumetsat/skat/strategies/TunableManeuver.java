@@ -82,7 +82,7 @@ public class TunableManeuver implements SKParametersList, EventDetector {
     }
 
     /** {@inheritDoc} */
-    public int eventOccurred(SpacecraftState s, boolean increasing) throws OrekitException {
+    public Action eventOccurred(SpacecraftState s, boolean increasing) throws OrekitException {
         resetIfInvalid();
         return current.eventOccurred(s, increasing);
     }
