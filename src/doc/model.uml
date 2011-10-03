@@ -1204,6 +1204,10 @@ It is updated by the updateState methods of all scenario components.</body>
             <packagedElement xmi:type="uml:Usage" xmi:id="_FKttJd1hEeCO1uZVwIAJVg" supplier="_E9a4Ad1hEeCO1uZVwIAJVg" client="_E3pAId1hEeCO1uZVwIAJVg"/>
             <packagedElement xmi:type="uml:Usage" xmi:id="_FKttJt1hEeCO1uZVwIAJVg" supplier="_E9a4BN1hEeCO1uZVwIAJVg" client="_E3pAId1hEeCO1uZVwIAJVg"/>
             <packagedElement xmi:type="uml:Usage" xmi:id="_FKttJ91hEeCO1uZVwIAJVg" supplier="_E21u4N1hEeCO1uZVwIAJVg" client="_E3pAId1hEeCO1uZVwIAJVg"/>
+            <packagedElement xmi:type="uml:Class" xmi:id="_6V7R8O3UEeCpOqUFV6jmRA" name="InclinationControlBox" clientDependency="_AcCUkO3VEeCpOqUFV6jmRA _M-ERwO3VEeCpOqUFV6jmRA">
+              <interfaceRealization xmi:id="_AcCUkO3VEeCpOqUFV6jmRA" name="InterfaceRealization1" supplier="_E3KfAN1hEeCO1uZVwIAJVg" client="_6V7R8O3UEeCpOqUFV6jmRA" contract="_E3KfAN1hEeCO1uZVwIAJVg"/>
+              <interfaceRealization xmi:id="_M-ERwO3VEeCpOqUFV6jmRA" name="InterfaceRealization2" supplier="_NH0FIOBXEeCxMfzvkTl0-w" client="_6V7R8O3UEeCpOqUFV6jmRA" contract="_NH0FIOBXEeCxMfzvkTl0-w"/>
+            </packagedElement>
           </packagedElement>
           <packagedElement xmi:type="uml:Package" xmi:id="_E3tRkN1hEeCO1uZVwIAJVg" name="leo" clientDependency="_FKttKN1hEeCO1uZVwIAJVg _FKttKd1hEeCO1uZVwIAJVg _FKttKt1hEeCO1uZVwIAJVg">
             <packagedElement xmi:type="uml:Class" xmi:id="_E3ufsN1hEeCO1uZVwIAJVg" name="GroundTrackGrid" clientDependency="_FGCBcN1hEeCO1uZVwIAJVg _ffvi4OBQEeCxMfzvkTl0-w _czHgYOBXEeCxMfzvkTl0-w">
@@ -1294,6 +1298,10 @@ It is updated by the updateState methods of all scenario components.</body>
             <packagedElement xmi:type="uml:Usage" xmi:id="_FKttKN1hEeCO1uZVwIAJVg" supplier="_E9UxYN1hEeCO1uZVwIAJVg" client="_E3tRkN1hEeCO1uZVwIAJVg"/>
             <packagedElement xmi:type="uml:Usage" xmi:id="_FKttKd1hEeCO1uZVwIAJVg" supplier="_E9a4Ad1hEeCO1uZVwIAJVg" client="_E3tRkN1hEeCO1uZVwIAJVg"/>
             <packagedElement xmi:type="uml:Usage" xmi:id="_FKttKt1hEeCO1uZVwIAJVg" supplier="_E21u4N1hEeCO1uZVwIAJVg" client="_E3tRkN1hEeCO1uZVwIAJVg"/>
+            <packagedElement xmi:type="uml:Class" xmi:id="_YLDHkO3VEeCpOqUFV6jmRA" name="MeanLocalSolarTime" clientDependency="_g_hN4O3VEeCpOqUFV6jmRA _l8QNo-3VEeCpOqUFV6jmRA">
+              <interfaceRealization xmi:id="_g_hN4O3VEeCpOqUFV6jmRA" name="InterfaceRealization1" supplier="_E3KfAN1hEeCO1uZVwIAJVg" client="_YLDHkO3VEeCpOqUFV6jmRA" contract="_E3KfAN1hEeCO1uZVwIAJVg"/>
+              <interfaceRealization xmi:id="_l8QNo-3VEeCpOqUFV6jmRA" name="InterfaceRealization2" supplier="_NH0FIOBXEeCxMfzvkTl0-w" client="_YLDHkO3VEeCpOqUFV6jmRA" contract="_NH0FIOBXEeCxMfzvkTl0-w"/>
+            </packagedElement>
           </packagedElement>
           <packagedElement xmi:type="uml:Interface" xmi:id="_qfK6UOBPEeCxMfzvkTl0-w" name="OrekitStepHandler"/>
         </packagedElement>
