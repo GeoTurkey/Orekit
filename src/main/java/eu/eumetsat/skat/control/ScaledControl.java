@@ -40,7 +40,7 @@ class ScaledControl {
      * <p>
      * The scaled residual squared is equal to:
      * ((control.{@link StationKeepingControl#getAchievedValue() getAchievedValue()}
-     *  - control.{@link StationKeepingControl#getTargetValue() getTarget()})
+     *  - control.{@link StationKeepingControl#getTargetValue() getTargetValue()})
      *  / scale)<sup>2</sup>
      * </p>
      */

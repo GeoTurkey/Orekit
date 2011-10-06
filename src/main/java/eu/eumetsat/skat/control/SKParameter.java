@@ -19,7 +19,7 @@ package eu.eumetsat.skat.control;
  * </p>
  * @author Luc Maisonobe
  */
-public abstract class SKParameter implements Constrainable {
+public abstract class SKParameter implements SKElement {
 
     /** Name of the parameter. */
     private final String name;
@@ -44,8 +44,8 @@ public abstract class SKParameter implements Constrainable {
      * @param tunable tunable flag
      */
     protected SKParameter(final String name,
-                               final double min, final double max,
-                               final double value, final boolean tunable) {
+                          final double min, final double max,
+                          final double value, final boolean tunable) {
         this.name    = name;
         this.min     = min;
         this.max     = max;

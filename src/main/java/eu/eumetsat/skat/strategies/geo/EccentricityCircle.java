@@ -2,6 +2,7 @@
 package eu.eumetsat.skat.strategies.geo;
 
 import org.orekit.errors.PropagationException;
+import org.orekit.propagation.events.EventDetector;
 import org.orekit.propagation.sampling.OrekitStepHandler;
 import org.orekit.propagation.sampling.OrekitStepInterpolator;
 
@@ -10,11 +11,16 @@ import eu.eumetsat.skat.control.SKControl;
 /**
  * Station-keeping control attempting to follow a specified eccentricity circle.
  */
-public class EccentricityCircle
-    implements SKControl, OrekitStepHandler {
+public class EccentricityCircle implements SKControl {
 
-    /** Serializable UID. */
-    private static final long serialVersionUID = 2605474503798176086L;
+    /** Associated step handler. */
+    private final OrekitStepHandler stephandler;
+
+    /** Simple constructor.
+     */
+    public EccentricityCircle() {
+        this.stephandler = new Handler();
+    }
 
     /** {@inheritDoc} */
     public String getName() {
@@ -34,17 +40,6 @@ public class EccentricityCircle
     }
 
     /** {@inheritDoc} */
-    public void handleStep(OrekitStepInterpolator interpolator, boolean isLast)
-        throws PropagationException {
-        // TODO
-    }
-
-    /** {@inheritDoc} */
-    public void reset() {
-        // TODO
-    }
-
-    /** {@inheritDoc} */
     public boolean isConstrained() {
         // TODO
         return false;
@@ -60,6 +55,36 @@ public class EccentricityCircle
     public double getMax() {
         // TODO
         return Double.NaN;
+    }
+
+    /** {@inheritDoc} */
+    public EventDetector getEventDetector() {
+        // TODO
+        return null;
+    }
+
+    /** {@inheritDoc} */
+    public OrekitStepHandler getStepHandler() {
+        return stephandler;
+    }
+
+    /** Inner class for step handling. */
+    private class Handler implements OrekitStepHandler {
+
+        /** Serializable UID. */
+        private static final long serialVersionUID = 220407581859026265L;
+
+        /** {@inheritDoc} */
+        public void reset() {
+            // TODO
+        }
+
+        /** {@inheritDoc} */
+        public void handleStep(OrekitStepInterpolator interpolator, boolean isLast)
+                throws PropagationException {
+            // TODO
+        }
+
     }
 
 }

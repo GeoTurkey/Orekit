@@ -5,11 +5,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
-import org.orekit.errors.OrekitException;
 import org.orekit.forces.maneuvers.ImpulseManeuver;
-import org.orekit.propagation.SpacecraftState;
 import org.orekit.propagation.events.DateDetector;
 import org.orekit.propagation.events.EventDetector;
+import org.orekit.propagation.sampling.OrekitStepHandler;
 import org.orekit.time.AbsoluteDate;
 
 import eu.eumetsat.skat.control.SKParameter;
@@ -23,10 +22,7 @@ import eu.eumetsat.skat.control.SKParametersList;
  * </p>
  * @author Luc Maisonobe
  */
-public class TunableManeuver implements SKParametersList, EventDetector {
-
-    /** Serializable UID. */
-    private static final long serialVersionUID = 7193368247300270766L;
+public class TunableManeuver implements SKParametersList {
 
     /** Thrust direction in spacecraft frame. */
     private final Vector3D direction;
@@ -75,54 +71,6 @@ public class TunableManeuver implements SKParametersList, EventDetector {
         current           = null;
     }
 
-    /** {@inheritDoc} */
-    public double g(SpacecraftState s) throws OrekitException {
-        resetIfInvalid();
-        return current.g(s);
-    }
-
-    /** {@inheritDoc} */
-    public Action eventOccurred(SpacecraftState s, boolean increasing) throws OrekitException {
-        resetIfInvalid();
-        return current.eventOccurred(s, increasing);
-    }
-
-    /** {@inheritDoc} */
-    public SpacecraftState resetState(SpacecraftState oldState) throws OrekitException {
-        resetIfInvalid();
-        return current.resetState(oldState);
-    }
-
-    /** {@inheritDoc} */
-    public double getThreshold() {
-        resetIfInvalid();
-        return current.getThreshold();
-    }
-
-    /** {@inheritDoc} */
-    public double getMaxCheckInterval() {
-        resetIfInvalid();
-        return current.getMaxCheckInterval();
-    }
-
-    /** {@inheritDoc} */
-    public int getMaxIterationCount() {
-        resetIfInvalid();
-        return current.getMaxIterationCount();
-    }
-
-    /** Reset the current impulse maneuver if it has been invalidated.
-     */
-    private void resetIfInvalid() {
-        if (current == null) {
-            AbsoluteDate triggerDate = reference.shiftedBy(dateOffset.getValue());
-            current = new ImpulseManeuver(new DateDetector(triggerDate),
-                                          new Vector3D(velocityIncrement.getValue(),
-                                                       direction),
-                                          isp);
-        }
-    }
-
     /** Local class for control parameters invalidating maneuver at parameter changes. */
     private class ManeuverParameter extends SKParameter {
 
@@ -142,6 +90,23 @@ public class TunableManeuver implements SKParametersList, EventDetector {
         /** {@inheritDoc} */
         protected void valueChanged() {
             current = null;
+        }
+
+        /** {@inheritDoc} */
+        public EventDetector getEventDetector() {
+            if (current == null) {
+                AbsoluteDate triggerDate = reference.shiftedBy(dateOffset.getValue());
+                current = new ImpulseManeuver(new DateDetector(triggerDate),
+                                              new Vector3D(velocityIncrement.getValue(),
+                                                           direction),
+                                              isp);
+            }
+            return current;
+        }
+
+        /** {@inheritDoc} */
+        public OrekitStepHandler getStepHandler() {
+            return null;
         }
 
     }

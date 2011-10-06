@@ -9,6 +9,7 @@ import org.orekit.bodies.GeodeticPoint;
 import org.orekit.errors.OrekitException;
 import org.orekit.errors.PropagationException;
 import org.orekit.propagation.SpacecraftState;
+import org.orekit.propagation.events.EventDetector;
 import org.orekit.propagation.sampling.OrekitStepHandler;
 import org.orekit.propagation.sampling.OrekitStepInterpolator;
 import org.orekit.time.AbsoluteDate;
@@ -39,11 +40,10 @@ import eu.eumetsat.skat.control.SKControl;
  * </p>
  * @author Luc Maisonobe
  */
-public class LongitudeSlotMargins
-    implements SKControl, OrekitStepHandler {
+public class LongitudeSlotMargins implements SKControl {
 
-    /** Serializable UID. */
-    private static final long serialVersionUID = -2359037806639947135L;
+    /** Associated step handler. */
+    private final OrekitStepHandler stephandler;
 
     /** Longitude slot westward boundary. */
     private final double westBoundary;
@@ -77,6 +77,7 @@ public class LongitudeSlotMargins
     public LongitudeSlotMargins(final double westBoundary, final double eastBoundary,
                                 final double target, final double samplingStep,
                                 final BodyShape earth) {
+        this.stephandler  = new Handler();
         this.westBoundary = westBoundary;
         this.eastBoundary = MathUtils.normalizeAngle(eastBoundary, westBoundary);
         this.target       = target;
@@ -118,48 +119,67 @@ public class LongitudeSlotMargins
     }
 
     /** {@inheritDoc} */
-    public void handleStep(OrekitStepInterpolator interpolator, boolean isLast)
-        throws PropagationException {
-
-        try {
-
-            // find step boundaries
-            final AbsoluteDate minDate =
-                    interpolator.isForward() ? interpolator.getPreviousDate() : interpolator.getCurrentDate();
-            final AbsoluteDate maxDate =
-                    interpolator.isForward() ? interpolator.getCurrentDate() : interpolator.getPreviousDate();
-
-            // loop throughout step
-            for (AbsoluteDate date = minDate;
-                    date.compareTo(maxDate) < 0;
-                    date = date.shiftedBy(samplingStep)) {
-
-                // compute position in Earth frame
-                interpolator.setInterpolatedDate(date);
-                final SpacecraftState state = interpolator.getInterpolatedState();
-                final Vector3D position = state.getPVCoordinates(earth.getBodyFrame()).getPosition();
-
-                // convert to latitude/longitude/altitude
-                final GeodeticPoint gp = earth.transform(position, earth.getBodyFrame(), date);
-
-                // update longitude excursion
-                minL = FastMath.min(minL, gp.getLongitude());
-                maxL = FastMath.max(maxL, gp.getLongitude());
-
-            }
-
-        } catch (OrekitException oe) {
-            throw new PropagationException(oe);
-        }
-
+    public EventDetector getEventDetector() {
+        // TODO
+        return null;
     }
 
     /** {@inheritDoc} */
-    public void reset() {
-        // set the initial values at infinite, to make sure they will be updated
-        // properly as soon as simulation starts
-        minL = Double.POSITIVE_INFINITY;
-        maxL = Double.NEGATIVE_INFINITY;
+    public OrekitStepHandler getStepHandler() {
+        return stephandler;
+    }
+
+    /** Inner class for step handling. */
+    private class Handler implements OrekitStepHandler {
+
+        /** Serializable UID. */
+        private static final long serialVersionUID = 1817488123211175376L;
+
+        /** {@inheritDoc} */
+        public void reset() {
+            // set the initial values at infinite, to make sure they will be updated
+            // properly as soon as simulation starts
+            minL = Double.POSITIVE_INFINITY;
+            maxL = Double.NEGATIVE_INFINITY;
+        }
+
+        /** {@inheritDoc} */
+        public void handleStep(OrekitStepInterpolator interpolator, boolean isLast)
+            throws PropagationException {
+
+            try {
+
+                // find step boundaries
+                final AbsoluteDate minDate =
+                        interpolator.isForward() ? interpolator.getPreviousDate() : interpolator.getCurrentDate();
+                final AbsoluteDate maxDate =
+                        interpolator.isForward() ? interpolator.getCurrentDate() : interpolator.getPreviousDate();
+
+                // loop throughout step
+                for (AbsoluteDate date = minDate;
+                        date.compareTo(maxDate) < 0;
+                        date = date.shiftedBy(samplingStep)) {
+
+                    // compute position in Earth frame
+                    interpolator.setInterpolatedDate(date);
+                    final SpacecraftState state = interpolator.getInterpolatedState();
+                    final Vector3D position = state.getPVCoordinates(earth.getBodyFrame()).getPosition();
+
+                    // convert to latitude/longitude/altitude
+                    final GeodeticPoint gp = earth.transform(position, earth.getBodyFrame(), date);
+
+                    // update longitude excursion
+                    minL = FastMath.min(minL, gp.getLongitude());
+                    maxL = FastMath.max(maxL, gp.getLongitude());
+
+                }
+
+            } catch (OrekitException oe) {
+                throw new PropagationException(oe);
+            }
+
+        }
+
     }
 
 }
