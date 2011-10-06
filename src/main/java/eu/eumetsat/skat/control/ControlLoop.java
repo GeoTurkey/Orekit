@@ -8,11 +8,13 @@ import org.apache.commons.math.analysis.MultivariateRealFunction;
 import org.apache.commons.math.optimization.GoalType;
 import org.apache.commons.math.optimization.MultivariateRealOptimizer;
 import org.orekit.errors.OrekitException;
+import org.orekit.forces.maneuvers.ImpulseManeuver;
 import org.orekit.propagation.Propagator;
 import org.orekit.time.AbsoluteDate;
 
 import eu.eumetsat.skat.scenario.ScenarioComponent;
 import eu.eumetsat.skat.scenario.ScenarioState;
+import eu.eumetsat.skat.strategies.TunableManeuver;
 
 
 /**
@@ -41,10 +43,13 @@ public class ControlLoop implements ScenarioComponent {
     /** Orbit propagator. */
     private final Propagator propagator;
 
+    /** Tunable maneuvers. */
+    private final List<TunableManeuver> tunables;
+
     /** Station-keeping controls. */
     private final List<ScaledControl> controls;
 
-    /** Tunable control parameters. */
+    /** Station-keeping parameters. */
     private final List<SKParameter> parameters;
 
     /** Simple constructor.
@@ -62,6 +67,7 @@ public class ControlLoop implements ScenarioComponent {
         this.maxEval    = maxEval;
         this.optimizer  = optimizer;
         this.propagator = propagator;
+        tunables        = new ArrayList<TunableManeuver>();
         controls        = new ArrayList<ScaledControl>();
         parameters      = new ArrayList<SKParameter>();
     }
@@ -84,14 +90,20 @@ public class ControlLoop implements ScenarioComponent {
     }
 
     /** Add the tunable parameters from a control parameters list.
-     * @param parametersList control parameters list to use
+     * @param tunable maneuver that should be tuned by this control loop
      */
-    public void addParametersList(final SKParametersList parametersList) {
-        for (final SKParameter parameter : parametersList.getParameters()) {
+    public void addTunableManeuver(final TunableManeuver tunable) {
+
+        // store a reference to the maneuver
+        tunables.add(tunable);
+
+        // extract the station-keeping parameters
+        for (final SKParameter parameter : tunable.getParameters()) {
             if (parameter.isTunable()) {
                 parameters.add(parameter);
             }
         }
+
     }
 
     /** {@inheritDoc}
@@ -108,10 +120,10 @@ public class ControlLoop implements ScenarioComponent {
     public ScenarioState updateState(final ScenarioState origin, final AbsoluteDate target)
         throws OrekitException {
 
-        // compute start point
+        // guess a start point
         double[] startPoint = new double[parameters.size()];
         for (int i = 0; i < startPoint.length; ++i) {
-            startPoint[i] = parameters.get(i).getValue();
+            startPoint[i] = parameters.get(i).guessOptimalValue();
         }
 
         // find the optimal parameters that minimize objective function
@@ -123,12 +135,23 @@ public class ControlLoop implements ScenarioComponent {
 
         // set the parameters to the optimal values
         for (int i = 0; i < optimum.length; ++i) {
-            parameters.get(i).setValue(optimum[i]);
+            final SKParameter parameter = parameters.get(i);
+            parameter.storeLastOptimalValue(optimum[i]);
+            parameter.setValue(optimum[i]);
         }
 
-        // TODO what else ?
-        
-        return null;
+        // update the scheduled maneuvers, adding the newly optimized set
+        final List<ImpulseManeuver> theoreticalManeuvers = new ArrayList<ImpulseManeuver>();
+        theoreticalManeuvers.addAll(origin.getTheoreticalManeuvers());
+        for (final TunableManeuver tunable : tunables) {
+            // get the optimized maneuver, using the optimum value set above
+            final ImpulseManeuver optimized = tunable.getManeuver();
+            theoreticalManeuvers.add(optimized);
+        }
+
+        // build the updated scenario state
+        return new ScenarioState(origin.getRealState(), origin.getEstimatedState(),
+                                 theoreticalManeuvers, origin.getPerformedManeuvers());
 
     }
 

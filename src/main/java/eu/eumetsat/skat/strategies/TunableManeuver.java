@@ -12,7 +12,6 @@ import org.orekit.propagation.sampling.OrekitStepHandler;
 import org.orekit.time.AbsoluteDate;
 
 import eu.eumetsat.skat.control.SKParameter;
-import eu.eumetsat.skat.control.SKParametersList;
 
 /**
  * Class for maneuver simulation.
@@ -22,7 +21,7 @@ import eu.eumetsat.skat.control.SKParametersList;
  * </p>
  * @author Luc Maisonobe
  */
-public class TunableManeuver implements SKParametersList {
+public class TunableManeuver {
 
     /** Thrust direction in spacecraft frame. */
     private final Vector3D direction;
@@ -94,14 +93,7 @@ public class TunableManeuver implements SKParametersList {
 
         /** {@inheritDoc} */
         public EventDetector getEventDetector() {
-            if (current == null) {
-                AbsoluteDate triggerDate = reference.shiftedBy(dateOffset.getValue());
-                current = new ImpulseManeuver(new DateDetector(triggerDate),
-                                              new Vector3D(velocityIncrement.getValue(),
-                                                           direction),
-                                              isp);
-            }
-            return current;
+            return getManeuver();
         }
 
         /** {@inheritDoc} */
@@ -111,12 +103,33 @@ public class TunableManeuver implements SKParametersList {
 
     }
 
-    /** {@inheritDoc} */
+    /** Get the maneuver parameters.
+     * @return list of maneuver parameters
+     */
     public List<SKParameter> getParameters() {
         final List<SKParameter> list = new ArrayList<SKParameter>(2);
         list.add(dateOffset);
         list.add(velocityIncrement);
         return list;
+    }
+
+    /** Get the maneuver corresponding to the current value of the parameters.
+     * @return maneuver corresponding to the current value of the parameters
+     */
+    public ImpulseManeuver getManeuver() {
+
+        if (current == null) {
+            // the parameters value have changed, thus invalidating the maneuver,
+            // build a new valid one
+            AbsoluteDate triggerDate = reference.shiftedBy(dateOffset.getValue());
+            current = new ImpulseManeuver(new DateDetector(triggerDate),
+                                          new Vector3D(velocityIncrement.getValue(),
+                                                       direction),
+                                          isp);
+        }
+
+        return current;
+
     }
 
 }
