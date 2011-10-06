@@ -2,17 +2,13 @@
 package eu.eumetsat.skat.control;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import org.apache.commons.math.analysis.MultivariateRealFunction;
 import org.apache.commons.math.optimization.GoalType;
 import org.apache.commons.math.optimization.MultivariateRealOptimizer;
 import org.orekit.errors.OrekitException;
 import org.orekit.propagation.Propagator;
-import org.orekit.propagation.events.EventDetector;
-import org.orekit.propagation.sampling.OrekitStepHandler;
 import org.orekit.time.AbsoluteDate;
 
 import eu.eumetsat.skat.scenario.ScenarioComponent;
@@ -119,9 +115,11 @@ public class ControlLoop implements ScenarioComponent {
         }
 
         // find the optimal parameters that minimize objective function
-        double[] optimum = optimizer.optimize(maxEval,
-                                              new ObjectiveFunction(), GoalType.MINIMIZE,
-                                              startPoint).getPoint();
+        final MultivariateRealFunction objective =
+                new ObjectiveFunction(propagator, parameters, controls, target,
+                                      origin.getEstimatedState(), origin.getTheoreticalManeuvers());
+        double[] optimum =
+                optimizer.optimize(maxEval, objective, GoalType.MINIMIZE, startPoint).getPoint();
 
         // set the parameters to the optimal values
         for (int i = 0; i < optimum.length; ++i) {
@@ -131,73 +129,6 @@ public class ControlLoop implements ScenarioComponent {
         // TODO what else ?
         
         return null;
-
-    }
-
-    /** Local function to be optimized. */
-    private class ObjectiveFunction implements MultivariateRealFunction {
-
-        /** {@inheritDoc} */
-        public double value(final double[] point) {
-
-            // set the parameters to the current test values
-            for (int i = 0; i < point.length; ++i) {
-                parameters.get(i).setValue(point[i]);
-            }
-
-            // get the detectors associated with the station-keeping elements
-            // (note that some elements may be associated with the same detector)
-            Set<EventDetector> detectors = new HashSet<EventDetector>();
-            for (final SKParameter parameter : parameters) {
-                if (parameter.getEventDetector() != null) {
-                    detectors.add(parameter.getEventDetector());
-                }
-            }
-            for (final ScaledControl sc : controls) {
-                if (sc.getControl().getEventDetector() != null) {
-                    detectors.add(sc.getControl().getEventDetector());
-                }
-            }
-
-            // get the step handlers associated with the station-keeping elements
-            // (note that some elements may be associated with the same step handler)
-            Set<OrekitStepHandler> handlers = new HashSet<OrekitStepHandler>();
-            for (final SKParameter parameter : parameters) {
-                if (parameter.getStepHandler() != null) {
-                    handlers.add(parameter.getStepHandler());
-                }
-            }
-            for (final ScaledControl sc : controls) {
-                if (sc.getControl().getStepHandler() != null) {
-                    handlers.add(sc.getControl().getStepHandler());
-                }
-            }
-
-            // set up the propagator
-            propagator.clearEventsDetectors();
-            for (final EventDetector detector : detectors) {
-                propagator.addEventDetector(detector);
-            }
-            if (handlers.size() == 1) {
-                propagator.setMasterMode(handlers.iterator().next());
-            } else if (handlers.size() > 1) {
-                // TODO check what to do when 0
-                throw OrekitException.createInternalError(null);
-            }
-
-            // perform propagation
-            propagator.resetInitialState(...);
-            propagator.propagate(...);
-
-            // compute sum of squared scaled residuals
-            double sum = 0;
-            for (final ScaledControl s : controls) {
-                sum += s.getScaledResidualSquared();
-            }
-
-            return sum;
-
-        }
 
     }
 
