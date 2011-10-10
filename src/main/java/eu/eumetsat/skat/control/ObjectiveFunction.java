@@ -15,7 +15,7 @@ import org.orekit.propagation.sampling.OrekitStepHandler;
 import org.orekit.propagation.sampling.OrekitStepInterpolator;
 import org.orekit.time.AbsoluteDate;
 
-/** Inner function to be optimized. */
+/** Objective function to be optimizedby the {@link ControlLoop}. */
 class ObjectiveFunction implements MultivariateRealFunction, OrekitStepHandler {
 
     /** Serializable UID. */
