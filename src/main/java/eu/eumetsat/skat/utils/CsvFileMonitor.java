@@ -74,7 +74,7 @@ public class CsvFileMonitor implements Monitor {
     private int columns;
 
     /** First column for each monitored value. */
-    private final Map<String, Integer> firstColumn;
+    private final Map<String, Integer> firstColumns;
 
     /** Date of the line under construction. */
     private AbsoluteDate currentDate;
@@ -88,8 +88,8 @@ public class CsvFileMonitor implements Monitor {
      * will be generated (a typical marker is "# ")
      * @param separator fields separator (typical separators are "," or "\t")
      * @param format format to use for writing fields
-     * @param referenceDate reference date to compute first column
-     * @param dateTolerance tolerance in second below which values are gathered
+     * @param referenceDate reference date to compute offset in first column
+     * @param dateTolerance tolerance in seconds below which values are gathered
      * in the same line
      * @exception OrekitException if UTC time scale cannot be retrieved
      */
@@ -104,7 +104,7 @@ public class CsvFileMonitor implements Monitor {
         this.format        = format;
         this.referenceDate = referenceDate;
         this.dateTolerance = dateTolerance;
-        this.firstColumn   = new HashMap<String, Integer>();
+        this.firstColumns  = new HashMap<String, Integer>();
         this.columns       = 0;
 
         // at construction, we don't have yet a current date,
@@ -135,14 +135,14 @@ public class CsvFileMonitor implements Monitor {
         final String name = monitorable.getName();
         final int n       = monitorable.getValue().length;
 
-        // check if a similar  value is already monitored
-        if (firstColumn.containsKey(monitorable.getName())) {
-            throw SkatException.createIllegalArgumentException(SkatMessages.VALUE_ALREADY_MONITORED, name);
-        }
-
         // check if we have started monitoring or not
         if (currentDate != null) {
             throw SkatException.createIllegalStateException(SkatMessages.MONITORING_ALREADY_STARTED, name);
+        }
+
+        // check if a similar  value is already monitored
+        if (firstColumns.containsKey(monitorable.getName())) {
+            throw SkatException.createIllegalArgumentException(SkatMessages.VALUE_ALREADY_MONITORED, name);
         }
 
         // write header
@@ -157,7 +157,7 @@ public class CsvFileMonitor implements Monitor {
         }
 
         // assign columns to the monitorable
-        firstColumn.put(name, columns);
+        firstColumns.put(name, columns);
         columns += n;
 
     }
@@ -166,7 +166,7 @@ public class CsvFileMonitor implements Monitor {
     public void valueChanged(Monitorable monitorable) {
 
         // check if the monitorable is monitored
-        Integer first = firstColumn.get(monitorable.getName());
+        Integer first = firstColumns.get(monitorable.getName());
         if (first == null) {
             throw SkatException.createIllegalArgumentException(SkatMessages.VALUE_NOT_MONITORED,
                                                                monitorable.getName());
