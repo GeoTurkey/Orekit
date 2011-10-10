@@ -39,10 +39,10 @@ class ObjectiveFunction implements MultivariateRealFunction, OrekitStepHandler {
     /** Maneuvers that are already scheduled. */
     private final List<ImpulseManeuver> scheduledManeuvers;
 
-    /** Active event detectors. */
+    /** Current set of event detectors. */
     private final Set<EventDetector> detectors;
 
-    /** Active step handlers. */
+    /** Current set of step handlers. */
     private final Set<OrekitStepHandler> handlers;
 
     /** Simple constructor.
@@ -68,41 +68,8 @@ class ObjectiveFunction implements MultivariateRealFunction, OrekitStepHandler {
         this.initialState       = initialState;
         this.scheduledManeuvers = scheduledManeuvers;
 
-        // different station-keeping elements may be associated with the same detector,
-        // so we must gather them in a set to avoid notifying them several times
         detectors = new HashSet<EventDetector>();
-
-        // get the detectors associated with parameters
-        for (final SKParameter parameter : parameters) {
-            if (parameter.getEventDetector() != null) {
-                detectors.add(parameter.getEventDetector());
-            }
-        }
-
-        // get the detectors associated with control laws
-        for (final ScaledControl sc : controls) {
-            if (sc.getControl().getEventDetector() != null) {
-                detectors.add(sc.getControl().getEventDetector());
-            }
-        }
-
-        // different station-keeping elements may be associated with the same handler,
-        // so we must gather them in a set to avoid notifying them several times
-        handlers = new HashSet<OrekitStepHandler>();
-
-        // get the step handlers associated with parameters
-        for (final SKParameter parameter : parameters) {
-            if (parameter.getStepHandler() != null) {
-                handlers.add(parameter.getStepHandler());
-            }
-        }
-
-        // get the step handlers associated with control laws
-        for (final ScaledControl sc : controls) {
-            if (sc.getControl().getStepHandler() != null) {
-                handlers.add(sc.getControl().getStepHandler());
-            }
-        }
+        handlers  = new HashSet<OrekitStepHandler>();
 
     }
 
@@ -110,11 +77,15 @@ class ObjectiveFunction implements MultivariateRealFunction, OrekitStepHandler {
     public double value(final double[] point) {
 
         try {
+
             // set the parameters to the current test values
             for (int i = 0; i < point.length; ++i) {
                 parameters.get(i).setValue(point[i]);
             }
 
+            // setting the parameters may have changed the detectors and handlers
+            resetEventDetectors();
+            resetStepHandlers();
 
             // set up the propagator with the station-keeping elements
             // that are part of the optimization process in the control loop
@@ -139,9 +110,63 @@ class ObjectiveFunction implements MultivariateRealFunction, OrekitStepHandler {
                 sum += s.getScaledResidualSquared();
             }
 
+            // return the sum of squared scaled residuals
             return sum;
+
         } catch (PropagationException pe) {
             return Double.POSITIVE_INFINITY;
+        }
+
+    }
+
+    /** Reset the event detectors.
+     * <p>
+     * Different station-keeping elements may be associated with the same detector,
+     * so we must gather them in a set to avoid notifying them several times
+     * </p>
+     */
+    private void resetEventDetectors() {
+
+        detectors.clear();
+
+        // get the step handlers associated with parameters
+        for (final SKParameter parameter : parameters) {
+            if (parameter.getStepHandler() != null) {
+                detectors.add(parameter.getEventDetector());
+            }
+        }
+
+        // get the step handlers associated with control laws
+        for (final ScaledControl sc : controls) {
+            if (sc.getControl().getStepHandler() != null) {
+                detectors.add(sc.getControl().getEventDetector());
+            }
+        }
+
+    }
+
+    /** reset the step handlers.
+     * <p>
+     * Different station-keeping elements may be associated with the same handler,
+     * so we must gather them in a set to avoid notifying them several times
+     * </p>
+     */
+    private void resetStepHandlers() {
+
+        handlers.clear();
+
+        // get the step handlers associated with parameters
+        for (final SKParameter parameter : parameters) {
+            if (parameter.getStepHandler() != null) {
+                handlers.add(parameter.getStepHandler());
+            }
+        }
+
+        // get the step handlers associated with control laws
+        for (final ScaledControl sc : controls) {
+            if (sc.getControl().getStepHandler() != null) {
+                handlers.add(sc.getControl().getStepHandler());
+            }
         }
 
     }
