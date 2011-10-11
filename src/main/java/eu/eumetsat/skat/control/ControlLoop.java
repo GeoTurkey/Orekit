@@ -34,6 +34,9 @@ import eu.eumetsat.skat.strategies.TunableManeuver;
  */
 public class ControlLoop implements ScenarioComponent {
 
+    /** Index of the spacecraft managed by this loop. */
+    private final int spacecraftIndex;
+
     /** Maximal number of objective function evaluations. */
     private final int maxEval;
 
@@ -58,18 +61,21 @@ public class ControlLoop implements ScenarioComponent {
      * They must be added later on by {@link #addControl(double, SKControl)}
      * and {@link #addParametersList(SKParametersList)}.
      * </p>
+     * @param spacecraftIndex index of the spacecraft managed by this loop
      * @param maxEval maximal number of objective function evaluations
      * @param optimizer optimizing engine
      * @param propagator orbit propagator
      */
-    public ControlLoop(final int maxEval, final MultivariateRealOptimizer optimizer,
+    public ControlLoop(final int spacecraftIndex,
+                       final int maxEval, final MultivariateRealOptimizer optimizer,
                        final Propagator propagator) {
-        this.maxEval    = maxEval;
-        this.optimizer  = optimizer;
-        this.propagator = propagator;
-        tunables        = new ArrayList<TunableManeuver>();
-        controls        = new ArrayList<ScaledControl>();
-        parameters      = new ArrayList<SKParameter>();
+        this.spacecraftIndex = spacecraftIndex;
+        this.maxEval         = maxEval;
+        this.optimizer       = optimizer;
+        this.propagator      = propagator;
+        tunables             = new ArrayList<TunableManeuver>();
+        controls             = new ArrayList<ScaledControl>();
+        parameters           = new ArrayList<SKParameter>();
     }
 
     /** Add a scaled control.
@@ -117,7 +123,7 @@ public class ControlLoop implements ScenarioComponent {
      * #addControl(double, SKControl) station keeping controls}.
      * </p>
      */
-    public ScenarioState updateState(final ScenarioState origin, final AbsoluteDate target)
+    public ScenarioState[] updateState(final ScenarioState[] originals, final AbsoluteDate target)
         throws OrekitException {
 
         // guess a start point
@@ -129,7 +135,8 @@ public class ControlLoop implements ScenarioComponent {
         // find the optimal parameters that minimize objective function
         final MultivariateRealFunction objective =
                 new ObjectiveFunction(propagator, parameters, controls, target,
-                                      origin.getEstimatedState(), origin.getTheoreticalManeuvers());
+                                      originals[spacecraftIndex].getEstimatedState(),
+                                      originals[spacecraftIndex].getTheoreticalManeuvers());
         double[] optimum =
                 optimizer.optimize(maxEval, objective, GoalType.MINIMIZE, startPoint).getPoint();
 
@@ -142,7 +149,7 @@ public class ControlLoop implements ScenarioComponent {
 
         // update the scheduled maneuvers, adding the newly optimized set
         final List<ImpulseManeuver> theoreticalManeuvers = new ArrayList<ImpulseManeuver>();
-        theoreticalManeuvers.addAll(origin.getTheoreticalManeuvers());
+        theoreticalManeuvers.addAll(originals[spacecraftIndex].getTheoreticalManeuvers());
         for (final TunableManeuver tunable : tunables) {
             // get the optimized maneuver, using the optimum value set above
             final ImpulseManeuver optimized = tunable.getManeuver();
@@ -150,8 +157,12 @@ public class ControlLoop implements ScenarioComponent {
         }
 
         // build the updated scenario state
-        return new ScenarioState(origin.getRealState(), origin.getEstimatedState(),
-                                 theoreticalManeuvers, origin.getPerformedManeuvers());
+        ScenarioState[] updated = originals.clone();
+        updated[spacecraftIndex] = new ScenarioState(originals[spacecraftIndex].getRealState(),
+                                                     originals[spacecraftIndex].getEstimatedState(),
+                                                     theoreticalManeuvers,
+                                                     originals[spacecraftIndex].getPerformedManeuvers());
+        return updated;
 
     }
 

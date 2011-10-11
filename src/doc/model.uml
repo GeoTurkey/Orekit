@@ -216,11 +216,11 @@
               </eAnnotations>
               <ownedParameter xmi:id="_E_n3c91hEeCO1uZVwIAJVg" name="tunable" type="_E3lVwN1hEeCO1uZVwIAJVg"/>
             </ownedOperation>
-            <ownedOperation xmi:id="_E_xocN1hEeCO1uZVwIAJVg" name="updateState" visibility="public" method="_E_xodt1hEeCO1uZVwIAJVg">
+            <ownedOperation xmi:id="_E_xocN1hEeCO1uZVwIAJVg" name="updateStates" visibility="public" method="_E_xodt1hEeCO1uZVwIAJVg">
               <eAnnotations xmi:id="_E_xocd1hEeCO1uZVwIAJVg" source="http://www.topcased.org/documentation">
                 <details xmi:id="_E_xoct1hEeCO1uZVwIAJVg" key="documentation" value="{@inheritDoc}&#xA; &lt;p>&#xA; Optimize the control parameters to achieve the goals.&#xA; &lt;/p>&#xA; &lt;p>&#xA; At the end of the optimization the {@link&#xA; #addControlParametersSet(ControlParametersSet) control parameters} values&#xA; will be set to the optimal values that best fulfill the {@link&#xA; #addGoal(StationKeepingGoal) station keeping goals}.&#xA; &lt;/p>&#xA; "/>
               </eAnnotations>
-              <ownedParameter xmi:id="_E_xoc91hEeCO1uZVwIAJVg" name="origin" type="_E3iScN1hEeCO1uZVwIAJVg"/>
+              <ownedParameter xmi:id="_E_xoc91hEeCO1uZVwIAJVg" name="originals" type="_E3iScN1hEeCO1uZVwIAJVg"/>
               <ownedParameter xmi:id="_E_xodN1hEeCO1uZVwIAJVg" name="target" type="_E9bfEN1hEeCO1uZVwIAJVg"/>
               <ownedParameter xmi:id="_E_xodd1hEeCO1uZVwIAJVg" type="_E3iScN1hEeCO1uZVwIAJVg" direction="return"/>
             </ownedOperation>
@@ -452,11 +452,11 @@ It is updated by the updateState methods of all scenario components.</body>
             <eAnnotations xmi:id="_E3eoEd1hEeCO1uZVwIAJVg" source="http://www.topcased.org/documentation">
               <details xmi:id="_E3eoEt1hEeCO1uZVwIAJVg" key="documentation" value=" Interface representing a component of a station-keeping scenario.&#xA; &lt;p>&#xA; Station-keeping scenario components are the basic building blocks&#xA; used to build scenarii. They can be elementary components like&#xA; an orbit determination phase, or a free-flying phase or they&#xA; can be composed components like a complete cycle including&#xA; the aforementioned elementary components.&#xA; &lt;/p>&#xA; @author Luc Maisonobe&#xA;"/>
             </eAnnotations>
-            <ownedOperation xmi:id="_FCMqUN1hEeCO1uZVwIAJVg" name="updateState">
+            <ownedOperation xmi:id="_FCMqUN1hEeCO1uZVwIAJVg" name="updateStates">
               <eAnnotations xmi:id="_FCMqUd1hEeCO1uZVwIAJVg" source="http://www.topcased.org/documentation">
                 <details xmi:id="_FCMqUt1hEeCO1uZVwIAJVg" key="documentation" value="Apply the scenario component.&#xA; @param original original state of the scenario&#xA; @param target target date for end of simulation&#xA; @return achieved state&#xA; @exception OrekitException if simulation cannot be performed&#xA; "/>
               </eAnnotations>
-              <ownedParameter xmi:id="_FCMqU91hEeCO1uZVwIAJVg" name="original" type="_E3iScN1hEeCO1uZVwIAJVg"/>
+              <ownedParameter xmi:id="_FCMqU91hEeCO1uZVwIAJVg" name="originals" type="_E3iScN1hEeCO1uZVwIAJVg"/>
               <ownedParameter xmi:id="_FCMqVN1hEeCO1uZVwIAJVg" name="target" type="_E9bfEN1hEeCO1uZVwIAJVg"/>
               <ownedParameter xmi:id="_FCMqVd1hEeCO1uZVwIAJVg" type="_E3iScN1hEeCO1uZVwIAJVg" direction="return"/>
             </ownedOperation>
@@ -515,11 +515,11 @@ It is updated by the updateState methods of all scenario components.</body>
               </eAnnotations>
               <ownedParameter xmi:id="_FCT_E91hEeCO1uZVwIAJVg" name="component" type="_E3eoEN1hEeCO1uZVwIAJVg"/>
             </ownedOperation>
-            <ownedOperation xmi:id="_FCbT0N1hEeCO1uZVwIAJVg" name="updateState" visibility="public" method="_FCb6491hEeCO1uZVwIAJVg">
+            <ownedOperation xmi:id="_FCbT0N1hEeCO1uZVwIAJVg" name="updateStates" visibility="public" method="_FCb6491hEeCO1uZVwIAJVg">
               <eAnnotations xmi:id="_FCbT0d1hEeCO1uZVwIAJVg" source="http://www.topcased.org/documentation">
                 <details xmi:id="_FCbT0t1hEeCO1uZVwIAJVg" key="documentation" value="{@inheritDoc}&#xA; &lt;p>The scenario will be run in loops until the target date&#xA; is reached. At each iteration of the loop, the target date of&#xA; the iteration will be set according to the cycle duration set at&#xA; construction.&lt;/p>&#xA; "/>
               </eAnnotations>
-              <ownedParameter xmi:id="_FCb64N1hEeCO1uZVwIAJVg" name="original" type="_E3iScN1hEeCO1uZVwIAJVg"/>
+              <ownedParameter xmi:id="_FCb64N1hEeCO1uZVwIAJVg" name="originals" type="_E3iScN1hEeCO1uZVwIAJVg"/>
               <ownedParameter xmi:id="_FCb64d1hEeCO1uZVwIAJVg" name="target" type="_E9bfEN1hEeCO1uZVwIAJVg"/>
               <ownedParameter xmi:id="_FCb64t1hEeCO1uZVwIAJVg" type="_E3iScN1hEeCO1uZVwIAJVg" direction="return"/>
             </ownedOperation>

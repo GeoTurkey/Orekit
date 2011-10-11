@@ -1,0 +1,33 @@
+/* Copyright 2011 Eumetsat */
+package eu.eumetsat.skat.utils;
+
+/** Keys for monitorable parameters.
+ */
+public enum MonitorableKey {
+
+    IN_PLANE_MANEUVER_NUMBER,
+    IN_PLANE_MANEUVER_TOTAL_DV,
+    OUT_OF_PLANE_MANEUVER_NUMBER,
+    OUT_OF_PLANE_MANEUVER_TOTAL_DV,
+    PROPELLANT_MASS_COMNSUMPTION,
+
+    LATITUDE,
+    LONGITUDE,
+    ALTITUDE,
+
+    SEMI_MAJOR_AXIS,
+    ECCENTRICITY,
+    CIRCULAR_EX,
+    CIRCULAR_EY,
+    EQUINOCTIAL_EX,
+    EQUINOCTIAL_EY,
+    INCLINATION,
+    EQUINOCTIAL_HX,
+    EQUINOCTIAL_HY,
+
+    SOLAR_TIME_AT_ASCENDING_NODE,
+    SOLAR_TIME_AT_DESCENDING_NODE,
+
+    CYCLES_NUMBER;
+
+}

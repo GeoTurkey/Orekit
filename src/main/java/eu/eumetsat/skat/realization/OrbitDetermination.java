@@ -27,6 +27,9 @@ import eu.eumetsat.skat.scenario.ScenarioState;
  */
 public class OrbitDetermination implements ScenarioComponent {
 
+    /** Index of the spacecraft managed by this component. */
+    private final int spacecraftIndex;
+
     /** Vector generator. */
     private final CorrelatedRandomVectorGenerator generator;
 
@@ -34,6 +37,7 @@ public class OrbitDetermination implements ScenarioComponent {
     private final PositionAngle positionAngle;
 
     /** Simple constructor.
+     * @param spacecraftIndex index of the spacecraft managed by this component
      * @param covariance covariance matrix to use for generating
      * orbit determination errors
      * @param positionAngle position angle used in the covariance matrix
@@ -41,10 +45,12 @@ public class OrbitDetermination implements ScenarioComponent {
      * considered to be dependent on previous ones and are discarded
      * @param random raw random generator
      */
-    public OrbitDetermination(final RealMatrix covariance,
+    public OrbitDetermination(final int spacecraftIndex,
+                              final RealMatrix covariance,
                               final PositionAngle positionAngle,
                               final double small,
                               final RandomGenerator random) {
+        this.spacecraftIndex = spacecraftIndex;
         final double[] zeroMean = new double[covariance.getRowDimension()];
         generator = new CorrelatedRandomVectorGenerator(zeroMean, covariance, small,
                                                         new GaussianRandomGenerator(random));
@@ -52,12 +58,12 @@ public class OrbitDetermination implements ScenarioComponent {
     }
 
     /** {@inheritDoc} */
-    public ScenarioState updateState(final ScenarioState original, AbsoluteDate target)
+    public ScenarioState[] updateState(final ScenarioState[] originals, AbsoluteDate target)
         throws OrekitException {
 
         // get the real state vector
-        final SpacecraftState realState = original.getRealState();
-        final Orbit realOrbit           = original.getRealState().getOrbit();
+        final SpacecraftState realState = originals[spacecraftIndex].getRealState();
+        final Orbit realOrbit           = originals[spacecraftIndex].getRealState().getOrbit();
         final OrbitType type            = realOrbit.getType();
         final double[] orbitArray       = new double[6];
         type.mapOrbitToArray(realOrbit, positionAngle, orbitArray);
@@ -76,9 +82,11 @@ public class OrbitDetermination implements ScenarioComponent {
                 new SpacecraftState(estimatedOrbit, realState.getAttitude(),
                                     realState.getMass());
 
-        return new ScenarioState(realState, estimatedState,
-                                 original.getTheoreticalManeuvers(),
-                                 original.getPerformedManeuvers());
+        ScenarioState[] updated = originals.clone();
+        updated[spacecraftIndex] = new ScenarioState(realState, estimatedState,
+                                                     originals[spacecraftIndex].getTheoreticalManeuvers(),
+                                                     originals[spacecraftIndex].getPerformedManeuvers());
+        return updated;
 
     }
 

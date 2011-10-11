@@ -24,13 +24,13 @@ public interface ScenarioComponent {
      * it may be a target date. For control loop it may be end of station keeping
      * cycle.
      * </p>
-     * @param original original state of the scenario
+     * @param originals original states of the scenario
      * @param date date of the update (it's exact meaning depends
      * on component)
      * @return updated state
      * @exception OrekitException if simulation cannot be performed
      */
-    ScenarioState updateState(ScenarioState original, AbsoluteDate target)
+    ScenarioState[] updateState(ScenarioState[] originals, AbsoluteDate target)
         throws OrekitException;
 
 }

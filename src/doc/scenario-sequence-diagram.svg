@@ -293,7 +293,7 @@
             <line clip-path="url(#clipPath30)" fill="none" x1="116"
                 x2="262" y1="144" y2="144"/>
             <text xml:space="preserve" x="174" y="138"
-                clip-path="url(#clipPath31)" stroke="none">updateState</text>
+                clip-path="url(#clipPath31)" stroke="none">updateStates</text>
             <polygon clip-path="url(#clipPath32)"
                 points=" 262 144 252 149 252 139" stroke="none"/>
             <polygon fill="none" stroke-width="1.1"
@@ -317,7 +317,7 @@
             <line clip-path="url(#clipPath39)" fill="none" x1="116"
                 x2="468" y1="277" y2="277"/>
             <text xml:space="preserve" x="376" y="267"
-                clip-path="url(#clipPath40)" stroke="none">updateState</text>
+                clip-path="url(#clipPath40)" stroke="none">updateStates</text>
             <polygon clip-path="url(#clipPath41)"
                 points=" 468 277 458 282 458 272" stroke="none"/>
             <polygon fill="none" stroke-width="1.1"

@@ -50,6 +50,9 @@ public class ManeuverMagnitudeError implements ScenarioComponent {
     /** Angular threshold for maneuver direction filtering. */
     private static final double ALIGNMENT_THRESHOLD = FastMath.toRadians(10.0);
 
+    /** Index of the spacecraft managed by this component. */
+    private final int spacecraftIndex;
+
     /** Maneuvers direction to which this error applies. */
     private final Vector3D filteringDirection;
 
@@ -60,30 +63,33 @@ public class ManeuverMagnitudeError implements ScenarioComponent {
     private final RandomGenerator generator;
 
     /** Simple constructor.
+     * @param spacecraftIndex index of the spacecraft managed by this component
      * @param filteringDirection filter used to decide if the instance should be
      * applied to a maneuver or not
      * @param standardDeviation standard deviation of the multiplying error factor
      * (for example 0.05 for a 5% error)
      * @param generator random generator to use for evaluating the error factor
      */
-    public ManeuverMagnitudeError(final Vector3D filteringDirection,
+    public ManeuverMagnitudeError(final int spacecraftIndex,
+                                  final Vector3D filteringDirection,
                                   final double standardDeviation,
                                   final RandomGenerator generator) {
+        this.spacecraftIndex    = spacecraftIndex;
         this.filteringDirection = filteringDirection;
         this.standardDeviation  = standardDeviation;
         this.generator          = generator;
     }
 
     /** {@inheritDoc} */
-    public ScenarioState updateState(final ScenarioState original, AbsoluteDate target)
+    public ScenarioState[] updateState(final ScenarioState[] originals, AbsoluteDate target)
         throws OrekitException {
 
         // prepare a list for holding the modified maneuvers
         List<ImpulseManeuver> modified =
-                new ArrayList<ImpulseManeuver>(original.getPerformedManeuvers().size());
+                new ArrayList<ImpulseManeuver>(originals[spacecraftIndex].getPerformedManeuvers().size());
 
         // modify the maneuvers
-        for (final ImpulseManeuver maneuver : original.getPerformedManeuvers()) {
+        for (final ImpulseManeuver maneuver : originals[spacecraftIndex].getPerformedManeuvers()) {
             final double angle = Vector3D.angle(filteringDirection, maneuver.getDeltaVSat());
             if ((angle < ALIGNMENT_THRESHOLD) || (angle > FastMath.PI - ALIGNMENT_THRESHOLD)) {
                 // the maneuver is affected by the error
@@ -98,10 +104,12 @@ public class ManeuverMagnitudeError implements ScenarioComponent {
         }
 
         // return an updated state
-        return new ScenarioState(original.getRealState(),
-                                 original.getEstimatedState(),
-                                 original.getTheoreticalManeuvers(),
-                                 modified);
+        ScenarioState[] updated = originals.clone();
+        updated[spacecraftIndex] = new ScenarioState(originals[spacecraftIndex].getRealState(),
+                                                     originals[spacecraftIndex].getEstimatedState(),
+                                                     originals[spacecraftIndex].getTheoreticalManeuvers(),
+                                                     modified);
+        return updated;
 
     }
 
