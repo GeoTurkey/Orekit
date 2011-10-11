@@ -81,7 +81,7 @@ public class ManeuverMagnitudeError implements ScenarioComponent {
     }
 
     /** {@inheritDoc} */
-    public ScenarioState[] updateState(final ScenarioState[] originals, AbsoluteDate target)
+    public ScenarioState[] updateStates(final ScenarioState[] originals, AbsoluteDate target)
         throws OrekitException {
 
         // prepare a list for holding the modified maneuvers

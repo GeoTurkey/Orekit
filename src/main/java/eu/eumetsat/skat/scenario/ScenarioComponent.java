@@ -30,7 +30,7 @@ public interface ScenarioComponent {
      * @return updated state
      * @exception OrekitException if simulation cannot be performed
      */
-    ScenarioState[] updateState(ScenarioState[] originals, AbsoluteDate target)
+    ScenarioState[] updateStates(ScenarioState[] originals, AbsoluteDate target)
         throws OrekitException;
 
 }

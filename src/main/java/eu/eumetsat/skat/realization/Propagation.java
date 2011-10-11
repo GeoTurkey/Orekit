@@ -54,7 +54,7 @@ public class Propagation implements ScenarioComponent {
     }
 
     /** {@inheritDoc} */
-    public ScenarioState[] updateState(final ScenarioState[] originals, final AbsoluteDate target)
+    public ScenarioState[] updateStates(final ScenarioState[] originals, final AbsoluteDate target)
         throws OrekitException {
 
         ScenarioState[] updated = new ScenarioState[originals.length];

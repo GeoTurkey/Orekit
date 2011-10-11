@@ -50,7 +50,7 @@ public class Scenario implements ScenarioComponent {
      * the iteration will be set according to the cycle duration set at
      * construction.</p>
      */
-    public ScenarioState[] updateState(final ScenarioState[] origins, final AbsoluteDate target)
+    public ScenarioState[] updateStates(final ScenarioState[] origins, final AbsoluteDate target)
         throws OrekitException {
 
         ScenarioState[] states = origins.clone();
@@ -62,7 +62,7 @@ public class Scenario implements ScenarioComponent {
 
             // run all components of the scenario in order
             for (final ScenarioComponent component : components) {
-                states = component.updateState(states, iterationTarget);
+                states = component.updateStates(states, iterationTarget);
             }
 
         } while (iterationTarget.compareTo(target) < 0);

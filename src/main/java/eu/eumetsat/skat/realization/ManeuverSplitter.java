@@ -14,7 +14,7 @@ import eu.eumetsat.skat.scenario.ScenarioState;
 public class ManeuverSplitter implements ScenarioComponent {
 
     /** {@inheritDoc} */
-    public ScenarioState[] updateState(final ScenarioState[] originals, final AbsoluteDate target)
+    public ScenarioState[] updateStates(final ScenarioState[] originals, final AbsoluteDate target)
         throws OrekitException {
         // TODO Auto-generated method stub
         return null;

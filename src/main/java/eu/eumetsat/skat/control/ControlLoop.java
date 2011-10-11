@@ -123,7 +123,7 @@ public class ControlLoop implements ScenarioComponent {
      * #addControl(double, SKControl) station keeping controls}.
      * </p>
      */
-    public ScenarioState[] updateState(final ScenarioState[] originals, final AbsoluteDate target)
+    public ScenarioState[] updateStates(final ScenarioState[] originals, final AbsoluteDate target)
         throws OrekitException {
 
         // guess a start point
