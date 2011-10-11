@@ -22,9 +22,9 @@ public class CsvFileMonitorTest {
 
     private ByteArrayOutputStream out;
     private Format format;
-    private BasicMonitorable mass;
-    private BasicMonitorable position;
-    private BasicMonitorable velocity;
+    private MonitorableSKData mass;
+    private MonitorableSKData position;
+    private MonitorableSKData velocity;
 
     @Test
     public void testEmpty() throws OrekitException {
@@ -56,7 +56,7 @@ public class CsvFileMonitorTest {
         Assert.assertTrue(lines[0].startsWith("# file generated on "));
         Assert.assertEquals("# ", lines[1]);
         Assert.assertEquals("# column 1: date offset since 2000-01-01T11:58:55.816", lines[2]);
-        Assert.assertEquals("# column 2: mass",        lines[3]);
+        Assert.assertEquals("# column 2: spacecraft mass",        lines[3]);
         Assert.assertEquals("# column 3: position[0]", lines[4]);
         Assert.assertEquals("# column 4: position[1]", lines[5]);
         Assert.assertEquals("# column 5: position[2]", lines[6]);
@@ -113,13 +113,31 @@ public class CsvFileMonitorTest {
         mass.register(monitor);
         position.register(monitor);
         velocity.register(monitor);
-        new BasicMonitorable("mass", 1).register(monitor);
+        new Monitorable(){
+
+            public void register(Monitor monitor) {
+                monitor.startMonitoring(this);
+            }
+
+            public String getName() {
+                return mass.getName();
+            }
+
+            public AbsoluteDate getDate() {
+                return mass.getDate();
+            }
+
+            public double[] getValue() {
+                return mass.getValue();
+            }
+            
+        }.register(monitor);
     }
 
     @Test(expected=IllegalArgumentException.class)
     public void testNotMonitored() throws OrekitException {
         CsvFileMonitor monitor = new CsvFileMonitor(out, "# ", ",", format, AbsoluteDate.J2000_EPOCH, 1.0);
-        monitor.valueChanged(new BasicMonitorable("unknown", 1));
+        monitor.valueChanged(MonitorableSKData.CYCLES_NUMBER);
     }
 
     @Test(expected=IllegalStateException.class)
@@ -132,16 +150,16 @@ public class CsvFileMonitorTest {
         mass.setDateAndValue(t0,     new double[] { 1000.0 });
         velocity.setDateAndValue(t0, new double[] { 44444.44, 55555.55, 66666.66 });
         position.setDateAndValue(t0, new double[] { 11111.11, 22222.22, 33333.33 });
-        new BasicMonitorable("late monitorable", 1).register(monitor);
+        MonitorableSKData.CYCLES_NUMBER.register(monitor);
     }
 
     @Before
     public void setUp() {
         out      = new ByteArrayOutputStream();
         format   = new DecimalFormat("#0.00", new DecimalFormatSymbols(Locale.US));
-        mass     = new BasicMonitorable("mass",     1);
-        position = new BasicMonitorable("position", 3);
-        velocity = new BasicMonitorable("velocity", 3);
+        mass     = MonitorableSKData.SPACECRAFT_MASS;
+        position = MonitorableSKData.POSITION;
+        velocity = MonitorableSKData.VELOCITY;
     }
 
     @After

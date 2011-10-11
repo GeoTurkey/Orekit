@@ -2,24 +2,20 @@
 package eu.eumetsat.skat.realization;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import org.orekit.errors.OrekitException;
-import org.orekit.errors.PropagationException;
 import org.orekit.forces.maneuvers.ImpulseManeuver;
+import org.orekit.propagation.BoundedPropagator;
 import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
-import org.orekit.propagation.events.EventDetector;
-import org.orekit.propagation.sampling.OrekitStepHandler;
-import org.orekit.propagation.sampling.OrekitStepInterpolator;
+import org.orekit.propagation.events.EventsLogger;
+import org.orekit.propagation.events.EventsLogger.LoggedEvent;
 import org.orekit.time.AbsoluteDate;
 
 import eu.eumetsat.skat.scenario.ScenarioComponent;
 import eu.eumetsat.skat.scenario.ScenarioState;
-import eu.eumetsat.skat.utils.Monitorable;
-import eu.eumetsat.skat.utils.MonitorableKey;
+import eu.eumetsat.skat.utils.MonitorableSKData;
 
 /**
  * Class for simple propagation of a station-keeping cycle.
@@ -35,42 +31,55 @@ public class Propagation implements ScenarioComponent {
     /** Orbit propagator. */
     private final Propagator propagator;
 
+    /** Output step for monitoring. */
+    private final double outputstep;
+
     /** Monitored values. */
-    private final List<Monitorable> monitorables;
+    private final List<MonitorableSKData> monitorables;
 
     /** Simple constructor.
      * @param propagator propagator to use
+     * @param outputStep output step for monitoring (s)
      */
-    public Propagation(final Propagator propagator) {
+    public Propagation(final Propagator propagator, final double outputStep) {
         this.propagator   = propagator;
-        this.monitorables = new ArrayList<Monitorable>();
+        this.outputstep   = outputStep;
+        this.monitorables = new ArrayList<MonitorableSKData>();
     }
 
     /** Monitor a station-keeping data.
      * @param key key of station-keeping data to monitor
      */
-    public void monitor(final MonitorableKey key) {
-        // TODO
+    public void monitor(final MonitorableSKData key) {
+        monitorables.add(key);
     }
 
     /** {@inheritDoc} */
     public ScenarioState[] updateStates(final ScenarioState[] originals, final AbsoluteDate target)
         throws OrekitException {
 
-        ScenarioState[] updated = new ScenarioState[originals.length];
+        final ScenarioState[] updated = new ScenarioState[originals.length];
+        final List<BoundedPropagator> ephemerides = new ArrayList<BoundedPropagator>(originals.length);
+        final List<List<LoggedEvent>> events      = new ArrayList<List<LoggedEvent>>(originals.length);
 
+
+        // separately propagate each spacecraft
         for (int i = 0; i < originals.length; ++i) {
+
+            final EventsLogger logger = new EventsLogger();
 
             // set up the propagator with the maneuvers to perform
             propagator.clearEventsDetectors();
             for (final ImpulseManeuver maneuver : originals[i].getTheoreticalManeuvers()) {
-                propagator.addEventDetector(maneuver);
+                propagator.addEventDetector(logger.monitorDetector(maneuver));
             }
-            propagator.setMasterMode(new Handler());
+            propagator.setEphemerisMode();
 
             // perform propagation
             propagator.resetInitialState(originals[i].getRealState());
             SpacecraftState finalState = propagator.propagate(target);
+            events.add(logger.getLoggedEvents());
+            ephemerides.add(propagator.getGeneratedEphemeris());
 
             // build the updated scenario state
             updated[i] = new ScenarioState(finalState, finalState,
@@ -79,23 +88,14 @@ public class Propagation implements ScenarioComponent {
 
         }
 
+        // monitor station-keeping data from all spacecrafts together
+        // (this ensures we can compute inter-satellite data)
+        ephemerides.get(0).setMasterMode(outputstep,
+                                         new MultiSpacecraftFixedStepHandler(ephemerides, events));
+        ephemerides.get(0).propagate(target);
+
         return updated;
 
-    }
-
-    /** Inner class for monitoring. */
-    private class Handler implements OrekitStepHandler {
-
-        /** {@inheritDoc} */
-        public void handleStep(final OrekitStepInterpolator interpolator, final boolean isLast)
-            throws PropagationException {
-            // TODO Auto-generated method stub
-        }
-
-        /** {@inheritDoc} */
-        public void reset() {
-        }
-        
     }
 
 }
