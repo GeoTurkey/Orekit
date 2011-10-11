@@ -133,6 +133,7 @@ public class ControlLoop implements ScenarioComponent {
         }
 
         // find the optimal parameters that minimize objective function
+        // TODO introduce constraints
         final MultivariateRealFunction objective =
                 new ObjectiveFunction(propagator, parameters, controls, target,
                                       originals[spacecraftIndex].getEstimatedState(),
