@@ -132,7 +132,7 @@ public class Propagation implements ScenarioComponent {
             updateNodes(date, ephemerides, updated);
 
             // monitor data
-            // TODO
+            monitorData(date, ephemerides, updated);
 
         }
 
@@ -303,6 +303,30 @@ public class Propagation implements ScenarioComponent {
         final Vector3D sunPosition = sun.getPVCoordinates(state.getDate(), eme2000).getPosition();
         final double dAlpha = sunPosition.getAlpha() - spacecraftPosition.getAlpha();
         return 12.0 * MathUtils.normalizeAngle(dAlpha, FastMath.PI) / FastMath.PI;
+    }
+
+    /** Monitor the station-keeping data up to current date.
+     * @param date current date
+     * @param ephemerides spacecrafts ephemerides
+     * @param states states array to update
+     * @exception OrekitException if a node cannot be computed
+     */
+    private void monitorData(final AbsoluteDate date, final List<BoundedPropagator> ephemerides,
+                             final ScenarioState[] states)
+        throws OrekitException {
+
+        // update the real and estimated states
+        for (int i = 0; i < states.length; ++i) {
+            final SpacecraftState state = ephemerides.get(i).propagate(date);
+            states[i] = states[i].updateRealState(state);
+            states[i] = states[i].updateEstimatedState(state);
+        }
+
+        // perform monitoring
+        for (final MonitorableSKData monitorable : monitorables) {
+            monitorable.update(states, earth);
+        }
+
     }
 
 }
