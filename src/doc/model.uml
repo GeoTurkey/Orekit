@@ -443,7 +443,7 @@
         <packagedElement xmi:type="uml:Package" xmi:id="_E3eBAN1hEeCO1uZVwIAJVg" name="scenario" clientDependency="_FKsfAt1hEeCO1uZVwIAJVg _FKsfA91hEeCO1uZVwIAJVg _FKsfBN1hEeCO1uZVwIAJVg _FKsfBd1hEeCO1uZVwIAJVg _FKsfBt1hEeCO1uZVwIAJVg">
           <ownedComment xmi:id="_5lGl0N1pEeCO1uZVwIAJVg" annotatedElement="_E3iScN1hEeCO1uZVwIAJVg">
             <body>scenario state contains all the properties of current cycle (orbit, maneuvers ...)
-It is updated by the updateState methods of all scenario components.</body>
+It is updated by the updateStates methods of all scenario components.</body>
           </ownedComment>
           <ownedComment xmi:id="_a2H9wN1uEeCO1uZVwIAJVg" annotatedElement="_E3hEUN1hEeCO1uZVwIAJVg">
             <body>as Scenario implements ScenarioComponent by itself, recursive scenario building is possible</body>
@@ -572,6 +572,36 @@ It is updated by the updateState methods of all scenario components.</body>
             </ownedOperation>
             <ownedOperation xmi:id="_7jm7cOA-EeC0rbAAcgLFmg" name="getPerformedManeuvers">
               <ownedParameter xmi:id="_95LrsOA-EeC0rbAAcgLFmg" name="return" type="_E_ZN891hEeCO1uZVwIAJVg" direction="return"/>
+            </ownedOperation>
+            <ownedOperation xmi:id="_g_CecfS0EeCwdKSYhKL5Dg" name="getCycleNumber">
+              <ownedParameter xmi:id="_i9_ecPS0EeCwdKSYhKL5Dg" name="return" type="_FDK6sN1hEeCO1uZVwIAJVg" direction="return"/>
+            </ownedOperation>
+            <ownedOperation xmi:id="_zir0QPS-EeCwdKSYhKL5Dg" name="getInPlane">
+              <ownedParameter xmi:id="_6xoHMPS-EeCwdKSYhKL5Dg" name="return" type="_FDK6sN1hEeCO1uZVwIAJVg" direction="return"/>
+            </ownedOperation>
+            <ownedOperation xmi:id="_0fpy0PS-EeCwdKSYhKL5Dg" name="getInPlaneDV">
+              <ownedParameter xmi:id="__GgcwPS-EeCwdKSYhKL5Dg" name="return" type="_26xTseRSEeCC7oKz25Mm0Q" direction="return"/>
+            </ownedOperation>
+            <ownedOperation xmi:id="_11BDQPS-EeCwdKSYhKL5Dg" name="getOutOfPlane">
+              <ownedParameter xmi:id="_FJi9QPS_EeCwdKSYhKL5Dg" name="return" type="_FDK6sN1hEeCO1uZVwIAJVg" direction="return"/>
+            </ownedOperation>
+            <ownedOperation xmi:id="_2t2vwPS-EeCwdKSYhKL5Dg" name="getOutOfPlaneDV">
+              <ownedParameter xmi:id="_HzSmsPS_EeCwdKSYhKL5Dg" name="return" type="_26xTseRSEeCC7oKz25Mm0Q" direction="return"/>
+            </ownedOperation>
+            <ownedOperation xmi:id="_32t1QPS-EeCwdKSYhKL5Dg" name="getMassConsumption">
+              <ownedParameter xmi:id="_QDb7IPTDEeCwdKSYhKL5Dg" name="return" type="_26xTseRSEeCC7oKz25Mm0Q" direction="return"/>
+            </ownedOperation>
+            <ownedOperation xmi:id="_4yPCUPS-EeCwdKSYhKL5Dg" name="getAscendingNodeDate">
+              <ownedParameter xmi:id="_SxZWMPTDEeCwdKSYhKL5Dg" name="return" type="_E9bfEN1hEeCO1uZVwIAJVg" direction="return"/>
+            </ownedOperation>
+            <ownedOperation xmi:id="_Mz9rQPS_EeCwdKSYhKL5Dg" name="getAscendingNodeSolarTime">
+              <ownedParameter xmi:id="_Vxu6sPTDEeCwdKSYhKL5Dg" name="return" type="_26xTseRSEeCC7oKz25Mm0Q" direction="return"/>
+            </ownedOperation>
+            <ownedOperation xmi:id="_NzXSwPS_EeCwdKSYhKL5Dg" name="getDescendingNodeDate">
+              <ownedParameter xmi:id="_YNJNMPTDEeCwdKSYhKL5Dg" name="return" type="_E9bfEN1hEeCO1uZVwIAJVg" direction="return"/>
+            </ownedOperation>
+            <ownedOperation xmi:id="_OwtEwPS_EeCwdKSYhKL5Dg" name="getDescendingNodeSolarTime">
+              <ownedParameter xmi:id="_a0wvsPTDEeCwdKSYhKL5Dg" name="return" type="_26xTseRSEeCC7oKz25Mm0Q" direction="return"/>
             </ownedOperation>
           </packagedElement>
           <packagedElement xmi:type="uml:Usage" xmi:id="_FKsfAt1hEeCO1uZVwIAJVg" supplier="_E9UxYN1hEeCO1uZVwIAJVg" client="_E3eBAN1hEeCO1uZVwIAJVg"/>

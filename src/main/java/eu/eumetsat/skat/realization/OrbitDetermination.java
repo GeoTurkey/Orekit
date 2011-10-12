@@ -83,9 +83,7 @@ public class OrbitDetermination implements ScenarioComponent {
                                     realState.getMass());
 
         ScenarioState[] updated = originals.clone();
-        updated[spacecraftIndex] = new ScenarioState(realState, estimatedState,
-                                                     originals[spacecraftIndex].getTheoreticalManeuvers(),
-                                                     originals[spacecraftIndex].getPerformedManeuvers());
+        updated[spacecraftIndex] = originals[spacecraftIndex].updateEstimatedState(estimatedState);
         return updated;
 
     }

@@ -159,10 +159,7 @@ public class ControlLoop implements ScenarioComponent {
 
         // build the updated scenario state
         ScenarioState[] updated = originals.clone();
-        updated[spacecraftIndex] = new ScenarioState(originals[spacecraftIndex].getRealState(),
-                                                     originals[spacecraftIndex].getEstimatedState(),
-                                                     theoreticalManeuvers,
-                                                     originals[spacecraftIndex].getPerformedManeuvers());
+        updated[spacecraftIndex] = originals[spacecraftIndex].updateTheoreticalManeuvers(theoreticalManeuvers);
         return updated;
 
     }

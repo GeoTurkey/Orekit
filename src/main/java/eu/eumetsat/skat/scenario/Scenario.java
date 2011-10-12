@@ -65,6 +65,11 @@ public class Scenario implements ScenarioComponent {
                 states = component.updateStates(states, iterationTarget);
             }
 
+            // increment cycle number
+            for (int i = 0; i < states.length; ++i) {
+                states[i] = states[i].updateCyclesNumber(states[i].getCyclesNumber() + 1);
+            }
+
         } while (iterationTarget.compareTo(target) < 0);
 
         return states;

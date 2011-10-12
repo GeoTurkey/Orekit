@@ -105,10 +105,7 @@ public class ManeuverMagnitudeError implements ScenarioComponent {
 
         // return an updated state
         ScenarioState[] updated = originals.clone();
-        updated[spacecraftIndex] = new ScenarioState(originals[spacecraftIndex].getRealState(),
-                                                     originals[spacecraftIndex].getEstimatedState(),
-                                                     originals[spacecraftIndex].getTheoreticalManeuvers(),
-                                                     modified);
+        updated[spacecraftIndex] = originals[spacecraftIndex].updatePerformedManeuvers(modified);
         return updated;
 
     }

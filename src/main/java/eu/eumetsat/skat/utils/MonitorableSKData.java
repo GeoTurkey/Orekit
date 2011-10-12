@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
+import org.orekit.bodies.BodyShape;
 import org.orekit.bodies.GeodeticPoint;
 import org.orekit.errors.OrekitException;
 import org.orekit.frames.Frame;
@@ -16,6 +17,8 @@ import org.orekit.orbits.KeplerianOrbit;
 import org.orekit.orbits.OrbitType;
 import org.orekit.time.AbsoluteDate;
 import org.orekit.utils.PVCoordinates;
+
+import eu.eumetsat.skat.scenario.ScenarioState;
 
 /** Enumerate representing time-dependent values that can be monitored.
  * <p>
@@ -32,9 +35,9 @@ public enum MonitorableSKData implements Monitorable {
 
         /** {@inheritDoc} */
         @Override
-        protected void extractData(final Snapshot[] snapshots, double[] data) {
-            for (int i = 0; i < snapshots.length; ++i) {
-                data[i] = snapshots[i].getInPlane();
+        protected void extractData(final ScenarioState[] states, BodyShape earth, double[] data) {
+            for (int i = 0; i < states.length; ++i) {
+                data[i] = states[i].getInPlane();
             }
         }
         
@@ -44,9 +47,9 @@ public enum MonitorableSKData implements Monitorable {
 
         /** {@inheritDoc} */
         @Override
-        protected void extractData(final Snapshot[] snapshots, double[] data) {
-            for (int i = 0; i < snapshots.length; ++i) {
-                data[i] = snapshots[i].getInPlaneDV();
+        protected void extractData(final ScenarioState[] states, BodyShape earth, double[] data) {
+            for (int i = 0; i < states.length; ++i) {
+                data[i] = states[i].getInPlaneDV();
             }
         }
         
@@ -56,9 +59,9 @@ public enum MonitorableSKData implements Monitorable {
 
         /** {@inheritDoc} */
         @Override
-        protected void extractData(final Snapshot[] snapshots, double[] data) {
-            for (int i = 0; i < snapshots.length; ++i) {
-                data[i] = snapshots[i].getOutOfPlane();
+        protected void extractData(final ScenarioState[] states, BodyShape earth, double[] data) {
+            for (int i = 0; i < states.length; ++i) {
+                data[i] = states[i].getOutOfPlane();
             }
         }
         
@@ -68,9 +71,9 @@ public enum MonitorableSKData implements Monitorable {
 
         /** {@inheritDoc} */
         @Override
-        protected void extractData(final Snapshot[] snapshots, double[] data) {
-            for (int i = 0; i < snapshots.length; ++i) {
-                data[i] = snapshots[i].getOutOfPlaneDV();
+        protected void extractData(final ScenarioState[] states, BodyShape earth, double[] data) {
+            for (int i = 0; i < states.length; ++i) {
+                data[i] = states[i].getOutOfPlaneDV();
             }
         }
         
@@ -80,9 +83,9 @@ public enum MonitorableSKData implements Monitorable {
 
         /** {@inheritDoc} */
         @Override
-        protected void extractData(final Snapshot[] snapshots, double[] data) {
-            for (int i = 0; i < snapshots.length; ++i) {
-                data[i] = snapshots[i].getMassConsumption();
+        protected void extractData(final ScenarioState[] states, BodyShape earth, double[] data) {
+            for (int i = 0; i < states.length; ++i) {
+                data[i] = states[i].getMassConsumption();
             }
         }
         
@@ -92,9 +95,9 @@ public enum MonitorableSKData implements Monitorable {
 
         /** {@inheritDoc} */
         @Override
-        protected void extractData(final Snapshot[] snapshots, double[] data) {
-            for (int i = 0; i < snapshots.length; ++i) {
-                data[i] = snapshots[i].getState().getMass();
+        protected void extractData(final ScenarioState[] states, BodyShape earth, double[] data) {
+            for (int i = 0; i < states.length; ++i) {
+                data[i] = states[i].getRealState().getMass();
             }
         }
         
@@ -104,11 +107,11 @@ public enum MonitorableSKData implements Monitorable {
 
         /** {@inheritDoc} */
         @Override
-        protected void extractData(final Snapshot[] snapshots, double[] data)
+        protected void extractData(final ScenarioState[] states, BodyShape earth, double[] data)
             throws OrekitException {
             final Frame eme2000 = FramesFactory.getEME2000();
-            for (int i = 0; i < snapshots.length; ++i) {
-                final PVCoordinates pv = snapshots[i].getState().getPVCoordinates(eme2000);
+            for (int i = 0; i < states.length; ++i) {
+                final PVCoordinates pv = states[i].getRealState().getPVCoordinates(eme2000);
                 final Vector3D position = pv.getPosition();
                 data[3 * i]     = position.getX();
                 data[3 * i + 1] = position.getY();
@@ -122,11 +125,11 @@ public enum MonitorableSKData implements Monitorable {
 
         /** {@inheritDoc} */
         @Override
-        protected void extractData(final Snapshot[] snapshots, double[] data)
+        protected void extractData(final ScenarioState[] states, BodyShape earth, double[] data)
             throws OrekitException {
             final Frame eme2000 = FramesFactory.getEME2000();
-            for (int i = 0; i < snapshots.length; ++i) {
-                final PVCoordinates pv = snapshots[i].getState().getPVCoordinates(eme2000);
+            for (int i = 0; i < states.length; ++i) {
+                final PVCoordinates pv = states[i].getRealState().getPVCoordinates(eme2000);
                 final Vector3D velocity = pv.getVelocity();
                 data[3 * i]     = velocity.getX();
                 data[3 * i + 1] = velocity.getY();
@@ -140,11 +143,11 @@ public enum MonitorableSKData implements Monitorable {
 
         /** {@inheritDoc} */
         @Override
-        protected void extractData(final Snapshot[] snapshots, double[] data)
+        protected void extractData(final ScenarioState[] states, BodyShape earth, double[] data)
             throws OrekitException {
             final Frame itrf = FramesFactory.getITRF2008();
-            for (int i = 0; i < snapshots.length; ++i) {
-                final PVCoordinates pv = snapshots[i].getState().getPVCoordinates(itrf);
+            for (int i = 0; i < states.length; ++i) {
+                final PVCoordinates pv = states[i].getRealState().getPVCoordinates(itrf);
                 final Vector3D position = pv.getPosition();
                 data[3 * i]     = position.getX();
                 data[3 * i + 1] = position.getY();
@@ -158,11 +161,11 @@ public enum MonitorableSKData implements Monitorable {
 
         /** {@inheritDoc} */
         @Override
-        protected void extractData(final Snapshot[] snapshots, double[] data)
+        protected void extractData(final ScenarioState[] states, BodyShape earth, double[] data)
             throws OrekitException {
             final Frame itrf = FramesFactory.getITRF2008();
-            for (int i = 0; i < snapshots.length; ++i) {
-                final PVCoordinates pv = snapshots[i].getState().getPVCoordinates(itrf);
+            for (int i = 0; i < states.length; ++i) {
+                final PVCoordinates pv = states[i].getRealState().getPVCoordinates(itrf);
                 final Vector3D velocity = pv.getVelocity();
                 data[3 * i]     = velocity.getX();
                 data[3 * i + 1] = velocity.getY();
@@ -176,13 +179,13 @@ public enum MonitorableSKData implements Monitorable {
 
         /** {@inheritDoc} */
         @Override
-        protected void extractData(final Snapshot[] snapshots, double[] data)
+        protected void extractData(final ScenarioState[] states, BodyShape earth, double[] data)
                 throws OrekitException {
             final Frame itrf = FramesFactory.getITRF2008();
-            for (int i = 0; i < snapshots.length; ++i) {
-                final PVCoordinates pv   = snapshots[i].getState().getPVCoordinates(itrf);
-                final AbsoluteDate  date = snapshots[i].getState().getDate();
-                final GeodeticPoint gp   = snapshots[i].getEarth().transform(pv.getPosition(), itrf, date);
+            for (int i = 0; i < states.length; ++i) {
+                final PVCoordinates pv   = states[i].getRealState().getPVCoordinates(itrf);
+                final AbsoluteDate  date = states[i].getRealState().getDate();
+                final GeodeticPoint gp   = earth.transform(pv.getPosition(), itrf, date);
                 data[i] = gp.getLatitude();
             }
         }
@@ -193,13 +196,13 @@ public enum MonitorableSKData implements Monitorable {
 
         /** {@inheritDoc} */
         @Override
-        protected void extractData(final Snapshot[] snapshots, double[] data)
+        protected void extractData(final ScenarioState[] states, BodyShape earth, double[] data)
                 throws OrekitException {
             final Frame itrf = FramesFactory.getITRF2008();
-            for (int i = 0; i < snapshots.length; ++i) {
-                final PVCoordinates pv   = snapshots[i].getState().getPVCoordinates(itrf);
-                final AbsoluteDate  date = snapshots[i].getState().getDate();
-                final GeodeticPoint gp   = snapshots[i].getEarth().transform(pv.getPosition(), itrf, date);
+            for (int i = 0; i < states.length; ++i) {
+                final PVCoordinates pv   = states[i].getRealState().getPVCoordinates(itrf);
+                final AbsoluteDate  date = states[i].getRealState().getDate();
+                final GeodeticPoint gp   = earth.transform(pv.getPosition(), itrf, date);
                 data[i] = gp.getLongitude();
             }
         }
@@ -210,13 +213,13 @@ public enum MonitorableSKData implements Monitorable {
 
         /** {@inheritDoc} */
         @Override
-        protected void extractData(final Snapshot[] snapshots, double[] data)
+        protected void extractData(final ScenarioState[] states, BodyShape earth, double[] data)
                 throws OrekitException {
             final Frame itrf = FramesFactory.getITRF2008();
-            for (int i = 0; i < snapshots.length; ++i) {
-                final PVCoordinates pv   = snapshots[i].getState().getPVCoordinates(itrf);
-                final AbsoluteDate  date = snapshots[i].getState().getDate();
-                final GeodeticPoint gp   = snapshots[i].getEarth().transform(pv.getPosition(), itrf, date);
+            for (int i = 0; i < states.length; ++i) {
+                final PVCoordinates pv   = states[i].getRealState().getPVCoordinates(itrf);
+                final AbsoluteDate  date = states[i].getRealState().getDate();
+                final GeodeticPoint gp   = earth.transform(pv.getPosition(), itrf, date);
                 data[i] = gp.getAltitude();
             }
         }
@@ -227,10 +230,10 @@ public enum MonitorableSKData implements Monitorable {
 
         /** {@inheritDoc} */
         @Override
-        protected void extractData(final Snapshot[] snapshots, double[] data) {
-            for (int i = 0; i < snapshots.length; ++i) {
+        protected void extractData(final ScenarioState[] states, BodyShape earth, double[] data) {
+            for (int i = 0; i < states.length; ++i) {
                 final KeplerianOrbit orbit =
-                        (KeplerianOrbit) OrbitType.KEPLERIAN.convertType(snapshots[i].getState().getOrbit());
+                        (KeplerianOrbit) OrbitType.KEPLERIAN.convertType(states[i].getRealState().getOrbit());
                 data[i] = orbit.getA();
             }
         }
@@ -241,10 +244,10 @@ public enum MonitorableSKData implements Monitorable {
 
         /** {@inheritDoc} */
         @Override
-        protected void extractData(final Snapshot[] snapshots, double[] data) {
-            for (int i = 0; i < snapshots.length; ++i) {
+        protected void extractData(final ScenarioState[] states, BodyShape earth, double[] data) {
+            for (int i = 0; i < states.length; ++i) {
                 final KeplerianOrbit orbit =
-                        (KeplerianOrbit) OrbitType.KEPLERIAN.convertType(snapshots[i].getState().getOrbit());
+                        (KeplerianOrbit) OrbitType.KEPLERIAN.convertType(states[i].getRealState().getOrbit());
                 data[i] = orbit.getE();
             }
         }
@@ -255,10 +258,10 @@ public enum MonitorableSKData implements Monitorable {
 
         /** {@inheritDoc} */
         @Override
-        protected void extractData(final Snapshot[] snapshots, double[] data) {
-            for (int i = 0; i < snapshots.length; ++i) {
+        protected void extractData(final ScenarioState[] states, BodyShape earth, double[] data) {
+            for (int i = 0; i < states.length; ++i) {
                 final KeplerianOrbit orbit =
-                        (KeplerianOrbit) OrbitType.KEPLERIAN.convertType(snapshots[i].getState().getOrbit());
+                        (KeplerianOrbit) OrbitType.KEPLERIAN.convertType(states[i].getRealState().getOrbit());
                 data[i] = orbit.getI();
             }
         }
@@ -269,10 +272,10 @@ public enum MonitorableSKData implements Monitorable {
 
         /** {@inheritDoc} */
         @Override
-        protected void extractData(final Snapshot[] snapshots, double[] data) {
-            for (int i = 0; i < snapshots.length; ++i) {
+        protected void extractData(final ScenarioState[] states, BodyShape earth, double[] data) {
+            for (int i = 0; i < states.length; ++i) {
                 final CircularOrbit orbit =
-                        (CircularOrbit) OrbitType.CIRCULAR.convertType(snapshots[i].getState().getOrbit());
+                        (CircularOrbit) OrbitType.CIRCULAR.convertType(states[i].getRealState().getOrbit());
                 data[2 * i]     = orbit.getCircularEx();
                 data[2 * i + 1] = orbit.getCircularEy();
             }
@@ -284,10 +287,10 @@ public enum MonitorableSKData implements Monitorable {
 
         /** {@inheritDoc} */
         @Override
-        protected void extractData(final Snapshot[] snapshots, double[] data) {
-            for (int i = 0; i < snapshots.length; ++i) {
+        protected void extractData(final ScenarioState[] states, BodyShape earth, double[] data) {
+            for (int i = 0; i < states.length; ++i) {
                 final EquinoctialOrbit orbit =
-                        (EquinoctialOrbit) OrbitType.EQUINOCTIAL.convertType(snapshots[i].getState().getOrbit());
+                        (EquinoctialOrbit) OrbitType.EQUINOCTIAL.convertType(states[i].getRealState().getOrbit());
                 data[2 * i]     = orbit.getEquinoctialEx();
                 data[2 * i + 1] = orbit.getEquinoctialEy();
             }
@@ -299,10 +302,10 @@ public enum MonitorableSKData implements Monitorable {
 
         /** {@inheritDoc} */
         @Override
-        protected void extractData(final Snapshot[] snapshots, double[] data) {
-            for (int i = 0; i < snapshots.length; ++i) {
+        protected void extractData(final ScenarioState[] states, BodyShape earth, double[] data) {
+            for (int i = 0; i < states.length; ++i) {
                 final EquinoctialOrbit orbit =
-                        (EquinoctialOrbit) OrbitType.EQUINOCTIAL.convertType(snapshots[i].getState().getOrbit());
+                        (EquinoctialOrbit) OrbitType.EQUINOCTIAL.convertType(states[i].getRealState().getOrbit());
                 data[2 * i]     = orbit.getHx();
                 data[2 * i + 1] = orbit.getHy();
             }
@@ -314,7 +317,7 @@ public enum MonitorableSKData implements Monitorable {
 
         /** {@inheritDoc} */
         @Override
-        protected void extractData(final Snapshot[] snapshots, double[] data) {
+        protected void extractData(final ScenarioState[] states, BodyShape earth, double[] data) {
             // TODO Auto-generated method stub
         }
         
@@ -324,7 +327,7 @@ public enum MonitorableSKData implements Monitorable {
 
         /** {@inheritDoc} */
         @Override
-        protected void extractData(final Snapshot[] snapshots, double[] data) {
+        protected void extractData(final ScenarioState[] states, BodyShape earth, double[] data) {
             // TODO Auto-generated method stub
         }
         
@@ -334,9 +337,9 @@ public enum MonitorableSKData implements Monitorable {
 
         /** {@inheritDoc} */
         @Override
-        protected void extractData(final Snapshot[] snapshots, double[] data) {
-            for (int i = 0; i < snapshots.length; ++i) {
-                data[i] = snapshots[i].getCyclesNumber();
+        protected void extractData(final ScenarioState[] states, BodyShape earth, double[] data) {
+            for (int i = 0; i < states.length; ++i) {
+                data[i] = states[i].getCyclesNumber();
             }
         }
         
@@ -384,14 +387,15 @@ public enum MonitorableSKData implements Monitorable {
     }
 
     /** Update the current date and value, and notifies all monitors.
-     * @param snapshots snapshots of all spacecrafts
+     * @param states states of all spacecrafts
+     * @param earth Earth model
      * @exception OrekitException if data cannot be computed
      */
-    public void update(final Snapshot[] snapshots)
+    public void update(final ScenarioState[] states, final BodyShape earth)
         throws OrekitException {
 
-        date = snapshots[0].getState().getDate();
-        extractData(snapshots, value);
+        date = states[0].getRealState().getDate();
+        extractData(states, earth, value);
 
         // notifies monitors
         for (final Monitor monitor : monitors) {
@@ -400,12 +404,14 @@ public enum MonitorableSKData implements Monitorable {
 
     }
 
-    /** Extract the monitored data from the snapshots.
-     * @param snapshots snapshots of all spacecrafts
+    /** Extract the monitored data from the states.
+     * @param states states of all spacecrafts
+     * @param earth Earth model
      * @param data placeholder where to put the extracted data
      * @exception OrekitException if data cannot be computed
      */
-    protected abstract void extractData(final Snapshot[] snapshots, double[] data)
+    protected abstract void extractData(ScenarioState[] states, BodyShape earth,
+                                        double[] data)
         throws OrekitException;
 
 }

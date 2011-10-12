@@ -25,6 +25,8 @@ import org.orekit.time.AbsoluteDate;
 import org.orekit.utils.Constants;
 import org.orekit.utils.PVCoordinates;
 
+import eu.eumetsat.skat.scenario.ScenarioState;
+
 
 public class CsvFileMonitorTest {
 
@@ -33,6 +35,7 @@ public class CsvFileMonitorTest {
     private MonitorableSKData mass;
     private MonitorableSKData position;
     private MonitorableSKData velocity;
+    private BodyShape earth;
 
     @Test
     public void testEmpty() throws OrekitException {
@@ -79,14 +82,14 @@ public class CsvFileMonitorTest {
         mass.register(monitor);
         position.register(monitor);
         velocity.register(monitor);
-        Snapshot[] snapshots0 = createSnapshots(10.0, 1000.0, 11111.11, 22222.22, 33333.33, 44444.44, 55555.55, 66666.66);
-        mass.update(snapshots0);
-        velocity.update(snapshots0);
-        position.update(snapshots0);
-        Snapshot[] snapshots1 = createSnapshots(20.0, 1000.0, 44444.44, 55555.55, 66666.66, 11111.11, 22222.22, 33333.33);
-        mass.update(snapshots1);
-        velocity.update(snapshots1);
-        position.update(snapshots1);
+        ScenarioState[] snapshots0 = createStates(10.0, 1000.0, 11111.11, 22222.22, 33333.33, 44444.44, 55555.55, 66666.66);
+        mass.update(snapshots0, earth);
+        velocity.update(snapshots0, earth);
+        position.update(snapshots0, earth);
+        ScenarioState[] snapshots1 = createStates(20.0, 1000.0, 44444.44, 55555.55, 66666.66, 11111.11, 22222.22, 33333.33);
+        mass.update(snapshots1, earth);
+        velocity.update(snapshots1, earth);
+        position.update(snapshots1, earth);
         monitor.stopMonitoring();
         String[] lines = out.toString().split(System.getProperty("line.separator"));
         Assert.assertEquals(12, lines.length);
@@ -100,15 +103,15 @@ public class CsvFileMonitorTest {
         mass.register(monitor);
         position.register(monitor);
         velocity.register(monitor);
-        Snapshot[] snapshots0 = createSnapshots(10.0, 1000.0, 11111.11, 22222.22, 33333.33, 44444.44, 55555.55, 66666.66);
-        mass.update(snapshots0);
-        velocity.update(snapshots0);
-        position.update(snapshots0);
-        Snapshot[] snapshots1 = createSnapshots(10.000008, 1000.0, 11111.11, 22222.22, 33333.33, 77777.77, 88888.88, 99999.99);
-        velocity.update(snapshots1);
-        Snapshot[] snapshots2 = createSnapshots(20.0, 1000.0, 44444.44, 55555.55, 66666.66, 11111.11, 22222.22, 33333.33);
-        velocity.update(snapshots2);
-        position.update(snapshots2);
+        ScenarioState[] snapshots0 = createStates(10.0, 1000.0, 11111.11, 22222.22, 33333.33, 44444.44, 55555.55, 66666.66);
+        mass.update(snapshots0, earth);
+        velocity.update(snapshots0, earth);
+        position.update(snapshots0, earth);
+        ScenarioState[] snapshots1 = createStates(10.000008, 1000.0, 11111.11, 22222.22, 33333.33, 77777.77, 88888.88, 99999.99);
+        velocity.update(snapshots1, earth);
+        ScenarioState[] snapshots2 = createStates(20.0, 1000.0, 44444.44, 55555.55, 66666.66, 11111.11, 22222.22, 33333.33);
+        velocity.update(snapshots2, earth);
+        position.update(snapshots2, earth);
         monitor.stopMonitoring();
         String[] lines = out.toString().split(System.getProperty("line.separator"));
         Assert.assertEquals(12, lines.length);
@@ -155,16 +158,15 @@ public class CsvFileMonitorTest {
         mass.register(monitor);
         position.register(monitor);
         velocity.register(monitor);
-        Snapshot[] snapshots = createSnapshots(10.0, 1000.0, 44444.44, 55555.55, 66666.66, 11111.11, 22222.22, 33333.33);
-        mass.update(snapshots);
-        velocity.update(snapshots);
-        position.update(snapshots);
+        ScenarioState[] snapshots = createStates(10.0, 1000.0, 44444.44, 55555.55, 66666.66, 11111.11, 22222.22, 33333.33);
+        mass.update(snapshots, earth);
+        velocity.update(snapshots, earth);
         MonitorableSKData.CYCLES_NUMBER.register(monitor);
     }
 
-    private Snapshot[] createSnapshots(final double dt, final double mass,
-                                       final double x,  final double y,  final double z,
-                                       final double vx, final double vy, final double vz)
+    private ScenarioState[] createStates(final double dt, final double mass,
+                                         final double x,  final double y,  final double z,
+                                         final double vx, final double vy, final double vz)
         throws OrekitException {
         PVCoordinates pv = new PVCoordinates(new Vector3D(x, y, z),
                                              new Vector3D(vx, vy, vz));
@@ -172,29 +174,32 @@ public class CsvFileMonitorTest {
                                          AbsoluteDate.J2000_EPOCH.shiftedBy(dt * Constants.JULIAN_DAY),
                                          Constants.EIGEN5C_EARTH_MU);
         SpacecraftState state = new SpacecraftState(orbit, mass);
-        BodyShape earth = new OneAxisEllipsoid(Constants.WGS84_EARTH_EQUATORIAL_RADIUS,
-                                               Constants.WGS84_EARTH_FLATTENING,
-                                               FramesFactory.getITRF2008());
-        return new Snapshot[] { new Snapshot(state, 0, 0.0, 0, 0.0, 0.0, 1, earth) };
+        return new ScenarioState[] {
+            new ScenarioState(1, state)
+        };
     }
 
     @Before
-    public void setUp() {
+    public void setUp() throws OrekitException {
+        Utils.setDataRoot("orekit-data");
         out      = new ByteArrayOutputStream();
         format   = new DecimalFormat("#0.00", new DecimalFormatSymbols(Locale.US));
         mass     = MonitorableSKData.SPACECRAFT_MASS;
         position = MonitorableSKData.POSITION_EME2000;
         velocity = MonitorableSKData.VELOCITY_EME2000;
+        earth    = new OneAxisEllipsoid(Constants.WGS84_EARTH_EQUATORIAL_RADIUS,
+                                        Constants.WGS84_EARTH_FLATTENING,
+                                        FramesFactory.getITRF2008());
     }
 
     @After
     public void tearDown() {
-        Utils.setDataRoot("orekit-data");
         out      = null;
         format   = null;
         mass     = null;
         position = null;
         velocity = null;
+        earth    = null;
     }
 
 }
