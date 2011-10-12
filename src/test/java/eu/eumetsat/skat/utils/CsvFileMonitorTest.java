@@ -9,13 +9,21 @@ import java.util.Locale;
 
 import junit.framework.Assert;
 
+import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.orekit.Utils;
+import org.orekit.bodies.BodyShape;
+import org.orekit.bodies.OneAxisEllipsoid;
 import org.orekit.errors.OrekitException;
+import org.orekit.frames.FramesFactory;
+import org.orekit.orbits.CartesianOrbit;
+import org.orekit.orbits.Orbit;
+import org.orekit.propagation.SpacecraftState;
 import org.orekit.time.AbsoluteDate;
 import org.orekit.utils.Constants;
+import org.orekit.utils.PVCoordinates;
 
 
 public class CsvFileMonitorTest {
@@ -57,12 +65,12 @@ public class CsvFileMonitorTest {
         Assert.assertEquals("# ", lines[1]);
         Assert.assertEquals("# column 1: date offset since 2000-01-01T11:58:55.816", lines[2]);
         Assert.assertEquals("# column 2: spacecraft mass",        lines[3]);
-        Assert.assertEquals("# column 3: position[0]", lines[4]);
-        Assert.assertEquals("# column 4: position[1]", lines[5]);
-        Assert.assertEquals("# column 5: position[2]", lines[6]);
-        Assert.assertEquals("# column 6: velocity[0]", lines[7]);
-        Assert.assertEquals("# column 7: velocity[1]", lines[8]);
-        Assert.assertEquals("# column 8: velocity[2]", lines[9]);
+        Assert.assertEquals("# column 3: position eme2000[0]", lines[4]);
+        Assert.assertEquals("# column 4: position eme2000[1]", lines[5]);
+        Assert.assertEquals("# column 5: position eme2000[2]", lines[6]);
+        Assert.assertEquals("# column 6: velocity eme2000[0]", lines[7]);
+        Assert.assertEquals("# column 7: velocity eme2000[1]", lines[8]);
+        Assert.assertEquals("# column 8: velocity eme2000[2]", lines[9]);
     }
 
     @Test
@@ -71,13 +79,14 @@ public class CsvFileMonitorTest {
         mass.register(monitor);
         position.register(monitor);
         velocity.register(monitor);
-        AbsoluteDate t0 = AbsoluteDate.J2000_EPOCH.shiftedBy(10.0 * Constants.JULIAN_DAY);
-        mass.setDateAndValue(t0,     new double[] { 1000.0 });
-        velocity.setDateAndValue(t0, new double[] { 44444.44, 55555.55, 66666.66 });
-        position.setDateAndValue(t0, new double[] { 11111.11, 22222.22, 33333.33 });
-        AbsoluteDate t1 = AbsoluteDate.J2000_EPOCH.shiftedBy(20.0 * Constants.JULIAN_DAY);
-        velocity.setDateAndValue(t1, new double[] { 11111.11, 22222.22, 33333.33 });
-        position.setDateAndValue(t1, new double[] { 44444.44, 55555.55, 66666.66 });
+        Snapshot[] snapshots0 = createSnapshots(10.0, 1000.0, 11111.11, 22222.22, 33333.33, 44444.44, 55555.55, 66666.66);
+        mass.update(snapshots0);
+        velocity.update(snapshots0);
+        position.update(snapshots0);
+        Snapshot[] snapshots1 = createSnapshots(20.0, 1000.0, 44444.44, 55555.55, 66666.66, 11111.11, 22222.22, 33333.33);
+        mass.update(snapshots1);
+        velocity.update(snapshots1);
+        position.update(snapshots1);
         monitor.stopMonitoring();
         String[] lines = out.toString().split(System.getProperty("line.separator"));
         Assert.assertEquals(12, lines.length);
@@ -91,15 +100,15 @@ public class CsvFileMonitorTest {
         mass.register(monitor);
         position.register(monitor);
         velocity.register(monitor);
-        AbsoluteDate t0 = AbsoluteDate.J2000_EPOCH.shiftedBy(10.0 * Constants.JULIAN_DAY);
-        mass.setDateAndValue(t0,     new double[] { 1000.0 });
-        velocity.setDateAndValue(t0, new double[] { 44444.44, 55555.55, 66666.66 });
-        position.setDateAndValue(t0, new double[] { 11111.11, 22222.22, 33333.33 });
-        AbsoluteDate t1 = AbsoluteDate.J2000_EPOCH.shiftedBy(10.000008 * Constants.JULIAN_DAY);
-        velocity.setDateAndValue(t1, new double[] { 77777.77, 88888.88, 99999.99 });
-        AbsoluteDate t2 = AbsoluteDate.J2000_EPOCH.shiftedBy(20.0 * Constants.JULIAN_DAY);
-        velocity.setDateAndValue(t2, new double[] { 11111.11, 22222.22, 33333.33 });
-        position.setDateAndValue(t2, new double[] { 44444.44, 55555.55, 66666.66 });
+        Snapshot[] snapshots0 = createSnapshots(10.0, 1000.0, 11111.11, 22222.22, 33333.33, 44444.44, 55555.55, 66666.66);
+        mass.update(snapshots0);
+        velocity.update(snapshots0);
+        position.update(snapshots0);
+        Snapshot[] snapshots1 = createSnapshots(10.000008, 1000.0, 11111.11, 22222.22, 33333.33, 77777.77, 88888.88, 99999.99);
+        velocity.update(snapshots1);
+        Snapshot[] snapshots2 = createSnapshots(20.0, 1000.0, 44444.44, 55555.55, 66666.66, 11111.11, 22222.22, 33333.33);
+        velocity.update(snapshots2);
+        position.update(snapshots2);
         monitor.stopMonitoring();
         String[] lines = out.toString().split(System.getProperty("line.separator"));
         Assert.assertEquals(12, lines.length);
@@ -146,11 +155,27 @@ public class CsvFileMonitorTest {
         mass.register(monitor);
         position.register(monitor);
         velocity.register(monitor);
-        AbsoluteDate t0 = AbsoluteDate.J2000_EPOCH.shiftedBy(10.0 * Constants.JULIAN_DAY);
-        mass.setDateAndValue(t0,     new double[] { 1000.0 });
-        velocity.setDateAndValue(t0, new double[] { 44444.44, 55555.55, 66666.66 });
-        position.setDateAndValue(t0, new double[] { 11111.11, 22222.22, 33333.33 });
+        Snapshot[] snapshots = createSnapshots(10.0, 1000.0, 44444.44, 55555.55, 66666.66, 11111.11, 22222.22, 33333.33);
+        mass.update(snapshots);
+        velocity.update(snapshots);
+        position.update(snapshots);
         MonitorableSKData.CYCLES_NUMBER.register(monitor);
+    }
+
+    private Snapshot[] createSnapshots(final double dt, final double mass,
+                                       final double x,  final double y,  final double z,
+                                       final double vx, final double vy, final double vz)
+        throws OrekitException {
+        PVCoordinates pv = new PVCoordinates(new Vector3D(x, y, z),
+                                             new Vector3D(vx, vy, vz));
+        Orbit orbit = new CartesianOrbit(pv, FramesFactory.getEME2000(),
+                                         AbsoluteDate.J2000_EPOCH.shiftedBy(dt * Constants.JULIAN_DAY),
+                                         Constants.EIGEN5C_EARTH_MU);
+        SpacecraftState state = new SpacecraftState(orbit, mass);
+        BodyShape earth = new OneAxisEllipsoid(Constants.WGS84_EARTH_EQUATORIAL_RADIUS,
+                                               Constants.WGS84_EARTH_FLATTENING,
+                                               FramesFactory.getITRF2008());
+        return new Snapshot[] { new Snapshot(state, 0, 0.0, 0, 0.0, 0.0, 1, earth) };
     }
 
     @Before
@@ -158,8 +183,8 @@ public class CsvFileMonitorTest {
         out      = new ByteArrayOutputStream();
         format   = new DecimalFormat("#0.00", new DecimalFormatSymbols(Locale.US));
         mass     = MonitorableSKData.SPACECRAFT_MASS;
-        position = MonitorableSKData.POSITION;
-        velocity = MonitorableSKData.VELOCITY;
+        position = MonitorableSKData.POSITION_EME2000;
+        velocity = MonitorableSKData.VELOCITY_EME2000;
     }
 
     @After
