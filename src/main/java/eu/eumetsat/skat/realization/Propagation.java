@@ -301,7 +301,7 @@ public class Propagation implements ScenarioComponent {
         throws OrekitException {
         final Vector3D spacecraftPosition = state.getPVCoordinates(eme2000).getPosition();
         final Vector3D sunPosition = sun.getPVCoordinates(state.getDate(), eme2000).getPosition();
-        final double dAlpha = sunPosition.getAlpha() - spacecraftPosition.getAlpha();
+        final double dAlpha = FastMath.PI + spacecraftPosition.getAlpha() - sunPosition.getAlpha();
         return 12.0 * MathUtils.normalizeAngle(dAlpha, FastMath.PI) / FastMath.PI;
     }
 
