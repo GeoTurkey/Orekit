@@ -861,6 +861,16 @@ It is updated by the updateStates methods of all scenario components.</body>
               <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_i5EutuRMEeCkjrkI4Jl04g" value="1"/>
             </ownedEnd>
           </packagedElement>
+          <packagedElement xmi:type="uml:Association" xmi:id="_9v9WUPXLEeCTIMie9DR2WQ" name="A_&lt;propagation>_&lt;monitorableDuo>" memberEnd="_9v9WUfXLEeCTIMie9DR2WQ _9v9WVPXLEeCTIMie9DR2WQ">
+            <ownedEnd xmi:id="_9v9WUfXLEeCTIMie9DR2WQ" name="propagation" type="_E3oZEN1hEeCO1uZVwIAJVg" association="_9v9WUPXLEeCTIMie9DR2WQ">
+              <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_9v9WUvXLEeCTIMie9DR2WQ" value="1"/>
+              <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_9v9WU_XLEeCTIMie9DR2WQ" value="1"/>
+            </ownedEnd>
+            <ownedEnd xmi:id="_9v9WVPXLEeCTIMie9DR2WQ" name="monitorableDuo" type="_9j7M0PXIEeCTIMie9DR2WQ" aggregation="shared" association="_9v9WUPXLEeCTIMie9DR2WQ">
+              <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_9v9WVfXLEeCTIMie9DR2WQ" value="*"/>
+              <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_9v9WVvXLEeCTIMie9DR2WQ"/>
+            </ownedEnd>
+          </packagedElement>
         </packagedElement>
         <packagedElement xmi:type="uml:Package" xmi:id="_E3pAIN1hEeCO1uZVwIAJVg" name="strategies">
           <ownedComment xmi:id="_yPuoYOBWEeCxMfzvkTl0-w" annotatedElement="_Pa2DsN1iEeCO1uZVwIAJVg">
@@ -1790,8 +1800,9 @@ It is updated by the updateStates methods of all scenario components.</body>
               <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_hButhuBlEeCxMfzvkTl0-w" value="1"/>
             </ownedEnd>
           </packagedElement>
-          <packagedElement xmi:type="uml:Interface" xmi:id="_dhPWIN6gEeCJNKrGCyr87w" name="Monitorable">
+          <packagedElement xmi:type="uml:Interface" xmi:id="_dhPWIN6gEeCJNKrGCyr87w" name="MonitorableMono">
             <ownedOperation xmi:id="_wNeKseRREeCC7oKz25Mm0Q" name="register">
+              <ownedParameter xmi:id="_M6AmAPXJEeCTIMie9DR2WQ" name="nbSpacecrafts" type="_FDK6sN1hEeCO1uZVwIAJVg"/>
               <ownedParameter xmi:id="_N90OAORSEeCC7oKz25Mm0Q" name="monitor" visibility="public" type="_mNd0gN6iEeCJNKrGCyr87w">
                 <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_N90OAeRSEeCC7oKz25Mm0Q" value="1"/>
                 <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_N90OAuRSEeCC7oKz25Mm0Q" value="1"/>
@@ -1814,9 +1825,10 @@ It is updated by the updateStates methods of all scenario components.</body>
                 <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_26xTs-RSEeCC7oKz25Mm0Q" value="*"/>
                 <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_26xTtORSEeCC7oKz25Mm0Q" value="1"/>
               </ownedParameter>
+              <ownedParameter xmi:id="_pHdIoPXIEeCTIMie9DR2WQ" name="spacecraftIndex" type="_FDK6sN1hEeCO1uZVwIAJVg"/>
             </ownedOperation>
           </packagedElement>
-          <packagedElement xmi:type="uml:Interface" xmi:id="_mNd0gN6iEeCJNKrGCyr87w" name="Monitor">
+          <packagedElement xmi:type="uml:Interface" xmi:id="_mNd0gN6iEeCJNKrGCyr87w" name="MonitorMono">
             <ownedOperation xmi:id="_yrPNoORREeCC7oKz25Mm0Q" name="valueChanged">
               <ownedParameter xmi:id="_XrZGkORSEeCC7oKz25Mm0Q" name="monitorable" visibility="public" type="_dhPWIN6gEeCJNKrGCyr87w">
                 <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_XrZGkeRSEeCC7oKz25Mm0Q" value="1"/>
@@ -1841,8 +1853,54 @@ It is updated by the updateStates methods of all scenario components.</body>
               <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_B9OgJt6jEeCJNKrGCyr87w" value="1"/>
             </ownedEnd>
           </packagedElement>
-          <packagedElement xmi:type="uml:Class" xmi:id="_mmUtcORVEeCC7oKz25Mm0Q" name="CsvFileMonitor" clientDependency="_sk5ksORVEeCC7oKz25Mm0Q">
+          <packagedElement xmi:type="uml:Class" xmi:id="_mmUtcORVEeCC7oKz25Mm0Q" name="CsvFileMonitor" clientDependency="_sk5ksORVEeCC7oKz25Mm0Q _GSd00PXKEeCTIMie9DR2WQ">
             <interfaceRealization xmi:id="_sk5ksORVEeCC7oKz25Mm0Q" name="InterfaceRealization1" supplier="_mNd0gN6iEeCJNKrGCyr87w" client="_mmUtcORVEeCC7oKz25Mm0Q" contract="_mNd0gN6iEeCJNKrGCyr87w"/>
+            <interfaceRealization xmi:id="_GSd00PXKEeCTIMie9DR2WQ" name="InterfaceRealization2" supplier="_hptIMPXJEeCTIMie9DR2WQ" client="_mmUtcORVEeCC7oKz25Mm0Q" contract="_hptIMPXJEeCTIMie9DR2WQ"/>
+          </packagedElement>
+          <packagedElement xmi:type="uml:Interface" xmi:id="_9j7M0PXIEeCTIMie9DR2WQ" name="MonitorableDuo">
+            <ownedOperation xmi:id="_D7d9sPXJEeCTIMie9DR2WQ" name="register">
+              <ownedParameter xmi:id="_buKW0PXJEeCTIMie9DR2WQ" name="nbSpacecrafts" visibility="public" type="_buJvwPXJEeCTIMie9DR2WQ">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_buKW0fXJEeCTIMie9DR2WQ" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_buKW0vXJEeCTIMie9DR2WQ" value="1"/>
+              </ownedParameter>
+              <ownedParameter xmi:id="_dVzDAPXJEeCTIMie9DR2WQ" name="monitor" type="_hptIMPXJEeCTIMie9DR2WQ"/>
+            </ownedOperation>
+            <ownedOperation xmi:id="_F6kusPXJEeCTIMie9DR2WQ" name="getName">
+              <ownedParameter xmi:id="_ZOmHoPXKEeCTIMie9DR2WQ" visibility="public" type="_E9voId1hEeCO1uZVwIAJVg" direction="return">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_ZOmHofXKEeCTIMie9DR2WQ" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_ZOmHovXKEeCTIMie9DR2WQ" value="1"/>
+              </ownedParameter>
+            </ownedOperation>
+            <ownedOperation xmi:id="_GtO6sPXJEeCTIMie9DR2WQ" name="getDate">
+              <ownedParameter xmi:id="_eIl8cPXKEeCTIMie9DR2WQ" name="Parameter1" type="_E9bfEN1hEeCO1uZVwIAJVg" direction="return"/>
+            </ownedOperation>
+            <ownedOperation xmi:id="_Hl19sPXJEeCTIMie9DR2WQ" name="getValue">
+              <ownedParameter xmi:id="_kDxhcPXKEeCTIMie9DR2WQ" name="spacecraftIndex1" type="_FDK6sN1hEeCO1uZVwIAJVg"/>
+              <ownedParameter xmi:id="_kXE38PXKEeCTIMie9DR2WQ" name="spacecraftIndex2" type="_FDK6sN1hEeCO1uZVwIAJVg"/>
+              <ownedParameter xmi:id="_rOsQAPXKEeCTIMie9DR2WQ" visibility="public" type="_26xTseRSEeCC7oKz25Mm0Q" isUnique="false" direction="return">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_rOsQAfXKEeCTIMie9DR2WQ" value="*"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_rOsQAvXKEeCTIMie9DR2WQ" value="1"/>
+              </ownedParameter>
+            </ownedOperation>
+          </packagedElement>
+          <packagedElement xmi:type="uml:Interface" xmi:id="_hptIMPXJEeCTIMie9DR2WQ" name="MonitorDuo">
+            <ownedOperation xmi:id="_DWNCkPXLEeCTIMie9DR2WQ" name="startMonitoring">
+              <ownedParameter xmi:id="_HhqWYPXLEeCTIMie9DR2WQ" name="monitorable" type="_9j7M0PXIEeCTIMie9DR2WQ"/>
+            </ownedOperation>
+            <ownedOperation xmi:id="_EmPuIPXLEeCTIMie9DR2WQ" name="valueChanged">
+              <ownedParameter xmi:id="_Nha5YPXLEeCTIMie9DR2WQ" name="monitorable" type="_9j7M0PXIEeCTIMie9DR2WQ"/>
+            </ownedOperation>
+            <ownedOperation xmi:id="_Fex4oPXLEeCTIMie9DR2WQ" name="stopMonitoring"/>
+          </packagedElement>
+          <packagedElement xmi:type="uml:Association" xmi:id="_sPMgMPXJEeCTIMie9DR2WQ" name="A_&lt;monitorableDuo>_&lt;monitorDuo>" memberEnd="_sPMgMfXJEeCTIMie9DR2WQ _sPMgNPXJEeCTIMie9DR2WQ">
+            <ownedEnd xmi:id="_sPMgMfXJEeCTIMie9DR2WQ" name="monitorableDuo" type="_9j7M0PXIEeCTIMie9DR2WQ" association="_sPMgMPXJEeCTIMie9DR2WQ">
+              <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_sPMgMvXJEeCTIMie9DR2WQ" value="1"/>
+              <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_sPMgM_XJEeCTIMie9DR2WQ" value="1"/>
+            </ownedEnd>
+            <ownedEnd xmi:id="_sPMgNPXJEeCTIMie9DR2WQ" name="monitors" type="_hptIMPXJEeCTIMie9DR2WQ" aggregation="shared" association="_sPMgMPXJEeCTIMie9DR2WQ">
+              <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_sPMgNfXJEeCTIMie9DR2WQ" value="*"/>
+              <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_sPMgNvXJEeCTIMie9DR2WQ"/>
+            </ownedEnd>
           </packagedElement>
         </packagedElement>
         <packagedElement xmi:type="uml:Usage" xmi:id="_FKqCwN1hEeCO1uZVwIAJVg" supplier="_E9IkIN1hEeCO1uZVwIAJVg" client="_E1Ai4d1hEeCO1uZVwIAJVg"/>
@@ -2097,5 +2155,6 @@ It is updated by the updateStates methods of all scenario components.</body>
   <packagedElement xmi:type="uml:Model" xmi:id="_26xTsORSEeCC7oKz25Mm0Q" name="Java Types View">
     <packagedElement xmi:type="uml:PrimitiveType" xmi:id="_26xTseRSEeCC7oKz25Mm0Q" name="double"/>
     <packagedElement xmi:type="uml:PrimitiveType" xmi:id="_1_1DgORUEeCC7oKz25Mm0Q" name="void"/>
+    <packagedElement xmi:type="uml:PrimitiveType" xmi:id="_buJvwPXJEeCTIMie9DR2WQ" name="int"/>
   </packagedElement>
 </uml:Model>

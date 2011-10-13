@@ -32,21 +32,21 @@ public class CsvFileMonitorTest {
 
     private ByteArrayOutputStream out;
     private Format format;
-    private MonitorableSKData mass;
-    private MonitorableSKData position;
-    private MonitorableSKData velocity;
+    private MonitorableMonoSKData mass;
+    private MonitorableMonoSKData position;
+    private MonitorableMonoSKData velocity;
     private BodyShape earth;
 
     @Test
     public void testEmpty() throws OrekitException {
-        CsvFileMonitor monitor = new CsvFileMonitor(out, null, ",", format, AbsoluteDate.J2000_EPOCH, 1.0);
+        CsvFileMonitor monitor = new CsvFileMonitor(0, out, null, ",", format, AbsoluteDate.J2000_EPOCH, 1.0);
         monitor.stopMonitoring();
         Assert.assertEquals("", out.toString());
     }
 
     @Test
     public void testSmallHeader() throws OrekitException {
-        CsvFileMonitor monitor = new CsvFileMonitor(out, "# ", ",", format, AbsoluteDate.J2000_EPOCH, 1.0);
+        CsvFileMonitor monitor = new CsvFileMonitor(0, out, "# ", ",", format, AbsoluteDate.J2000_EPOCH, 1.0);
         monitor.stopMonitoring();
         String[] lines = out.toString().split(System.getProperty("line.separator"));
         Assert.assertEquals(3, lines.length);
@@ -57,10 +57,10 @@ public class CsvFileMonitorTest {
 
     @Test
     public void testNormalHeader() throws OrekitException {
-        CsvFileMonitor monitor = new CsvFileMonitor(out, "# ", ",", format, AbsoluteDate.J2000_EPOCH, 1.0);
-        mass.register(monitor);
-        position.register(monitor);
-        velocity.register(monitor);
+        CsvFileMonitor monitor = new CsvFileMonitor(0, out, "# ", ",", format, AbsoluteDate.J2000_EPOCH, 1.0);
+        mass.register(1, monitor);
+        position.register(1, monitor);
+        velocity.register(1, monitor);
         monitor.stopMonitoring();
         String[] lines = out.toString().split(System.getProperty("line.separator"));
         Assert.assertEquals(10, lines.length);
@@ -78,10 +78,10 @@ public class CsvFileMonitorTest {
 
     @Test
     public void testSmallNominalCase() throws OrekitException {
-        CsvFileMonitor monitor = new CsvFileMonitor(out, "# ", ",", format, AbsoluteDate.J2000_EPOCH, 1.0);
-        mass.register(monitor);
-        position.register(monitor);
-        velocity.register(monitor);
+        CsvFileMonitor monitor = new CsvFileMonitor(0, out, "# ", ",", format, AbsoluteDate.J2000_EPOCH, 1.0);
+        mass.register(1, monitor);
+        position.register(1, monitor);
+        velocity.register(1, monitor);
         ScenarioState[] snapshots0 = createStates(10.0, 1000.0, 11111.11, 22222.22, 33333.33, 44444.44, 55555.55, 66666.66);
         mass.update(snapshots0, earth);
         velocity.update(snapshots0, earth);
@@ -99,10 +99,10 @@ public class CsvFileMonitorTest {
 
     @Test
     public void testShortStep() throws OrekitException {
-        CsvFileMonitor monitor = new CsvFileMonitor(out, "# ", ",", format, AbsoluteDate.J2000_EPOCH, 1.0);
-        mass.register(monitor);
-        position.register(monitor);
-        velocity.register(monitor);
+        CsvFileMonitor monitor = new CsvFileMonitor(0, out, "# ", ",", format, AbsoluteDate.J2000_EPOCH, 1.0);
+        mass.register(1, monitor);
+        position.register(1, monitor);
+        velocity.register(1, monitor);
         ScenarioState[] snapshots0 = createStates(10.0, 1000.0, 11111.11, 22222.22, 33333.33, 44444.44, 55555.55, 66666.66);
         mass.update(snapshots0, earth);
         velocity.update(snapshots0, earth);
@@ -121,13 +121,13 @@ public class CsvFileMonitorTest {
 
     @Test(expected=IllegalArgumentException.class)
     public void testDuplicatedMonitorable() throws OrekitException {
-        CsvFileMonitor monitor = new CsvFileMonitor(out, "# ", ",", format, AbsoluteDate.J2000_EPOCH, 1.0);
-        mass.register(monitor);
-        position.register(monitor);
-        velocity.register(monitor);
-        new Monitorable(){
+        CsvFileMonitor monitor = new CsvFileMonitor(0, out, "# ", ",", format, AbsoluteDate.J2000_EPOCH, 1.0);
+        mass.register(1, monitor);
+        position.register(1, monitor);
+        velocity.register(1, monitor);
+        new MonitorableMono(){
 
-            public void register(Monitor monitor) {
+            public void register(final int nbSpacecrafts, final MonitorMono monitor) {
                 monitor.startMonitoring(this);
             }
 
@@ -139,29 +139,29 @@ public class CsvFileMonitorTest {
                 return mass.getDate();
             }
 
-            public double[] getValue() {
-                return mass.getValue();
+            public double[] getValue(int index) {
+                return mass.getValue(index);
             }
             
-        }.register(monitor);
+        }.register(1, monitor);
     }
 
     @Test(expected=IllegalArgumentException.class)
     public void testNotMonitored() throws OrekitException {
-        CsvFileMonitor monitor = new CsvFileMonitor(out, "# ", ",", format, AbsoluteDate.J2000_EPOCH, 1.0);
-        monitor.valueChanged(MonitorableSKData.CYCLES_NUMBER);
+        CsvFileMonitor monitor = new CsvFileMonitor(0, out, "# ", ",", format, AbsoluteDate.J2000_EPOCH, 1.0);
+        monitor.valueChanged(MonitorableMonoSKData.CYCLES_NUMBER);
     }
 
     @Test(expected=IllegalStateException.class)
     public void testMonitoringAlreadyStarted() throws OrekitException {
-        CsvFileMonitor monitor = new CsvFileMonitor(out, "# ", ",", format, AbsoluteDate.J2000_EPOCH, 1.0);
-        mass.register(monitor);
-        position.register(monitor);
-        velocity.register(monitor);
+        CsvFileMonitor monitor = new CsvFileMonitor(0, out, "# ", ",", format, AbsoluteDate.J2000_EPOCH, 1.0);
+        mass.register(1, monitor);
+        position.register(1, monitor);
+        velocity.register(1, monitor);
         ScenarioState[] snapshots = createStates(10.0, 1000.0, 44444.44, 55555.55, 66666.66, 11111.11, 22222.22, 33333.33);
         mass.update(snapshots, earth);
         velocity.update(snapshots, earth);
-        MonitorableSKData.CYCLES_NUMBER.register(monitor);
+        MonitorableMonoSKData.CYCLES_NUMBER.register(1, monitor);
     }
 
     private ScenarioState[] createStates(final double dt, final double mass,
@@ -184,9 +184,9 @@ public class CsvFileMonitorTest {
         Utils.setDataRoot("orekit-data");
         out      = new ByteArrayOutputStream();
         format   = new DecimalFormat("#0.00", new DecimalFormatSymbols(Locale.US));
-        mass     = MonitorableSKData.SPACECRAFT_MASS;
-        position = MonitorableSKData.POSITION_EME2000;
-        velocity = MonitorableSKData.VELOCITY_EME2000;
+        mass     = MonitorableMonoSKData.SPACECRAFT_MASS;
+        position = MonitorableMonoSKData.POSITION_EME2000;
+        velocity = MonitorableMonoSKData.VELOCITY_EME2000;
         earth    = new OneAxisEllipsoid(Constants.WGS84_EARTH_EQUATORIAL_RADIUS,
                                         Constants.WGS84_EARTH_FLATTENING,
                                         FramesFactory.getITRF2008());

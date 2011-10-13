@@ -32,7 +32,7 @@ import org.orekit.time.AbsoluteDate;
 
 import eu.eumetsat.skat.scenario.ScenarioComponent;
 import eu.eumetsat.skat.scenario.ScenarioState;
-import eu.eumetsat.skat.utils.MonitorableSKData;
+import eu.eumetsat.skat.utils.MonitorableMonoSKData;
 import eu.eumetsat.skat.utils.SkatException;
 
 /**
@@ -62,7 +62,7 @@ public class Propagation implements ScenarioComponent {
     private final double outputstep;
 
     /** Monitored values. */
-    private final List<MonitorableSKData> monitorables;
+    private final List<MonitorableMonoSKData> monitorables;
 
     /** Simple constructor.
      * @param propagator propagator to use
@@ -76,13 +76,13 @@ public class Propagation implements ScenarioComponent {
         this.earth        = earth;
         this.sun          = sun;
         this.outputstep   = outputStep;
-        this.monitorables = new ArrayList<MonitorableSKData>();
+        this.monitorables = new ArrayList<MonitorableMonoSKData>();
     }
 
-    /** Monitor a station-keeping data.
+    /** MonitorMono a station-keeping data.
      * @param key key of station-keeping data to monitor
      */
-    public void monitor(final MonitorableSKData key) {
+    public void monitor(final MonitorableMonoSKData key) {
         monitorables.add(key);
     }
 
@@ -305,7 +305,7 @@ public class Propagation implements ScenarioComponent {
         return 12.0 * MathUtils.normalizeAngle(dAlpha, FastMath.PI) / FastMath.PI;
     }
 
-    /** Monitor the station-keeping data up to current date.
+    /** MonitorMono the station-keeping data up to current date.
      * @param date current date
      * @param ephemerides spacecrafts ephemerides
      * @param states states array to update
@@ -323,7 +323,7 @@ public class Propagation implements ScenarioComponent {
         }
 
         // perform monitoring
-        for (final MonitorableSKData monitorable : monitorables) {
+        for (final MonitorableMonoSKData monitorable : monitorables) {
             monitorable.update(states, earth);
         }
 

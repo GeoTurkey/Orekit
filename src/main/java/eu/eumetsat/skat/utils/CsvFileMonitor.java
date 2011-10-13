@@ -18,7 +18,7 @@ import org.orekit.time.TimeScale;
 import org.orekit.time.TimeScalesFactory;
 import org.orekit.utils.Constants;
 
-/** Monitor for time-dependent values writing their evolution in a csv or tsv file.
+/** MonitorMono for time-dependent values writing their evolution in a csv or tsv file.
  * <p>
  * CSV stands for Comma Separated Values and TSV stands for Tab Separated Values.
  * Despite its name, this class support any string as a separator, as long as there
@@ -50,7 +50,13 @@ import org.orekit.utils.Constants;
  * 
  * @author Luc Maisonobe
  */
-public class CsvFileMonitor implements Monitor {
+public class CsvFileMonitor implements MonitorMono, MonitorDuo {
+
+    /** Index of the first (or unique) monitored spacecraft. */
+    private final int index1;
+
+    /** Index of the second monitored spacecraft. */
+    private final int index2;
 
     /** Output file. */
     private final PrintStream out;
@@ -83,6 +89,7 @@ public class CsvFileMonitor implements Monitor {
     private String[] currentFields;
 
     /** Simple constructor.
+     * @param index index of the unique monitored spacecraft
      * @param outputStream output stream
      * @param headerMarker marker for starting header lines, if null no header
      * will be generated (a typical marker is "# ")
@@ -93,11 +100,35 @@ public class CsvFileMonitor implements Monitor {
      * in the same line
      * @exception OrekitException if UTC time scale cannot be retrieved
      */
-    public CsvFileMonitor(final OutputStream outputStream, final String headerMarker,
+    public CsvFileMonitor(final int index,
+                          final OutputStream outputStream, final String headerMarker,
+                          final String separator, final Format format,
+                          final AbsoluteDate referenceDate, final double dateTolerance)
+        throws OrekitException {
+        this(index, -1, outputStream, headerMarker, separator, format, referenceDate, dateTolerance);
+    }
+
+    /** Simple constructor.
+     * @param index1 index of the first monitored spacecraft
+     * @param index2 index of the second monitored spacecraft
+     * @param outputStream output stream
+     * @param headerMarker marker for starting header lines, if null no header
+     * will be generated (a typical marker is "# ")
+     * @param separator fields separator (typical separators are "," or "\t")
+     * @param format format to use for writing fields
+     * @param referenceDate reference date to compute offset in first column
+     * @param dateTolerance tolerance in seconds below which values are gathered
+     * in the same line
+     * @exception OrekitException if UTC time scale cannot be retrieved
+     */
+    public CsvFileMonitor(final int index1, final int index2,
+                          final OutputStream outputStream, final String headerMarker,
                           final String separator, final Format format,
                           final AbsoluteDate referenceDate, final double dateTolerance)
         throws OrekitException {
 
+        this.index1        = index1;
+        this.index2        = index2;
         this.out           = new PrintStream(outputStream);
         this.headerMarker  = headerMarker;
         this.separator     = separator;
@@ -128,12 +159,26 @@ public class CsvFileMonitor implements Monitor {
     }
 
     /** {@inheritDoc} */
-    public void startMonitoring(Monitorable monitorable)
+    public void startMonitoring(MonitorableMono monitorable)
         throws IllegalArgumentException, IllegalStateException {
+        startMonitoring(monitorable.getValue(index1).length, monitorable.getName());
+    }
 
-        // retrieve monitorable meta-data
-        final String name = monitorable.getName();
-        final int n       = monitorable.getValue().length;
+    /** {@inheritDoc} */
+    public void startMonitoring(MonitorableDuo monitorable)
+        throws IllegalArgumentException, IllegalStateException {
+        startMonitoring(monitorable.getValue(index1, index2).length, monitorable.getName());
+    }
+
+    /** Notifies a monitor that monitoring should start for the specified value.
+     * @param dimension dimension of the monitored parameter
+     * @param name name of the monitored parameter
+     * @exception IllegalArgumentException if a {@link MonitorableMono} with the same name
+     * is already monitored
+     * @exception IllegalStateException if {@link #valueChanged(MonitorableMono)
+     * valueChanged} has already been called at least once.
+     */
+    private void startMonitoring(final int dimension, final String name) {
 
         // check if we have started monitoring or not
         if (currentDate != null) {
@@ -141,16 +186,16 @@ public class CsvFileMonitor implements Monitor {
         }
 
         // check if a similar  value is already monitored
-        if (firstColumns.containsKey(monitorable.getName())) {
+        if (firstColumns.containsKey(name)) {
             throw SkatException.createIllegalArgumentException(SkatMessages.VALUE_ALREADY_MONITORED, name);
         }
 
         // write header
         if (headerMarker != null) {
-            if (n == 1) {
+            if (dimension == 1) {
                 out.println(headerMarker + "column " + (columns + 2) + ": " + name);
             } else {
-                for (int i = 0; i < n; ++i) {
+                for (int i = 0; i < dimension; ++i) {
                     out.println(headerMarker + "column " + (columns + i + 2) + ": " + name + "[" + i + "]");
                 }
             }
@@ -158,35 +203,68 @@ public class CsvFileMonitor implements Monitor {
 
         // assign columns to the monitorable
         firstColumns.put(name, columns);
-        columns += n;
+        columns += dimension;
 
     }
 
     /** {@inheritDoc} */
-    public void valueChanged(Monitorable monitorable) {
+    public void valueChanged(MonitorableMono monitorable) {
+
+        final String name = monitorable.getName();
 
         // check if the monitorable is monitored
-        Integer first = firstColumns.get(monitorable.getName());
+        Integer first = firstColumns.get(name);
         if (first == null) {
             throw SkatException.createIllegalArgumentException(SkatMessages.VALUE_NOT_MONITORED,
-                                                               monitorable.getName());
+                                                               name);
         }
+
+        // we know the monitorable is managed, we can extract its data
+        valueChanged(first, monitorable.getDate(), monitorable.getValue(index1));
+
+    }
+
+    /** {@inheritDoc} */
+    public void valueChanged(MonitorableDuo monitorable) {
+
+        final String name = monitorable.getName();
+
+        // check if the monitorable is monitored
+        Integer first = firstColumns.get(name);
+        if (first == null) {
+            throw SkatException.createIllegalArgumentException(SkatMessages.VALUE_NOT_MONITORED,
+                                                               name);
+        }
+
+        // we know the monitorable is managed, we can extract its data
+        valueChanged(first, monitorable.getDate(), monitorable.getValue(index1, index2));
+
+    }
+
+    /** Monitor a time-dependent value.
+     * <p>
+     * This method is called each time a monitored value changes.
+     * </p>
+     * @param first first column of the monitorable
+     * @param date current date
+     * @param value time-dependent value
+     */
+    private void valueChanged(final int first, final AbsoluteDate date, final double[] value) {
 
         if (currentDate == null) {
             // this is the first time this method is called,
             // we initialize the fields array with dummy values
             currentFields = new String[columns];
             Arrays.fill(currentFields, format.format(Double.NaN));
-            currentDate = monitorable.getDate();
-        } else if (FastMath.abs(monitorable.getDate().durationFrom(currentDate)) > dateTolerance) {
+            currentDate = date;
+        } else if (FastMath.abs(date.durationFrom(currentDate)) > dateTolerance) {
             // the change date is far from the previous line,
             // we consider the previous line is completed, we can write it to the file
             writeCompletedLine();
-            currentDate = monitorable.getDate();
+            currentDate = date;
         }
 
         // update the fields assigned to the monitorable
-        final double[] value = monitorable.getValue();
         for (int i = 0; i < value.length; ++i) {
             currentFields[first + i] = format.format(value[i]); 
         }
