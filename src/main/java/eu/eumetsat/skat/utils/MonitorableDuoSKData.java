@@ -37,9 +37,9 @@ public enum MonitorableDuoSKData implements MonitorableDuo {
                                    final BodyShape earth, double[] data)
             throws OrekitException {
             final Vector3D otherP =
-                    otherState.getRealState().getPVCoordinates(FramesFactory.getEME2000()).getPosition();
+                    otherState.getRealStartState().getPVCoordinates(FramesFactory.getEME2000()).getPosition();
             final Vector3D referenceP =
-                    referenceState.getRealState().getPVCoordinates(FramesFactory.getEME2000()).getPosition();
+                    referenceState.getRealStartState().getPVCoordinates(FramesFactory.getEME2000()).getPosition();
             data[0] = otherP.distance(referenceP);
         }
 
@@ -53,9 +53,9 @@ public enum MonitorableDuoSKData implements MonitorableDuo {
                                    final BodyShape earth, double[] data)
             throws OrekitException {
             final Vector3D otherP =
-                    otherState.getRealState().getPVCoordinates(FramesFactory.getEME2000()).getPosition();
+                    otherState.getRealStartState().getPVCoordinates(FramesFactory.getEME2000()).getPosition();
             final Vector3D referenceP =
-                    referenceState.getRealState().getPVCoordinates(FramesFactory.getEME2000()).getPosition();
+                    referenceState.getRealStartState().getPVCoordinates(FramesFactory.getEME2000()).getPosition();
             data[0] = otherP.getX() - referenceP.getX();
             data[1] = otherP.getY() - referenceP.getY();
             data[2] = otherP.getZ() - referenceP.getZ();
@@ -71,9 +71,9 @@ public enum MonitorableDuoSKData implements MonitorableDuo {
                                    final BodyShape earth, double[] data)
             throws OrekitException {
             final Vector3D otherV =
-                    otherState.getRealState().getPVCoordinates(FramesFactory.getEME2000()).getVelocity();
+                    otherState.getRealStartState().getPVCoordinates(FramesFactory.getEME2000()).getVelocity();
             final Vector3D referenceV =
-                    referenceState.getRealState().getPVCoordinates(FramesFactory.getEME2000()).getVelocity();
+                    referenceState.getRealStartState().getPVCoordinates(FramesFactory.getEME2000()).getVelocity();
             data[0] = otherV.getX() - referenceV.getX();
             data[1] = otherV.getY() - referenceV.getY();
             data[2] = otherV.getZ() - referenceV.getZ();
@@ -89,9 +89,9 @@ public enum MonitorableDuoSKData implements MonitorableDuo {
                                    final BodyShape earth, double[] data)
             throws OrekitException {
             final Vector3D otherP =
-                    otherState.getRealState().getPVCoordinates(FramesFactory.getITRF2008()).getPosition();
+                    otherState.getRealStartState().getPVCoordinates(FramesFactory.getITRF2008()).getPosition();
             final Vector3D referenceP =
-                    referenceState.getRealState().getPVCoordinates(FramesFactory.getITRF2008()).getPosition();
+                    referenceState.getRealStartState().getPVCoordinates(FramesFactory.getITRF2008()).getPosition();
             data[0] = otherP.getX() - referenceP.getX();
             data[1] = otherP.getY() - referenceP.getY();
             data[2] = otherP.getZ() - referenceP.getZ();
@@ -107,9 +107,9 @@ public enum MonitorableDuoSKData implements MonitorableDuo {
                                    final BodyShape earth, double[] data)
             throws OrekitException {
             final Vector3D otherV =
-                    otherState.getRealState().getPVCoordinates(FramesFactory.getITRF2008()).getVelocity();
+                    otherState.getRealStartState().getPVCoordinates(FramesFactory.getITRF2008()).getVelocity();
             final Vector3D referenceV =
-                    referenceState.getRealState().getPVCoordinates(FramesFactory.getITRF2008()).getVelocity();
+                    referenceState.getRealStartState().getPVCoordinates(FramesFactory.getITRF2008()).getVelocity();
             data[0] = otherV.getX() - referenceV.getX();
             data[1] = otherV.getY() - referenceV.getY();
             data[2] = otherV.getZ() - referenceV.getZ();
@@ -124,9 +124,9 @@ public enum MonitorableDuoSKData implements MonitorableDuo {
         protected void extractData(final ScenarioState referenceState, final ScenarioState otherState,
                                    final BodyShape earth, double[] data) {
             final KeplerianOrbit otherOrbit =
-                    (KeplerianOrbit) OrbitType.KEPLERIAN.convertType(otherState.getRealState().getOrbit());
+                    (KeplerianOrbit) OrbitType.KEPLERIAN.convertType(otherState.getRealStartState().getOrbit());
             final KeplerianOrbit referenceOrbit =
-                    (KeplerianOrbit) OrbitType.KEPLERIAN.convertType(referenceState.getRealState().getOrbit());
+                    (KeplerianOrbit) OrbitType.KEPLERIAN.convertType(referenceState.getRealStartState().getOrbit());
             data[0] = otherOrbit.getA() - referenceOrbit.getA();
         }
 
@@ -139,9 +139,9 @@ public enum MonitorableDuoSKData implements MonitorableDuo {
         protected void extractData(final ScenarioState referenceState, final ScenarioState otherState,
                                    final BodyShape earth, double[] data) {
             final KeplerianOrbit otherOrbit =
-                    (KeplerianOrbit) OrbitType.KEPLERIAN.convertType(otherState.getRealState().getOrbit());
+                    (KeplerianOrbit) OrbitType.KEPLERIAN.convertType(otherState.getRealStartState().getOrbit());
             final KeplerianOrbit referenceOrbit =
-                    (KeplerianOrbit) OrbitType.KEPLERIAN.convertType(referenceState.getRealState().getOrbit());
+                    (KeplerianOrbit) OrbitType.KEPLERIAN.convertType(referenceState.getRealStartState().getOrbit());
             data[0] = otherOrbit.getE() - referenceOrbit.getE();
         }
 
@@ -154,9 +154,9 @@ public enum MonitorableDuoSKData implements MonitorableDuo {
         protected void extractData(final ScenarioState referenceState, final ScenarioState otherState,
                                    final BodyShape earth, double[] data) {
             final KeplerianOrbit otherOrbit =
-                    (KeplerianOrbit) OrbitType.KEPLERIAN.convertType(otherState.getRealState().getOrbit());
+                    (KeplerianOrbit) OrbitType.KEPLERIAN.convertType(otherState.getRealStartState().getOrbit());
             final KeplerianOrbit referenceOrbit =
-                    (KeplerianOrbit) OrbitType.KEPLERIAN.convertType(referenceState.getRealState().getOrbit());
+                    (KeplerianOrbit) OrbitType.KEPLERIAN.convertType(referenceState.getRealStartState().getOrbit());
             data[0] = otherOrbit.getI() - referenceOrbit.getI();
         }
 
@@ -169,9 +169,9 @@ public enum MonitorableDuoSKData implements MonitorableDuo {
         protected void extractData(final ScenarioState referenceState, final ScenarioState otherState,
                                    final BodyShape earth, double[] data) {
             final CircularOrbit otherOrbit =
-                    (CircularOrbit) OrbitType.CIRCULAR.convertType(otherState.getRealState().getOrbit());
+                    (CircularOrbit) OrbitType.CIRCULAR.convertType(otherState.getRealStartState().getOrbit());
             final CircularOrbit referenceOrbit =
-                    (CircularOrbit) OrbitType.CIRCULAR.convertType(referenceState.getRealState().getOrbit());
+                    (CircularOrbit) OrbitType.CIRCULAR.convertType(referenceState.getRealStartState().getOrbit());
             data[0] = otherOrbit.getCircularEx() - referenceOrbit.getCircularEx();
             data[1] = otherOrbit.getCircularEy() - referenceOrbit.getCircularEy();
         }
@@ -185,9 +185,9 @@ public enum MonitorableDuoSKData implements MonitorableDuo {
         protected void extractData(final ScenarioState referenceState, final ScenarioState otherState,
                                    final BodyShape earth, double[] data) {
             final EquinoctialOrbit otherOrbit =
-                    (EquinoctialOrbit) OrbitType.EQUINOCTIAL.convertType(otherState.getRealState().getOrbit());
+                    (EquinoctialOrbit) OrbitType.EQUINOCTIAL.convertType(otherState.getRealStartState().getOrbit());
             final EquinoctialOrbit referenceOrbit =
-                    (EquinoctialOrbit) OrbitType.EQUINOCTIAL.convertType(referenceState.getRealState().getOrbit());
+                    (EquinoctialOrbit) OrbitType.EQUINOCTIAL.convertType(referenceState.getRealStartState().getOrbit());
             data[0] = otherOrbit.getEquinoctialEx() - referenceOrbit.getEquinoctialEx();
             data[1] = otherOrbit.getEquinoctialEy() - referenceOrbit.getEquinoctialEy();
         }
@@ -201,9 +201,9 @@ public enum MonitorableDuoSKData implements MonitorableDuo {
         protected void extractData(final ScenarioState referenceState, final ScenarioState otherState,
                                    final BodyShape earth, double[] data) {
             final EquinoctialOrbit otherOrbit =
-                    (EquinoctialOrbit) OrbitType.EQUINOCTIAL.convertType(otherState.getRealState().getOrbit());
+                    (EquinoctialOrbit) OrbitType.EQUINOCTIAL.convertType(otherState.getRealStartState().getOrbit());
             final EquinoctialOrbit referenceOrbit =
-                    (EquinoctialOrbit) OrbitType.EQUINOCTIAL.convertType(referenceState.getRealState().getOrbit());
+                    (EquinoctialOrbit) OrbitType.EQUINOCTIAL.convertType(referenceState.getRealStartState().getOrbit());
             data[0] = otherOrbit.getHx() - referenceOrbit.getHx();
             data[1] = otherOrbit.getHy() - referenceOrbit.getHy();
         }
@@ -274,7 +274,7 @@ public enum MonitorableDuoSKData implements MonitorableDuo {
     public void update(final ScenarioState[] states, final BodyShape earth)
             throws OrekitException {
 
-        date = states[0].getRealState().getDate();
+        date = states[0].getRealStartState().getDate();
         for (int i = 0; i < states.length; ++i) {
             for (int j = 0; j < states.length; ++j) {
                 if (i != j) {

@@ -107,7 +107,7 @@ public class Propagation implements ScenarioComponent {
             propagator.setEphemerisMode();
 
             // perform propagation
-            propagator.resetInitialState(originals[i].getRealState());
+            propagator.resetInitialState(originals[i].getRealStartState());
 
             // retrieve discrete events data
             events.add(logger.getLoggedEvents());
@@ -185,7 +185,6 @@ public class Propagation implements ScenarioComponent {
                     // this is an in-plane maneuver
                     final int number = states[i].getInPlane() + 1;
                     final double dv  = states[i].getInPlaneDV() + maneuver.getDeltaVSat().getNorm();
-                    states[i] = states[i].updateOutOfPlaneManeuvers(number, dv);
                     states[i] = states[i].updateInPlaneManeuvers(number, dv);
                 }
 
@@ -315,11 +314,10 @@ public class Propagation implements ScenarioComponent {
                              final ScenarioState[] states)
         throws OrekitException {
 
-        // update the real and estimated states
+        // update the real states
         for (int i = 0; i < states.length; ++i) {
             final SpacecraftState state = ephemerides.get(i).propagate(date);
-            states[i] = states[i].updateRealState(state);
-            states[i] = states[i].updateEstimatedState(state);
+            states[i] = states[i].updateRealEndState(state);
         }
 
         // perform monitoring

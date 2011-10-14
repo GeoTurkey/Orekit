@@ -136,7 +136,7 @@ public class ControlLoop implements ScenarioComponent {
         // TODO introduce constraints
         final MultivariateRealFunction objective =
                 new ObjectiveFunction(propagator, parameters, controls, target,
-                                      originals[spacecraftIndex].getEstimatedState(),
+                                      originals[spacecraftIndex].getEstimatedStartState(),
                                       originals[spacecraftIndex].getTheoreticalManeuvers());
         double[] optimum =
                 optimizer.optimize(maxEval, objective, GoalType.MINIMIZE, startPoint).getPoint();

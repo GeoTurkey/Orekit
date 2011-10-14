@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.orekit.errors.OrekitException;
+import org.orekit.forces.maneuvers.ImpulseManeuver;
 import org.orekit.time.AbsoluteDate;
 
 /** Station-Keeping scenario.
@@ -58,16 +59,21 @@ public class Scenario implements ScenarioComponent {
         do {
 
             // set target date for iteration using cycle duration
-            iterationTarget = states[0].getEstimatedState().getDate().shiftedBy(duration);
+            iterationTarget = states[0].getEstimatedStartState().getDate().shiftedBy(duration);
 
             // run all components of the scenario in order
             for (final ScenarioComponent component : components) {
                 states = component.updateStates(states, iterationTarget);
             }
 
-            // increment cycle number
+            // prepare next cycle
             for (int i = 0; i < states.length; ++i) {
                 states[i] = states[i].updateCyclesNumber(states[i].getCyclesNumber() + 1);
+                states[i] = states[i].updateRealStartState(states[i].getRealEndState());
+                states[i] = states[i].updateEstimatedStartState(null);
+                states[i] = states[i].updateRealEndState(null);
+                states[i] = states[i].updateTheoreticalManeuvers(new ArrayList<ImpulseManeuver>());
+                states[i] = states[i].updatePerformedManeuvers(new ArrayList<ImpulseManeuver>());
             }
 
         } while (iterationTarget.compareTo(target) < 0);

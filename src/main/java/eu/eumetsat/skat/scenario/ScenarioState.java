@@ -60,11 +60,14 @@ public class ScenarioState {
     /** Solar time at previous descending node. */
     private final double descendingNodesSolarTime;
 
-    /** Real state. */
-    private final SpacecraftState realState;
+    /** Real state at cycle start. */
+    private final SpacecraftState realStartState;
 
-    /** Estimated state. */
-    private final SpacecraftState estimatedState;
+    /** Estimated state at cycle start. */
+    private final SpacecraftState estimatedStartState;
+
+    /** Real state at cycle end. */
+    private final SpacecraftState realEndState;
 
     /** Theoretical maneuvers. */
     private final List<ImpulseManeuver> theoreticalManeuvers;
@@ -83,8 +86,9 @@ public class ScenarioState {
      * @param ascendingNodesSolarTime solar time at previous ascending node
      * @param descendingNodeDate date of previous descending node
      * @param descendingNodesSolarTime solar time at previous descending node
-     * @param realState real state
-     * @param estimatedState estimated state
+     * @param realStartState real state at cycle start
+     * @param estimatedStartState estimated state at cycle start
+     * @param realEndState real state at cycle end
      * @param theoreticalManeuvers list of scheduled theoretical maneuvers
      * @param performedManeuvers list of performed maneuvers
      */
@@ -96,8 +100,9 @@ public class ScenarioState {
                           final double ascendingNodesSolarTime,
                           final AbsoluteDate descendingNodeDate,
                           final double descendingNodesSolarTime,
-                          final SpacecraftState realState,
-                          final SpacecraftState estimatedState,
+                          final SpacecraftState realStartState,
+                          final SpacecraftState estimatedStartState,
+                          final SpacecraftState realEndState,
                           final List<ImpulseManeuver> theoreticalManeuvers,
                           final List<ImpulseManeuver> performedManeuvers) {
         this.cyclesNumber             = cyclesNumber;
@@ -110,8 +115,9 @@ public class ScenarioState {
         this.ascendingNodesSolarTime  = ascendingNodesSolarTime;
         this.descendingNodeDate       = descendingNodeDate;
         this.descendingNodesSolarTime = descendingNodesSolarTime;
-        this.realState                = realState;
-        this.estimatedState           = estimatedState;
+        this.realStartState           = realStartState;
+        this.estimatedStartState      = estimatedStartState;
+        this.realEndState             = realEndState;
         this.theoreticalManeuvers     = theoreticalManeuvers;
         this.performedManeuvers       = performedManeuvers;
     }
@@ -126,7 +132,7 @@ public class ScenarioState {
              0.0,
              AbsoluteDate.PAST_INFINITY, Double.NaN,
              AbsoluteDate.PAST_INFINITY, Double.NaN,
-             realState, realState,
+             realState, null, null,
              new ArrayList<ImpulseManeuver>(),
              new ArrayList<ImpulseManeuver>());
     }
@@ -151,7 +157,7 @@ public class ScenarioState {
                                  massConsumption,
                                  ascendingNodeDate, ascendingNodesSolarTime,
                                  descendingNodeDate, descendingNodesSolarTime,
-                                 realState, estimatedState,
+                                 realStartState, estimatedStartState, realEndState,
                                  theoreticalManeuvers, performedManeuvers);
     }
 
@@ -183,7 +189,7 @@ public class ScenarioState {
                                  massConsumption,
                                  ascendingNodeDate, ascendingNodesSolarTime,
                                  descendingNodeDate, descendingNodesSolarTime,
-                                 realState, estimatedState,
+                                 realStartState, estimatedStartState, realEndState,
                                  theoreticalManeuvers, performedManeuvers);
     }
 
@@ -215,7 +221,7 @@ public class ScenarioState {
                                  massConsumption,
                                  ascendingNodeDate, ascendingNodesSolarTime,
                                  descendingNodeDate, descendingNodesSolarTime,
-                                 realState, estimatedState,
+                                 realStartState, estimatedStartState, realEndState,
                                  theoreticalManeuvers, performedManeuvers);
     }
 
@@ -239,7 +245,7 @@ public class ScenarioState {
                                  massConsumption,
                                  ascendingNodeDate, ascendingNodesSolarTime,
                                  descendingNodeDate, descendingNodesSolarTime,
-                                 realState, estimatedState,
+                                 realStartState, estimatedStartState, realEndState,
                                  theoreticalManeuvers, performedManeuvers);
     }
 
@@ -272,7 +278,7 @@ public class ScenarioState {
                                  massConsumption,
                                  date, solarTime,
                                  descendingNodeDate, descendingNodesSolarTime,
-                                 realState, estimatedState,
+                                 realStartState, estimatedStartState, realEndState,
                                  theoreticalManeuvers, performedManeuvers);
     }
 
@@ -305,55 +311,79 @@ public class ScenarioState {
                                  massConsumption,
                                  ascendingNodeDate, ascendingNodesSolarTime,
                                  date, solarTime,
-                                 realState, estimatedState,
+                                 realStartState, estimatedStartState, realEndState,
                                  theoreticalManeuvers, performedManeuvers);
     }
 
-    /** Get the real state.
-     * @return real state
+    /** Get the real state at cycle start.
+     * @return real state at cycle start
      */
-    public SpacecraftState getRealState() {
-        return realState;
+    public SpacecraftState getRealStartState() {
+        return realStartState;
     }
 
-    /** Update the real state.
+    /** Update the real state at cycle start.
      * <p>
      * The instance is not changed, a new instance is created
      * </p>
-     * @param state real state
+     * @param state real state at cycle start
      * @return updated state
      */
-    public ScenarioState updateRealState(final SpacecraftState state) {
+    public ScenarioState updateRealStartState(final SpacecraftState state) {
         return new ScenarioState(cyclesNumber,
                                  inPlane, inPlaneDV, outOfPlane, outOfPlaneDV,
                                  massConsumption,
                                  ascendingNodeDate, ascendingNodesSolarTime,
                                  descendingNodeDate, descendingNodesSolarTime,
-                                 state, estimatedState,
+                                 state, estimatedStartState, realEndState,
                                  theoreticalManeuvers, performedManeuvers);
     }
 
-    /** Get the estimated state.
-     * @return estimated state
+    /** Get the estimated state at cycle start.
+     * @return estimated state at cycle start
      */
-    public SpacecraftState getEstimatedState() {
-        return estimatedState;
+    public SpacecraftState getEstimatedStartState() {
+        return estimatedStartState;
     }
 
-    /** Update the estimated state.
+    /** Update the estimated state at cycle start.
      * <p>
      * The instance is not changed, a new instance is created
      * </p>
-     * @param state estimated state
+     * @param state estimated state at cycle start
      * @return updated state
      */
-    public ScenarioState updateEstimatedState(final SpacecraftState state) {
+    public ScenarioState updateEstimatedStartState(final SpacecraftState state) {
         return new ScenarioState(cyclesNumber,
                                  inPlane, inPlaneDV, outOfPlane, outOfPlaneDV,
                                  massConsumption,
                                  ascendingNodeDate, ascendingNodesSolarTime,
                                  descendingNodeDate, descendingNodesSolarTime,
-                                 realState, estimatedState,
+                                 realStartState, estimatedStartState, realEndState,
+                                 theoreticalManeuvers, performedManeuvers);
+    }
+
+    /** Get the real state at cycle end.
+     * @return real state at cycle end
+     */
+    public SpacecraftState getRealEndState() {
+        return realEndState;
+    }
+
+    /** Update the real state at cycle end.
+     * <p>
+     * The instance is not changed, a new instance is created
+     * </p>
+     * @param state real state at cycle end
+     * @return updated state
+     */
+    public ScenarioState updateRealEndState(final SpacecraftState state) {
+        return new ScenarioState(cyclesNumber,
+                                 inPlane, inPlaneDV, outOfPlane, outOfPlaneDV,
+                                 massConsumption,
+                                 ascendingNodeDate, ascendingNodesSolarTime,
+                                 descendingNodeDate, descendingNodesSolarTime,
+                                 realStartState, estimatedStartState, state,
                                  theoreticalManeuvers, performedManeuvers);
     }
 
@@ -377,7 +407,7 @@ public class ScenarioState {
                                  massConsumption,
                                  ascendingNodeDate, ascendingNodesSolarTime,
                                  descendingNodeDate, descendingNodesSolarTime,
-                                 realState, estimatedState,
+                                 realStartState, estimatedStartState, realEndState,
                                  maneuvers, performedManeuvers);
     }
 
@@ -401,7 +431,7 @@ public class ScenarioState {
                                  massConsumption,
                                  ascendingNodeDate, ascendingNodesSolarTime,
                                  descendingNodeDate, descendingNodesSolarTime,
-                                 realState, estimatedState,
+                                 realStartState, estimatedStartState, realEndState,
                                  theoreticalManeuvers, performedManeuvers);
     }
 
