@@ -14,20 +14,20 @@ import org.orekit.time.AbsoluteDate;
 import eu.eumetsat.skat.control.SKParameter;
 
 /**
- * Class for maneuver simulation.
- * <p>
- * This class performs an impulse maneuver with tunable date and
- * velocity increment
- * </p>
+ * This class represents an impulse maneuver with free parameters for date
+ * and velocity increment.
  * @author Luc Maisonobe
  */
 public class TunableManeuver {
+
+    /** Indicator for in-plane maneuvers. */
+    private final boolean inPlane;
 
     /** Thrust direction in spacecraft frame. */
     private final Vector3D direction;
 
     /** Specific impulse. */
-    private double isp;
+    private final double isp;
 
     /** Tunable velocity increment. */
     private final SKParameter velocityIncrement;
@@ -43,6 +43,7 @@ public class TunableManeuver {
 
     /** Simple constructor.
      * @param name name of the maneuver
+     * @param inPlane if true, the maneuver is considered to be in-plane
      * @param direction thrust direction in spacecraft frame
      * @param isp engine specific impulse (s)
      * @param minIncrement minimal allowed value for velocity increment
@@ -51,11 +52,12 @@ public class TunableManeuver {
      * @param minDateOffset offset for earliest allowed maneuver date
      * @param maxDateOffset offset for latest allowed maneuver date
      */
-    public TunableManeuver(final String name,
+    public TunableManeuver(final String name, final boolean inPlane,
                            final Vector3D direction, final double isp,
                            final double minIncrement, final double maxIncrement,
                            final AbsoluteDate reference,
                            final double minDateOffset, final double maxDateOffset) {
+        this.inPlane      = inPlane;
         this.direction    = direction.normalize();
         this.isp          = isp;
         this.reference    = reference;
@@ -93,7 +95,18 @@ public class TunableManeuver {
 
         /** {@inheritDoc} */
         public EventDetector getEventDetector() {
-            return getManeuver();
+
+            if (current == null) {
+                // the parameters value have changed, thus invalidating the maneuver,
+                // build a new valid one
+                AbsoluteDate triggerDate = reference.shiftedBy(dateOffset.getValue());
+                current = new ImpulseManeuver(new DateDetector(triggerDate),
+                                              new Vector3D(velocityIncrement.getValue(), direction),
+                                              isp);
+            }
+
+            return current;
+
         }
 
         /** {@inheritDoc} */
@@ -116,20 +129,11 @@ public class TunableManeuver {
     /** Get the maneuver corresponding to the current value of the parameters.
      * @return maneuver corresponding to the current value of the parameters
      */
-    public ImpulseManeuver getManeuver() {
-
-        if (current == null) {
-            // the parameters value have changed, thus invalidating the maneuver,
-            // build a new valid one
-            AbsoluteDate triggerDate = reference.shiftedBy(dateOffset.getValue());
-            current = new ImpulseManeuver(new DateDetector(triggerDate),
-                                          new Vector3D(velocityIncrement.getValue(),
-                                                       direction),
-                                          isp);
-        }
-
-        return current;
-
+    public ScheduledManeuver getManeuver() {
+        return new ScheduledManeuver(inPlane,
+                                     reference.shiftedBy(dateOffset.getValue()),
+                                     new Vector3D(velocityIncrement.getValue(), direction),
+                                     isp);
     }
 
 }

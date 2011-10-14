@@ -10,10 +10,13 @@ import org.orekit.errors.PropagationException;
 import org.orekit.forces.maneuvers.ImpulseManeuver;
 import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
+import org.orekit.propagation.events.DateDetector;
 import org.orekit.propagation.events.EventDetector;
 import org.orekit.propagation.sampling.OrekitStepHandler;
 import org.orekit.propagation.sampling.OrekitStepInterpolator;
 import org.orekit.time.AbsoluteDate;
+
+import eu.eumetsat.skat.strategies.ScheduledManeuver;
 
 /** Objective function to be optimizedby the {@link ControlLoop}. */
 class ObjectiveFunction implements MultivariateRealFunction, OrekitStepHandler {
@@ -37,7 +40,7 @@ class ObjectiveFunction implements MultivariateRealFunction, OrekitStepHandler {
     private final SpacecraftState initialState;
 
     /** Maneuvers that are already scheduled. */
-    private final List<ImpulseManeuver> scheduledManeuvers;
+    private final List<ScheduledManeuver> scheduledManeuvers;
 
     /** Current set of event detectors. */
     private final Set<EventDetector> detectors;
@@ -59,7 +62,7 @@ class ObjectiveFunction implements MultivariateRealFunction, OrekitStepHandler {
                              final List<ScaledControl> controls,
                              final AbsoluteDate cycleEnd,
                              final SpacecraftState initialState,
-                             final List<ImpulseManeuver> scheduledManeuvers) {
+                             final List<ScheduledManeuver> scheduledManeuvers) {
 
         this.propagator         = propagator;
         this.parameters         = parameters;
@@ -96,8 +99,10 @@ class ObjectiveFunction implements MultivariateRealFunction, OrekitStepHandler {
             propagator.setMasterMode(this);
 
             // set up the scheduled maneuvers that are not optimized
-            for (final ImpulseManeuver maneuver : scheduledManeuvers) {
-                propagator.addEventDetector(maneuver);
+            for (final ScheduledManeuver maneuver : scheduledManeuvers) {
+                propagator.addEventDetector(new ImpulseManeuver(new DateDetector(maneuver.getDate()),
+                                                                maneuver.getDeltaV(),
+                                                                maneuver.getIsp()));
             }
 
             // perform propagation

@@ -8,12 +8,12 @@ import org.apache.commons.math.analysis.MultivariateRealFunction;
 import org.apache.commons.math.optimization.GoalType;
 import org.apache.commons.math.optimization.MultivariateRealOptimizer;
 import org.orekit.errors.OrekitException;
-import org.orekit.forces.maneuvers.ImpulseManeuver;
 import org.orekit.propagation.Propagator;
 import org.orekit.time.AbsoluteDate;
 
 import eu.eumetsat.skat.scenario.ScenarioComponent;
 import eu.eumetsat.skat.scenario.ScenarioState;
+import eu.eumetsat.skat.strategies.ScheduledManeuver;
 import eu.eumetsat.skat.strategies.TunableManeuver;
 
 
@@ -149,11 +149,11 @@ public class ControlLoop implements ScenarioComponent {
         }
 
         // update the scheduled maneuvers, adding the newly optimized set
-        final List<ImpulseManeuver> theoreticalManeuvers = new ArrayList<ImpulseManeuver>();
+        final List<ScheduledManeuver> theoreticalManeuvers = new ArrayList<ScheduledManeuver>();
         theoreticalManeuvers.addAll(originals[spacecraftIndex].getTheoreticalManeuvers());
         for (final TunableManeuver tunable : tunables) {
             // get the optimized maneuver, using the optimum value set above
-            final ImpulseManeuver optimized = tunable.getManeuver();
+            final ScheduledManeuver optimized = tunable.getManeuver();
             theoreticalManeuvers.add(optimized);
         }
 

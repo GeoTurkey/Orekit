@@ -8,11 +8,11 @@ import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math.random.RandomGenerator;
 import org.apache.commons.math.util.FastMath;
 import org.orekit.errors.OrekitException;
-import org.orekit.forces.maneuvers.ImpulseManeuver;
 import org.orekit.time.AbsoluteDate;
 
 import eu.eumetsat.skat.scenario.ScenarioComponent;
 import eu.eumetsat.skat.scenario.ScenarioState;
+import eu.eumetsat.skat.strategies.ScheduledManeuver;
 
 /**
  * Class for introducing random realization errors in magnitude to maneuvers.
@@ -85,18 +85,19 @@ public class ManeuverMagnitudeError implements ScenarioComponent {
         throws OrekitException {
 
         // prepare a list for holding the modified maneuvers
-        List<ImpulseManeuver> modified =
-                new ArrayList<ImpulseManeuver>(originals[spacecraftIndex].getPerformedManeuvers().size());
+        List<ScheduledManeuver> modified =
+                new ArrayList<ScheduledManeuver>(originals[spacecraftIndex].getPerformedManeuvers().size());
 
         // modify the maneuvers
-        for (final ImpulseManeuver maneuver : originals[spacecraftIndex].getPerformedManeuvers()) {
-            final double angle = Vector3D.angle(filteringDirection, maneuver.getDeltaVSat());
+        for (final ScheduledManeuver maneuver : originals[spacecraftIndex].getPerformedManeuvers()) {
+            final double angle = Vector3D.angle(filteringDirection, maneuver.getDeltaV());
             if ((angle < ALIGNMENT_THRESHOLD) || (angle > FastMath.PI - ALIGNMENT_THRESHOLD)) {
                 // the maneuver is affected by the error
                 final double errorFactor = 1.0 + standardDeviation * generator.nextGaussian();
-                modified.add(new ImpulseManeuver(maneuver.getTrigger(),
-                                                 new Vector3D(errorFactor, maneuver.getDeltaVSat()),
-                                                 maneuver.getIsp()));
+                modified.add(new ScheduledManeuver(maneuver.isInPlane(),
+                                                   maneuver.getDate(),
+                                                   new Vector3D(errorFactor, maneuver.getDeltaV()),
+                                                   maneuver.getIsp()));
             } else {
                 // the maneuver is immune to the error
                 modified.add(maneuver);
