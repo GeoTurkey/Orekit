@@ -14,7 +14,6 @@ import org.orekit.orbits.EquinoctialOrbit;
 import org.orekit.orbits.KeplerianOrbit;
 import org.orekit.orbits.OrbitType;
 import org.orekit.time.AbsoluteDate;
-import org.orekit.utils.PVCoordinates;
 
 import eu.eumetsat.skat.scenario.ScenarioState;
 
@@ -30,167 +29,183 @@ import eu.eumetsat.skat.scenario.ScenarioState;
  */
 public enum MonitorableDuoSKData implements MonitorableDuo {
 
-    DELTA_POSITION_EME2000(3) {
+    DISTANCE(1) {
 
         /** {@inheritDoc} */
         @Override
-        protected void extractData(final ScenarioState state1, final ScenarioState state2,
+        protected void extractData(final ScenarioState referenceState, final ScenarioState otherState,
                                    final BodyShape earth, double[] data)
             throws OrekitException {
-            final PVCoordinates pv1 = state1.getRealState().getPVCoordinates(FramesFactory.getEME2000());
-            final Vector3D position1 = pv1.getPosition();
-            final PVCoordinates pv2 = state2.getRealState().getPVCoordinates(FramesFactory.getEME2000());
-            final Vector3D position2 = pv2.getPosition();
-            data[0] = position1.getX() - position2.getX();
-            data[1] = position1.getY() - position2.getY();
-            data[2] = position1.getZ() - position2.getZ();
+            final Vector3D otherP =
+                    otherState.getRealState().getPVCoordinates(FramesFactory.getEME2000()).getPosition();
+            final Vector3D referenceP =
+                    referenceState.getRealState().getPVCoordinates(FramesFactory.getEME2000()).getPosition();
+            data[0] = otherP.distance(referenceP);
         }
 
     },
 
-    DELTA_VELOCITY_EME2000(3) {
+    RELATIVE_POSITION_EME2000(3) {
 
         /** {@inheritDoc} */
         @Override
-        protected void extractData(final ScenarioState state1, final ScenarioState state2,
+        protected void extractData(final ScenarioState referenceState, final ScenarioState otherState,
                                    final BodyShape earth, double[] data)
             throws OrekitException {
-            final PVCoordinates pv1 = state1.getRealState().getPVCoordinates(FramesFactory.getEME2000());
-            final Vector3D velocity1 = pv1.getVelocity();
-            final PVCoordinates pv2 = state2.getRealState().getPVCoordinates(FramesFactory.getEME2000());
-            final Vector3D velocity2 = pv2.getVelocity();
-            data[0] = velocity1.getX() - velocity2.getX();
-            data[1] = velocity1.getY() - velocity2.getY();
-            data[2] = velocity1.getZ() - velocity2.getZ();
+            final Vector3D otherP =
+                    otherState.getRealState().getPVCoordinates(FramesFactory.getEME2000()).getPosition();
+            final Vector3D referenceP =
+                    referenceState.getRealState().getPVCoordinates(FramesFactory.getEME2000()).getPosition();
+            data[0] = otherP.getX() - referenceP.getX();
+            data[1] = otherP.getY() - referenceP.getY();
+            data[2] = otherP.getZ() - referenceP.getZ();
         }
 
     },
 
-    DELTA_POSITION_ITRF(3) {
+    RELATIVE_VELOCITY_EME2000(3) {
 
         /** {@inheritDoc} */
         @Override
-        protected void extractData(final ScenarioState state1, final ScenarioState state2,
+        protected void extractData(final ScenarioState referenceState, final ScenarioState otherState,
                                    final BodyShape earth, double[] data)
             throws OrekitException {
-            final PVCoordinates pv1 = state1.getRealState().getPVCoordinates(FramesFactory.getITRF2008());
-            final Vector3D position1 = pv1.getPosition();
-            final PVCoordinates pv2 = state2.getRealState().getPVCoordinates(FramesFactory.getITRF2008());
-            final Vector3D position2 = pv2.getPosition();
-            data[0] = position1.getX() - position2.getX();
-            data[1] = position1.getY() - position2.getY();
-            data[2] = position1.getZ() - position2.getZ();
+            final Vector3D otherV =
+                    otherState.getRealState().getPVCoordinates(FramesFactory.getEME2000()).getVelocity();
+            final Vector3D referenceV =
+                    referenceState.getRealState().getPVCoordinates(FramesFactory.getEME2000()).getVelocity();
+            data[0] = otherV.getX() - referenceV.getX();
+            data[1] = otherV.getY() - referenceV.getY();
+            data[2] = otherV.getZ() - referenceV.getZ();
         }
 
     },
 
-    DELTA_VELOCITY_ITRF(3) {
+    RELATIVE_POSITION_ITRF(3) {
 
         /** {@inheritDoc} */
         @Override
-        protected void extractData(final ScenarioState state1, final ScenarioState state2,
+        protected void extractData(final ScenarioState referenceState, final ScenarioState otherState,
                                    final BodyShape earth, double[] data)
             throws OrekitException {
-            final PVCoordinates pv1 = state1.getRealState().getPVCoordinates(FramesFactory.getITRF2008());
-            final Vector3D velocity1 = pv1.getVelocity();
-            final PVCoordinates pv2 = state2.getRealState().getPVCoordinates(FramesFactory.getITRF2008());
-            final Vector3D velocity2 = pv2.getVelocity();
-            data[0] = velocity1.getX() - velocity2.getX();
-            data[1] = velocity1.getY() - velocity2.getY();
-            data[2] = velocity1.getZ() - velocity2.getZ();
+            final Vector3D otherP =
+                    otherState.getRealState().getPVCoordinates(FramesFactory.getITRF2008()).getPosition();
+            final Vector3D referenceP =
+                    referenceState.getRealState().getPVCoordinates(FramesFactory.getITRF2008()).getPosition();
+            data[0] = otherP.getX() - referenceP.getX();
+            data[1] = otherP.getY() - referenceP.getY();
+            data[2] = otherP.getZ() - referenceP.getZ();
         }
 
     },
 
-    DELTA_SEMI_MAJOR_AXIS(1) {
+    RELATIVE_VELOCITY_ITRF(3) {
 
         /** {@inheritDoc} */
         @Override
-        protected void extractData(final ScenarioState state1, final ScenarioState state2,
-                                   final BodyShape earth, double[] data) {
-            final KeplerianOrbit orbit1 =
-                    (KeplerianOrbit) OrbitType.KEPLERIAN.convertType(state1.getRealState().getOrbit());
-            final KeplerianOrbit orbit2 =
-                    (KeplerianOrbit) OrbitType.KEPLERIAN.convertType(state2.getRealState().getOrbit());
-            data[0] = orbit1.getA() - orbit2.getA();
+        protected void extractData(final ScenarioState referenceState, final ScenarioState otherState,
+                                   final BodyShape earth, double[] data)
+            throws OrekitException {
+            final Vector3D otherV =
+                    otherState.getRealState().getPVCoordinates(FramesFactory.getITRF2008()).getVelocity();
+            final Vector3D referenceV =
+                    referenceState.getRealState().getPVCoordinates(FramesFactory.getITRF2008()).getVelocity();
+            data[0] = otherV.getX() - referenceV.getX();
+            data[1] = otherV.getY() - referenceV.getY();
+            data[2] = otherV.getZ() - referenceV.getZ();
         }
 
     },
 
-    DELTA_ECCENTRICITY(1) {
+    SEMI_MAJOR_AXIS_DIFFERENCE(1) {
 
         /** {@inheritDoc} */
         @Override
-        protected void extractData(final ScenarioState state1, final ScenarioState state2,
+        protected void extractData(final ScenarioState referenceState, final ScenarioState otherState,
                                    final BodyShape earth, double[] data) {
-            final KeplerianOrbit orbit1 =
-                    (KeplerianOrbit) OrbitType.KEPLERIAN.convertType(state1.getRealState().getOrbit());
-            final KeplerianOrbit orbit2 =
-                    (KeplerianOrbit) OrbitType.KEPLERIAN.convertType(state2.getRealState().getOrbit());
-            data[0] = orbit1.getE() - orbit2.getE();
+            final KeplerianOrbit otherOrbit =
+                    (KeplerianOrbit) OrbitType.KEPLERIAN.convertType(otherState.getRealState().getOrbit());
+            final KeplerianOrbit referenceOrbit =
+                    (KeplerianOrbit) OrbitType.KEPLERIAN.convertType(referenceState.getRealState().getOrbit());
+            data[0] = otherOrbit.getA() - referenceOrbit.getA();
         }
 
     },
 
-    DELTA_INCLINATION(1) {
+    ECCENTRICITY_DIFFERENCE(1) {
 
         /** {@inheritDoc} */
         @Override
-        protected void extractData(final ScenarioState state1, final ScenarioState state2,
+        protected void extractData(final ScenarioState referenceState, final ScenarioState otherState,
                                    final BodyShape earth, double[] data) {
-            final KeplerianOrbit orbit1 =
-                    (KeplerianOrbit) OrbitType.KEPLERIAN.convertType(state1.getRealState().getOrbit());
-            final KeplerianOrbit orbit2 =
-                    (KeplerianOrbit) OrbitType.KEPLERIAN.convertType(state2.getRealState().getOrbit());
-            data[0] = orbit1.getI() - orbit2.getI();
+            final KeplerianOrbit otherOrbit =
+                    (KeplerianOrbit) OrbitType.KEPLERIAN.convertType(otherState.getRealState().getOrbit());
+            final KeplerianOrbit referenceOrbit =
+                    (KeplerianOrbit) OrbitType.KEPLERIAN.convertType(referenceState.getRealState().getOrbit());
+            data[0] = otherOrbit.getE() - referenceOrbit.getE();
         }
 
     },
 
-    DELTA_CIRCULAR_ECCENTRICITY_VECTOR(2) {
+    INCLINATION_DIFFERENCE(1) {
 
         /** {@inheritDoc} */
         @Override
-        protected void extractData(final ScenarioState state1, final ScenarioState state2,
+        protected void extractData(final ScenarioState referenceState, final ScenarioState otherState,
                                    final BodyShape earth, double[] data) {
-            final CircularOrbit orbit1 =
-                    (CircularOrbit) OrbitType.CIRCULAR.convertType(state1.getRealState().getOrbit());
-            final CircularOrbit orbit2 =
-                    (CircularOrbit) OrbitType.CIRCULAR.convertType(state2.getRealState().getOrbit());
-            data[0] = orbit1.getCircularEx() - orbit2.getCircularEx();
-            data[1] = orbit1.getCircularEy() - orbit2.getCircularEy();
+            final KeplerianOrbit otherOrbit =
+                    (KeplerianOrbit) OrbitType.KEPLERIAN.convertType(otherState.getRealState().getOrbit());
+            final KeplerianOrbit referenceOrbit =
+                    (KeplerianOrbit) OrbitType.KEPLERIAN.convertType(referenceState.getRealState().getOrbit());
+            data[0] = otherOrbit.getI() - referenceOrbit.getI();
         }
 
     },
 
-    DELTA_EQUINOCTIAL_ECCENTRICITY_VECTOR(2) {
+    RELATIVE_CIRCULAR_ECCENTRICITY_VECTOR(2) {
 
         /** {@inheritDoc} */
         @Override
-        protected void extractData(final ScenarioState state1, final ScenarioState state2,
+        protected void extractData(final ScenarioState referenceState, final ScenarioState otherState,
                                    final BodyShape earth, double[] data) {
-            final EquinoctialOrbit orbit1 =
-                    (EquinoctialOrbit) OrbitType.EQUINOCTIAL.convertType(state1.getRealState().getOrbit());
-            final EquinoctialOrbit orbit2 =
-                    (EquinoctialOrbit) OrbitType.EQUINOCTIAL.convertType(state2.getRealState().getOrbit());
-            data[0] = orbit1.getEquinoctialEx() - orbit2.getEquinoctialEx();
-            data[1] = orbit1.getEquinoctialEy() - orbit2.getEquinoctialEy();
+            final CircularOrbit otherOrbit =
+                    (CircularOrbit) OrbitType.CIRCULAR.convertType(otherState.getRealState().getOrbit());
+            final CircularOrbit referenceOrbit =
+                    (CircularOrbit) OrbitType.CIRCULAR.convertType(referenceState.getRealState().getOrbit());
+            data[0] = otherOrbit.getCircularEx() - referenceOrbit.getCircularEx();
+            data[1] = otherOrbit.getCircularEy() - referenceOrbit.getCircularEy();
         }
 
     },
 
-    DELTA_EQUINOCTIAL_INCLINATION_VECTOR(2) {
+    RELATIVE_EQUINOCTIAL_ECCENTRICITY_VECTOR(2) {
 
         /** {@inheritDoc} */
         @Override
-        protected void extractData(final ScenarioState state1, final ScenarioState state2,
+        protected void extractData(final ScenarioState referenceState, final ScenarioState otherState,
                                    final BodyShape earth, double[] data) {
-            final EquinoctialOrbit orbit1 =
-                    (EquinoctialOrbit) OrbitType.EQUINOCTIAL.convertType(state1.getRealState().getOrbit());
-            final EquinoctialOrbit orbit2 =
-                    (EquinoctialOrbit) OrbitType.EQUINOCTIAL.convertType(state2.getRealState().getOrbit());
-            data[0] = orbit1.getHx() - orbit2.getHx();
-            data[1] = orbit1.getHy() - orbit2.getHy();
+            final EquinoctialOrbit otherOrbit =
+                    (EquinoctialOrbit) OrbitType.EQUINOCTIAL.convertType(otherState.getRealState().getOrbit());
+            final EquinoctialOrbit referenceOrbit =
+                    (EquinoctialOrbit) OrbitType.EQUINOCTIAL.convertType(referenceState.getRealState().getOrbit());
+            data[0] = otherOrbit.getEquinoctialEx() - referenceOrbit.getEquinoctialEx();
+            data[1] = otherOrbit.getEquinoctialEy() - referenceOrbit.getEquinoctialEy();
+        }
+
+    },
+
+    RELATIVE_EQUINOCTIAL_INCLINATION_VECTOR(2) {
+
+        /** {@inheritDoc} */
+        @Override
+        protected void extractData(final ScenarioState referenceState, final ScenarioState otherState,
+                                   final BodyShape earth, double[] data) {
+            final EquinoctialOrbit otherOrbit =
+                    (EquinoctialOrbit) OrbitType.EQUINOCTIAL.convertType(otherState.getRealState().getOrbit());
+            final EquinoctialOrbit referenceOrbit =
+                    (EquinoctialOrbit) OrbitType.EQUINOCTIAL.convertType(referenceState.getRealState().getOrbit());
+            data[0] = otherOrbit.getHx() - referenceOrbit.getHx();
+            data[1] = otherOrbit.getHy() - referenceOrbit.getHy();
         }
 
     };
@@ -215,7 +230,7 @@ public enum MonitorableDuoSKData implements MonitorableDuo {
         this.dimension = dimension;
         this.date      = AbsoluteDate.PAST_INFINITY;
         this.value     = null;
-        this.monitors = new HashSet<MonitorDuo>();
+        this.monitors  = new HashSet<MonitorDuo>();
     }
 
     /** {@inheritDoc} */
@@ -276,12 +291,13 @@ public enum MonitorableDuoSKData implements MonitorableDuo {
     }
 
     /** Extract the monitored data from the states.
-     * @param state state of one spacecraft
+     * @param referenceState state of the reference spacecraft
+     * @param otherState state of the other spacecraft
      * @param earth Earth model
      * @param data placeholder where to put the extracted data
      * @exception OrekitException if data cannot be computed
      */
-    protected abstract void extractData(ScenarioState state1, ScenarioState state2,
+    protected abstract void extractData(ScenarioState referenceState, ScenarioState otherState,
                                         BodyShape earth, double[] data)
         throws OrekitException;
 
