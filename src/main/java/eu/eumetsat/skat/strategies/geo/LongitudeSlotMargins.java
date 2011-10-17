@@ -26,7 +26,7 @@ import eu.eumetsat.skat.control.SKControl;
  * </pre>
  * where l<sub>E</sub> is the East boundary of the longitude slot,
  * l<sub>W</sub> is the West boundary of the longitude slot, l(t) is
- * the spacecraft longitude at time t and the min anx max functions
+ * the spacecraft longitude at time t and the min and max functions
  * are evaluated for the complete cycle duration.
  * </p>
  * <p>
@@ -102,25 +102,21 @@ public class LongitudeSlotMargins implements SKControl {
 
     /** {@inheritDoc} */
     public boolean isConstrained() {
-        // TODO
-        return false;
+        return true;
     }
 
     /** {@inheritDoc} */
     public double getMin() {
-        // TODO
-        return Double.NaN;
+        return westBoundary - eastBoundary;
     }
 
     /** {@inheritDoc} */
     public double getMax() {
-        // TODO
-        return Double.NaN;
+        return eastBoundary - westBoundary;
     }
 
     /** {@inheritDoc} */
     public EventDetector getEventDetector() {
-        // TODO
         return null;
     }
 
@@ -156,9 +152,7 @@ public class LongitudeSlotMargins implements SKControl {
                         interpolator.isForward() ? interpolator.getCurrentDate() : interpolator.getPreviousDate();
 
                 // loop throughout step
-                for (AbsoluteDate date = minDate;
-                        date.compareTo(maxDate) < 0;
-                        date = date.shiftedBy(samplingStep)) {
+                for (AbsoluteDate date = minDate; date.compareTo(maxDate) < 0; date = date.shiftedBy(samplingStep)) {
 
                     // compute position in Earth frame
                     interpolator.setInterpolatedDate(date);
