@@ -18,7 +18,10 @@ import org.orekit.time.AbsoluteDate;
 
 import eu.eumetsat.skat.strategies.ScheduledManeuver;
 
-/** Objective function to be optimizedby the {@link ControlLoop}. */
+/** Objective function to be optimized by the {@link ControlLoop}.
+ * @see ControlLoop
+ * @author Luc Maisonobe
+ */
 class ObjectiveFunction implements MultivariateRealFunction, OrekitStepHandler {
 
     /** Serializable UID. */

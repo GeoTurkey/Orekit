@@ -8,7 +8,7 @@ package eu.eumetsat.skat.control;
  * Station-keeping controls can be for example to ensure that spacecraft
  * remains within its allowed slot with as large margins as possible.
  * </p>
- * @see SKParametersList
+ * @see SKParameter
  * @author Luc Maisonobe
  */
 public interface SKControl extends SKElement {

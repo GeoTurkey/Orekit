@@ -18,7 +18,7 @@ import eu.eumetsat.skat.strategies.TunableManeuver;
 
 
 /**
- * Control loop between {@link SKParametersList control parameters} and {@link
+ * Control loop between {@link SKParameter control parameters} and {@link
  * SKControl station-keeping controls}.
  * <p>
  * This loop is mainly an optimization loop that adjusts the control parameters
@@ -28,7 +28,8 @@ import eu.eumetsat.skat.strategies.TunableManeuver;
  *             / scale<sub>i</sub>)<sup>2</sup>)<br>
  * the sum being computed across all scaled controls.
  * </p>
- * @see SKParametersList
+ * @see TunableManeuver
+ * @see SKParameter
  * @see SKControl
  * @author Luc Maisonobe
  */
@@ -59,7 +60,7 @@ public class ControlLoop implements ScenarioComponent {
      * <p>
      * Creates an empty control loop, with neither controls nor control parameters.
      * They must be added later on by {@link #addControl(double, SKControl)}
-     * and {@link #addParametersList(SKParametersList)}.
+     * and {@link #addTunableManeuver(TunableManeuver)}.
      * </p>
      * @param spacecraftIndex index of the spacecraft managed by this loop
      * @param maxEval maximal number of objective function evaluations
@@ -118,7 +119,7 @@ public class ControlLoop implements ScenarioComponent {
      * </p>
      * <p>
      * At the end of the optimization the {@link
-     * #addParametersList(SKParametersList) control parameters} values
+     * #addTunableManeuver(TunableManeuver) maneuvers} values
      * will be set to the optimal values that best fulfill the {@link
      * #addControl(double, SKControl) station keeping controls}.
      * </p>
