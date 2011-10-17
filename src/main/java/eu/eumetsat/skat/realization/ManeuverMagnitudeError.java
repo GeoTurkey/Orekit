@@ -6,7 +6,6 @@ import java.util.List;
 
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math.random.RandomGenerator;
-import org.apache.commons.math.util.FastMath;
 import org.orekit.errors.OrekitException;
 import org.orekit.time.AbsoluteDate;
 
@@ -47,14 +46,14 @@ import eu.eumetsat.skat.strategies.ScheduledManeuver;
  */
 public class ManeuverMagnitudeError implements ScenarioComponent {
 
-    /** Angular threshold for maneuver direction filtering. */
-    private static final double ALIGNMENT_THRESHOLD = FastMath.toRadians(10.0);
-
     /** Index of the spacecraft managed by this component. */
     private final int spacecraftIndex;
 
-    /** Maneuvers direction to which this error applies. */
-    private final Vector3D filteringDirection;
+    /** Indicator for applying this error to in-plane maneuvers. */
+    private final boolean inPlane;
+
+    /** Indicator for applying this error to out-of-plane maneuvers. */
+    private final boolean outOfPlane;
 
     /** Standard deviation of the multiplying error factor. */
     private final double standardDeviation;
@@ -64,18 +63,19 @@ public class ManeuverMagnitudeError implements ScenarioComponent {
 
     /** Simple constructor.
      * @param spacecraftIndex index of the spacecraft managed by this component
-     * @param filteringDirection filter used to decide if the instance should be
-     * applied to a maneuver or not
+     * @param inPlane if true, the error applies to in-plane maneuvers
+     * @param outOfPlane if true, the error applies to out-of-plane maneuvers
      * @param standardDeviation standard deviation of the multiplying error factor
      * (for example 0.05 for a 5% error)
      * @param generator random generator to use for evaluating the error factor
      */
     public ManeuverMagnitudeError(final int spacecraftIndex,
-                                  final Vector3D filteringDirection,
+                                  final boolean inPlane, final boolean outOfPlane,
                                   final double standardDeviation,
                                   final RandomGenerator generator) {
         this.spacecraftIndex    = spacecraftIndex;
-        this.filteringDirection = filteringDirection;
+        this.inPlane            = inPlane;
+        this.outOfPlane         = outOfPlane;
         this.standardDeviation  = standardDeviation;
         this.generator          = generator;
     }
@@ -90,8 +90,7 @@ public class ManeuverMagnitudeError implements ScenarioComponent {
 
         // modify the maneuvers
         for (final ScheduledManeuver maneuver : originals[spacecraftIndex].getPerformedManeuvers()) {
-            final double angle = Vector3D.angle(filteringDirection, maneuver.getDeltaV());
-            if ((angle < ALIGNMENT_THRESHOLD) || (angle > FastMath.PI - ALIGNMENT_THRESHOLD)) {
+            if ((inPlane && maneuver.isInPlane()) || (outOfPlane && !(maneuver.isInPlane()))) {
                 // the maneuver is affected by the error
                 final double errorFactor = 1.0 + standardDeviation * generator.nextGaussian();
                 modified.add(new ScheduledManeuver(maneuver.isInPlane(),
