@@ -9,6 +9,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.text.ParseException;
 
+import org.antlr.runtime.RecognitionException;
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math.ode.nonstiff.AdaptiveStepsizeIntegrator;
 import org.apache.commons.math.ode.nonstiff.DormandPrince853Integrator;
@@ -43,8 +44,8 @@ import org.orekit.time.TimeScale;
 import org.orekit.time.TimeScalesFactory;
 import org.orekit.utils.Constants;
 
-import eu.eumetsat.skat.utils.KeyValueFileParser;
 import eu.eumetsat.skat.utils.SkatException;
+import eu.eumetsat.skat.utils.SkatFileParser;
 import eu.eumetsat.skat.utils.SkatMessages;
 
 /** Feasibility check application for blind-optimization based station keeping.
@@ -102,6 +103,10 @@ public class LatestEscapeTimeStationKeeping {
             System.err.println(pe.getLocalizedMessage());
         } catch (IOException ioe) {
             System.err.println(ioe.getLocalizedMessage());
+        } catch (NoSuchFieldException nsfe) {
+            System.err.println(nsfe.getLocalizedMessage());
+        } catch ( RecognitionException re) {
+            System.err.println(re.getLocalizedMessage());
         } catch (OrekitException oe) {
             System.err.println(oe.getLocalizedMessage());
         } catch (SkatException se) {
@@ -133,12 +138,15 @@ public class LatestEscapeTimeStationKeeping {
      * @exception OrekitException if orekit cannot be initialized properly (gravity field, UTC ...)
      * @exception ParseException if gravity field cannot be read
      * @exception IOException if gravity field cannot be read
+     * @exception NoSuchFieldException if a required parameter is missing
+     * @exception RecognitionException if there is a syntax error in the input file
      */
     public LatestEscapeTimeStationKeeping(File input)
-            throws SkatException, OrekitException, ParseException, IOException {
+            throws SkatException, OrekitException, ParseException, IOException,
+            NoSuchFieldException, RecognitionException {
 
-        final KeyValueFileParser<ParameterKey> parser =
-                new KeyValueFileParser<ParameterKey>(ParameterKey.class);
+        final SkatFileParser<ParameterKey> parser =
+                new SkatFileParser<ParameterKey>();
             TimeScale utc = TimeScalesFactory.getUTC();
 
         // set up frames

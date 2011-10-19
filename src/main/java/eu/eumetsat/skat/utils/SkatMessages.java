@@ -38,7 +38,9 @@ public enum SkatMessages implements Localizable {
     UNABLE_TO_FIND_RESOURCE("unable to find resource {0}"),
     UNKNOWN_FRAME("unknown frame {0}"),
     VALUE_ALREADY_MONITORED("value {0} is already monitored"),
-    VALUE_NOT_MONITORED("value {0} is not monitored");
+    VALUE_NOT_MONITORED("value {0} is not monitored"),
+    WRONG_TYPE("type error at line {0} of input file, expected {1} but was {2}"),
+    MISSING_INPUT_DATA("missing input data {0}");
 
     // CHECKSTYLE: resume JavadocVariable check
 

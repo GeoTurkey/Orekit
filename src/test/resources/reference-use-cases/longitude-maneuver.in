@@ -1,17 +1,103 @@
-inertial.frame           = EME2000
-earth.frame              = ITRF2008 with tides
+inertial_frame = "EME2000"
+earth_frame = "ITRF2008 with tides"
 
-gravity.field.degree     = 10
-gravity.field.order      = 10
+simulation     = {
+                    start_date   = 2004-01-01T00:00:00.000
+                    duration     = 50.0
+                    cycle_number = 3
+                 }
 
-orbit.equinoctial.date   = 2004-01-01T23:30:00.000
-orbit.equinoctial.a      = 42167290.0
-orbit.equinoctial.ex     = 1.0e-4
-orbit.equinoctial.ey     = 2.0e-5
-orbit.equinoctial.hx     =  0.00044
-orbit.equinoctial.hy     = -0.00012
-orbit.equinoctial.lambda = 104.99
+gravity_field  = {
+                    degree     = 10
+                    order      = 10
+                 }
 
-simulation.start.date     = 2004-01-01T00:00:00.000
-simulation.cycle.duration = 50.0
-simulation.cycle.number   = 3
+random_seed    = 15632532253
+
+spacecrafts    = [
+                    {
+                       orbit = {
+                                  type   = "equinoctial"
+                                  date   = 2004-01-01T23:30:00.000
+                                  a      = 42167290.0
+                                  ex     = 1.0e-4
+                                  ey     = 2.0e-5
+                                  hx     =  0.00044
+                                  hy     = -0.00012
+                                  lambda = 104.99
+                               }
+                       scenario = [
+                                    {
+                                      component = "orbit determination"
+                                      covariance = [
+                                                     [ 1.0, 0.0, 0.0, 0.0, 0.0, 0.0 ],
+                                                     [ 0.0, 1.0, 0.0, 0.0, 0.0, 0.0 ],
+                                                     [ 0.0, 0.0, 1.0, 0.0, 0.0, 0.0 ],
+                                                     [ 0.0, 0.0, 0.0, 1.0, 0.0, 0.0 ],
+                                                     [ 0.0, 0.0, 0.0, 0.0, 1.0, 0.0 ],
+                                                     [ 0.0, 0.0, 0.0, 0.0, 0.0, 1.0 ]
+                                                   ]
+                                      angle-type = true
+                                      small      = 1.0e-6
+                                    },
+                                    {
+                                      component  = "control loop"
+                                      max_eval   = 1000
+                                      propagator = "numerical"
+                                      controls   = [
+                                                     {
+                                                       scale = 0.01
+                                                       type  = "longitude margins"
+                                                       east_boundary = 19.9
+                                                       west_boundary = 20.1
+                                                       target        =  0.0
+                                                       sampling      = 3600.0
+                                                     }
+                                                     {
+                                                       scale         = 1.0e-4
+                                                       type          = "eccentricity circle"
+                                                       center_x      = 0.0
+                                                       center_y      = 0.0
+                                                       radius        = 1.0e-4
+                                                       sampling      = 3600.0
+                                                     }
+                                                   ]
+                                      maneuvers  = [
+                                                     { in_plane     = true
+                                                       name         = "E/W-1"
+                                                       dvMin        = -0.1
+                                                       dvMax        =  0.1
+                                                       nominal_date = 172800
+                                                       dtMin        = -86400
+                                                       dtMax        =  86400
+                                                     },
+                                                     { in_plane     = true
+                                                       name         = "E/W-2"
+                                                       dvMin        = -0.1
+                                                       dvMax        =  0.1
+                                                       nominal_date = 216000
+                                                       dtMin        = -86400
+                                                       dtMax        =  86400
+                                                     }
+                                                   ]
+                                    },
+                                    {
+                                      component          = "maneuver date error"
+                                      in_plane           = true
+                                      out_of_plane       = true
+                                      standard-deviation = 60.0
+                                    },
+                                    {
+                                      component          = "maneuver magnitude error"
+                                      in_plane           = true
+                                      out_of_plane       = true
+                                      standard-deviation = 0.001
+                                    },
+                                    {
+                                      component          = "propagation"
+                                      propagator         = "numerical"
+                                    }
+                                  ]
+                    }
+                 ]
+

@@ -9,6 +9,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.text.ParseException;
 
+import org.antlr.runtime.RecognitionException;
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math.ode.nonstiff.AdaptiveStepsizeIntegrator;
 import org.apache.commons.math.ode.nonstiff.DormandPrince853Integrator;
@@ -47,8 +48,8 @@ import org.orekit.utils.Constants;
 import org.orekit.utils.PVCoordinates;
 
 import eu.eumetsat.skat.utils.SkatException;
+import eu.eumetsat.skat.utils.SkatFileParser;
 import eu.eumetsat.skat.utils.SkatMessages;
-import eu.eumetsat.skat.utils.KeyValueFileParser;
 import eu.eumetsat.skat.utils.ParameterKey;
 
 /** Station-Keeping Analysis Tool (SKAT).
@@ -116,6 +117,10 @@ public class Skat {
             System.err.println(pe.getLocalizedMessage());
         } catch (IOException ioe) {
             System.err.println(ioe.getLocalizedMessage());
+        } catch (NoSuchFieldException nsfe) {
+            System.err.println(nsfe.getLocalizedMessage());
+        } catch ( RecognitionException re) {
+            System.err.println(re.getLocalizedMessage());
         } catch (OrekitException oe) {
             System.err.println(oe.getLocalizedMessage());
         } catch (SkatException se) {
@@ -147,13 +152,15 @@ public class Skat {
      * @exception OrekitException if orekit cannot be initialized properly (gravity field, UTC ...)
      * @exception ParseException if gravity field cannot be read
      * @exception IOException if gravity field cannot be read
+     * @exception NoSuchFieldException if a required parameter is missing
+     * @exception RecognitionException if there is a syntax error in the input file
      */
     public Skat(final File input)
-            throws SkatException, OrekitException, ParseException, IOException {
+            throws SkatException, OrekitException, ParseException, IOException,
+                   NoSuchFieldException, RecognitionException {
 
         // parse input file
-        final KeyValueFileParser<ParameterKey> parser =
-            new KeyValueFileParser<ParameterKey>(ParameterKey.class);
+        final SkatFileParser<ParameterKey> parser = new SkatFileParser<ParameterKey>();
         parser.parseInput(new FileInputStream(input));
         TimeScale utc = TimeScalesFactory.getUTC();
 
@@ -178,12 +185,8 @@ public class Skat {
         // set up orbit
         final Orbit initialOrbit;
         if (parser.containsKey(ParameterKey.ORBIT_CARTESIAN_DATE)) {
-            final Vector3D position = parser.getVector(ParameterKey.ORBIT_CARTESIAN_PX,
-                                                       ParameterKey.ORBIT_CARTESIAN_PY,
-                                                       ParameterKey.ORBIT_CARTESIAN_PZ);
-            final Vector3D velocity = parser.getVector(ParameterKey.ORBIT_CARTESIAN_VX,
-                                                       ParameterKey.ORBIT_CARTESIAN_VY,
-                                                       ParameterKey.ORBIT_CARTESIAN_VZ);
+            final Vector3D position = parser.getVector(ParameterKey.ORBIT_CARTESIAN_POSITION);
+            final Vector3D velocity = parser.getVector(ParameterKey.ORBIT_CARTESIAN_VELOCITY);
             initialOrbit = new CartesianOrbit(new PVCoordinates(position, velocity),
                                               inertialFrame,
                                               parser.getDate(ParameterKey.ORBIT_CARTESIAN_DATE, utc),

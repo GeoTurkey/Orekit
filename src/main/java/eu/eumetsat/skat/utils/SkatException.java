@@ -245,4 +245,33 @@ public class SkatException extends Exception {
 
     }
 
+    /** Create an {@link java.lang.NoSuchFieldException} for an internal error.
+     * @param specifier format specifier (to be translated)
+     * @param parts parts to insert in the format (no translation)
+     * @return a {@link java.lang.NoSuchFieldException}
+     */
+    public static NoSuchFieldException createNoSuchFieldException(final Localizable specifier,
+                                                                    final Object ... parts) {
+
+        return new NoSuchFieldException() {
+
+            /** Serializable UID. */
+            private static final long serialVersionUID = 7993072272125446238L;
+
+            /** {@inheritDoc} */
+            @Override
+            public String getMessage() {
+                return buildMessage(Locale.US, specifier, parts);
+            }
+
+            /** {@inheritDoc} */
+            @Override
+            public String getLocalizedMessage() {
+                return buildMessage(Locale.getDefault(), specifier, parts);
+            }
+
+        };
+
+    }
+
 }
