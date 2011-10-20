@@ -7,6 +7,7 @@ options {
 }
 
 tokens {
+  ASSIGNMENT;
   STRUCT_VALUE;
   ARRAY_VALUE;
   BOOLEAN_VALUE;
@@ -22,44 +23,25 @@ tokens {
 
 data
     :  (a+=assignment (SEMICOLON)*)+ EOF
-    -> ^(STRUCT_VALUE<SkatParseTree>[null, SkatParseTree.SkatType.STRUCTURE, $a]);
+    -> ^(STRUCT_VALUE $a);
 
 assignment
-    : IDENTIFIER ASSIGN p=value[$IDENTIFIER.text]
-    -> $p;
+    : IDENTIFIER ASSIGN v=value
+    -> ^(ASSIGNMENT $v);
 
-value[String key]
-    : structValue[key]
-    | arrayValue[key]
-    | intValue[key]
-    | doubleValue[key]
-    | booleanValue[key]
-    | stringValue[key];
+value
+    : structValue
+    | arrayValue
+    | INT
+    | DOUBLE
+    | DATE
+    | BOOLEAN
+    | STRING;
 
-structValue[String key]
+structValue
     : STRUCT_OPEN (fields+=assignment (SEMICOLON)*)+ STRUCT_CLOSE
-    -> ^(STRUCT_VALUE<SkatParseTree>[key, SkatParseTree.SkatType.STRUCTURE, $fields]);
+    -> ^(STRUCT_VALUE  $fields);
 
-arrayValue[String key]
-    : ARRAY_OPEN  elements+=value[null] (ARRAY_SEPARATOR elements+=value[null])* ARRAY_CLOSE
-    -> ^(ARRAY_VALUE<SkatParseTree>[key, SkatParseTree.SkatType.ARRAY, $elements]);
-
-booleanValue[String key]
-    : BOOLEAN
-    -> ^(BOOLEAN_VALUE<SkatParseTree>[key, SkatParseTree.SkatType.BOOLEAN]);
-
-intValue[String key]
-    : INT
-    -> ^(INT_VALUE<SkatParseTree>[key, SkatParseTree.SkatType.INT]);
-
-doubleValue[String key]
-    : DOUBLE
-    -> ^(DOUBLE_VALUE<SkatParseTree>[key, SkatParseTree.SkatType.DOUBLE]);
-
-dateValue[String key]
-    : DATE
-    -> ^(DATE_VALUE<SkatParseTree>[key, SkatParseTree.SkatType.DATE]);
-
-stringValue[String key]
-    : STRING
-    -> ^(STRING_VALUE<SkatParseTree>[key, SkatParseTree.SkatType.STRING]);
+arrayValue
+    : ARRAY_OPEN  elements+=value (ARRAY_SEPARATOR elements+=value)* ARRAY_CLOSE
+    -> ^(ARRAY_VALUE  $elements);

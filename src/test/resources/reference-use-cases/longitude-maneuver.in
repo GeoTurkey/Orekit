@@ -2,9 +2,10 @@ inertial_frame = "EME2000"
 earth_frame = "ITRF2008 with tides"
 
 simulation     = {
-                    start_date   = 2004-01-01T00:00:00.000
-                    duration     = 50.0
-                    cycle_number = 3
+                    start_date         = 2004-01-01T00:00:00.000
+                    position_tolerance = 100.0
+                    duration           = 50.0
+                    cycle_number       = 3
                  }
 
 gravity_field  = {
@@ -17,14 +18,13 @@ random_seed    = 15632532253
 spacecrafts    = [
                     {
                        orbit = {
-                                  type   = "equinoctial"
-                                  date   = 2004-01-01T23:30:00.000
-                                  a      = 42167290.0
-                                  ex     = 1.0e-4
-                                  ey     = 2.0e-5
-                                  hx     =  0.00044
-                                  hy     = -0.00012
-                                  lambda = 104.99
+                                  date     = 2004-01-01T23:30:00.000
+                                  a        = 42167290.0
+                                  ex       = 1.0e-4
+                                  ey       = 2.0e-5
+                                  hx       =  0.00044
+                                  hy       = -0.00012
+                                  lambda_M = 104.99
                                }
                        scenario = [
                                     {

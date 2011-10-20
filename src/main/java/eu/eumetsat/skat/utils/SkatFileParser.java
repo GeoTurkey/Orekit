@@ -6,205 +6,346 @@ import java.io.InputStream;
 import org.antlr.runtime.ANTLRInputStream;
 import org.antlr.runtime.CommonTokenStream;
 import org.antlr.runtime.RecognitionException;
+import org.antlr.runtime.tree.Tree;
 import org.apache.commons.math.exception.DimensionMismatchException;
-import org.apache.commons.math.exception.util.DummyLocalizable;
-import org.apache.commons.math.exception.util.Localizable;
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math.linear.Array2DRowRealMatrix;
 import org.apache.commons.math.linear.RealMatrix;
 import org.apache.commons.math.util.FastMath;
 import org.orekit.errors.OrekitException;
-import org.orekit.errors.OrekitMessages;
 import org.orekit.frames.Frame;
 import org.orekit.frames.FramesFactory;
 import org.orekit.frames.Predefined;
+import org.orekit.orbits.CartesianOrbit;
+import org.orekit.orbits.CircularOrbit;
+import org.orekit.orbits.EquinoctialOrbit;
+import org.orekit.orbits.KeplerianOrbit;
+import org.orekit.orbits.Orbit;
+import org.orekit.orbits.PositionAngle;
 import org.orekit.time.AbsoluteDate;
 import org.orekit.time.TimeScale;
+import org.orekit.utils.PVCoordinates;
 
-/** Simple parser for key/value files.
- * <p>
- * This file is a slightly modified copy (changed package name)
- * of the similar file present in the Orekit library tutorials,
- * which is distributed under the terms of the Apache Software
- * License V2.
- * </p>
- * @param Key type of the parameter keys
+/** Simple parser for key/value files with embedded structures and arrays.
  */
-public class SkatFileParser<Key extends Enum<Key>> {
+public class SkatFileParser {
 
-    /** Error message for unknown frame. */
-    private static final Localizable UNKNOWN_FRAME =
-        new DummyLocalizable("unknown frame {0}");
+    /** Name of the input for error messages. */
+    private String inputName;
 
-    /** Error message for not Earth frame. */
-    private static final Localizable NOT_EARTH_FRAME =
-        new DummyLocalizable("frame {0} is not an Earth frame");
-
-    /** Data root node. */
-    private SkatParseTree root;
-
-    /** Current node. */
-    private SkatParseTree current;
+    /** Data tree root node. */
+    private final Tree root;
 
     /** Simple constructor.
-     */
-    public SkatFileParser() {
-    }
-
-    /** Parse an input file.
-     * <p>
-     * The input file syntax is a set of key=value lines. Blank lines and lines
-     * starting with '#' (after whitespace trimming) are silently ignored. The
-     * equal sign may be surrounded by space characters. Keys must correspond to
-     * the {@link Key} enumerate constants, given that matching is not
-     * case sensitive and that '_' characters may appear as '.' characters in the
-     * file. This means that the lines:
-     * <pre>
-     *   # this is the semi-major axis
-     *   orbit.circular.a   = 7231582
-     * </pre>
-     * are perfectly right and correspond to key {@code Key#ORBIT_CIRCULAR_A} if
-     * such a constant exists in the enumerate.
-     * </p>
+     * @param inputName name of the input (for error messages)
      * @param input input stream
      * @exception IOException if input file cannot be read
      * @exception RecognitionException if a syntax error occurs in the input file
      * @exception IllegalArgumentException if a line cannot be read properly
      */
-    public void parseInput(final InputStream input)
+    public SkatFileParser(final String inputName, final InputStream input)
         throws IOException, RecognitionException, IllegalArgumentException {
+
+        this.inputName = inputName;
 
         SkatLexer lexer = new SkatLexer(new ANTLRInputStream(input));
         CommonTokenStream tokensStream = new CommonTokenStream();
         tokensStream.setTokenSource(lexer);
         SkatParser parser = new SkatParser(tokensStream);
-        root = (SkatParseTree) parser.data().getTree();
-        current = root;
+
+        root = (Tree) parser.data().getTree();
+
     }
 
-    /** Enter a branch in the data tree.
-     * @param key key of the selected branch
-     * @exception NoSuchFieldException if the branch does not exist
+    /** Get the root of the parsed data tree.
+     * @return root of the parsed data tree
      */
-    public void enterBranch(final Key key) throws NoSuchFieldException {
-        current = current.getField(key.name());
+    public Tree getRoot() {
+        return root;
     }
 
-    /** Leave a branch in the data tree.
+    /** Check if a structure node contains a value for a specified key.
+     * @param node structure node
+     * @param key field key
+     * @return true if the field exists
+     * @exception IllegalArgumentException if the node is not a structure node
      */
-    public void leaveBranch() {
-        current = (SkatParseTree) current.getParent();
-    }
+    public boolean containsKey(final Tree node, final ParameterKey key)
+        throws IllegalArgumentException {
 
-    /** Check if the current branch contains a parameter.
-     * @param key parameter key
-     * @return true if the branch contains the requested parameter
-     */
-    public boolean containsKey(final Key key) {
-        return current.containsField(key.name());
-    }
+        checkType(SkatParser.STRUCT_VALUE, node);
 
-    /** Get a raw double value from a parameters map.
-     * @param key parameter key
-     * @return double value corresponding to the key
-     * @exception NoSuchFieldException if key is not in the map
-     */
-    public double getDouble(final Key key) throws NoSuchFieldException {
-        return current.getField(key.name()).getDoubleValue();
-    }
-
-    /** Get a raw int value from a parameters map.
-     * @param key parameter key
-     * @return int value corresponding to the key
-     * @exception NoSuchFieldException if key is not in the map
-     */
-    public int getInt(final Key key) throws NoSuchFieldException {
-        return current.getField(key.name()).getIntValue();
-    }
-
-    /** Get an angle value from a parameters map.
-     * <p>
-     * The angle is considered to be in degrees in the file, it will be returned in radians
-     * </p>
-     * @param key parameter key
-     * @return angular value corresponding to the key, in radians
-     * @exception NoSuchFieldException if key is not in the map
-     */
-    public double getAngle(final Key key) throws NoSuchFieldException {
-        return FastMath.toRadians(getDouble(key));
-    }
-
-    /** Get a date value from a parameters map.
-     * <p>
-     * The date is considered to be in UTC in the file
-     * </p>
-     * @param key parameter key
-     * @param timeScale time scale in which the date is to be parsed
-     * @return date value corresponding to the key
-     * @exception NoSuchFieldException if key is not in the map
-     */
-    public AbsoluteDate getDate(final Key key, TimeScale timeScale) throws NoSuchFieldException {
-        return current.getField(key.name()).getDateValue(timeScale);
-    }
-
-    /** Get a string value from a parameters map.
-     * @param key parameter key
-     * @return string value corresponding to the key
-     * @exception NoSuchFieldException if key is not in the map
-     */
-    public String getString(final Key key) throws NoSuchFieldException {
-        return current.getField(key.name()).getStringValue();
-    }
-
-    /** Get a vector value from a parameters map.
-     * @param key parameter key
-     * @return vector value corresponding to the key
-     * @exception NoSuchFieldException if key is not in the map
-     * @exception DimensionMismatchException if array does not have 3 elements
-     */
-    public Vector3D getVector(final Key key)
-        throws NoSuchFieldException {
-        final double[] array = current.getField(key.name()).getDoubleArrayValue();
-        if (array.length != 3) {
-            throw new DimensionMismatchException(array.length, 3);
-        }
-        return new Vector3D(array[0], array[1], array[2]);
-    }
-
-    /** Get a covariance value from a parameters map.
-     * @param key parameter key
-     * @return covariance value corresponding to the key
-     * @exception NoSuchFieldException if key is not in the map
-     * @exception DimensionMismatchException if matrix does not have 6x6 elements
-     */
-    public RealMatrix getCovariance(final Key key)
-        throws NoSuchFieldException {
-
-        final double[][] matrix = current.getField(key.name()).getDoubleMatrixValue();
-
-        if (matrix.length != 6) {
-            throw new DimensionMismatchException(matrix.length, 6);
-        }
-        for (double[] row : matrix) {
-            if (row.length != 6) {
-                throw new DimensionMismatchException(row.length, 6);
+        for (int i = 0; i < node.getChildCount(); ++i) {
+            final Tree child = node.getChild(i);
+            checkType(SkatParser.ASSIGNMENT, child);
+            if (child.getText().equals(key.getKey())) {
+                return true;
             }
         }
 
+        return false;
+
+    }
+
+    /** Get the value associated with a specified key.
+     * @param node structure node
+     * @param key key to which the value is associated
+     * @return field
+     * @exception IllegalArgumentException if the node is not a structure node
+     * or if the node does not contain a value for the specified key
+     */
+    public Tree getValue(final Tree node, final ParameterKey key)
+        throws IllegalArgumentException {
+
+        checkType(SkatParser.STRUCT_VALUE, node);
+
+        for (int i = 0; i < node.getChildCount(); ++i) {
+            final Tree child = node.getChild(i);
+            checkType(SkatParser.ASSIGNMENT, child);
+            if (child.getText().equals(key.getKey())) {
+                // the value is the unique child of the assignment node
+                return child.getChild(0);
+            }
+        }
+
+        throw SkatException.createIllegalArgumentException(SkatMessages.MISSING_INPUT_DATA,
+                                                           node.getLine(), inputName,
+                                                           key.getKey());
+
+    }
+
+    /** Get the number of elements in an array.
+     * @param node structure node
+     * @return number of elements in the array
+     * @exception IllegalArgumentException if the node is not an array node
+     */
+    public int getElementsNumber(final Tree node)
+        throws IllegalArgumentException {
+
+        checkType(SkatParser.ARRAY_VALUE, node);
+        return node.getChildCount();
+
+    }
+
+    /** Get an array element.
+     * @param i array element index
+     * @return array element
+     * @exception IllegalArgumentException if the node is not an array node
+     * or if the node does not contain a value for the specified key
+     */
+    public Tree getElement(final Tree node, final int i)
+        throws IllegalArgumentException {
+
+        checkType(SkatParser.ARRAY_VALUE, node);
+        if ((i < 0) || (i >= node.getChildCount())) {
+            throw SkatException.createIllegalArgumentException(SkatMessages.MISSING_INPUT_DATA,
+                                                               node.getLine(), inputName,
+                                                               "[" + i + "]");
+        }
+        return node.getChild(i);
+
+    }
+
+    /** Get a double value.
+     * @param node structure containing the parameter
+     * @param key parameter key
+     * @return double value corresponding to the key
+     * @exception IllegalArgumentException if node does not contains the key
+     * or it is not a number
+     */
+    public double getDouble(final Tree node, final ParameterKey key) throws IllegalArgumentException {
+
+        // get the node
+        final Tree value = getValue(node, key);
+
+        // check its type (both integers and doubles can be parsed as doubles)
+        try {
+            checkType(SkatParser.INT_VALUE, value);
+        } catch (IllegalArgumentException iae) {
+            checkType(SkatParser.DOUBLE_VALUE, value);
+        }
+
+        // parse the value
+        return Double.parseDouble(value.getText());
+
+    }
+
+    /** Get an int value.
+     * @param node structure containing the parameter
+     * @param key parameter key
+     * @return int value corresponding to the key
+     * @exception IllegalArgumentException if node does not contains the key
+     * or it is not an integer
+     */
+    public int getInt(final Tree node, final ParameterKey key) throws IllegalArgumentException {
+
+        // get the node
+        final Tree value = getValue(node, key);
+
+        // check its type
+        checkType(SkatParser.INT_VALUE, value);
+
+        // parse the value
+        return Integer.parseInt(value.getText());
+
+    }
+
+    /** Get a boolean value.
+     * @param node structure containing the parameter
+     * @param key parameter key
+     * @return boolean value corresponding to the key
+     * @exception IllegalArgumentException if node does not contains the key
+     * or it is not a boolean
+     */
+    public boolean getBoolean(final Tree node, final ParameterKey key) throws IllegalArgumentException {
+
+        // get the node
+        final Tree value = getValue(node, key);
+
+        // check its type
+        checkType(SkatParser.BOOLEAN_VALUE, value);
+
+        // parse the value
+        return Boolean.parseBoolean(value.getText());
+
+    }
+
+    /** Get a string value.
+     * @param node structure containing the parameter
+     * @param key parameter key
+     * @return string value corresponding to the key
+     * @exception IllegalArgumentException if node does not contains the key
+     * or it is not a string
+     */
+    public String getString(final Tree node, final ParameterKey key) throws IllegalArgumentException {
+
+        // get the node
+        final Tree value = getValue(node, key);
+
+        // check its type
+        checkType(SkatParser.BOOLEAN_VALUE, value);
+
+        // parse the value
+        return value.getText();
+
+    }
+
+    /** Get an angle value.
+     * <p>
+     * The angle is considered to be in degrees in the file, it will be returned in radians
+     * </p>
+     * @param node structure containing the parameter
+     * @param key parameter key
+     * @return angle value corresponding to the key
+     * @exception IllegalArgumentException if node does not contains the key
+     * or it is not a number
+     */
+    public double getAngle(final Tree node, final ParameterKey key) throws IllegalArgumentException {
+        return FastMath.toRadians(getDouble(node, key));
+    }
+
+    /** Get a date value.
+     * @param node structure containing the parameter
+     * @param key parameter key
+     * @param timeScale time scale used to parse the date
+     * @return date value corresponding to the key
+     * @exception IllegalArgumentException if node does not contains the key
+     * or it is not a date
+     */
+    public AbsoluteDate getDate(final Tree node, final ParameterKey key, final TimeScale timeScale)
+        throws IllegalArgumentException {
+
+        // get the node
+        final Tree value = getValue(node, key);
+
+        // check its type
+        checkType(SkatParser.BOOLEAN_VALUE, value);
+
+        // parse the value
+        return new AbsoluteDate(value.getText(), timeScale);
+
+    }
+
+    /** Get a vector value.
+     * @param node structure containing the parameter
+     * @param key parameter key
+     * @return vector value corresponding to the key
+     * @exception IllegalArgumentException if node does not contains the key
+     * or it is not an array
+     * @exception DimensionMismatchException if array does not have 3 elements
+     */
+    public Vector3D getVector(final Tree node, final ParameterKey key)
+        throws IllegalArgumentException {
+
+        // get the node
+        final Tree value = getValue(node, key);
+
+        // check its type
+        checkType(SkatParser.ARRAY_VALUE, value);
+
+        // parse the value
+        if (getElementsNumber(value) != 3) {
+            throw new DimensionMismatchException(getElementsNumber(value), 3);
+        }
+        return new Vector3D(Double.parseDouble(getElement(value, 0).getText()),
+                            Double.parseDouble(getElement(value, 1).getText()),
+                            Double.parseDouble(getElement(value, 2).getText()));
+
+    }
+
+    /** Get a covariance value.
+     * @param node structure containing the parameter
+     * @param key parameter key
+     * @return covariance value corresponding to the key
+     * @exception IllegalArgumentException if node does not contains the key
+     * or it is not a matrix
+     * @exception DimensionMismatchException if matrix does not have 6x6 elements
+     */
+    public RealMatrix getCovariance(final Tree node, final ParameterKey key)
+        throws IllegalArgumentException {
+
+
+        // get the node
+        final Tree value = getValue(node, key);
+
+        // check types and dimensions
+        checkType(SkatParser.ARRAY_VALUE, value);
+        if (getElementsNumber(value) != 6) {
+            throw new DimensionMismatchException(getElementsNumber(value), 6);
+        }
+        for (int i = 0; i < getElementsNumber(value); ++i) {
+            final Tree row = getElement(value, i);
+            checkType(SkatParser.ARRAY_VALUE, row);
+            if (getElementsNumber(row) != 6) {
+                throw new DimensionMismatchException(getElementsNumber(row), 6);
+            }
+        }
+
+        // parse the value
+        final double[][] matrix = new double[6][6];
+        for (int i = 0; i < matrix.length; ++i) {
+            final Tree row = getElement(value, i);
+            for (int j = 0; j < matrix[i].length; ++j) {
+                matrix[i][j] = Double.parseDouble(getElement(row, j).getText());
+            }
+        }
         return new Array2DRowRealMatrix(matrix, false);
 
     }
 
-    /** Get an inertial frame from a parameters map.
+    /** Get an inertial frame.
+     * @param node structure containing the parameter
      * @param key parameter key
      * @return inertial frame corresponding to the key
-     * @exception NoSuchFieldException if key is not in the map
+     * @exception IllegalArgumentException if node does not contains the key
+     * or it is not a known inertial frame
      * @exception OrekitException if frame cannot be built
      */
-    public Frame getInertialFrame(final Key key) throws NoSuchFieldException, OrekitException {
+    public Frame getInertialFrame(final Tree node, final ParameterKey key)
+        throws IllegalArgumentException, OrekitException {
 
         // get the name of the desired frame
-        final String frameName = current.getField(key.name()).getStringValue();
+        final String frameName = getString(node, key);
 
         // check the name against predefined frames
         for (Predefined predefined : Predefined.values()) {
@@ -212,47 +353,131 @@ public class SkatFileParser<Key extends Enum<Key>> {
                 if (FramesFactory.getFrame(predefined).isPseudoInertial()) {
                     return FramesFactory.getFrame(predefined);
                 } else {
-                    throw new OrekitException(OrekitMessages.NON_PSEUDO_INERTIAL_FRAME_NOT_SUITABLE_FOR_DEFINING_ORBITS,
-                                              frameName);
+                    throw new OrekitException(SkatMessages.NOT_INERTIAL_FRAME, frameName);
                 }
             }
         }
 
         // none of the frames match the name
-        throw new OrekitException(UNKNOWN_FRAME, frameName);
+        throw new OrekitException(SkatMessages.UNKNOWN_FRAME, frameName);
 
     }
 
-    /** Get an Earth frame from a parameters map.
+    /** Get an Earth frame.
      * <p>
-     * We consider Earth frames are the frames with name starting with "ITRF".
+     * We consider Earth frames are the frames with name starting
+     * with either "ITRF" or "GTOD".
      * </p>
+     * @param node structure containing the parameter
      * @param key parameter key
-     * @param parameters key/value map containing the parameters
      * @return Earth frame corresponding to the key
-     * @exception NoSuchFieldException if key is not in the map
+     * @exception IllegalArgumentException if node does not contains the key
+     * or it is not a known Earth frame
      * @exception OrekitException if frame cannot be built
      */
-    public Frame getEarthFrame(final Key key)
-            throws NoSuchFieldException, OrekitException {
+    public Frame getEarthFrame(final Tree node, final ParameterKey key)
+            throws IllegalArgumentException, OrekitException {
 
         // get the name of the desired frame
-        final String frameName = current.getField(key.name()).getStringValue();
+        final String frameName = getString(node, key);
 
         // check the name against predefined frames
         for (Predefined predefined : Predefined.values()) {
             if (frameName.equals(predefined.getName())) {
-                if (frameName.startsWith("ITRF")) {
+                if (frameName.startsWith("ITRF") || frameName.startsWith("GTOD")) {
                     return FramesFactory.getFrame(predefined);
                 } else {
-                    throw new OrekitException(NOT_EARTH_FRAME, frameName);
+                    throw new OrekitException(SkatMessages.NOT_EARTH_FRAME, frameName);
                 }
             }
         }
 
         // none of the frames match the name
-        throw new OrekitException(UNKNOWN_FRAME, frameName);
+        throw new OrekitException(SkatMessages.UNKNOWN_FRAME, frameName);
 
+    }
+
+    /** Get an orbit.
+     * <p>
+     * Orbits may be defined in Cartesian, Keplerian, circular or equinoctial elements.
+     * </p>
+     * @param node structure containing the parameter
+     * @param inertialFrame inertial frame in which orbit is defined
+     * @param timeScale time scale in which orbit is defined
+     * @param mu gravity coefficient to use
+     * @return orbit corresponding to the key
+     * @exception IllegalArgumentException if node does not contains the key
+     * or it is not an orbit
+     * @exception OrekitException if orbit cannot be built
+     */
+    public Orbit getOrbit(final Tree node, final Frame inertialFrame,
+                          final TimeScale timeScale, final double mu)
+        throws IllegalArgumentException, OrekitException {
+
+        if (containsKey(node, ParameterKey.ORBIT_CARTESIAN_POSITION)) {
+            return new CartesianOrbit(new PVCoordinates(getVector(node, ParameterKey.ORBIT_CARTESIAN_POSITION),
+                                                        getVector(node, ParameterKey.ORBIT_CARTESIAN_VELOCITY)),
+                                      inertialFrame,
+                                      getDate(node, ParameterKey.ORBIT_CARTESIAN_DATE, timeScale),
+                                      mu);
+        } else if (containsKey(node, ParameterKey.ORBIT_KEPLERIAN_MEAN_ANOMALY)) {
+            return new KeplerianOrbit(getDouble(node, ParameterKey.ORBIT_KEPLERIAN_A),
+                                      getDouble(node, ParameterKey.ORBIT_KEPLERIAN_E),
+                                      getAngle(node,  ParameterKey.ORBIT_KEPLERIAN_I),
+                                      getAngle(node,  ParameterKey.ORBIT_KEPLERIAN_PA),
+                                      getAngle(node,  ParameterKey.ORBIT_KEPLERIAN_RAAN),
+                                      getAngle(node,  ParameterKey.ORBIT_KEPLERIAN_MEAN_ANOMALY),
+                                      PositionAngle.MEAN,
+                                      inertialFrame,
+                                      getDate(node, ParameterKey.ORBIT_KEPLERIAN_DATE, timeScale),
+                                      mu);
+        } else if (containsKey(node, ParameterKey.ORBIT_CIRCULAR_MEAN_LATITUDE_ARGUMENT)) {
+            return new CircularOrbit(getDouble(node, ParameterKey.ORBIT_CIRCULAR_A),
+                                     getDouble(node, ParameterKey.ORBIT_CIRCULAR_EX),
+                                     getDouble(node, ParameterKey.ORBIT_CIRCULAR_EY),
+                                     getAngle(node,  ParameterKey.ORBIT_CIRCULAR_I),
+                                     getAngle(node,  ParameterKey.ORBIT_CIRCULAR_RAAN),
+                                     getAngle(node,  ParameterKey.ORBIT_CIRCULAR_MEAN_LATITUDE_ARGUMENT),
+                                     PositionAngle.MEAN,
+                                     inertialFrame,
+                                     getDate(node, ParameterKey.ORBIT_CIRCULAR_DATE, timeScale),
+                                     mu);
+        } else if (containsKey(node, ParameterKey.ORBIT_EQUINOCTIAL_MEAN_LONGITUDE_ARGUMENT)) {
+            return new EquinoctialOrbit(getDouble(node, ParameterKey.ORBIT_EQUINOCTIAL_A),
+                                        getDouble(node, ParameterKey.ORBIT_EQUINOCTIAL_EX),
+                                        getDouble(node, ParameterKey.ORBIT_EQUINOCTIAL_EY),
+                                        getDouble(node, ParameterKey.ORBIT_EQUINOCTIAL_HX),
+                                        getDouble(node, ParameterKey.ORBIT_EQUINOCTIAL_HY),
+                                        getAngle(node, ParameterKey.ORBIT_EQUINOCTIAL_MEAN_LONGITUDE_ARGUMENT),
+                                        PositionAngle.MEAN,
+                                        inertialFrame,
+                                        getDate(node, ParameterKey.ORBIT_EQUINOCTIAL_DATE, timeScale),
+                                        mu);
+        } else {
+            throw SkatException.createIllegalArgumentException(SkatMessages.MISSING_INPUT_DATA,
+                                                               node.getLine(), inputName,
+                                                               ParameterKey.ORBIT_CARTESIAN_DATE.getKey() +
+                                                               "|" + ParameterKey.ORBIT_CARTESIAN_POSITION +
+                                                               "|" + ParameterKey.ORBIT_EQUINOCTIAL_A +
+                                                               "|" + ParameterKey.ORBIT_EQUINOCTIAL_EX +
+                                                               "|...");
+        }
+
+    }
+
+    /** Check a parser tree node type.
+     * @param expected expected type
+     * @param node tree node to check
+     * @exception IllegalArgumentException if the node has not the expected type
+     */
+    private void checkType(final int expected, final Tree node)
+        throws IllegalArgumentException {
+        if (node.getType() != expected) {
+            throw SkatException.createIllegalArgumentException(SkatMessages.WRONG_TYPE,
+                                                               node.getLine(), inputName,
+                                                               SkatParser.tokenNames[expected],
+                                                               SkatParser.tokenNames[node.getType()]);
+        }
     }
 
 }
