@@ -35,7 +35,7 @@ spacecrafts    = [
                      ];
                      angle_type = "true angle";
                      small      = 1.0e-6;
-                 };
+                 }
              },
              {
                  component  = "control loop";
@@ -101,7 +101,7 @@ spacecrafts    = [
                      position_tolerance   = 100.0;
                      gravity_field_degree = 10;
                      gravity_field_order  = 10;
-                 };
+                 }
              }
          ]
      }
