@@ -73,12 +73,13 @@ public class SkatFileParser {
     public boolean containsKey(final Tree node, final ParameterKey key)
         throws IllegalArgumentException {
 
-        checkType(SkatParser.STRUCT_VALUE, node);
+        checkType(SkatParser.STRUCT, node);
 
         for (int i = 0; i < node.getChildCount(); ++i) {
             final Tree child = node.getChild(i);
             checkType(SkatParser.ASSIGNMENT, child);
-            if (child.getText().equals(key.getKey())) {
+         // the key is the first child
+            if (child.getChild(0).getText().equals(key.getKey())) {
                 return true;
             }
         }
@@ -97,14 +98,14 @@ public class SkatFileParser {
     public Tree getValue(final Tree node, final ParameterKey key)
         throws IllegalArgumentException {
 
-        checkType(SkatParser.STRUCT_VALUE, node);
+        checkType(SkatParser.STRUCT, node);
 
         for (int i = 0; i < node.getChildCount(); ++i) {
             final Tree child = node.getChild(i);
             checkType(SkatParser.ASSIGNMENT, child);
-            if (child.getText().equals(key.getKey())) {
-                // the value is the unique child of the assignment node
-                return child.getChild(0);
+            // the key is the first child and the value is the second child
+            if (child.getChild(0).getText().equals(key.getKey())) {
+                return child.getChild(1);
             }
         }
 
@@ -122,7 +123,7 @@ public class SkatFileParser {
     public int getElementsNumber(final Tree node)
         throws IllegalArgumentException {
 
-        checkType(SkatParser.ARRAY_VALUE, node);
+        checkType(SkatParser.ARRAY, node);
         return node.getChildCount();
 
     }
@@ -136,7 +137,7 @@ public class SkatFileParser {
     public Tree getElement(final Tree node, final int i)
         throws IllegalArgumentException {
 
-        checkType(SkatParser.ARRAY_VALUE, node);
+        checkType(SkatParser.ARRAY, node);
         if ((i < 0) || (i >= node.getChildCount())) {
             throw SkatException.createIllegalArgumentException(SkatMessages.MISSING_INPUT_DATA,
                                                                node.getLine(), inputName,
@@ -160,9 +161,9 @@ public class SkatFileParser {
 
         // check its type (both integers and doubles can be parsed as doubles)
         try {
-            checkType(SkatParser.INT_VALUE, value);
+            checkType(SkatParser.INT, value);
         } catch (IllegalArgumentException iae) {
-            checkType(SkatParser.DOUBLE_VALUE, value);
+            checkType(SkatParser.DOUBLE, value);
         }
 
         // parse the value
@@ -183,7 +184,7 @@ public class SkatFileParser {
         final Tree value = getValue(node, key);
 
         // check its type
-        checkType(SkatParser.INT_VALUE, value);
+        checkType(SkatParser.INT, value);
 
         // parse the value
         return Integer.parseInt(value.getText());
@@ -203,7 +204,7 @@ public class SkatFileParser {
         final Tree value = getValue(node, key);
 
         // check its type
-        checkType(SkatParser.BOOLEAN_VALUE, value);
+        checkType(SkatParser.BOOLEAN, value);
 
         // parse the value
         return Boolean.parseBoolean(value.getText());
@@ -223,7 +224,7 @@ public class SkatFileParser {
         final Tree value = getValue(node, key);
 
         // check its type
-        checkType(SkatParser.BOOLEAN_VALUE, value);
+        checkType(SkatParser.STRING, value);
 
         // parse the value
         return value.getText();
@@ -259,7 +260,7 @@ public class SkatFileParser {
         final Tree value = getValue(node, key);
 
         // check its type
-        checkType(SkatParser.BOOLEAN_VALUE, value);
+        checkType(SkatParser.DATE, value);
 
         // parse the value
         return new AbsoluteDate(value.getText(), timeScale);
@@ -281,7 +282,7 @@ public class SkatFileParser {
         final Tree value = getValue(node, key);
 
         // check its type
-        checkType(SkatParser.ARRAY_VALUE, value);
+        checkType(SkatParser.ARRAY, value);
 
         // parse the value
         if (getElementsNumber(value) != 3) {
@@ -309,13 +310,13 @@ public class SkatFileParser {
         final Tree value = getValue(node, key);
 
         // check types and dimensions
-        checkType(SkatParser.ARRAY_VALUE, value);
+        checkType(SkatParser.ARRAY, value);
         if (getElementsNumber(value) != 6) {
             throw new DimensionMismatchException(getElementsNumber(value), 6);
         }
         for (int i = 0; i < getElementsNumber(value); ++i) {
             final Tree row = getElement(value, i);
-            checkType(SkatParser.ARRAY_VALUE, row);
+            checkType(SkatParser.ARRAY, row);
             if (getElementsNumber(row) != 6) {
                 throw new DimensionMismatchException(getElementsNumber(row), 6);
             }

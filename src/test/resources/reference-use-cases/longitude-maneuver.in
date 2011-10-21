@@ -1,103 +1,107 @@
-inertial_frame = "EME2000"
-earth_frame = "ITRF2008 with tides"
+inertial_frame   = "EME2000";
+earth_frame      = "ITRF2008 with tides";
+output_file_name = "longitude-maneuver.out";
 
 simulation     = {
-                    start_date         = 2004-01-01T00:00:00.000
-                    position_tolerance = 100.0
-                    duration           = 50.0
-                    cycle_number       = 3
-                 }
-
-gravity_field  = {
-                    degree     = 10
-                    order      = 10
-                 }
-
-random_seed    = 15632532253
+     start_date    = 2004-01-01T00:00:00.000;
+     duration      = 50.0;
+     cycle_number  = 3;
+     random_seed   = 156325253;
+};
 
 spacecrafts    = [
-                    {
-                       orbit = {
-                                  date     = 2004-01-01T23:30:00.000
-                                  a        = 42167290.0
-                                  ex       = 1.0e-4
-                                  ey       = 2.0e-5
-                                  hx       =  0.00044
-                                  hy       = -0.00012
-                                  lambda_M = 104.99
-                               }
-                       scenario = [
-                                    {
-                                      component = "orbit determination"
-                                      covariance = [
-                                                     [ 1.0, 0.0, 0.0, 0.0, 0.0, 0.0 ],
-                                                     [ 0.0, 1.0, 0.0, 0.0, 0.0, 0.0 ],
-                                                     [ 0.0, 0.0, 1.0, 0.0, 0.0, 0.0 ],
-                                                     [ 0.0, 0.0, 0.0, 1.0, 0.0, 0.0 ],
-                                                     [ 0.0, 0.0, 0.0, 0.0, 1.0, 0.0 ],
-                                                     [ 0.0, 0.0, 0.0, 0.0, 0.0, 1.0 ]
-                                                   ]
-                                      angle-type = true
-                                      small      = 1.0e-6
-                                    },
-                                    {
-                                      component  = "control loop"
-                                      max_eval   = 1000
-                                      propagator = "numerical"
-                                      controls   = [
-                                                     {
-                                                       scale = 0.01
-                                                       type  = "longitude margins"
-                                                       east_boundary = 19.9
-                                                       west_boundary = 20.1
-                                                       target        =  0.0
-                                                       sampling      = 3600.0
-                                                     }
-                                                     {
-                                                       scale         = 1.0e-4
-                                                       type          = "eccentricity circle"
-                                                       center_x      = 0.0
-                                                       center_y      = 0.0
-                                                       radius        = 1.0e-4
-                                                       sampling      = 3600.0
-                                                     }
-                                                   ]
-                                      maneuvers  = [
-                                                     { in_plane     = true
-                                                       name         = "E/W-1"
-                                                       dvMin        = -0.1
-                                                       dvMax        =  0.1
-                                                       nominal_date = 172800
-                                                       dtMin        = -86400
-                                                       dtMax        =  86400
-                                                     },
-                                                     { in_plane     = true
-                                                       name         = "E/W-2"
-                                                       dvMin        = -0.1
-                                                       dvMax        =  0.1
-                                                       nominal_date = 216000
-                                                       dtMin        = -86400
-                                                       dtMax        =  86400
-                                                     }
-                                                   ]
-                                    },
-                                    {
-                                      component          = "maneuver date error"
-                                      in_plane           = true
-                                      out_of_plane       = true
-                                      standard-deviation = 60.0
-                                    },
-                                    {
-                                      component          = "maneuver magnitude error"
-                                      in_plane           = true
-                                      out_of_plane       = true
-                                      standard-deviation = 0.001
-                                    },
-                                    {
-                                      component          = "propagation"
-                                      propagator         = "numerical"
-                                    }
-                                  ]
-                    }
-                 ]
-
+     {
+         orbit = {
+             date     = 2004-01-01T23:30:00.000;
+             a        = 42167290.0;
+             ex       = 1.0e-4;
+             ey       = 2.0e-5;
+             hx       =  0.00044;
+             hy       = -0.00012;
+             lambda_M = 104.99;
+         };
+         scenario = [
+             {
+                 component = "orbit determination";
+                 covariance = {
+                     matrix     = [
+                         [ 1.0, 0.0, 0.0, 0.0, 0.0, 0.0 ],
+                         [ 0.0, 1.0, 0.0, 0.0, 0.0, 0.0 ],
+                         [ 0.0, 0.0, 1.0, 0.0, 0.0, 0.0 ],
+                         [ 0.0, 0.0, 0.0, 1.0, 0.0, 0.0 ],
+                         [ 0.0, 0.0, 0.0, 0.0, 1.0, 0.0 ],
+                         [ 0.0, 0.0, 0.0, 0.0, 0.0, 1.0 ]
+                     ];
+                     angle_type = "true angle";
+                     small      = 1.0e-6;
+                 };
+             },
+             {
+                 component  = "control loop";
+                 max_eval   = 1000;
+                 propagator = "numerical";
+                 controls   = [
+                     {
+                         scale         = 0.01;
+                         type          = "longitude margins";
+                         name          = "longitude";
+                         east_boundary = 19.9;
+                         west_boundary = 20.1;
+                         target        =  0.0;
+                         sampling      = 3600.0;
+                     },
+                     {
+                         scale         = 1.0e-4;
+                         type          = "eccentricity circle";
+                         name          = "eccentricity";
+                         center_x      = 0.0;
+                         center_y      = 0.0;
+                         radius        = 1.0e-4;
+                         sampling      = 3600.0;
+                     }
+                 ];
+                 maneuvers  = [
+                     {
+                         in_plane     = true;
+                         name         = "E/W-1";
+                         dv_min       = -0.1;
+                         dv_max       =  0.1;
+                         nominal_date = 172800;
+                         dt_min       = -86400;
+                         dt_max       =  86400;
+                     },
+                     {
+                         in_plane     = true;
+                         name         = "E/W-2";
+                         dv_min       = -0.1;
+                         dv_max       =  0.1;
+                         nominal_date = 216000;
+                         dt_min       = -86400;
+                         dt_max       =  86400;
+                     }
+                 ];
+             },
+             {
+                 component          = "maneuver date error";
+                 in_plane           = true;
+                 out_of_plane       = true;
+                 standard_deviation = 60.0;
+             },
+             {
+                 component          = "maneuver magnitude error";
+                 in_plane           = true;
+                 out_of_plane       = true;
+                 standard_deviation = 0.001;
+             },
+             {
+                 component          = "propagation";
+                 propagator         = {
+                     method               = "numerical";
+                     position_tolerance   = 100.0;
+                     gravity_field_degree = 10;
+                     gravity_field_order  = 10;
+                 };
+             }
+         ];
+     }
+];

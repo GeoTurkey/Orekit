@@ -164,8 +164,8 @@ public class LatestEscapeTimeStationKeeping {
 
         // load gravity field
         final PotentialCoefficientsProvider gravityField = GravityFieldFactory.getPotentialProvider();
-        final int degree = parser.getInt(root, ParameterKey.GRAVITY_FIELD_DEGREE);
-        final int order  = parser.getInt(root, ParameterKey.GRAVITY_FIELD_ORDER);
+        final int degree = parser.getInt(root, ParameterKey.NUMERICAL_PROPAGATOR_GRAVITY_FIELD_DEGREE);
+        final int order  = parser.getInt(root, ParameterKey.NUMERICAL_PROPAGATOR_GRAVITY_FIELD_ORDER);
         ForceModel gravity = new CunninghamAttractionModel(earthFrame,
                                                            gravityField.getAe(),
                                                            gravityField.getMu(),

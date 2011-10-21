@@ -9,10 +9,13 @@ public enum ParameterKey {
 
     INERTIAL_FRAME,
     EARTH_FRAME,
-    GRAVITY_FIELD,
-    GRAVITY_FIELD_DEGREE("degree"),
-    GRAVITY_FIELD_ORDER("order"),
+    SIMULATION,
+    SIMULATION_START_DATE("start_date"),
+    SIMULATION_CYCLE_DURATION("duration"),
+    SIMULATION_CYCLE_NUMBER("cycle_number"),
+    SIMULATION_RANDOM_SEED("random_seed"),
 
+    SPACECRAFTS,
     ORBIT,
 
     ORBIT_CARTESIAN_DATE("date"),
@@ -43,11 +46,51 @@ public enum ParameterKey {
     ORBIT_EQUINOCTIAL_HY("hy"),
     ORBIT_EQUINOCTIAL_MEAN_LONGITUDE_ARGUMENT("lambda_M"),
 
-    SIMULATION,
-    SIMULATION_START_DATE("start_date"),
-    SIMULATION_POSITION_TOLERANCE("position_tolerance"),
-    SIMULATION_CYCLE_DURATION("duration"),
-    SIMULATION_CYCLE_NUMBER("cycle_number");
+    SCENARIO,
+    SCENARIO_COMPONENT("component"),
+
+    COMPONENT_ORBIT_DETERMINATION_COVARIANCE("covariance"),
+    COVARIANCE_MATRIX("matrix"),
+    COVARIANCE_ANGLE_TYPE("angle_type"),
+    COVARIANCE_SMALL("small"),
+
+    COMPONENT_CONTROL_LOOP_MAX_EVAL("max_eval"),
+    COMPONENT_CONTROL_LOOP_PROPAGATOR("propagator"),
+    COMPONENT_CONTROL_LOOP_CONTROLS("controls"),
+    COMPONENT_CONTROL_LOOP_MANEUVERS("maneuvers"),
+
+    CONTROL_SCALE("scale"),
+    CONTROL_TYPE("type"),
+    CONTROL_NAME("name"),
+    CONTROL_SAMPLING("sampling"),
+    CONTROL_LONGITUDE_MARGINS_EAST("east_boundary"),
+    CONTROL_LONGITUDE_MARGINS_WEST("west_boundary"),
+    CONTROL_LONGITUDE_MARGINS_TARGET("target"),
+    CONTROL_ECCENTRICITY_CIRCLE_CENTER_X("center_x"),
+    CONTROL_ECCENTRICITY_CIRCLE_CENTER_Y("center_y"),
+    CONTROL_ECCENTRICITY_CIRCLE_RADIUS("radius"),
+
+    MANEUVERS_IN_PLANE("in_plane"),
+    MANEUVERS_NAME("name"),
+    MANEUVERS_DV_MIN("dv_min"),
+    MANEUVERS_DV_MAX("dv_max"),
+    MANEUVERS_NOMINAL_DATE("nominal_date"),
+    MANEUVERS_DT_MIN("dt_min"),
+    MANEUVERS_DT_MAX("dt_max"),
+
+    COMPONENT_MANEUVER_DATE_ERROR_IN_PLANE("in_plane"),
+    COMPONENT_MANEUVER_DATE_ERROR_OUT_OF_PLANE("out_of_plane"),
+    COMPONENT_MANEUVER_DATE_ERROR_STANDARD_DEVIATION("standard_deviation"),
+
+    COMPONENT_MANEUVER_MAGNITUDE_ERROR_IN_PLANE("in_plane"),
+    COMPONENT_MANEUVER_MAGNITUDE_ERROR_OUT_OF_PLANE("out_of_plane"),
+    COMPONENT_MANEUVER_MAGNITUDE_ERROR_STANDARD_DEVIATION("standard_deviation"),
+
+    COMPONENT_PROPAGATION_PROPAGATOR("propagator"),
+    COMPONENT_PROPAGATION_METHOD("method"),
+    NUMERICAL_PROPAGATOR_TOLERANCE("position_tolerance"),
+    NUMERICAL_PROPAGATOR_GRAVITY_FIELD_DEGREE("gravity_field_degree"),
+    NUMERICAL_PROPAGATOR_GRAVITY_FIELD_ORDER("gravity_field_order");
 
     /** Key to be recognized in input files. */
     private final String key;

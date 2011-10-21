@@ -22,8 +22,9 @@ lexer grammar SkatLexer;
 }
 
 
-TRUE                          : 't' 'r' 'u' 'e';
-FALSE                         : 'f' 'a' 'l' 's' 'e';
+fragment TRUE                 : 'true';
+fragment FALSE                : 'false';
+BOOLEAN                       : TRUE | FALSE;
 
 fragment LETTER_LIKE          : ('a'..'z') | ('A'..'Z') | '_';
 fragment DIGIT                : '0'..'9';

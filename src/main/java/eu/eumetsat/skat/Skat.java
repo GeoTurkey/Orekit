@@ -8,24 +8,22 @@ import java.io.PrintStream;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.antlr.runtime.RecognitionException;
 import org.antlr.runtime.tree.Tree;
-import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
+import org.apache.commons.math.linear.RealMatrix;
 import org.apache.commons.math.ode.nonstiff.AdaptiveStepsizeIntegrator;
 import org.apache.commons.math.ode.nonstiff.DormandPrince853Integrator;
-import org.apache.commons.math.optimization.GoalType;
-import org.apache.commons.math.optimization.univariate.BrentOptimizer;
-import org.apache.commons.math.optimization.univariate.UnivariateRealPointValuePair;
-import org.apache.commons.math.util.FastMath;
+import org.apache.commons.math.random.RandomGenerator;
+import org.apache.commons.math.random.Well19937a;
 import org.orekit.attitudes.LofOffset;
 import org.orekit.bodies.BodyShape;
-import org.orekit.bodies.GeodeticPoint;
 import org.orekit.bodies.OneAxisEllipsoid;
 import org.orekit.data.DataProvidersManager;
 import org.orekit.data.DirectoryCrawler;
 import org.orekit.errors.OrekitException;
-import org.orekit.errors.PropagationException;
 import org.orekit.forces.ForceModel;
 import org.orekit.forces.gravity.CunninghamAttractionModel;
 import org.orekit.forces.gravity.potential.GravityFieldFactory;
@@ -33,15 +31,19 @@ import org.orekit.forces.gravity.potential.PotentialCoefficientsProvider;
 import org.orekit.frames.Frame;
 import org.orekit.frames.LOFType;
 import org.orekit.orbits.Orbit;
-import org.orekit.propagation.Propagator;
+import org.orekit.orbits.PositionAngle;
 import org.orekit.propagation.SpacecraftState;
 import org.orekit.propagation.numerical.NumericalPropagator;
-import org.orekit.propagation.sampling.OrekitFixedStepHandler;
 import org.orekit.time.AbsoluteDate;
 import org.orekit.time.TimeScale;
 import org.orekit.time.TimeScalesFactory;
 import org.orekit.utils.Constants;
 
+import eu.eumetsat.skat.realization.ManeuverDateError;
+import eu.eumetsat.skat.realization.ManeuverMagnitudeError;
+import eu.eumetsat.skat.realization.OrbitDetermination;
+import eu.eumetsat.skat.realization.Propagation;
+import eu.eumetsat.skat.scenario.ScenarioComponent;
 import eu.eumetsat.skat.utils.ParameterKey;
 import eu.eumetsat.skat.utils.SkatException;
 import eu.eumetsat.skat.utils.SkatFileParser;
@@ -56,23 +58,56 @@ import eu.eumetsat.skat.utils.SkatMessages;
  */
 public class Skat {
 
+    /** Constant for orbit determination scenario component. */
+    private static final String ORBIT_DETERMINATION_COMPONENT = "orbit determination";
+
+    /** Constant for control loop scenario component. */
+    private static final String CONTROL_LOOP_COMPONENT = "control loop";
+
+    /** Constant for maneuver_date_error scenario component. */
+    private static final String MANEUVER_DATE_ERROR_COMPONENT = "maneuver date error";
+
+    /** Constant for maneuver magnitude error scenario component. */
+    private static final String MANEUVER_MAGNITUDE_ERROR_COMPONENT = "maneuver magnitude error";
+
+    /** Constant for propagation scenario component. */
+    private static final String PROPAGATION_COMPONENT = "propagation";
+
+    /** Constant for numerical propagator. */
+    private static final String NUMERICAL_PROPAGATOR = "numerical";
+
+    /** Constant for numerical propagator. */
+    private static final String SEMI_ANALYTICAL_PROPAGATOR = "semi-analytical";
+
+    /** Constant for true angle type. */
+    private static final String TRUE_ANGLE= "true angle";
+
+    /** Constant for eccentric angle type. */
+    private static final String ECCENTRIC_ANGLE= "eccentric angle";
+
+    /** Constant for mean angle type. */
+    private static final String MEAN_ANGLE= "mean angle";
+
     /** Output file. */
     private final PrintStream output;
 
     /** Initial orbit. */
-    private final SpacecraftState initialState;
+    private final List<SpacecraftState> initialState;
+
+    /** Scenario components. */
+    private final List<List<ScenarioComponent>> scenarii;
 
     /** Earth model. */
     private final BodyShape earth;
-
-    /** Orbit propagator. */
-    private final Propagator propagator;
 
     /** Inertial frame. */
     private final Frame inertialFrame;
 
     /** Earth frame. */
     private final Frame earthFrame;
+
+    /** Random generator. */
+    private final RandomGenerator generator;
 
     /** Start date. */
     private final AbsoluteDate startDate;
@@ -169,38 +204,50 @@ public class Skat {
                                      Constants.WGS84_EARTH_FLATTENING,
                                      earthFrame);
 
-        // load gravity field
-        final PotentialCoefficientsProvider gravityField = GravityFieldFactory.getPotentialProvider();
-        final Tree gravityNode = parser.getValue(root, ParameterKey.GRAVITY_FIELD);
-        final int degree = parser.getInt(gravityNode, ParameterKey.GRAVITY_FIELD_DEGREE);
-        final int order  = parser.getInt(gravityNode, ParameterKey.GRAVITY_FIELD_ORDER);
-        ForceModel gravity = new CunninghamAttractionModel(earthFrame,
-                                                           gravityField.getAe(),
-                                                           gravityField.getMu(),
-                                                           gravityField.getC(degree, order, false),
-                                                           gravityField.getS(degree, order, false));
-        // set up orbit
-        final Tree orbitNode = parser.getValue(root, ParameterKey.ORBIT);
-        final Orbit initialOrbit = parser.getOrbit(orbitNode, inertialFrame, utc, gravityField.getMu());
-        initialState = new SpacecraftState(initialOrbit);
-
-        // set up propagator
-        final double minStep = 0.01;
-        final double maxStep = Constants.JULIAN_DAY;
         final Tree simulationNode = parser.getValue(root, ParameterKey.SIMULATION);
-        final double dP      = parser.getDouble(simulationNode, ParameterKey.SIMULATION_POSITION_TOLERANCE);
-        final double[][] tolerance = NumericalPropagator.tolerances(dP, initialOrbit, initialOrbit.getType());
-        final AdaptiveStepsizeIntegrator integrator = new DormandPrince853Integrator(minStep, maxStep, tolerance[0], tolerance[1]);
-        integrator.setInitialStepSize(initialOrbit.getKeplerianPeriod() / 100.0);
-        final NumericalPropagator numPropagator = new NumericalPropagator(integrator);
-        numPropagator.setAttitudeProvider(new LofOffset(initialState.getFrame(), LOFType.TNW));
-        numPropagator.addForceModel(gravity);
-        numPropagator.setOrbitType(initialOrbit.getType());
-        propagator = numPropagator;
-
         startDate     = parser.getDate(simulationNode, ParameterKey.SIMULATION_START_DATE, utc);
         cycleDuration = parser.getDouble(simulationNode, ParameterKey.SIMULATION_CYCLE_DURATION) * Constants.JULIAN_DAY;
         cyclesNumber  = parser.getInt(simulationNode, ParameterKey.SIMULATION_CYCLE_NUMBER);
+        generator     = new Well19937a(parser.getInt(simulationNode, ParameterKey.SIMULATION_RANDOM_SEED));
+
+        // load gravity field
+        final PotentialCoefficientsProvider gravityField = GravityFieldFactory.getPotentialProvider();
+
+        // set up multi-spacecrafts simulation
+        final Tree spacecraftsNode = parser.getValue(root, ParameterKey.SPACECRAFTS);
+        initialState = new ArrayList<SpacecraftState>();
+        scenarii     = new ArrayList<List<ScenarioComponent>>();
+        for (int i = 0; i < parser.getElementsNumber(spacecraftsNode); ++i) {
+
+            // set up orbit
+            final Tree orbitNode = parser.getValue(parser.getElement(spacecraftsNode, i),
+                                                   ParameterKey.ORBIT);
+            final Orbit initialOrbit = parser.getOrbit(orbitNode, inertialFrame, utc, gravityField.getMu());
+            initialState.add(new SpacecraftState(initialOrbit));
+
+            // set up scenario components
+            final Tree scenarioNode = parser.getValue(parser.getElement(spacecraftsNode, i),
+                                                      ParameterKey.SCENARIO);
+            List<ScenarioComponent> components = new ArrayList<ScenarioComponent>();
+            for (int j = 0; j < parser.getElementsNumber(scenarioNode); ++j) {
+                final Tree componentNode = parser.getElement(scenarioNode, j);
+                final String type = parser.getString(componentNode, ParameterKey.SCENARIO_COMPONENT);
+                if (type.equals(ORBIT_DETERMINATION_COMPONENT)) {
+                    components.add(parseOrbitDeterminationComponent(parser, componentNode, i));
+                } else if (type.equals(CONTROL_LOOP_COMPONENT)) {
+                    components.add(parseControlLoopComponent(parser, componentNode));
+                } else if (type.equals(MANEUVER_DATE_ERROR_COMPONENT)) {
+                    components.add(parseManeuverDateErrorComponent(parser, componentNode, i));
+                } else if (type.equals(MANEUVER_MAGNITUDE_ERROR_COMPONENT)) {
+                    components.add(parseManeuverMagnitudeErrorComponent(parser, componentNode, i));
+                } else if (type.equals(PROPAGATION_COMPONENT)) {
+                    components.add(parsePropagationComponent(parser, componentNode,
+                                                             initialOrbit, gravityField));
+                }
+            }
+            scenarii.add(components);
+
+        }
 
         // open the output stream
         output = new PrintStream(new File(input.getParentFile(),
@@ -208,31 +255,129 @@ public class Skat {
 
     }
 
+    /** Parse an orbit determination component.
+     * @param parser input file parser
+     * @param node data node containing component configuration parameters
+     * @param spacecraftIndex spacecraft index
+     * @return parsed component
+     */
+    private ScenarioComponent parseOrbitDeterminationComponent(final SkatFileParser parser, final Tree node,
+                                                               final int spacecraftIndex) {
+        final Tree covarianceNode =
+                parser.getValue(node, ParameterKey.COMPONENT_ORBIT_DETERMINATION_COVARIANCE);
+        final RealMatrix covariance =
+                parser.getCovariance(covarianceNode, ParameterKey.COVARIANCE_MATRIX);
+        final String angleType =
+                parser.getString(covarianceNode, ParameterKey.COVARIANCE_ANGLE_TYPE);
+        final PositionAngle positionAngle;
+        if (angleType.equals(TRUE_ANGLE)) {
+            positionAngle = PositionAngle.TRUE;
+        } else if (angleType.equals(ECCENTRIC_ANGLE)) {
+            positionAngle = PositionAngle.ECCENTRIC;
+        } else {
+            positionAngle = PositionAngle.MEAN;
+        }
+        final double small =
+                parser.getDouble(covarianceNode, ParameterKey.COVARIANCE_SMALL);
+        return new OrbitDetermination(spacecraftIndex, covariance, positionAngle, small, generator);
+    }
+
+    /** Parse a control loop component.
+     * @param parser input file parser
+     * @param node data node containing component configuration parameters
+     * @return parsed component
+     */
+    private ScenarioComponent parseControlLoopComponent(final SkatFileParser parser, final Tree node) {
+        // TODO
+        return null;
+    }
+
+    /** Parse a maneuver date error component.
+     * @param parser input file parser
+     * @param node data node containing component configuration parameters
+     * @param spacecraftIndex spacecraft index
+     * @return parsed component
+     */
+    private ScenarioComponent parseManeuverDateErrorComponent(final SkatFileParser parser, final Tree node,
+                                                              final int spacecraftIndex) {
+        final boolean inPlane =
+                parser.getBoolean(node, ParameterKey.COMPONENT_MANEUVER_DATE_ERROR_IN_PLANE);
+        final boolean outOfPlane =
+                parser.getBoolean(node, ParameterKey.COMPONENT_MANEUVER_DATE_ERROR_OUT_OF_PLANE);
+        final double standardDeviation =
+                parser.getDouble(node, ParameterKey.COMPONENT_MANEUVER_DATE_ERROR_STANDARD_DEVIATION);
+        return new ManeuverDateError(spacecraftIndex, inPlane, outOfPlane, standardDeviation, generator);
+    }
+
+    /** Parse a maneuver magnitude error component.
+     * @param parser input file parser
+     * @param node data node containing component configuration parameters
+     * @param spacecraftIndex spacecraft index
+     * @return parsed component
+     */
+    private ScenarioComponent parseManeuverMagnitudeErrorComponent(final SkatFileParser parser, final Tree node,
+                                                                   final int spacecraftIndex) {
+        final boolean inPlane =
+                parser.getBoolean(node, ParameterKey.COMPONENT_MANEUVER_MAGNITUDE_ERROR_IN_PLANE);
+        final boolean outOfPlane =
+                parser.getBoolean(node, ParameterKey.COMPONENT_MANEUVER_MAGNITUDE_ERROR_OUT_OF_PLANE);
+        final double standardDeviation =
+                parser.getDouble(node, ParameterKey.COMPONENT_MANEUVER_MAGNITUDE_ERROR_STANDARD_DEVIATION);
+        return new ManeuverMagnitudeError(spacecraftIndex, inPlane, outOfPlane, standardDeviation, generator);
+    }
+
+    /** Parse a propagation component.
+     * @param parser input file parser
+     * @param node data node containing component configuration parameters
+     * @param initialOrbit initial orbit
+     * @param gravityField gravity field
+     * @return parsed component
+     * @exception OrekitException if propagator cannot be set up
+     */
+    private ScenarioComponent parsePropagationComponent(final SkatFileParser parser, final Tree node,
+                                                        final Orbit initialOrbit,
+                                                        final PotentialCoefficientsProvider gravityField)
+        throws OrekitException {
+
+        // set up propagator
+        final Tree propagatorNode = parser.getValue(node, ParameterKey.COMPONENT_PROPAGATION_PROPAGATOR);
+        final String method = parser.getString(propagatorNode, ParameterKey.COMPONENT_PROPAGATION_METHOD);
+        if (method.equals(NUMERICAL_PROPAGATOR)) {
+            final double minStep = 0.01;
+            final double maxStep = Constants.JULIAN_DAY;
+            final double dP      = parser.getDouble(propagatorNode, ParameterKey.NUMERICAL_PROPAGATOR_TOLERANCE);
+            final double[][] tolerance = NumericalPropagator.tolerances(dP, initialOrbit, initialOrbit.getType());
+            final AdaptiveStepsizeIntegrator integrator =
+                    new DormandPrince853Integrator(minStep, maxStep, tolerance[0], tolerance[1]);
+            integrator.setInitialStepSize(initialOrbit.getKeplerianPeriod() / 100.0);
+            final NumericalPropagator numPropagator = new NumericalPropagator(integrator);
+            numPropagator.setAttitudeProvider(new LofOffset(inertialFrame, LOFType.TNW));
+
+            final int degree = parser.getInt(propagatorNode, ParameterKey.NUMERICAL_PROPAGATOR_GRAVITY_FIELD_DEGREE);
+            final int order  = parser.getInt(propagatorNode, ParameterKey.NUMERICAL_PROPAGATOR_GRAVITY_FIELD_ORDER);
+            ForceModel gravity = new CunninghamAttractionModel(earthFrame,
+                                                               gravityField.getAe(),
+                                                               gravityField.getMu(),
+                                                               gravityField.getC(degree, order, false),
+                                                               gravityField.getS(degree, order, false));
+
+            numPropagator.addForceModel(gravity);
+            numPropagator.setOrbitType(initialOrbit.getType());
+            return new Propagation(numPropagator);
+
+        } else {
+            // TODO implement semi-analytical propagation
+            throw SkatException.createInternalError(null);
+        }
+
+    }
+
     /** Run the simulation.
      * @throws OrekitException if some computation cannot be performed
      */
     public void run() throws OrekitException {
-
-        propagator.resetInitialState(initialState);
-        SpacecraftState startCycleState = propagator.propagate(startDate);
-
-        BrentOptimizer optimizer = new BrentOptimizer(1.0e-6, 1.0e-5);
-        EscapeTime escapeTime = new EscapeTime(propagator, earth);
-
-        PrintHandler stepHandler = new PrintHandler();
-        for (int i = 0; i < cyclesNumber; ++i) {
-            escapeTime.setInitialState(startCycleState);
-            escapeTime.setTargetDate(initialState.getDate().shiftedBy(cycleDuration));
-            UnivariateRealPointValuePair pair = optimizer.optimize(1000, escapeTime, GoalType.MAXIMIZE, -0.1, 0.1);
-            System.out.println("cycle " + i +
-                               ", evaluations = " + optimizer.getEvaluations() +
-                               ", dV = " + pair.getPoint() +
-                               ", duration = " + (pair.getValue() / Constants.JULIAN_DAY));
-            startCycleState = escapeTime.oneManeuverCycle(pair.getPoint(),
-                                                          startCycleState.getDate().shiftedBy(pair.getValue() - 2.0 * Constants.JULIAN_DAY),
-                                                          stepHandler);
-        }
-
+        // TODO implement simulation run
+        throw SkatException.createInternalError(null);
     }
 
     /** Close the output stream.
@@ -240,30 +385,5 @@ public class Skat {
     public void close() {
         output.close();
     }
-
-    private class PrintHandler implements OrekitFixedStepHandler {
-
-        private static final long serialVersionUID = 7991738543062196382L;
-
-        public void handleStep(SpacecraftState currentState, boolean isLast)
-                throws PropagationException {
-            try {
-
-                // get spacecraft longitude
-                Vector3D position = currentState.getPVCoordinates(earth.getBodyFrame()).getPosition();
-                GeodeticPoint gp = earth.transform(position, earth.getBodyFrame(), currentState.getDate());
-
-                // print it
-                output.println(currentState.getDate() + " " + FastMath.toDegrees(gp.getLongitude()));
-                if (isLast) {
-                    output.println("&");
-                }
-
-            } catch (OrekitException oe) {
-                throw new PropagationException(oe);
-            }
-        }
-
-    };
 
 }

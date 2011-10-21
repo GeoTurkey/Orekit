@@ -8,13 +8,8 @@ options {
 
 tokens {
   ASSIGNMENT;
-  STRUCT_VALUE;
-  ARRAY_VALUE;
-  BOOLEAN_VALUE;
-  INT_VALUE;
-  DOUBLE_VALUE;
-  DATE_VALUE;
-  STRING_VALUE;
+  STRUCT;
+  ARRAY;
 }
 
 @header {
@@ -22,12 +17,12 @@ tokens {
 }
 
 data
-    :  (a+=assignment (SEMICOLON)*)+ EOF
-    -> ^(STRUCT_VALUE $a);
+    :  (a+=assignment SEMICOLON)+ EOF
+    -> ^(STRUCT $a+);
 
 assignment
     : IDENTIFIER ASSIGN v=value
-    -> ^(ASSIGNMENT $v);
+    -> ^(ASSIGNMENT IDENTIFIER $v);
 
 value
     : structValue
@@ -39,9 +34,9 @@ value
     | STRING;
 
 structValue
-    : STRUCT_OPEN (fields+=assignment (SEMICOLON)*)+ STRUCT_CLOSE
-    -> ^(STRUCT_VALUE  $fields);
+    : STRUCT_OPEN (fields+=assignment SEMICOLON)+ STRUCT_CLOSE
+    -> ^(STRUCT  $fields+);
 
 arrayValue
     : ARRAY_OPEN  elements+=value (ARRAY_SEPARATOR elements+=value)* ARRAY_CLOSE
-    -> ^(ARRAY_VALUE  $elements);
+    -> ^(ARRAY  $elements+);
