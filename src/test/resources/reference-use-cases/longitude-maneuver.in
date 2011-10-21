@@ -9,6 +9,7 @@ simulation     = {
      random_seed   = 156325253;
 };
 
+# array of spacecrafts, for multi-spacecrafts simulation
 spacecrafts    = [
      {
          orbit = {
