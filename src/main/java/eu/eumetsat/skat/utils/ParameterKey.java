@@ -72,6 +72,8 @@ public enum ParameterKey {
 
     MANEUVERS_IN_PLANE("in_plane"),
     MANEUVERS_NAME("name"),
+    MANEUVERS_DIRECTION("direction"),
+    MANEUVERS_ISP("isp"),
     MANEUVERS_DV_MIN("dv_min"),
     MANEUVERS_DV_MAX("dv_max"),
     MANEUVERS_NOMINAL_DATE("nominal_date"),

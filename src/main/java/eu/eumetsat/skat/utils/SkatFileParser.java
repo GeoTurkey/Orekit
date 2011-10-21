@@ -11,10 +11,17 @@ import org.apache.commons.math.exception.DimensionMismatchException;
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math.linear.Array2DRowRealMatrix;
 import org.apache.commons.math.linear.RealMatrix;
+import org.apache.commons.math.ode.nonstiff.AdaptiveStepsizeIntegrator;
+import org.apache.commons.math.ode.nonstiff.DormandPrince853Integrator;
 import org.apache.commons.math.util.FastMath;
+import org.orekit.attitudes.LofOffset;
 import org.orekit.errors.OrekitException;
+import org.orekit.forces.ForceModel;
+import org.orekit.forces.gravity.CunninghamAttractionModel;
+import org.orekit.forces.gravity.potential.PotentialCoefficientsProvider;
 import org.orekit.frames.Frame;
 import org.orekit.frames.FramesFactory;
+import org.orekit.frames.LOFType;
 import org.orekit.frames.Predefined;
 import org.orekit.orbits.CartesianOrbit;
 import org.orekit.orbits.CircularOrbit;
@@ -22,13 +29,22 @@ import org.orekit.orbits.EquinoctialOrbit;
 import org.orekit.orbits.KeplerianOrbit;
 import org.orekit.orbits.Orbit;
 import org.orekit.orbits.PositionAngle;
+import org.orekit.propagation.Propagator;
+import org.orekit.propagation.numerical.NumericalPropagator;
 import org.orekit.time.AbsoluteDate;
 import org.orekit.time.TimeScale;
+import org.orekit.utils.Constants;
 import org.orekit.utils.PVCoordinates;
 
 /** Simple parser for key/value files with embedded structures and arrays.
  */
 public class SkatFileParser {
+
+    /** Constant for numerical propagator. */
+    private static final String NUMERICAL_PROPAGATOR = "numerical";
+
+    /** Constant for numerical propagator. */
+    private static final String SEMI_ANALYTICAL_PROPAGATOR = "semi-analytical";
 
     /** Name of the input for error messages. */
     private String inputName;
@@ -462,6 +478,54 @@ public class SkatFileParser {
                                                                "|" + ParameterKey.ORBIT_EQUINOCTIAL_A +
                                                                "|" + ParameterKey.ORBIT_EQUINOCTIAL_EX +
                                                                "|...");
+        }
+
+    }
+
+    /** Get a propagator.
+     * @param node structure containing the parameter
+     * @param initialOrbit initial orbit
+     * @param earthFrame Earth frame
+     * @param gravityField gravity field
+     * @return propagator
+     * @exception OrekitException if propagator cannot be set up
+     */
+    public Propagator getPropagator(final Tree node, final Orbit initialOrbit,
+                                    final Frame earthFrame,
+                                    final PotentialCoefficientsProvider gravityField)
+        throws OrekitException {
+
+        // set up propagator
+        final String method = getString(node, ParameterKey.COMPONENT_PROPAGATION_METHOD);
+        if (method.equals(NUMERICAL_PROPAGATOR)) {
+            final double minStep = 0.01;
+            final double maxStep = Constants.JULIAN_DAY;
+            final double dP      = getDouble(node, ParameterKey.NUMERICAL_PROPAGATOR_TOLERANCE);
+            final double[][] tolerance = NumericalPropagator.tolerances(dP, initialOrbit, initialOrbit.getType());
+            final AdaptiveStepsizeIntegrator integrator =
+                    new DormandPrince853Integrator(minStep, maxStep, tolerance[0], tolerance[1]);
+            integrator.setInitialStepSize(initialOrbit.getKeplerianPeriod() / 100.0);
+            final NumericalPropagator numPropagator = new NumericalPropagator(integrator);
+            numPropagator.setAttitudeProvider(new LofOffset(initialOrbit.getFrame(), LOFType.TNW));
+
+            final int degree = getInt(node, ParameterKey.NUMERICAL_PROPAGATOR_GRAVITY_FIELD_DEGREE);
+            final int order  = getInt(node, ParameterKey.NUMERICAL_PROPAGATOR_GRAVITY_FIELD_ORDER);
+            ForceModel gravity = new CunninghamAttractionModel(earthFrame,
+                                                               gravityField.getAe(),
+                                                               gravityField.getMu(),
+                                                               gravityField.getC(degree, order, false),
+                                                               gravityField.getS(degree, order, false));
+
+            numPropagator.addForceModel(gravity);
+            numPropagator.setOrbitType(initialOrbit.getType());
+            return numPropagator;
+
+        } else if (method.equals(SEMI_ANALYTICAL_PROPAGATOR)){
+            // TODO implement semi-analytical propagation
+            throw SkatException.createInternalError(null);
+        } else {
+            throw SkatException.createIllegalArgumentException(SkatMessages.UNSUPPORTED_PROPAGATION_METHOD,
+                                                               method, NUMERICAL_PROPAGATOR, SEMI_ANALYTICAL_PROPAGATOR);
         }
 
     }

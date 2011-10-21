@@ -13,37 +13,39 @@ import java.util.List;
 
 import org.antlr.runtime.RecognitionException;
 import org.antlr.runtime.tree.Tree;
+import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math.linear.RealMatrix;
-import org.apache.commons.math.ode.nonstiff.AdaptiveStepsizeIntegrator;
-import org.apache.commons.math.ode.nonstiff.DormandPrince853Integrator;
+import org.apache.commons.math.optimization.MultivariateRealOptimizer;
+import org.apache.commons.math.optimization.direct.CMAESOptimizer;
 import org.apache.commons.math.random.RandomGenerator;
 import org.apache.commons.math.random.Well19937a;
-import org.orekit.attitudes.LofOffset;
 import org.orekit.bodies.BodyShape;
 import org.orekit.bodies.OneAxisEllipsoid;
 import org.orekit.data.DataProvidersManager;
 import org.orekit.data.DirectoryCrawler;
 import org.orekit.errors.OrekitException;
-import org.orekit.forces.ForceModel;
-import org.orekit.forces.gravity.CunninghamAttractionModel;
 import org.orekit.forces.gravity.potential.GravityFieldFactory;
 import org.orekit.forces.gravity.potential.PotentialCoefficientsProvider;
 import org.orekit.frames.Frame;
-import org.orekit.frames.LOFType;
 import org.orekit.orbits.Orbit;
 import org.orekit.orbits.PositionAngle;
+import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
-import org.orekit.propagation.numerical.NumericalPropagator;
 import org.orekit.time.AbsoluteDate;
 import org.orekit.time.TimeScale;
 import org.orekit.time.TimeScalesFactory;
 import org.orekit.utils.Constants;
 
+import eu.eumetsat.skat.control.ControlLoop;
+import eu.eumetsat.skat.control.SKControl;
 import eu.eumetsat.skat.realization.ManeuverDateError;
 import eu.eumetsat.skat.realization.ManeuverMagnitudeError;
 import eu.eumetsat.skat.realization.OrbitDetermination;
 import eu.eumetsat.skat.realization.Propagation;
 import eu.eumetsat.skat.scenario.ScenarioComponent;
+import eu.eumetsat.skat.strategies.TunableManeuver;
+import eu.eumetsat.skat.strategies.geo.EccentricityCircle;
+import eu.eumetsat.skat.strategies.geo.LongitudeSlotMargins;
 import eu.eumetsat.skat.utils.ParameterKey;
 import eu.eumetsat.skat.utils.SkatException;
 import eu.eumetsat.skat.utils.SkatFileParser;
@@ -73,11 +75,11 @@ public class Skat {
     /** Constant for propagation scenario component. */
     private static final String PROPAGATION_COMPONENT = "propagation";
 
-    /** Constant for numerical propagator. */
-    private static final String NUMERICAL_PROPAGATOR = "numerical";
+    /** Constant for longitude margins control law. */
+    private static final String LONGITUDE_MARGINS_CONTROL = "longitude margins";
 
-    /** Constant for numerical propagator. */
-    private static final String SEMI_ANALYTICAL_PROPAGATOR = "semi-analytical";
+    /** Constant for eccentricity circle_control law. */
+    private static final String ECCENTRICITY_CIRCLE_CONTROL = "eccentricity circle";
 
     /** Constant for true angle type. */
     private static final String TRUE_ANGLE= "true angle";
@@ -235,7 +237,8 @@ public class Skat {
                 if (type.equals(ORBIT_DETERMINATION_COMPONENT)) {
                     components.add(parseOrbitDeterminationComponent(parser, componentNode, i));
                 } else if (type.equals(CONTROL_LOOP_COMPONENT)) {
-                    components.add(parseControlLoopComponent(parser, componentNode));
+                    components.add(parseControlLoopComponent(parser, componentNode, i,
+                                                             initialOrbit, gravityField));
                 } else if (type.equals(MANEUVER_DATE_ERROR_COMPONENT)) {
                     components.add(parseManeuverDateErrorComponent(parser, componentNode, i));
                 } else if (type.equals(MANEUVER_MAGNITUDE_ERROR_COMPONENT)) {
@@ -285,11 +288,95 @@ public class Skat {
     /** Parse a control loop component.
      * @param parser input file parser
      * @param node data node containing component configuration parameters
+     * @param spacecraftIndex spacecraft index
+     * @param initialOrbit initial orbit
+     * @param gravityField gravity field
+     * @return parsed component
+     * @exception OrekitException if propagator cannot be set up
+     */
+    private ScenarioComponent parseControlLoopComponent(final SkatFileParser parser, final Tree node,
+                                                        final int spacecraftIndex, final Orbit initialOrbit,
+                                                        final PotentialCoefficientsProvider gravityField)
+        throws OrekitException {
+
+        // general configuration
+        final int maxEval = parser.getInt(node, ParameterKey.COMPONENT_CONTROL_LOOP_MAX_EVAL);
+        final Propagator propagator = parser.getPropagator(parser.getValue(node, ParameterKey.COMPONENT_CONTROL_LOOP_PROPAGATOR),
+                                                           initialOrbit, earthFrame, gravityField);
+
+        // TODO configure optimizer
+        final MultivariateRealOptimizer optimizer = new CMAESOptimizer();
+
+        final ControlLoop loop = new ControlLoop(spacecraftIndex, maxEval, optimizer, propagator);
+
+        // control laws
+        final Tree controlsNode = parser.getValue(node, ParameterKey.COMPONENT_CONTROL_LOOP_CONTROLS);
+        for (int i = 0; i < parser.getElementsNumber(controlsNode); ++i) {
+            final Tree control = parser.getElement(controlsNode, i);
+            final double scale = parser.getDouble(control, ParameterKey.CONTROL_SCALE);
+            final String type  = parser.getString(control, ParameterKey.CONTROL_TYPE);
+            final String name  = parser.getString(control, ParameterKey.CONTROL_NAME);
+            if (type.equals(LONGITUDE_MARGINS_CONTROL)) {
+                loop.addControl(scale, parseLongitudeMarginControlLaw(parser, control, name));
+            } else  if (type.equals(ECCENTRICITY_CIRCLE_CONTROL)) {
+                loop.addControl(scale, parseEccentricityCircleControlLaw(parser, control, name));
+            } else {
+                throw SkatException.createIllegalArgumentException(SkatMessages.UNSUPPORTED_CONTROL_LAW,
+                                                                   type,
+                                                                   LONGITUDE_MARGINS_CONTROL,
+                                                                   ECCENTRICITY_CIRCLE_CONTROL);
+            }
+        }
+
+        // tunable maneuvers
+        final Tree maneuversNode = parser.getValue(node, ParameterKey.COMPONENT_CONTROL_LOOP_MANEUVERS);
+        for (int i = 0; i < parser.getElementsNumber(maneuversNode); ++i) {
+            final Tree maneuver     = parser.getElement(maneuversNode, i);
+            final boolean inPlane    = parser.getBoolean(maneuver, ParameterKey.MANEUVERS_IN_PLANE);
+            final String name        = parser.getString(maneuver,  ParameterKey.MANEUVERS_NAME);
+            final Vector3D direction = parser.getVector(maneuver,  ParameterKey.MANEUVERS_DIRECTION).normalize();
+            final double isp         = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_ISP);
+            final double dvMin       = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DV_MIN);
+            final double dvMax       = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DV_MAX);
+            final double nominal     = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_NOMINAL_DATE);
+            final double dtMin       = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DT_MIN);
+            final double dtMax       = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DT_MAX);
+            loop.addTunableManeuver(new TunableManeuver(name, inPlane, direction, isp,
+                                                        dvMin, dvMax, nominal, dtMin, dtMax));
+        }
+
+        return loop;
+
+    }
+
+    /** Parse a longitude margins control law.
+     * @param parser input file parser
+     * @param node data node containing component configuration parameters
+     * @param name name of the control law
      * @return parsed component
      */
-    private ScenarioComponent parseControlLoopComponent(final SkatFileParser parser, final Tree node) {
-        // TODO
-        return null;
+    private SKControl parseLongitudeMarginControlLaw(final SkatFileParser parser, final Tree node,
+                                                     final String name) {
+        final double eastBoundary = parser.getAngle(node, ParameterKey.CONTROL_LONGITUDE_MARGINS_EAST);
+        final double westBoundary = parser.getAngle(node, ParameterKey.CONTROL_LONGITUDE_MARGINS_WEST);
+        final double target       = parser.getAngle(node, ParameterKey.CONTROL_LONGITUDE_MARGINS_TARGET);
+        final double sampling     = parser.getAngle(node, ParameterKey.CONTROL_SAMPLING);
+        return new LongitudeSlotMargins(westBoundary, eastBoundary, target, sampling, earth);
+    }
+
+    /** Parse an eccentricity circle control law.
+     * @param parser input file parser
+     * @param node data node containing component configuration parameters
+     * @param name name of the control law
+     * @return parsed component
+     */
+    private SKControl parseEccentricityCircleControlLaw(final SkatFileParser parser, final Tree node,
+                                                     final String name) {
+        final double centerX  = parser.getDouble(node, ParameterKey.CONTROL_ECCENTRICITY_CIRCLE_CENTER_X);
+        final double centerY  = parser.getDouble(node, ParameterKey.CONTROL_ECCENTRICITY_CIRCLE_CENTER_Y);
+        final double radius   = parser.getDouble(node, ParameterKey.CONTROL_ECCENTRICITY_CIRCLE_RADIUS);
+        final double sampling = parser.getAngle(node, ParameterKey.CONTROL_SAMPLING);
+        return new EccentricityCircle(centerX, centerY, radius, sampling);
     }
 
     /** Parse a maneuver date error component.
@@ -338,38 +425,8 @@ public class Skat {
                                                         final Orbit initialOrbit,
                                                         final PotentialCoefficientsProvider gravityField)
         throws OrekitException {
-
-        // set up propagator
-        final Tree propagatorNode = parser.getValue(node, ParameterKey.COMPONENT_PROPAGATION_PROPAGATOR);
-        final String method = parser.getString(propagatorNode, ParameterKey.COMPONENT_PROPAGATION_METHOD);
-        if (method.equals(NUMERICAL_PROPAGATOR)) {
-            final double minStep = 0.01;
-            final double maxStep = Constants.JULIAN_DAY;
-            final double dP      = parser.getDouble(propagatorNode, ParameterKey.NUMERICAL_PROPAGATOR_TOLERANCE);
-            final double[][] tolerance = NumericalPropagator.tolerances(dP, initialOrbit, initialOrbit.getType());
-            final AdaptiveStepsizeIntegrator integrator =
-                    new DormandPrince853Integrator(minStep, maxStep, tolerance[0], tolerance[1]);
-            integrator.setInitialStepSize(initialOrbit.getKeplerianPeriod() / 100.0);
-            final NumericalPropagator numPropagator = new NumericalPropagator(integrator);
-            numPropagator.setAttitudeProvider(new LofOffset(inertialFrame, LOFType.TNW));
-
-            final int degree = parser.getInt(propagatorNode, ParameterKey.NUMERICAL_PROPAGATOR_GRAVITY_FIELD_DEGREE);
-            final int order  = parser.getInt(propagatorNode, ParameterKey.NUMERICAL_PROPAGATOR_GRAVITY_FIELD_ORDER);
-            ForceModel gravity = new CunninghamAttractionModel(earthFrame,
-                                                               gravityField.getAe(),
-                                                               gravityField.getMu(),
-                                                               gravityField.getC(degree, order, false),
-                                                               gravityField.getS(degree, order, false));
-
-            numPropagator.addForceModel(gravity);
-            numPropagator.setOrbitType(initialOrbit.getType());
-            return new Propagation(numPropagator);
-
-        } else {
-            // TODO implement semi-analytical propagation
-            throw SkatException.createInternalError(null);
-        }
-
+        return new Propagation(parser.getPropagator(parser.getValue(node, ParameterKey.COMPONENT_PROPAGATION_PROPAGATOR),
+                                                    initialOrbit, earthFrame, gravityField));
     }
 
     /** Run the simulation.

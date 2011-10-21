@@ -133,6 +133,11 @@ public class ControlLoop implements ScenarioComponent {
             startPoint[i] = parameters.get(i).guessOptimalValue();
         }
 
+        // set the reference date for maneuvers
+        for (final TunableManeuver tunable : tunables) {
+            tunable.setReferenceDate(originals[spacecraftIndex].getEstimatedStartState().getDate());
+        }
+
         // find the optimal parameters that minimize objective function
         // TODO introduce constraints
         final MultivariateRealFunction objective =

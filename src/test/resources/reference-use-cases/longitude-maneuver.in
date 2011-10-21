@@ -40,7 +40,12 @@ spacecrafts    = [
              {
                  component  = "control loop";
                  max_eval   = 1000;
-                 propagator = "numerical";
+                 propagator = {
+                     method               = "numerical";
+                     position_tolerance   = 100.0;
+                     gravity_field_degree = 10;
+                     gravity_field_order  = 10;
+                 };
                  controls   = [
                      {
                          scale         = 0.01;
@@ -65,6 +70,8 @@ spacecrafts    = [
                      {
                          in_plane     = true;
                          name         = "E/W-1";
+                         direction    = [ 1.0, 0.0, 0.0 ];
+                         isp          = 315;
                          dv_min       = -0.1;
                          dv_max       =  0.1;
                          nominal_date = 172800;
@@ -74,6 +81,8 @@ spacecrafts    = [
                      {
                          in_plane     = true;
                          name         = "E/W-2";
+                         direction    = [ 1.0, 0.0, 0.0 ];
+                         isp          = 315;
                          dv_min       = -0.1;
                          dv_max       =  0.1;
                          nominal_date = 216000;

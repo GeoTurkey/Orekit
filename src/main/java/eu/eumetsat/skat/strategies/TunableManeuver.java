@@ -32,8 +32,11 @@ public class TunableManeuver {
     /** Tunable velocity increment. */
     private final SKParameter velocityIncrement;
 
+    /** Nominal offset with respect to reference date. */
+    private final double nominal;
+
     /** Reference date of the maneuver. */
-    private final AbsoluteDate reference;
+    private AbsoluteDate reference;
 
     /** Tunable date offset. */
     private final SKParameter dateOffset;
@@ -48,19 +51,19 @@ public class TunableManeuver {
      * @param isp engine specific impulse (s)
      * @param minIncrement minimal allowed value for velocity increment
      * @param maxIncrement maximal allowed value for velocity increment
-     * @param reference maneuver reference date
+     * @param nominal nominal offset with respect to reference date
      * @param minDateOffset offset for earliest allowed maneuver date
      * @param maxDateOffset offset for latest allowed maneuver date
      */
     public TunableManeuver(final String name, final boolean inPlane,
                            final Vector3D direction, final double isp,
                            final double minIncrement, final double maxIncrement,
-                           final AbsoluteDate reference,
+                           final double nominal,
                            final double minDateOffset, final double maxDateOffset) {
         this.inPlane      = inPlane;
         this.direction    = direction.normalize();
         this.isp          = isp;
-        this.reference    = reference;
+        this.nominal      = nominal;
         dateOffset        = new ManeuverParameter(name + " (date)",
                                                   minDateOffset, maxDateOffset,
                                                   0.5 * (minDateOffset + maxDateOffset),
@@ -70,6 +73,13 @@ public class TunableManeuver {
                                                   0.5 * (minIncrement + maxIncrement),
                                                   true);
         current           = null;
+    }
+
+    /** Set the reference date.
+     * @param reference reference date
+     */
+    public void setReferenceDate(final AbsoluteDate reference) {
+        this.reference = reference;
     }
 
     /** Local class for control parameters invalidating maneuver at parameter changes. */
@@ -99,7 +109,7 @@ public class TunableManeuver {
             if (current == null) {
                 // the parameters value have changed, thus invalidating the maneuver,
                 // build a new valid one
-                AbsoluteDate triggerDate = reference.shiftedBy(dateOffset.getValue());
+                AbsoluteDate triggerDate = reference.shiftedBy(nominal + dateOffset.getValue());
                 current = new ImpulseManeuver(new DateDetector(triggerDate),
                                               new Vector3D(velocityIncrement.getValue(), direction),
                                               isp);
@@ -131,7 +141,7 @@ public class TunableManeuver {
      */
     public ScheduledManeuver getManeuver() {
         return new ScheduledManeuver(inPlane,
-                                     reference.shiftedBy(dateOffset.getValue()),
+                                     reference.shiftedBy(nominal + dateOffset.getValue()),
                                      new Vector3D(velocityIncrement.getValue(), direction),
                                      isp);
     }
