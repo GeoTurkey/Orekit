@@ -17,7 +17,7 @@ tokens {
 }
 
 data
-    :  (a+=assignment SEMICOLON)+ EOF
+    :  a+=assignment (SEMICOLON a+=assignment)* SEMICOLON* EOF
     -> ^(STRUCT $a+);
 
 assignment
@@ -34,9 +34,9 @@ value
     | STRING;
 
 structValue
-    : STRUCT_OPEN (fields+=assignment SEMICOLON)+ STRUCT_CLOSE
+    : STRUCT_OPEN fields+=assignment (SEMICOLON fields+=assignment)* SEMICOLON* STRUCT_CLOSE
     -> ^(STRUCT  $fields+);
 
 arrayValue
-    : ARRAY_OPEN  elements+=value (ARRAY_SEPARATOR elements+=value)* ARRAY_CLOSE
+    : ARRAY_OPEN  elements+=value (ARRAY_SEPARATOR elements+=value)* ARRAY_SEPARATOR* ARRAY_CLOSE
     -> ^(ARRAY  $elements+);

@@ -103,6 +103,6 @@ spacecrafts    = [
                      gravity_field_order  = 10;
                  };
              }
-         ];
+         ]
      }
-];
+]
