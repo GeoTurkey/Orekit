@@ -54,7 +54,9 @@ public enum ParameterKey {
     COVARIANCE_ANGLE_TYPE("angle_type"),
     COVARIANCE_SMALL("small"),
 
+    COMPONENT_CONTROL_LOOP_OPTIMIZER("optimizer"),
     COMPONENT_CONTROL_LOOP_MAX_EVAL("max_eval"),
+    COMPONENT_CONTROL_LOOP_NB_POINTS("nb_points"),
     COMPONENT_CONTROL_LOOP_PROPAGATOR("propagator"),
     COMPONENT_CONTROL_LOOP_CONTROLS("controls"),
     COMPONENT_CONTROL_LOOP_MANEUVERS("maneuvers"),

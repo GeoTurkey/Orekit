@@ -39,7 +39,9 @@ spacecrafts    = [
              },
              {
                  component  = "control loop";
+                 optimizer  = "CMA-ES";
                  max_eval   = 1000;
+                 nb_points  = 5;
                  propagator = {
                      method               = "numerical";
                      position_tolerance   = 100.0;

@@ -16,6 +16,7 @@ import org.antlr.runtime.tree.Tree;
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math.linear.RealMatrix;
 import org.apache.commons.math.optimization.MultivariateRealOptimizer;
+import org.apache.commons.math.optimization.direct.BOBYQAOptimizer;
 import org.apache.commons.math.optimization.direct.CMAESOptimizer;
 import org.apache.commons.math.random.RandomGenerator;
 import org.apache.commons.math.random.Well19937a;
@@ -59,36 +60,6 @@ import eu.eumetsat.skat.utils.SkatMessages;
  * </p>
  */
 public class Skat {
-
-    /** Constant for orbit determination scenario component. */
-    private static final String ORBIT_DETERMINATION_COMPONENT = "orbit determination";
-
-    /** Constant for control loop scenario component. */
-    private static final String CONTROL_LOOP_COMPONENT = "control loop";
-
-    /** Constant for maneuver_date_error scenario component. */
-    private static final String MANEUVER_DATE_ERROR_COMPONENT = "maneuver date error";
-
-    /** Constant for maneuver magnitude error scenario component. */
-    private static final String MANEUVER_MAGNITUDE_ERROR_COMPONENT = "maneuver magnitude error";
-
-    /** Constant for propagation scenario component. */
-    private static final String PROPAGATION_COMPONENT = "propagation";
-
-    /** Constant for longitude margins control law. */
-    private static final String LONGITUDE_MARGINS_CONTROL = "longitude margins";
-
-    /** Constant for eccentricity circle_control law. */
-    private static final String ECCENTRICITY_CIRCLE_CONTROL = "eccentricity circle";
-
-    /** Constant for true angle type. */
-    private static final String TRUE_ANGLE= "true angle";
-
-    /** Constant for eccentric angle type. */
-    private static final String ECCENTRIC_ANGLE= "eccentric angle";
-
-    /** Constant for mean angle type. */
-    private static final String MEAN_ANGLE= "mean angle";
 
     /** Output file. */
     private final PrintStream output;
@@ -228,24 +199,31 @@ public class Skat {
             initialState.add(new SpacecraftState(initialOrbit));
 
             // set up scenario components
-            final Tree scenarioNode = parser.getValue(parser.getElement(spacecraftsNode, i),
-                                                      ParameterKey.SCENARIO);
+            final Tree scenarioNode =
+                    parser.getValue(parser.getElement(spacecraftsNode, i), ParameterKey.SCENARIO);
             List<ScenarioComponent> components = new ArrayList<ScenarioComponent>();
             for (int j = 0; j < parser.getElementsNumber(scenarioNode); ++j) {
                 final Tree componentNode = parser.getElement(scenarioNode, j);
-                final String type = parser.getString(componentNode, ParameterKey.SCENARIO_COMPONENT);
-                if (type.equals(ORBIT_DETERMINATION_COMPONENT)) {
+                switch (SupportedScenarioComponent.parse(parser, componentNode, ParameterKey.SCENARIO_COMPONENT)) {
+                case ORBIT_DETERMINATION :
                     components.add(parseOrbitDeterminationComponent(parser, componentNode, i));
-                } else if (type.equals(CONTROL_LOOP_COMPONENT)) {
+                    break;
+                case CONTROL_LOOP :
                     components.add(parseControlLoopComponent(parser, componentNode, i,
                                                              initialOrbit, gravityField));
-                } else if (type.equals(MANEUVER_DATE_ERROR_COMPONENT)) {
+                    break;
+                case MANEUVER_DATE_ERROR :
                     components.add(parseManeuverDateErrorComponent(parser, componentNode, i));
-                } else if (type.equals(MANEUVER_MAGNITUDE_ERROR_COMPONENT)) {
+                    break;
+                case MANEUVER_MAGNITUDE_ERROR :
                     components.add(parseManeuverMagnitudeErrorComponent(parser, componentNode, i));
-                } else if (type.equals(PROPAGATION_COMPONENT)) {
+                    break;
+                case PROPAGATION :
                     components.add(parsePropagationComponent(parser, componentNode,
                                                              initialOrbit, gravityField));
+                    break;
+                default :
+                    throw SkatException.createInternalError(null);
                 }
             }
             scenarii.add(components);
@@ -263,22 +241,28 @@ public class Skat {
      * @param node data node containing component configuration parameters
      * @param spacecraftIndex spacecraft index
      * @return parsed component
+     * @exception SkatException if type of position angle cannot be parsed
      */
     private ScenarioComponent parseOrbitDeterminationComponent(final SkatFileParser parser, final Tree node,
-                                                               final int spacecraftIndex) {
+                                                               final int spacecraftIndex)
+        throws SkatException {
         final Tree covarianceNode =
                 parser.getValue(node, ParameterKey.COMPONENT_ORBIT_DETERMINATION_COVARIANCE);
         final RealMatrix covariance =
                 parser.getCovariance(covarianceNode, ParameterKey.COVARIANCE_MATRIX);
-        final String angleType =
-                parser.getString(covarianceNode, ParameterKey.COVARIANCE_ANGLE_TYPE);
         final PositionAngle positionAngle;
-        if (angleType.equals(TRUE_ANGLE)) {
+        switch (SupportedAngleTypes.parse(parser, covarianceNode, ParameterKey.COVARIANCE_ANGLE_TYPE)) {
+        case TRUE_ANGLE :
             positionAngle = PositionAngle.TRUE;
-        } else if (angleType.equals(ECCENTRIC_ANGLE)) {
-            positionAngle = PositionAngle.ECCENTRIC;
-        } else {
+            break;
+        case MEAN_ANGLE :
             positionAngle = PositionAngle.MEAN;
+            break;
+        case ECCENTRIC_ANGLE :
+            positionAngle = PositionAngle.ECCENTRIC;
+            break;
+        default :
+            throw SkatException.createInternalError(null);
         }
         final double small =
                 parser.getDouble(covarianceNode, ParameterKey.COVARIANCE_SMALL);
@@ -300,13 +284,24 @@ public class Skat {
                                                         final PotentialCoefficientsProvider gravityField)
         throws OrekitException, SkatException {
 
-        // general configuration
-        final int maxEval = parser.getInt(node, ParameterKey.COMPONENT_CONTROL_LOOP_MAX_EVAL);
+        // optimizer
+        final int maxEval  = parser.getInt(node, ParameterKey.COMPONENT_CONTROL_LOOP_MAX_EVAL);
+        final int nbPoints = parser.getInt(node, ParameterKey.COMPONENT_CONTROL_LOOP_NB_POINTS);
+        final MultivariateRealOptimizer optimizer;
+        switch (SupportedOptimizer.parse(parser, node, ParameterKey.COMPONENT_CONTROL_LOOP_OPTIMIZER)) {
+        case CMA_ES :
+            optimizer = new CMAESOptimizer(nbPoints);
+            break ;
+        case BOBYQA :
+            optimizer = new BOBYQAOptimizer(nbPoints);
+            break;
+        default :
+            throw SkatException.createInternalError(null);
+        }
+
         final Propagator propagator = parser.getPropagator(parser.getValue(node, ParameterKey.COMPONENT_CONTROL_LOOP_PROPAGATOR),
                                                            initialOrbit, earthFrame, gravityField);
 
-        // TODO configure optimizer
-        final MultivariateRealOptimizer optimizer = new CMAESOptimizer();
 
         final ControlLoop loop = new ControlLoop(spacecraftIndex, maxEval, optimizer, propagator);
 
@@ -315,16 +310,16 @@ public class Skat {
         for (int i = 0; i < parser.getElementsNumber(controlsNode); ++i) {
             final Tree control = parser.getElement(controlsNode, i);
             final double scale = parser.getDouble(control, ParameterKey.CONTROL_SCALE);
-            final String type  = parser.getString(control, ParameterKey.CONTROL_TYPE);
             final String name  = parser.getString(control, ParameterKey.CONTROL_NAME);
-            if (type.equals(LONGITUDE_MARGINS_CONTROL)) {
+            switch (SupportedControlLaw.parse(parser, control, ParameterKey.CONTROL_TYPE)) {
+            case LONGITUDE_MARGINS :
                 loop.addControl(scale, parseLongitudeMarginControlLaw(parser, control, name));
-            } else  if (type.equals(ECCENTRICITY_CIRCLE_CONTROL)) {
+                break;
+            case ECCENTRICITY_CIRCLE :
                 loop.addControl(scale, parseEccentricityCircleControlLaw(parser, control, name));
-            } else {
-                throw new SkatException(SkatMessages.UNSUPPORTED_KEY, type,
-                                        SkatException.packKeywords(LONGITUDE_MARGINS_CONTROL,
-                                                                   ECCENTRICITY_CIRCLE_CONTROL));
+                break;
+            default :
+                throw SkatException.createInternalError(null);
             }
         }
 
@@ -442,6 +437,230 @@ public class Skat {
      */
     public void close() {
         output.close();
+    }
+
+    /** Enumerate for scenario components. */
+    private enum SupportedScenarioComponent {
+
+        /** Constant for orbit determination scenario component. */
+        ORBIT_DETERMINATION("orbit determination"),
+
+        /** Constant for control loop scenario component. */
+        CONTROL_LOOP("control loop"),
+
+        /** Constant for maneuver_date_error scenario component. */
+        MANEUVER_DATE_ERROR("maneuver date error"),
+
+        /** Constant for maneuver magnitude error scenario component. */
+        MANEUVER_MAGNITUDE_ERROR("maneuver magnitude error"),
+
+        /** Constant for propagation scenario component. */
+        PROPAGATION("propagation");
+
+        /** Type of the component. */
+        private final String type;
+
+        /** Simple constructor.
+         * @param type type of the component
+         */
+        private SupportedScenarioComponent(final String type) {
+            this.type = type;
+        }
+
+        /** Parse scenario component specification.
+         * @param parser input file parser
+         * @param node data node containing component configuration parameters
+         * @param key key for the type
+         * @return parsed scenario component specification
+         * @exception SkatException if node does not specify a supported component
+         */
+        public static SupportedScenarioComponent parse(final SkatFileParser parser, final Tree node,
+                                                       final ParameterKey key)
+            throws SkatException {
+
+            final String s = parser.getString(node, key);
+            for (final SupportedScenarioComponent value : values()) {
+                if (s.equals(value.type)) {
+                    return value;
+                }
+            }
+
+            // none of the types matched the input file
+            final StringBuilder builder = new StringBuilder();
+            for (final SupportedScenarioComponent value : values()) {
+                if (builder.length() > 0) {
+                    builder.append(", ");
+                }
+                builder.append(value.type);
+            }
+            throw new SkatException(SkatMessages.UNSUPPORTED_KEY, s, node.getLine(),
+                                    parser.getInputName(), builder.toString());
+
+        }
+     
+
+    }
+
+    /** Enumerate for control laws. */
+    private enum SupportedControlLaw {
+
+        /** Constant for longitude margins control law. */
+        LONGITUDE_MARGINS("longitude margins"),
+
+        /** Constant for eccentricity circle_control law. */
+        ECCENTRICITY_CIRCLE("eccentricity circle");
+
+        /** Type of control law. */
+        private final String type;
+
+        /** Simple constructor.
+         * @param tpe type of control law
+         */
+        private SupportedControlLaw(final String type) {
+            this.type = type;
+        }
+
+        /** Parse control law specification.
+         * @param parser input file parser
+         * @param node data node containing control law configuration parameters
+         * @param key key for the type
+         * @return parsed control law specification
+         * @exception SkatException if node does not specify a supported control law
+         */
+        public static SupportedControlLaw parse(final SkatFileParser parser, final Tree node,
+                                                final ParameterKey key)
+            throws SkatException {
+
+            final String s = parser.getString(node, key);
+            for (final SupportedControlLaw value : values()) {
+                if (s.equals(value.type)) {
+                    return value;
+                }
+            }
+
+            // none of the types matched the input file
+            final StringBuilder builder = new StringBuilder();
+            for (final SupportedControlLaw value : values()) {
+                if (builder.length() > 0) {
+                    builder.append(", ");
+                }
+                builder.append(value.type);
+            }
+            throw new SkatException(SkatMessages.UNSUPPORTED_KEY, s, node.getLine(),
+                                    parser.getInputName(), builder.toString());
+
+        }
+     
+
+   }
+
+    /** Enumerate for optimizers. */
+    private enum SupportedOptimizer {
+
+        /** Constant for CMA-ES. */
+        CMA_ES("CMA_ES"),
+
+        /** Constant for Bobyqa. */
+        BOBYQA("bobyqa");
+
+        /** Type of angle. */
+        private final String type;
+
+        /** Simple constructor.
+         * @param type type of optimizer
+         */
+        private SupportedOptimizer(final String type) {
+            this.type = type;
+        }
+
+        /** Parse optimizer specification.
+         * @param parser input file parser
+         * @param node data node containing orbit configuration parameters
+         * @param key key for the type
+         * @return parsed optimizer specification
+         * @exception SkatException if node does not specify a supported optimizer
+         */
+        public static SupportedOptimizer parse(final SkatFileParser parser, final Tree node,
+                                                final ParameterKey key)
+            throws SkatException {
+
+            final String s = parser.getString(node, key);
+            for (final SupportedOptimizer value : values()) {
+                if (s.equals(value.type)) {
+                    return value;
+                }
+            }
+
+            // none of the types matched the input file
+            final StringBuilder builder = new StringBuilder();
+            for (final SupportedOptimizer value : values()) {
+                if (builder.length() > 0) {
+                    builder.append(", ");
+                }
+                builder.append(value.type);
+            }
+            throw new SkatException(SkatMessages.UNSUPPORTED_KEY, s, node.getLine(),
+                                    parser.getInputName(), builder.toString());
+
+        }
+     
+
+    }
+
+    /** Enumerate for angle types. */
+    private enum SupportedAngleTypes {
+
+        /** Constant for true angle type. */
+        TRUE_ANGLE("true angle"),
+
+        /** Constant for eccentric angle type. */
+        ECCENTRIC_ANGLE("eccentric angle"),
+
+        /** Constant for mean angle type. */
+        MEAN_ANGLE("mean angle");
+
+        /** Type of angle. */
+        private final String type;
+
+        /** Simple constructor.
+         * @param type type of angle
+         */
+        private SupportedAngleTypes(final String type) {
+            this.type = type;
+        }
+
+        /** Parse angle type specification.
+         * @param parser input file parser
+         * @param node data node containing orbit configuration parameters
+         * @param key key for the type
+         * @return parsed angle type specification
+         * @exception SkatException if node does not specify a supported angle type
+         */
+        public static SupportedAngleTypes parse(final SkatFileParser parser, final Tree node,
+                                                final ParameterKey key)
+            throws SkatException {
+
+            final String s = parser.getString(node, key);
+            for (final SupportedAngleTypes value : values()) {
+                if (s.equals(value.type)) {
+                    return value;
+                }
+            }
+
+            // none of the types matched the input file
+            final StringBuilder builder = new StringBuilder();
+            for (final SupportedAngleTypes value : values()) {
+                if (builder.length() > 0) {
+                    builder.append(", ");
+                }
+                builder.append(value.type);
+            }
+            throw new SkatException(SkatMessages.UNSUPPORTED_KEY, s, node.getLine(),
+                                    parser.getInputName(), builder.toString());
+
+        }
+     
+
     }
 
 }

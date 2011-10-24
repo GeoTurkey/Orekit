@@ -80,6 +80,13 @@ public class SkatFileParser {
         return root;
     }
 
+    /** Get the name of the input file.
+     * @return name of the input file
+     */
+    public String getInputName() {
+        return inputName;
+    }
+
     /** Check if a structure node contains a value for a specified key.
      * @param node structure node
      * @param key field key
@@ -526,8 +533,8 @@ public class SkatFileParser {
             throw SkatException.createInternalError(null);
         } else {
             throw new SkatException(SkatMessages.UNSUPPORTED_KEY, method,
-                                    SkatException.packKeywords(NUMERICAL_PROPAGATOR,
-                                                               SEMI_ANALYTICAL_PROPAGATOR));
+                                    node.getLine(), inputName,
+                                    NUMERICAL_PROPAGATOR + ", " + SEMI_ANALYTICAL_PROPAGATOR);
         }
 
     }
