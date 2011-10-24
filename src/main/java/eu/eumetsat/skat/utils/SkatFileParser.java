@@ -2,12 +2,14 @@ package eu.eumetsat.skat.utils;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.ParseException;
 
 import org.antlr.runtime.ANTLRInputStream;
 import org.antlr.runtime.CommonTokenStream;
 import org.antlr.runtime.RecognitionException;
 import org.antlr.runtime.tree.Tree;
 import org.apache.commons.math.exception.DimensionMismatchException;
+import org.apache.commons.math.exception.util.LocalizedFormats;
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math.linear.Array2DRowRealMatrix;
 import org.apache.commons.math.linear.RealMatrix;
@@ -18,6 +20,7 @@ import org.orekit.attitudes.LofOffset;
 import org.orekit.errors.OrekitException;
 import org.orekit.forces.ForceModel;
 import org.orekit.forces.gravity.CunninghamAttractionModel;
+import org.orekit.forces.gravity.potential.GravityFieldFactory;
 import org.orekit.forces.gravity.potential.PotentialCoefficientsProvider;
 import org.orekit.frames.Frame;
 import org.orekit.frames.FramesFactory;
@@ -234,6 +237,26 @@ public class SkatFileParser {
 
     }
 
+    /** Get an identifier value.
+     * @param node structure containing the parameter
+     * @param key parameter key
+     * @return identifier value corresponding to the key
+     * @exception IllegalArgumentException if node does not contains the key
+     * or it is not a string
+     */
+    public String getIdentifier(final Tree node, final ParameterKey key) throws IllegalArgumentException {
+
+        // get the node
+        final Tree value = getValue(node, key);
+
+        // check its type
+        checkType(SkatParser.IDENTIFIER, value);
+
+        // parse the value
+        return value.getText();
+
+    }
+
     /** Get a string value.
      * @param node structure containing the parameter
      * @param key parameter key
@@ -287,6 +310,27 @@ public class SkatFileParser {
 
         // parse the value
         return new AbsoluteDate(value.getText(), timeScale);
+
+    }
+
+    /** Get a position angle type.
+     * @param node structure containing the parameter
+     * @param key parameter key
+     * @return position angle type corresponding to the key
+     * @exception IllegalArgumentException if node does not contains the key
+     * or it is not a position angle
+     */
+    public PositionAngle getPositionAngle(final Tree node, final ParameterKey key)
+        throws IllegalArgumentException {
+
+        // get the node
+        final Tree value = getValue(node, key);
+
+        // check its type
+        checkType(SkatParser.IDENTIFIER, value);
+
+        // parse the value
+        return PositionAngle.valueOf(value.getText());
 
     }
 
@@ -493,48 +537,53 @@ public class SkatFileParser {
      * @param node structure containing the parameter
      * @param initialOrbit initial orbit
      * @param earthFrame Earth frame
-     * @param gravityField gravity field
      * @return propagator
      * @exception OrekitException if propagator cannot be set up
      * @exception SkatException if propagation method is not recognized
      */
     public Propagator getPropagator(final Tree node, final Orbit initialOrbit,
-                                    final Frame earthFrame,
-                                    final PotentialCoefficientsProvider gravityField)
-        throws OrekitException, SkatException {
+                                    final Frame earthFrame)
+                                            throws OrekitException, SkatException {
 
-        // set up propagator
-        final String method = getString(node, ParameterKey.COMPONENT_PROPAGATION_METHOD);
-        if (method.equals(NUMERICAL_PROPAGATOR)) {
-            final double minStep = 0.01;
-            final double maxStep = Constants.JULIAN_DAY;
-            final double dP      = getDouble(node, ParameterKey.NUMERICAL_PROPAGATOR_TOLERANCE);
-            final double[][] tolerance = NumericalPropagator.tolerances(dP, initialOrbit, initialOrbit.getType());
-            final AdaptiveStepsizeIntegrator integrator =
-                    new DormandPrince853Integrator(minStep, maxStep, tolerance[0], tolerance[1]);
-            integrator.setInitialStepSize(initialOrbit.getKeplerianPeriod() / 100.0);
-            final NumericalPropagator numPropagator = new NumericalPropagator(integrator);
-            numPropagator.setAttitudeProvider(new LofOffset(initialOrbit.getFrame(), LOFType.TNW));
+        try {
+            // set up propagator
+            final String method = getString(node, ParameterKey.COMPONENT_PROPAGATION_METHOD);
+            if (method.equals(NUMERICAL_PROPAGATOR)) {
+                final double minStep = 0.01;
+                final double maxStep = Constants.JULIAN_DAY;
+                final double dP      = getDouble(node, ParameterKey.NUMERICAL_PROPAGATOR_TOLERANCE);
+                final double[][] tolerance = NumericalPropagator.tolerances(dP, initialOrbit, initialOrbit.getType());
+                final AdaptiveStepsizeIntegrator integrator =
+                        new DormandPrince853Integrator(minStep, maxStep, tolerance[0], tolerance[1]);
+                integrator.setInitialStepSize(initialOrbit.getKeplerianPeriod() / 100.0);
+                final NumericalPropagator numPropagator = new NumericalPropagator(integrator);
+                numPropagator.setAttitudeProvider(new LofOffset(initialOrbit.getFrame(), LOFType.TNW));
 
-            final int degree = getInt(node, ParameterKey.NUMERICAL_PROPAGATOR_GRAVITY_FIELD_DEGREE);
-            final int order  = getInt(node, ParameterKey.NUMERICAL_PROPAGATOR_GRAVITY_FIELD_ORDER);
-            ForceModel gravity = new CunninghamAttractionModel(earthFrame,
-                                                               gravityField.getAe(),
-                                                               gravityField.getMu(),
-                                                               gravityField.getC(degree, order, false),
-                                                               gravityField.getS(degree, order, false));
+                PotentialCoefficientsProvider gravityField = GravityFieldFactory.getPotentialProvider();
+                final int degree = getInt(node, ParameterKey.NUMERICAL_PROPAGATOR_GRAVITY_FIELD_DEGREE);
+                final int order  = getInt(node, ParameterKey.NUMERICAL_PROPAGATOR_GRAVITY_FIELD_ORDER);
+                ForceModel gravity = new CunninghamAttractionModel(earthFrame,
+                                                                   gravityField.getAe(),
+                                                                   gravityField.getMu(),
+                                                                   gravityField.getC(degree, order, false),
+                                                                   gravityField.getS(degree, order, false));
 
-            numPropagator.addForceModel(gravity);
-            numPropagator.setOrbitType(initialOrbit.getType());
-            return numPropagator;
+                numPropagator.addForceModel(gravity);
+                numPropagator.setOrbitType(initialOrbit.getType());
+                return numPropagator;
 
-        } else if (method.equals(SEMI_ANALYTICAL_PROPAGATOR)){
-            // TODO implement semi-analytical propagation
-            throw SkatException.createInternalError(null);
-        } else {
-            throw new SkatException(SkatMessages.UNSUPPORTED_KEY, method,
-                                    node.getLine(), inputName,
-                                    NUMERICAL_PROPAGATOR + ", " + SEMI_ANALYTICAL_PROPAGATOR);
+            } else if (method.equals(SEMI_ANALYTICAL_PROPAGATOR)){
+                // TODO implement semi-analytical propagation
+                throw SkatException.createInternalError(null);
+            } else {
+                throw new SkatException(SkatMessages.UNSUPPORTED_KEY, method,
+                                        node.getLine(), inputName,
+                                        NUMERICAL_PROPAGATOR + ", " + SEMI_ANALYTICAL_PROPAGATOR);
+            }
+        } catch (ParseException pe) {
+            throw new SkatException(pe, LocalizedFormats.SIMPLE_MESSAGE, pe.getLocalizedMessage());
+        } catch (IOException ioe) {
+            throw new SkatException(ioe, LocalizedFormats.SIMPLE_MESSAGE, ioe.getLocalizedMessage());
         }
 
     }

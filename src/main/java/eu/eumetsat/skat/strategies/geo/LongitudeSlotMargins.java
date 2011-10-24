@@ -45,6 +45,9 @@ public class LongitudeSlotMargins implements SKControl {
     /** Associated step handler. */
     private final OrekitStepHandler stephandler;
 
+    /** Name of the control law. */
+    private final String name;
+
     /** Longitude slot westward boundary. */
     private final double westBoundary;
 
@@ -67,6 +70,7 @@ public class LongitudeSlotMargins implements SKControl {
     private double maxL;
 
     /** Simple constructor.
+     * @param name name of the control law
      * @param westBoundary longitude slot westward boundary
      * @param eastBoundary longitude slot eastward boundary
      * @param target longitude margins difference (should be set to 0.0 if
@@ -74,10 +78,12 @@ public class LongitudeSlotMargins implements SKControl {
      * @param samplingStep step to use for sampling throughout propagation
      * @param earth Earth model to use to compute longitudes
      */
-    public LongitudeSlotMargins(final double westBoundary, final double eastBoundary,
+    public LongitudeSlotMargins(final String name,
+                                final double westBoundary, final double eastBoundary,
                                 final double target, final double samplingStep,
                                 final BodyShape earth) {
         this.stephandler  = new Handler();
+        this.name         = name;
         this.westBoundary = westBoundary;
         this.eastBoundary = MathUtils.normalizeAngle(eastBoundary, westBoundary);
         this.target       = target;
@@ -87,7 +93,7 @@ public class LongitudeSlotMargins implements SKControl {
 
     /** {@inheritDoc} */
     public String getName() {
-        return "longitude margins";
+        return name;
     }
 
     /** {@inheritDoc} */

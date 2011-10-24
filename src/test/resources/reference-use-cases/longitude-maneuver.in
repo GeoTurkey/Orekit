@@ -23,7 +23,7 @@ spacecrafts    = [
          };
          scenario = [
              {
-                 component = "orbit determination";
+                 component = ORBIT_DETERMINATION;
                  covariance = {
                      matrix     = [
                          [ 1.0, 0.0, 0.0, 0.0, 0.0, 0.0 ],
@@ -33,13 +33,13 @@ spacecrafts    = [
                          [ 0.0, 0.0, 0.0, 0.0, 1.0, 0.0 ],
                          [ 0.0, 0.0, 0.0, 0.0, 0.0, 1.0 ]
                      ];
-                     angle_type = "true angle";
+                     angle_type = MEAN;
                      small      = 1.0e-6;
                  }
              },
              {
-                 component  = "control loop";
-                 optimizer  = "CMA-ES";
+                 component  = CONTROL_LOOP;
+                 optimizer  = CMA_ES;
                  max_eval   = 1000;
                  nb_points  = 5;
                  propagator = {
@@ -51,7 +51,7 @@ spacecrafts    = [
                  controls   = [
                      {
                          scale         = 0.01;
-                         type          = "longitude margins";
+                         type          = LONGITUDE_MARGINS;
                          name          = "longitude";
                          east_boundary = 19.9;
                          west_boundary = 20.1;
@@ -60,7 +60,7 @@ spacecrafts    = [
                      },
                      {
                          scale         = 1.0e-4;
-                         type          = "eccentricity circle";
+                         type          = ECCENTRICITY_CIRCLE;
                          name          = "eccentricity";
                          center_x      = 0.0;
                          center_y      = 0.0;
@@ -94,19 +94,19 @@ spacecrafts    = [
                  ];
              },
              {
-                 component          = "maneuver date error";
+                 component          = MANEUVER_DATE_ERROR;
                  in_plane           = true;
                  out_of_plane       = true;
                  standard_deviation = 60.0;
              },
              {
-                 component          = "maneuver magnitude error";
+                 component          = MANEUVER_MAGNITUDE_ERROR;
                  in_plane           = true;
                  out_of_plane       = true;
                  standard_deviation = 0.001;
              },
              {
-                 component          = "propagation";
+                 component          = PROPAGATION;
                  propagator         = {
                      method               = "numerical";
                      position_tolerance   = 100.0;

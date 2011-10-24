@@ -27,6 +27,7 @@ assignment
 value
     : structValue
     | arrayValue
+    | IDENTIFIER
     | INT
     | DOUBLE
     | DATE

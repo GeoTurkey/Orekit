@@ -7,6 +7,8 @@ import java.util.List;
 import org.apache.commons.math.analysis.MultivariateRealFunction;
 import org.apache.commons.math.optimization.GoalType;
 import org.apache.commons.math.optimization.MultivariateRealOptimizer;
+import org.apache.commons.math.optimization.direct.BOBYQAOptimizer;
+import org.apache.commons.math.optimization.direct.CMAESOptimizer;
 import org.orekit.errors.OrekitException;
 import org.orekit.propagation.Propagator;
 import org.orekit.time.AbsoluteDate;
@@ -15,6 +17,8 @@ import eu.eumetsat.skat.scenario.ScenarioComponent;
 import eu.eumetsat.skat.scenario.ScenarioState;
 import eu.eumetsat.skat.strategies.ScheduledManeuver;
 import eu.eumetsat.skat.strategies.TunableManeuver;
+import eu.eumetsat.skat.utils.SkatException;
+import eu.eumetsat.skat.utils.SupportedOptimizer;
 
 
 /**
@@ -41,8 +45,11 @@ public class ControlLoop implements ScenarioComponent {
     /** Maximal number of objective function evaluations. */
     private final int maxEval;
 
+    /** Number of sampling points. */
+    private final int nbPoints;
+
     /** Optimizing engine. */
-    private final MultivariateRealOptimizer optimizer;
+    private final SupportedOptimizer optimizer;
 
     /** Orbit propagator. */
     private final Propagator propagator;
@@ -64,14 +71,17 @@ public class ControlLoop implements ScenarioComponent {
      * </p>
      * @param spacecraftIndex index of the spacecraft managed by this loop
      * @param maxEval maximal number of objective function evaluations
+     * @param nbPoints number of smapling points
      * @param optimizer optimizing engine
      * @param propagator orbit propagator
      */
     public ControlLoop(final int spacecraftIndex,
-                       final int maxEval, final MultivariateRealOptimizer optimizer,
+                       final int maxEval, final int nbPoints,
+                       final SupportedOptimizer optimizer,
                        final Propagator propagator) {
         this.spacecraftIndex = spacecraftIndex;
         this.maxEval         = maxEval;
+        this.nbPoints        = nbPoints;
         this.optimizer       = optimizer;
         this.propagator      = propagator;
         tunables             = new ArrayList<TunableManeuver>();
@@ -144,8 +154,18 @@ public class ControlLoop implements ScenarioComponent {
                 new ObjectiveFunction(propagator, parameters, controls, target,
                                       originals[spacecraftIndex].getEstimatedStartState(),
                                       originals[spacecraftIndex].getTheoreticalManeuvers());
-        double[] optimum =
-                optimizer.optimize(maxEval, objective, GoalType.MINIMIZE, startPoint).getPoint();
+        MultivariateRealOptimizer o;
+        switch (optimizer) {
+        case CMA_ES :
+            o = new CMAESOptimizer(nbPoints);
+            break;
+        case BOBYQA :
+            o = new BOBYQAOptimizer(nbPoints);
+            break;
+        default :
+            throw SkatException.createInternalError(null);
+        }
+        double[] optimum = o.optimize(maxEval, objective, GoalType.MINIMIZE, startPoint).getPoint();
 
         // set the parameters to the optimal values
         for (int i = 0; i < optimum.length; ++i) {

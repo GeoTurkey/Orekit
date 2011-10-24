@@ -47,7 +47,7 @@ public enum ParameterKey {
     ORBIT_EQUINOCTIAL_MEAN_LONGITUDE_ARGUMENT("lambda_M"),
 
     SCENARIO,
-    SCENARIO_COMPONENT("component"),
+    COMPONENT_TYPE("component"),
 
     COMPONENT_ORBIT_DETERMINATION_COVARIANCE("covariance"),
     COVARIANCE_MATRIX("matrix"),

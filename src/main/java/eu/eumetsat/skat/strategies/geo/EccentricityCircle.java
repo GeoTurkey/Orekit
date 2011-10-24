@@ -1,7 +1,6 @@
 /* Copyright 2011 Eumetsat */
 package eu.eumetsat.skat.strategies.geo;
 
-import org.orekit.bodies.BodyShape;
 import org.orekit.errors.PropagationException;
 import org.orekit.propagation.events.EventDetector;
 import org.orekit.propagation.sampling.OrekitStepHandler;
@@ -17,6 +16,9 @@ public class EccentricityCircle implements SKControl {
     /** Associated step handler. */
     private final OrekitStepHandler stephandler;
 
+    /** Name of the control law. */
+    private final String name;
+
     /** Abscissa of the circle center. */
     private final double centerX;
 
@@ -30,14 +32,17 @@ public class EccentricityCircle implements SKControl {
     private final double samplingStep;
 
     /** Simple constructor.
+     * @param name name of the control law
      * @param centerX abscissa of the circle center
      * @param centerY ordinate of the circle center
      * @param radius radius of the circle
      * @param samplingStep step to use for sampling throughout propagation
      */
-    public EccentricityCircle(final double centerX, final double centerY, final double radius,
+    public EccentricityCircle(final String name,
+                              final double centerX, final double centerY, final double radius,
                               final double samplingStep) {
         this.stephandler  = new Handler();
+        this.name         = name;
         this.centerX      = centerX;
         this.centerY      = centerY;
         this.radius       = radius;
@@ -46,7 +51,7 @@ public class EccentricityCircle implements SKControl {
 
     /** {@inheritDoc} */
     public String getName() {
-        return "eccentricity circle";
+        return name;
     }
 
     /** {@inheritDoc} */
@@ -81,7 +86,6 @@ public class EccentricityCircle implements SKControl {
 
     /** {@inheritDoc} */
     public EventDetector getEventDetector() {
-        // TODO
         return null;
     }
 
