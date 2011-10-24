@@ -489,11 +489,12 @@ public class SkatFileParser {
      * @param gravityField gravity field
      * @return propagator
      * @exception OrekitException if propagator cannot be set up
+     * @exception SkatException if propagation method is not recognized
      */
     public Propagator getPropagator(final Tree node, final Orbit initialOrbit,
                                     final Frame earthFrame,
                                     final PotentialCoefficientsProvider gravityField)
-        throws OrekitException {
+        throws OrekitException, SkatException {
 
         // set up propagator
         final String method = getString(node, ParameterKey.COMPONENT_PROPAGATION_METHOD);
@@ -524,8 +525,9 @@ public class SkatFileParser {
             // TODO implement semi-analytical propagation
             throw SkatException.createInternalError(null);
         } else {
-            throw SkatException.createIllegalArgumentException(SkatMessages.UNSUPPORTED_PROPAGATION_METHOD,
-                                                               method, NUMERICAL_PROPAGATOR, SEMI_ANALYTICAL_PROPAGATOR);
+            throw new SkatException(SkatMessages.UNSUPPORTED_KEY, method,
+                                    SkatException.packKeywords(NUMERICAL_PROPAGATOR,
+                                                               SEMI_ANALYTICAL_PROPAGATOR));
         }
 
     }

@@ -153,6 +153,21 @@ public class SkatException extends Exception {
         return (specifier == null) ? "" : new MessageFormat(specifier.getLocalizedString(locale), locale).format(parts);
     }
 
+    /** Pack several keywords as a single string.
+     * @param keywords keywords to pack
+     * @return a single string containing all keywords
+     */
+    public static String packKeywords(final String ... keywords) {
+        final StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < keywords.length; ++i) {
+            if (i > 0) {
+                builder.append(", ");
+            }
+            builder.append(keywords[i]);
+        }
+        return builder.toString();
+    }
+
     /** Create an {@link java.lang.RuntimeException} for an internal error.
      * @param cause underlying cause
      * @return an {@link java.lang.RuntimeException} for an internal error

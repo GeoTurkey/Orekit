@@ -293,11 +293,12 @@ public class Skat {
      * @param gravityField gravity field
      * @return parsed component
      * @exception OrekitException if propagator cannot be set up
+     * @exception SkatException if control law cannot be recognized
      */
     private ScenarioComponent parseControlLoopComponent(final SkatFileParser parser, final Tree node,
                                                         final int spacecraftIndex, final Orbit initialOrbit,
                                                         final PotentialCoefficientsProvider gravityField)
-        throws OrekitException {
+        throws OrekitException, SkatException {
 
         // general configuration
         final int maxEval = parser.getInt(node, ParameterKey.COMPONENT_CONTROL_LOOP_MAX_EVAL);
@@ -321,10 +322,9 @@ public class Skat {
             } else  if (type.equals(ECCENTRICITY_CIRCLE_CONTROL)) {
                 loop.addControl(scale, parseEccentricityCircleControlLaw(parser, control, name));
             } else {
-                throw SkatException.createIllegalArgumentException(SkatMessages.UNSUPPORTED_CONTROL_LAW,
-                                                                   type,
-                                                                   LONGITUDE_MARGINS_CONTROL,
-                                                                   ECCENTRICITY_CIRCLE_CONTROL);
+                throw new SkatException(SkatMessages.UNSUPPORTED_KEY, type,
+                                        SkatException.packKeywords(LONGITUDE_MARGINS_CONTROL,
+                                                                   ECCENTRICITY_CIRCLE_CONTROL));
             }
         }
 
@@ -420,11 +420,12 @@ public class Skat {
      * @param gravityField gravity field
      * @return parsed component
      * @exception OrekitException if propagator cannot be set up
+     * @exception SkatException if propagator cannot be setup
      */
     private ScenarioComponent parsePropagationComponent(final SkatFileParser parser, final Tree node,
                                                         final Orbit initialOrbit,
                                                         final PotentialCoefficientsProvider gravityField)
-        throws OrekitException {
+        throws OrekitException, SkatException {
         return new Propagation(parser.getPropagator(parser.getValue(node, ParameterKey.COMPONENT_PROPAGATION_PROPAGATOR),
                                                     initialOrbit, earthFrame, gravityField));
     }
