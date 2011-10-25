@@ -32,6 +32,9 @@ import eu.eumetsat.skat.strategies.ScheduledManeuver;
  */
 public class ScenarioState {
 
+    /** Spacecraft name. */
+    private final String name;
+
     /** Cycles number. */
     private final int cyclesNumber;
 
@@ -81,6 +84,7 @@ public class ScenarioState {
     private final List<ScheduledManeuver> performedManeuvers;
 
     /** complete constructor.
+     * @param name spacecraft name
      * @param cyclesNumber cycle number
      * @param inplane number of performed in-plane maneuvers
      * @param inPlaneDV total dV in-plane maneuvers
@@ -98,7 +102,7 @@ public class ScenarioState {
      * @param theoreticalManeuvers list of scheduled theoretical maneuvers
      * @param performedManeuvers list of performed maneuvers
      */
-    private ScenarioState(final int cyclesNumber,
+    private ScenarioState(final String name, final int cyclesNumber,
                           final int inPlane, final double inPlaneDV,
                           final int outOfPlane, final double outOfPlaneDV,
                           final double massConsumption,
@@ -112,6 +116,7 @@ public class ScenarioState {
                           final BoundedPropagator ephemeris,
                           final List<ScheduledManeuver> theoreticalManeuvers,
                           final List<ScheduledManeuver> performedManeuvers) {
+        this.name                     = name;
         this.cyclesNumber             = cyclesNumber;
         this.inPlane                  = inPlane;
         this.inPlaneDV                = inPlaneDV;
@@ -131,11 +136,12 @@ public class ScenarioState {
     }
 
     /** Simple constructor.
+     * @param name spacecraft name
      * @param cyclesNumber cycles number
      * @param realState real state
      */
-    public ScenarioState(final int cyclesNumber, final SpacecraftState realState) {
-        this(cyclesNumber,
+    public ScenarioState(final String name, final int cyclesNumber, final SpacecraftState realState) {
+        this(name, cyclesNumber,
              0, 0.0, 0, 0.0,
              0.0,
              AbsoluteDate.PAST_INFINITY, Double.NaN,
@@ -143,6 +149,13 @@ public class ScenarioState {
              realState, null, null, null,
              new ArrayList<ScheduledManeuver>(),
              new ArrayList<ScheduledManeuver>());
+    }
+
+    /** Get the spacecraft name.
+     * @return spacecraft name
+     */
+    public String getName() {
+        return name;
     }
 
     /** Get the cycles number.
@@ -160,7 +173,7 @@ public class ScenarioState {
      * @return updated state
      */
     public ScenarioState updateCyclesNumber(final int cyclesNumber) {
-        return new ScenarioState(cyclesNumber,
+        return new ScenarioState(name, cyclesNumber,
                                  inPlane, inPlaneDV, outOfPlane, outOfPlaneDV,
                                  massConsumption,
                                  ascendingNodeDate, ascendingNodesSolarTime,
@@ -192,7 +205,7 @@ public class ScenarioState {
      * @return updated state
      */
     public ScenarioState updateInPlaneManeuvers(final int number, final double dv) {
-        return new ScenarioState(cyclesNumber,
+        return new ScenarioState(name, cyclesNumber,
                                  number, dv, outOfPlane, outOfPlaneDV,
                                  massConsumption,
                                  ascendingNodeDate, ascendingNodesSolarTime,
@@ -224,7 +237,7 @@ public class ScenarioState {
      * @return updated state
      */
     public ScenarioState updateOutOfPlaneManeuvers(final int number, final double dv) {
-        return new ScenarioState(cyclesNumber,
+        return new ScenarioState(name, cyclesNumber,
                                  inPlane, inPlaneDV, number, dv,
                                  massConsumption,
                                  ascendingNodeDate, ascendingNodesSolarTime,
@@ -248,7 +261,7 @@ public class ScenarioState {
      * @return updated state
      */
     public ScenarioState updateMassConsumption(final double massConsumption) {
-        return new ScenarioState(cyclesNumber,
+        return new ScenarioState(name, cyclesNumber,
                                  inPlane, inPlaneDV, outOfPlane, outOfPlaneDV,
                                  massConsumption,
                                  ascendingNodeDate, ascendingNodesSolarTime,
@@ -281,7 +294,7 @@ public class ScenarioState {
      */
     public ScenarioState updateAscendingNodeCrossing(final AbsoluteDate date,
                                                      final double solarTime) {
-        return new ScenarioState(cyclesNumber,
+        return new ScenarioState(name, cyclesNumber,
                                  inPlane, inPlaneDV, outOfPlane, outOfPlaneDV,
                                  massConsumption,
                                  date, solarTime,
@@ -314,7 +327,7 @@ public class ScenarioState {
      */
     public ScenarioState updateDescendingNodeCrossing(final AbsoluteDate date,
                                                       final double solarTime) {
-        return new ScenarioState(cyclesNumber,
+        return new ScenarioState(name, cyclesNumber,
                                  inPlane, inPlaneDV, outOfPlane, outOfPlaneDV,
                                  massConsumption,
                                  ascendingNodeDate, ascendingNodesSolarTime,
@@ -338,7 +351,7 @@ public class ScenarioState {
      * @return updated state
      */
     public ScenarioState updateRealStartState(final SpacecraftState state) {
-        return new ScenarioState(cyclesNumber,
+        return new ScenarioState(name, cyclesNumber,
                                  inPlane, inPlaneDV, outOfPlane, outOfPlaneDV,
                                  massConsumption,
                                  ascendingNodeDate, ascendingNodesSolarTime,
@@ -362,7 +375,7 @@ public class ScenarioState {
      * @return updated state
      */
     public ScenarioState updateEstimatedStartState(final SpacecraftState state) {
-        return new ScenarioState(cyclesNumber,
+        return new ScenarioState(name, cyclesNumber,
                                  inPlane, inPlaneDV, outOfPlane, outOfPlaneDV,
                                  massConsumption,
                                  ascendingNodeDate, ascendingNodesSolarTime,
@@ -386,7 +399,7 @@ public class ScenarioState {
      * @return updated state
      */
     public ScenarioState updateRealEndState(final SpacecraftState state) {
-        return new ScenarioState(cyclesNumber,
+        return new ScenarioState(name, cyclesNumber,
                                  inPlane, inPlaneDV, outOfPlane, outOfPlaneDV,
                                  massConsumption,
                                  ascendingNodeDate, ascendingNodesSolarTime,
@@ -410,7 +423,7 @@ public class ScenarioState {
      * @return updated state
      */
     public ScenarioState updateEphemeris(final BoundedPropagator ephemeris) {
-        return new ScenarioState(cyclesNumber,
+        return new ScenarioState(name, cyclesNumber,
                                  inPlane, inPlaneDV, outOfPlane, outOfPlaneDV,
                                  massConsumption,
                                  ascendingNodeDate, ascendingNodesSolarTime,
@@ -434,7 +447,7 @@ public class ScenarioState {
      * @return updated state
      */
     public ScenarioState updateTheoreticalManeuvers(final List<ScheduledManeuver> maneuvers) {
-        return new ScenarioState(cyclesNumber,
+        return new ScenarioState(name, cyclesNumber,
                                  inPlane, inPlaneDV, outOfPlane, outOfPlaneDV,
                                  massConsumption,
                                  ascendingNodeDate, ascendingNodesSolarTime,
@@ -458,7 +471,7 @@ public class ScenarioState {
      * @return updated state
      */
     public ScenarioState updatePerformedManeuvers(final List<ScheduledManeuver> maneuvers) {
-        return new ScenarioState(cyclesNumber,
+        return new ScenarioState(name, cyclesNumber,
                                  inPlane, inPlaneDV, outOfPlane, outOfPlaneDV,
                                  massConsumption,
                                  ascendingNodeDate, ascendingNodesSolarTime,

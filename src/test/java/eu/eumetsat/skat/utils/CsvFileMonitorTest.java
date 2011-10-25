@@ -175,7 +175,7 @@ public class CsvFileMonitorTest {
                                          Constants.EIGEN5C_EARTH_MU);
         SpacecraftState state = new SpacecraftState(orbit, mass);
         return new ScenarioState[] {
-            new ScenarioState(1, state)
+            new ScenarioState("dummy", 1, state)
         };
     }
 
