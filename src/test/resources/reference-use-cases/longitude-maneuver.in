@@ -5,8 +5,9 @@ output_file_name = "longitude-maneuver.out";
 simulation       = {
     inertial_frame = "EME2000";
     earth_frame    = "ITRF2008 with tides";
-    start_date     = 2004-01-01T00:00:00.000;
-    duration       = 50.0;
+    start_date     = 2011-10-23T00:00:00.000;
+    end_date       = 2011-12-31T23:59:59.999;
+    cycle_duration = 14.0;
     output_step    = 3600.0;
     random_seed    = 156325253;
 };

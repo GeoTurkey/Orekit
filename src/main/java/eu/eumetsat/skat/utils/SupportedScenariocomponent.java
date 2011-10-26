@@ -20,6 +20,16 @@ import eu.eumetsat.skat.strategies.TunableManeuver;
  */
 public enum SupportedScenariocomponent {
 
+    /** Constant for embedded scenario. */
+    SCENARIO() {
+        /** {@inheritDoc} */
+        public ScenarioComponent parse(final SkatFileParser parser, final Tree node, final Skat skat)
+            throws OrekitException, SkatException {
+            // TODO
+            return null;
+        }
+    },
+
     /** Constant for orbit determination scenario component. */
     ORBIT_DETERMINATION() {
         /** {@inheritDoc} */
@@ -131,13 +141,6 @@ public enum SupportedScenariocomponent {
             throws OrekitException, SkatException {
 
             final int[] indices = getIndices(parser, node, skat);
-            for (final int index : indices) {
-                if (skat.isManaged(index)) {
-                    throw new SkatException(SkatMessages.SPACECRAFT_MANAGED_TWICE, skat.getSpacecraftName(index));
-                }
-                skat.manage(index, true);
-            }
-
             final  Propagator[] propagators = new Propagator[indices.length];
             for (int i = 0; i < propagators.length; ++i) {
                 propagators[i] = parser.getPropagator(parser.getValue(node, ParameterKey.COMPONENT_PROPAGATION_PROPAGATOR),
@@ -145,7 +148,18 @@ public enum SupportedScenariocomponent {
                                                       skat.getEarth().getBodyFrame());
             }
 
-            return new Propagation(indices, propagators);
+            // build the component
+            Propagation propagation = new Propagation(indices, propagators);
+
+            // notify the Skat application this component manages the specified spacecrafts
+            for (final int index : indices) {
+                if (skat.isManaged(index)) {
+                    throw new SkatException(SkatMessages.SPACECRAFT_MANAGED_TWICE, skat.getSpacecraftName(index));
+                }
+                skat.manage(index, propagation);
+            }
+
+            return propagation;
 
         }
     };

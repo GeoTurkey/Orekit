@@ -11,7 +11,8 @@ public enum ParameterKey {
     SIMULATION_INERTIAL_FRAME("inertial_frame"),
     SIMULATION_EARTH_FRAME("earth_frame"),
     SIMULATION_START_DATE("start_date"),
-    SIMULATION_CYCLE_DURATION("duration"),
+    SIMULATION_END_DATE("end_date"),
+    SIMULATION_CYCLE_DURATION("cycle_duration"),
     SIMULATION_OUTPUT_STEP("output_step"),
     SIMULATION_RANDOM_SEED("random_seed"),
 
