@@ -4,7 +4,6 @@ package eu.eumetsat.skat.utils;
 import org.antlr.runtime.tree.Tree;
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
 import org.orekit.errors.OrekitException;
-import org.orekit.orbits.Orbit;
 import org.orekit.orbits.OrbitType;
 import org.orekit.propagation.Propagator;
 
