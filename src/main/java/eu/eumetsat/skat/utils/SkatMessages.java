@@ -42,7 +42,9 @@ public enum SkatMessages implements Localizable {
     WRONG_TYPE("type error at line {0} of input file {1}, expected {2} but was {3}"),
     MISSING_INPUT_DATA("missing data near line {0} of input file {1}: {2}"),
     UNSUPPORTED_KEY("unsupported key \"{0}\" at line {1} of input file {2}, supported keys: {3}"),
-    UNKNOWN_SPACECRAFT("unknown spacecraft {0}, known spacecrafts: {1}");
+    UNKNOWN_SPACECRAFT("unknown spacecraft {0}, known spacecrafts: {1}"),
+    SPACECRAFT_MANAGED_TWICE("spacecraft {0} is managed by several propagation scenario components"),
+    SPACECRAFT_NOT_MANAGED("spacecraft {0} is not managed by any propagation scenario components");
 
     // CHECKSTYLE: resume JavadocVariable check
 

@@ -29,6 +29,7 @@ import org.orekit.time.TimeScale;
 import org.orekit.time.TimeScalesFactory;
 import org.orekit.utils.Constants;
 
+import eu.eumetsat.skat.realization.Propagation;
 import eu.eumetsat.skat.scenario.Scenario;
 import eu.eumetsat.skat.scenario.ScenarioState;
 import eu.eumetsat.skat.utils.ParameterKey;
@@ -51,6 +52,9 @@ public class Skat {
 
     /** Initial orbit. */
     private final ScenarioState[] initialStates;
+
+    /** Indicator for spacecrafts managed by a propagator. */
+    final boolean[] managed;
 
     /** Scenario. */
     private final Scenario scenario;
@@ -163,6 +167,7 @@ public class Skat {
         // set up initial states
         final Tree initialStatesArrayNode = parser.getValue(root, ParameterKey.INITIAL_STATES);
         initialStates = new ScenarioState[parser.getElementsNumber(initialStatesArrayNode)];
+        managed       = new boolean[initialStates.length];
         for (int i = 0; i < initialStates.length; ++i) {
 
             // set up initial state
@@ -192,6 +197,13 @@ public class Skat {
             final  String type       = parser.getIdentifier(componentNode, ParameterKey.COMPONENT_TYPE);
             final SupportedScenariocomponent component = SupportedScenariocomponent.valueOf(type);
             scenario.addComponent(component.parse(parser, componentNode, this));
+        }
+
+        // check that every spacecraft is managed by at least one propagation component
+        for (int i = 0; i < managed.length; ++i) {
+            if (!managed[i]) {
+                throw new SkatException(SkatMessages.SPACECRAFT_NOT_MANAGED, getSpacecraftName(i));
+            }
         }
 
         // TODO add monitorable values
@@ -231,10 +243,20 @@ public class Skat {
         return initialStates[spacecraftIndex].getRealStartState().getOrbit();
     }
 
+    /** Get the spacecraft name corresponding to a specified index.
+     * @param index of the specified spacecraft in the scenario states array
+     * @return name spacecraft name
+     * @see #getSpacecraftIndex(String)
+     */
+    public String getSpacecraftName(final int index) {
+        return initialStates[index].getName();
+    }
+
     /** Get the spacecraft index corresponding to a specified name.
      * @param name spacecraft name
      * @return index of the specified spacecraft in the scenario states array
      * @exception SkatException if name is not recognized
+     * @see #getSpacecraftName(int)
      */
     public int getSpacecraftIndex(final String name)
         throws SkatException {
@@ -256,6 +278,27 @@ public class Skat {
         }
         throw new SkatException(SkatMessages.UNKNOWN_SPACECRAFT, name, known.toString());
 
+    }
+
+    /** Check if a spacecraft is managed by a propagator.
+     * @param index spacecraft index
+     * @return true if spacecraft is managed by a propagator
+     * @see #getSpacecraftIndex(String)
+     */
+    public boolean isManaged(final int index)
+        throws SkatException {
+        return managed[index];
+    }
+
+    /** Set a spacecraft management indicator.
+     * @param index spacecraft index
+     * @param isManaged if true the spacecraft is considered to be
+     * managed by a propagator
+     * @see #getSpacecraftIndex(String)
+     */
+    public void manage(final int index, final boolean isManaged)
+        throws SkatException {
+        managed[index] = isManaged;
     }
 
     /** Run the simulation.
