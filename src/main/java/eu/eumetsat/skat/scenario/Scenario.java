@@ -109,7 +109,7 @@ public class Scenario implements ScenarioComponent {
         do {
 
             // set target date for iteration using cycle duration
-            iterationTarget = states[0].getEstimatedStartState().getDate().shiftedBy(duration);
+            iterationTarget = states[0].getRealStartState().getDate().shiftedBy(duration);
 
             // run all components of the scenario in order
             for (final ScenarioComponent component : components) {
