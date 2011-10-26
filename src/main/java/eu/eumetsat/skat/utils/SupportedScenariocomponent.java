@@ -3,9 +3,9 @@ package eu.eumetsat.skat.utils;
 
 import org.antlr.runtime.tree.Tree;
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
-import org.apache.commons.math.linear.RealMatrix;
 import org.orekit.errors.OrekitException;
-import org.orekit.orbits.PositionAngle;
+import org.orekit.orbits.Orbit;
+import org.orekit.orbits.OrbitType;
 import org.orekit.propagation.Propagator;
 
 import eu.eumetsat.skat.Skat;
@@ -24,18 +24,13 @@ public enum SupportedScenariocomponent {
     /** Constant for orbit determination scenario component. */
     ORBIT_DETERMINATION() {
         /** {@inheritDoc} */
-        public ScenarioComponent parse(final SkatFileParser parser, final Tree node,
-                                       final int spacecraftIndex, final Skat skat)
+        public ScenarioComponent parse(final SkatFileParser parser, final Tree node, final Skat skat)
             throws OrekitException, SkatException {
-            final Tree covarianceNode =
-                    parser.getValue(node, ParameterKey.COMPONENT_ORBIT_DETERMINATION_COVARIANCE);
-            final RealMatrix covariance =
-                    parser.getCovariance(covarianceNode, ParameterKey.COVARIANCE_MATRIX);
-            final PositionAngle positionAngle =
-                    parser.getPositionAngle(covarianceNode, ParameterKey.COVARIANCE_ANGLE_TYPE);
-            final double small =
-                    parser.getDouble(covarianceNode, ParameterKey.COVARIANCE_SMALL);
-            return new OrbitDetermination(spacecraftIndex, covariance, positionAngle, small,
+            return new OrbitDetermination(getIndices(parser, node, skat),
+                                          parser.getCovariance(node, ParameterKey.ORBIT_DETERMINATION_COVARIANCE),
+                                          OrbitType.valueOf(parser.getIdentifier(node, ParameterKey.ORBIT_TYPE)),
+                                          parser.getPositionAngle(node, ParameterKey.ANGLE_TYPE),
+                                          parser.getDouble(node, ParameterKey.ORBIT_DETERMINATION_SMALL),
                                           skat.getGenerator());
         }
     },
@@ -44,8 +39,7 @@ public enum SupportedScenariocomponent {
     CONTROL_LOOP() {
 
         /** {@inheritDoc} */
-        public ScenarioComponent parse(final SkatFileParser parser, final Tree node,
-                                       final int spacecraftIndex, final Skat skat)
+        public ScenarioComponent parse(final SkatFileParser parser, final Tree node, final Skat skat)
             throws OrekitException, SkatException {
 
             // optimizer
@@ -54,12 +48,16 @@ public enum SupportedScenariocomponent {
             final String method = parser.getIdentifier(node, ParameterKey.COMPONENT_CONTROL_LOOP_OPTIMIZER);
             final SupportedOptimizer optimizer = SupportedOptimizer.valueOf(method);
 
-            final Propagator propagator = parser.getPropagator(parser.getValue(node, ParameterKey.COMPONENT_CONTROL_LOOP_PROPAGATOR),
-                                                               skat.getInitialOrbit(spacecraftIndex),
-                                                               skat.getEarth().getBodyFrame());
+            final int[] indices = getIndices(parser, node, skat);
+            final  Propagator[] propagators = new Propagator[indices.length];
+            for (int i = 0; i < propagators.length; ++i) {
+                propagators[i] = parser.getPropagator(parser.getValue(node, ParameterKey.COMPONENT_CONTROL_LOOP_PROPAGATOR),
+                                                      skat.getInitialOrbit(indices[i]),
+                                                      skat.getEarth().getBodyFrame());
+            }
 
 
-            final ControlLoop loop = new ControlLoop(spacecraftIndex, maxEval, nbPoints, optimizer, propagator);
+            final ControlLoop loop = new ControlLoop(indices, maxEval, nbPoints, optimizer, propagators);
 
             // control laws
             final Tree controlsNode = parser.getValue(node, ParameterKey.COMPONENT_CONTROL_LOOP_CONTROLS);
@@ -68,7 +66,7 @@ public enum SupportedScenariocomponent {
                 final double scale = parser.getDouble(control, ParameterKey.CONTROL_SCALE);
                 final String type = parser.getIdentifier(control, ParameterKey.CONTROL_TYPE);
                 SupportedControlLaw law = SupportedControlLaw.valueOf(type);
-                loop.addControl(scale, law.parse(parser, control, spacecraftIndex, skat));
+                loop.addControl(scale, law.parse(parser, control, skat));
             }
 
             // tunable maneuvers
@@ -96,8 +94,7 @@ public enum SupportedScenariocomponent {
     /** Constant for maneuver_date_error scenario component. */
     MANEUVER_DATE_ERROR() {
         /** {@inheritDoc} */
-        public ScenarioComponent parse(final SkatFileParser parser, final Tree node,
-                                       final int spacecraftIndex, final Skat skat)
+        public ScenarioComponent parse(final SkatFileParser parser, final Tree node, final Skat skat)
             throws OrekitException, SkatException {
             final boolean inPlane =
                     parser.getBoolean(node, ParameterKey.COMPONENT_MANEUVER_DATE_ERROR_IN_PLANE);
@@ -105,7 +102,8 @@ public enum SupportedScenariocomponent {
                     parser.getBoolean(node, ParameterKey.COMPONENT_MANEUVER_DATE_ERROR_OUT_OF_PLANE);
             final double standardDeviation =
                     parser.getDouble(node, ParameterKey.COMPONENT_MANEUVER_DATE_ERROR_STANDARD_DEVIATION);
-            return new ManeuverDateError(spacecraftIndex, inPlane, outOfPlane, standardDeviation,
+            return new ManeuverDateError(getIndices(parser, node, skat),
+                                         inPlane, outOfPlane, standardDeviation,
                                          skat.getGenerator());
         }
     },
@@ -113,8 +111,7 @@ public enum SupportedScenariocomponent {
     /** Constant for maneuver magnitude error scenario component. */
     MANEUVER_MAGNITUDE_ERROR() {
         /** {@inheritDoc} */
-        public ScenarioComponent parse(final SkatFileParser parser, final Tree node,
-                                       final int spacecraftIndex, final Skat skat)
+        public ScenarioComponent parse(final SkatFileParser parser, final Tree node, final Skat skat)
             throws OrekitException, SkatException {
             final boolean inPlane =
                     parser.getBoolean(node, ParameterKey.COMPONENT_MANEUVER_MAGNITUDE_ERROR_IN_PLANE);
@@ -122,7 +119,8 @@ public enum SupportedScenariocomponent {
                     parser.getBoolean(node, ParameterKey.COMPONENT_MANEUVER_MAGNITUDE_ERROR_OUT_OF_PLANE);
             final double standardDeviation =
                     parser.getDouble(node, ParameterKey.COMPONENT_MANEUVER_MAGNITUDE_ERROR_STANDARD_DEVIATION);
-            return new ManeuverMagnitudeError(spacecraftIndex, inPlane, outOfPlane, standardDeviation,
+            return new ManeuverMagnitudeError(getIndices(parser, node, skat),
+                                              inPlane, outOfPlane, standardDeviation,
                                               skat.getGenerator());
         }
     },
@@ -130,26 +128,45 @@ public enum SupportedScenariocomponent {
     /** Constant for propagation scenario component. */
     PROPAGATION() {
         /** {@inheritDoc} */
-        public ScenarioComponent parse(final SkatFileParser parser, final Tree node,
-                                                final int spacecraftIndex, final Skat skat)
+        public ScenarioComponent parse(final SkatFileParser parser, final Tree node, final Skat skat)
             throws OrekitException, SkatException {
-            return new Propagation(parser.getPropagator(parser.getValue(node, ParameterKey.COMPONENT_PROPAGATION_PROPAGATOR),
-                                                        skat.getInitialOrbit(spacecraftIndex),
-                                                        skat.getEarth().getBodyFrame()));
+            final int[] indices = getIndices(parser, node, skat);
+            final  Propagator[] propagators = new Propagator[indices.length];
+            for (int i = 0; i < propagators.length; ++i) {
+                propagators[i] = parser.getPropagator(parser.getValue(node, ParameterKey.COMPONENT_PROPAGATION_PROPAGATOR),
+                                                      skat.getInitialOrbit(indices[i]),
+                                                      skat.getEarth().getBodyFrame());
+            }
+            return new Propagation(indices, propagators);
         }
     };
+
+    /** Parse the indices of the spacecrafts affected by the component.
+     * @param parser input file parser
+     * @param node data node containing component configuration parameters
+     * @param skat enclosing Skat tool
+     * @return affected indices
+     * @exception SkatException if a spacecraft name cannot be recognized
+     */
+    private static int[] getIndices(final SkatFileParser parser, final Tree node, final Skat skat)
+        throws SkatException {
+        final Tree namesArrayNode = parser.getValue(node, ParameterKey.COMPONENT_SPACECRAFTS);
+        int[] indices = new int[parser.getElementsNumber(namesArrayNode)];
+        for (int i = 0; i < indices.length; ++i) {
+            indices[i] = skat.getSpacecraftIndex(parser.getElement(namesArrayNode, i).getText());
+        }
+        return indices;
+    }
 
     /** Parse an input data tree to build a scenario component.
      * @param parser input file parser
      * @param node data node containing component configuration parameters
-     * @param spacecraftIndex spacecraft index
      * @param skat enclosing Skat tool
      * @return parsed component
      * @exception OrekitException if propagator cannot be set up
      * @exception SkatException if control law cannot be recognized
      */
-    public abstract ScenarioComponent parse(final SkatFileParser parser, final Tree node,
-                                            final int spacecraftIndex, final Skat skat)
+    public abstract ScenarioComponent parse(final SkatFileParser parser, final Tree node, final Skat skat)
         throws OrekitException, SkatException;
 
 }

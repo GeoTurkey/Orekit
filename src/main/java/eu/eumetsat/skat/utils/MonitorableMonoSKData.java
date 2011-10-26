@@ -71,16 +71,6 @@ public enum MonitorableMonoSKData implements MonitorableMono {
 
     },
 
-    PROPELLANT_MASS_CONSUMPTION(1) {
-
-        /** {@inheritDoc} */
-        @Override
-        protected void extractData(final ScenarioState state, BodyShape earth, double[] data) {
-            data[0] = state.getMassConsumption();
-        }
-
-    },
-
     SPACECRAFT_MASS(1) {
 
         /** {@inheritDoc} */

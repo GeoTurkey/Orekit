@@ -75,9 +75,6 @@ public class LatestEscapeTimeStationKeeping {
     /** Start date. */
     private final AbsoluteDate startDate;
 
-    /** Number of cycles. */
-    private final int cyclesNumber;
-
     /** Maximal cycle duration. */
     private final double cycleDuration;
 
@@ -154,8 +151,8 @@ public class LatestEscapeTimeStationKeeping {
         TimeScale utc = TimeScalesFactory.getUTC();
 
         // set up frames
-        inertialFrame = parser.getInertialFrame(root, ParameterKey.INERTIAL_FRAME);
-        final Frame earthFrame = parser.getEarthFrame(root, ParameterKey.EARTH_FRAME);
+        inertialFrame = parser.getInertialFrame(root, ParameterKey.SIMULATION_INERTIAL_FRAME);
+        final Frame earthFrame = parser.getEarthFrame(root, ParameterKey.SIMULATION_EARTH_FRAME);
 
         // set up Earth model
         earth = new OneAxisEllipsoid(Constants.WGS84_EARTH_EQUATORIAL_RADIUS,
@@ -179,8 +176,8 @@ public class LatestEscapeTimeStationKeeping {
                                              parser.getDouble(root, ParameterKey.ORBIT_CIRCULAR_EY),
                                              parser.getAngle(root, ParameterKey.ORBIT_CIRCULAR_I),
                                              parser.getAngle(root, ParameterKey.ORBIT_CIRCULAR_RAAN),
-                                             parser.getAngle(root, ParameterKey.ORBIT_CIRCULAR_MEAN_LATITUDE_ARGUMENT),
-                                             PositionAngle.MEAN,
+                                             parser.getAngle(root, ParameterKey.ORBIT_CIRCULAR_LATITUDE_ARGUMENT),
+                                             PositionAngle.valueOf(parser.getIdentifier(root, ParameterKey.ORBIT_TYPE)),
                                              inertialFrame,
                                              parser.getDate(root, ParameterKey.ORBIT_CIRCULAR_DATE, utc),
                                              gravityField.getMu());
@@ -190,8 +187,8 @@ public class LatestEscapeTimeStationKeeping {
                                                 parser.getDouble(root, ParameterKey.ORBIT_EQUINOCTIAL_EY),
                                                 parser.getDouble(root, ParameterKey.ORBIT_EQUINOCTIAL_HX),
                                                 parser.getDouble(root, ParameterKey.ORBIT_EQUINOCTIAL_HY),
-                                                parser.getAngle(root, ParameterKey.ORBIT_EQUINOCTIAL_MEAN_LONGITUDE_ARGUMENT),
-                                                PositionAngle.MEAN,
+                                                parser.getAngle(root, ParameterKey.ORBIT_EQUINOCTIAL_LONGITUDE_ARGUMENT),
+                                                PositionAngle.valueOf(parser.getIdentifier(root, ParameterKey.ORBIT_TYPE)),
                                                 inertialFrame,
                                                 parser.getDate(root, ParameterKey.ORBIT_EQUINOCTIAL_DATE, utc),
                                                 gravityField.getMu());            
@@ -213,7 +210,6 @@ public class LatestEscapeTimeStationKeeping {
 
         startDate     = parser.getDate(root, ParameterKey.SIMULATION_START_DATE, utc);
         cycleDuration = parser.getDouble(root, ParameterKey.SIMULATION_CYCLE_DURATION) * Constants.JULIAN_DAY;
-        cyclesNumber  = parser.getInt(root, ParameterKey.SIMULATION_CYCLE_NUMBER);
 
     }
 
@@ -226,7 +222,7 @@ public class LatestEscapeTimeStationKeeping {
         EscapeTime escapeTime = new EscapeTime(propagator, earth);
 
         PrintHandler stepHandler = new PrintHandler(output, earth);
-        for (int i = 0; i < cyclesNumber; ++i) {
+        for (int i = 0; i < 10; ++i) {
             escapeTime.setInitialState(startCycleState);
             escapeTime.setTargetDate(initialState.getDate().shiftedBy(cycleDuration));
             UnivariateRealPointValuePair pair = optimizer.optimize(1000, escapeTime, GoalType.MAXIMIZE, -0.1, 0.1);

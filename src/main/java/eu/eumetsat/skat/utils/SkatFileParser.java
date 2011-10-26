@@ -31,6 +31,7 @@ import org.orekit.orbits.CircularOrbit;
 import org.orekit.orbits.EquinoctialOrbit;
 import org.orekit.orbits.KeplerianOrbit;
 import org.orekit.orbits.Orbit;
+import org.orekit.orbits.OrbitType;
 import org.orekit.orbits.PositionAngle;
 import org.orekit.propagation.Propagator;
 import org.orekit.propagation.numerical.NumericalPropagator;
@@ -482,53 +483,51 @@ public class SkatFileParser {
                           final TimeScale timeScale, final double mu)
         throws IllegalArgumentException, OrekitException {
 
-        if (containsKey(node, ParameterKey.ORBIT_CARTESIAN_POSITION)) {
+        final String type = getIdentifier(node, ParameterKey.ORBIT_TYPE);
+        switch (OrbitType.valueOf(type)) {
+
+        case CARTESIAN :
             return new CartesianOrbit(new PVCoordinates(getVector(node, ParameterKey.ORBIT_CARTESIAN_POSITION),
                                                         getVector(node, ParameterKey.ORBIT_CARTESIAN_VELOCITY)),
                                       inertialFrame,
                                       getDate(node, ParameterKey.ORBIT_CARTESIAN_DATE, timeScale),
                                       mu);
-        } else if (containsKey(node, ParameterKey.ORBIT_KEPLERIAN_MEAN_ANOMALY)) {
+        case KEPLERIAN :
             return new KeplerianOrbit(getDouble(node, ParameterKey.ORBIT_KEPLERIAN_A),
                                       getDouble(node, ParameterKey.ORBIT_KEPLERIAN_E),
                                       getAngle(node,  ParameterKey.ORBIT_KEPLERIAN_I),
                                       getAngle(node,  ParameterKey.ORBIT_KEPLERIAN_PA),
                                       getAngle(node,  ParameterKey.ORBIT_KEPLERIAN_RAAN),
-                                      getAngle(node,  ParameterKey.ORBIT_KEPLERIAN_MEAN_ANOMALY),
-                                      PositionAngle.MEAN,
+                                      getAngle(node,  ParameterKey.ORBIT_KEPLERIAN_ANOMALY),
+                                      getPositionAngle(node, ParameterKey.ANGLE_TYPE),
                                       inertialFrame,
                                       getDate(node, ParameterKey.ORBIT_KEPLERIAN_DATE, timeScale),
                                       mu);
-        } else if (containsKey(node, ParameterKey.ORBIT_CIRCULAR_MEAN_LATITUDE_ARGUMENT)) {
+        case CIRCULAR :
             return new CircularOrbit(getDouble(node, ParameterKey.ORBIT_CIRCULAR_A),
                                      getDouble(node, ParameterKey.ORBIT_CIRCULAR_EX),
                                      getDouble(node, ParameterKey.ORBIT_CIRCULAR_EY),
                                      getAngle(node,  ParameterKey.ORBIT_CIRCULAR_I),
                                      getAngle(node,  ParameterKey.ORBIT_CIRCULAR_RAAN),
-                                     getAngle(node,  ParameterKey.ORBIT_CIRCULAR_MEAN_LATITUDE_ARGUMENT),
-                                     PositionAngle.MEAN,
+                                     getAngle(node,  ParameterKey.ORBIT_CIRCULAR_LATITUDE_ARGUMENT),
+                                     getPositionAngle(node, ParameterKey.ANGLE_TYPE),
                                      inertialFrame,
                                      getDate(node, ParameterKey.ORBIT_CIRCULAR_DATE, timeScale),
                                      mu);
-        } else if (containsKey(node, ParameterKey.ORBIT_EQUINOCTIAL_MEAN_LONGITUDE_ARGUMENT)) {
+        case EQUINOCTIAL :
             return new EquinoctialOrbit(getDouble(node, ParameterKey.ORBIT_EQUINOCTIAL_A),
                                         getDouble(node, ParameterKey.ORBIT_EQUINOCTIAL_EX),
                                         getDouble(node, ParameterKey.ORBIT_EQUINOCTIAL_EY),
                                         getDouble(node, ParameterKey.ORBIT_EQUINOCTIAL_HX),
                                         getDouble(node, ParameterKey.ORBIT_EQUINOCTIAL_HY),
-                                        getAngle(node, ParameterKey.ORBIT_EQUINOCTIAL_MEAN_LONGITUDE_ARGUMENT),
-                                        PositionAngle.MEAN,
+                                        getAngle(node, ParameterKey.ORBIT_EQUINOCTIAL_LONGITUDE_ARGUMENT),
+                                        getPositionAngle(node, ParameterKey.ANGLE_TYPE),
                                         inertialFrame,
                                         getDate(node, ParameterKey.ORBIT_EQUINOCTIAL_DATE, timeScale),
                                         mu);
-        } else {
-            throw SkatException.createIllegalArgumentException(SkatMessages.MISSING_INPUT_DATA,
-                                                               node.getLine(), inputName,
-                                                               ParameterKey.ORBIT_CARTESIAN_DATE.getKey() +
-                                                               "|" + ParameterKey.ORBIT_CARTESIAN_POSITION +
-                                                               "|" + ParameterKey.ORBIT_EQUINOCTIAL_A +
-                                                               "|" + ParameterKey.ORBIT_EQUINOCTIAL_EX +
-                                                               "|...");
+        default :
+            // this should never happen
+            throw SkatException.createInternalError(null);
         }
 
     }

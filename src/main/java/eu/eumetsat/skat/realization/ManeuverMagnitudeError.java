@@ -46,8 +46,8 @@ import eu.eumetsat.skat.strategies.ScheduledManeuver;
  */
 public class ManeuverMagnitudeError implements ScenarioComponent {
 
-    /** Index of the spacecraft managed by this component. */
-    private final int spacecraftIndex;
+    /** Indices of the spacecrafts managed by this component. */
+    private final int[] spacecraftIndices;
 
     /** Indicator for applying this error to in-plane maneuvers. */
     private final boolean inPlane;
@@ -62,18 +62,18 @@ public class ManeuverMagnitudeError implements ScenarioComponent {
     private final RandomGenerator generator;
 
     /** Simple constructor.
-     * @param spacecraftIndex index of the spacecraft managed by this component
+     * @param spacecraftIndices indices of the spacecrafts managed by this component
      * @param inPlane if true, the error applies to in-plane maneuvers
      * @param outOfPlane if true, the error applies to out-of-plane maneuvers
      * @param standardDeviation standard deviation of the multiplying error factor
      * (for example 0.05 for a 5% error)
      * @param generator random generator to use for evaluating the error factor
      */
-    public ManeuverMagnitudeError(final int spacecraftIndex,
+    public ManeuverMagnitudeError(final int[] spacecraftIndices,
                                   final boolean inPlane, final boolean outOfPlane,
                                   final double standardDeviation,
                                   final RandomGenerator generator) {
-        this.spacecraftIndex    = spacecraftIndex;
+        this.spacecraftIndices  = spacecraftIndices.clone();
         this.inPlane            = inPlane;
         this.outOfPlane         = outOfPlane;
         this.standardDeviation  = standardDeviation;
@@ -84,28 +84,38 @@ public class ManeuverMagnitudeError implements ScenarioComponent {
     public ScenarioState[] updateStates(final ScenarioState[] originals, AbsoluteDate target)
         throws OrekitException {
 
-        // prepare a list for holding the modified maneuvers
-        List<ScheduledManeuver> modified =
-                new ArrayList<ScheduledManeuver>(originals[spacecraftIndex].getPerformedManeuvers().size());
+        ScenarioState[] updated = originals.clone();
 
-        // modify the maneuvers
-        for (final ScheduledManeuver maneuver : originals[spacecraftIndex].getPerformedManeuvers()) {
-            if ((inPlane && maneuver.isInPlane()) || (outOfPlane && !(maneuver.isInPlane()))) {
-                // the maneuver is affected by the error
-                final double errorFactor = 1.0 + standardDeviation * generator.nextGaussian();
-                modified.add(new ScheduledManeuver(maneuver.isInPlane(),
-                                                   maneuver.getDate(),
-                                                   new Vector3D(errorFactor, maneuver.getDeltaV()),
-                                                   maneuver.getIsp()));
-            } else {
-                // the maneuver is immune to the error
-                modified.add(maneuver);
+        for (int i = 0; i < spacecraftIndices.length; ++i) {
+
+            // select the current spacecraft affected by this component
+            final int index = spacecraftIndices[i];
+
+            // prepare a list for holding the modified maneuvers
+            List<ScheduledManeuver> modified =
+                    new ArrayList<ScheduledManeuver>(originals[index].getPerformedManeuvers().size());
+
+            // modify the maneuvers
+            for (final ScheduledManeuver maneuver : originals[index].getPerformedManeuvers()) {
+                if ((inPlane && maneuver.isInPlane()) || (outOfPlane && !(maneuver.isInPlane()))) {
+                    // the maneuver is affected by the error
+                    final double errorFactor = 1.0 + standardDeviation * generator.nextGaussian();
+                    modified.add(new ScheduledManeuver(maneuver.isInPlane(),
+                                                       maneuver.getDate(),
+                                                       new Vector3D(errorFactor, maneuver.getDeltaV()),
+                                                       maneuver.getIsp()));
+                } else {
+                    // the maneuver is immune to the error
+                    modified.add(maneuver);
+                }
             }
+
+            // update the state
+            updated[index] = originals[index].updatePerformedManeuvers(modified);
+
         }
 
-        // return an updated state
-        ScenarioState[] updated = originals.clone();
-        updated[spacecraftIndex] = originals[spacecraftIndex].updatePerformedManeuvers(modified);
+        // return an updated states
         return updated;
 
     }

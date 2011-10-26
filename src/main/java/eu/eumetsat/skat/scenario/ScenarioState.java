@@ -50,9 +50,6 @@ public class ScenarioState {
     /** Total dV out-of-plane maneuvers. */
     private final double outOfPlaneDV;
 
-    /** Mass consumption. */
-    private final double massConsumption;
-
     /** Date of previous ascending node. */
     private final AbsoluteDate ascendingNodeDate;
 
@@ -90,7 +87,6 @@ public class ScenarioState {
      * @param inPlaneDV total dV in-plane maneuvers
      * @param outOfPlane number of performed out-of-plane maneuvers
      * @param outOfPlaneDV total dV out-of-plane maneuvers
-     * @param massConsumption mass consumption
      * @param ascendingNodeDate date of previous ascending node
      * @param ascendingNodesSolarTime solar time at previous ascending node
      * @param descendingNodeDate date of previous descending node
@@ -105,7 +101,6 @@ public class ScenarioState {
     private ScenarioState(final String name, final int cyclesNumber,
                           final int inPlane, final double inPlaneDV,
                           final int outOfPlane, final double outOfPlaneDV,
-                          final double massConsumption,
                           final AbsoluteDate ascendingNodeDate,
                           final double ascendingNodesSolarTime,
                           final AbsoluteDate descendingNodeDate,
@@ -122,7 +117,6 @@ public class ScenarioState {
         this.inPlaneDV                = inPlaneDV;
         this.outOfPlane               = outOfPlane;
         this.outOfPlaneDV             = outOfPlaneDV;
-        this.massConsumption          = massConsumption;
         this.ascendingNodeDate        = ascendingNodeDate;
         this.ascendingNodesSolarTime  = ascendingNodesSolarTime;
         this.descendingNodeDate       = descendingNodeDate;
@@ -143,7 +137,6 @@ public class ScenarioState {
     public ScenarioState(final String name, final int cyclesNumber, final SpacecraftState realState) {
         this(name, cyclesNumber,
              0, 0.0, 0, 0.0,
-             0.0,
              AbsoluteDate.PAST_INFINITY, Double.NaN,
              AbsoluteDate.PAST_INFINITY, Double.NaN,
              realState, null, null, null,
@@ -175,7 +168,6 @@ public class ScenarioState {
     public ScenarioState updateCyclesNumber(final int cyclesNumber) {
         return new ScenarioState(name, cyclesNumber,
                                  inPlane, inPlaneDV, outOfPlane, outOfPlaneDV,
-                                 massConsumption,
                                  ascendingNodeDate, ascendingNodesSolarTime,
                                  descendingNodeDate, descendingNodesSolarTime,
                                  realStartState, estimatedStartState, realEndState,
@@ -207,7 +199,6 @@ public class ScenarioState {
     public ScenarioState updateInPlaneManeuvers(final int number, final double dv) {
         return new ScenarioState(name, cyclesNumber,
                                  number, dv, outOfPlane, outOfPlaneDV,
-                                 massConsumption,
                                  ascendingNodeDate, ascendingNodesSolarTime,
                                  descendingNodeDate, descendingNodesSolarTime,
                                  realStartState, estimatedStartState, realEndState,
@@ -239,31 +230,6 @@ public class ScenarioState {
     public ScenarioState updateOutOfPlaneManeuvers(final int number, final double dv) {
         return new ScenarioState(name, cyclesNumber,
                                  inPlane, inPlaneDV, number, dv,
-                                 massConsumption,
-                                 ascendingNodeDate, ascendingNodesSolarTime,
-                                 descendingNodeDate, descendingNodesSolarTime,
-                                 realStartState, estimatedStartState, realEndState,
-                                 ephemeris, theoreticalManeuvers, performedManeuvers);
-    }
-
-    /** get the mass consumption.
-     * @return mass consumption
-     */
-    public double getMassConsumption() {
-        return massConsumption;
-    }
-
-    /** Update the mass consumption.
-     * <p>
-     * The instance is not changed, a new instance is created
-     * </p>
-     * @param massConsumption mass consumption
-     * @return updated state
-     */
-    public ScenarioState updateMassConsumption(final double massConsumption) {
-        return new ScenarioState(name, cyclesNumber,
-                                 inPlane, inPlaneDV, outOfPlane, outOfPlaneDV,
-                                 massConsumption,
                                  ascendingNodeDate, ascendingNodesSolarTime,
                                  descendingNodeDate, descendingNodesSolarTime,
                                  realStartState, estimatedStartState, realEndState,
@@ -296,7 +262,6 @@ public class ScenarioState {
                                                      final double solarTime) {
         return new ScenarioState(name, cyclesNumber,
                                  inPlane, inPlaneDV, outOfPlane, outOfPlaneDV,
-                                 massConsumption,
                                  date, solarTime,
                                  descendingNodeDate, descendingNodesSolarTime,
                                  realStartState, estimatedStartState, realEndState,
@@ -329,7 +294,6 @@ public class ScenarioState {
                                                       final double solarTime) {
         return new ScenarioState(name, cyclesNumber,
                                  inPlane, inPlaneDV, outOfPlane, outOfPlaneDV,
-                                 massConsumption,
                                  ascendingNodeDate, ascendingNodesSolarTime,
                                  date, solarTime,
                                  realStartState, estimatedStartState, realEndState,
@@ -353,7 +317,6 @@ public class ScenarioState {
     public ScenarioState updateRealStartState(final SpacecraftState state) {
         return new ScenarioState(name, cyclesNumber,
                                  inPlane, inPlaneDV, outOfPlane, outOfPlaneDV,
-                                 massConsumption,
                                  ascendingNodeDate, ascendingNodesSolarTime,
                                  descendingNodeDate, descendingNodesSolarTime,
                                  state, estimatedStartState, realEndState,
@@ -377,7 +340,6 @@ public class ScenarioState {
     public ScenarioState updateEstimatedStartState(final SpacecraftState state) {
         return new ScenarioState(name, cyclesNumber,
                                  inPlane, inPlaneDV, outOfPlane, outOfPlaneDV,
-                                 massConsumption,
                                  ascendingNodeDate, ascendingNodesSolarTime,
                                  descendingNodeDate, descendingNodesSolarTime,
                                  realStartState, estimatedStartState, realEndState,
@@ -401,7 +363,6 @@ public class ScenarioState {
     public ScenarioState updateRealEndState(final SpacecraftState state) {
         return new ScenarioState(name, cyclesNumber,
                                  inPlane, inPlaneDV, outOfPlane, outOfPlaneDV,
-                                 massConsumption,
                                  ascendingNodeDate, ascendingNodesSolarTime,
                                  descendingNodeDate, descendingNodesSolarTime,
                                  realStartState, estimatedStartState, state,
@@ -425,7 +386,6 @@ public class ScenarioState {
     public ScenarioState updateEphemeris(final BoundedPropagator ephemeris) {
         return new ScenarioState(name, cyclesNumber,
                                  inPlane, inPlaneDV, outOfPlane, outOfPlaneDV,
-                                 massConsumption,
                                  ascendingNodeDate, ascendingNodesSolarTime,
                                  descendingNodeDate, descendingNodesSolarTime,
                                  realStartState, estimatedStartState, realEndState,
@@ -449,7 +409,6 @@ public class ScenarioState {
     public ScenarioState updateTheoreticalManeuvers(final List<ScheduledManeuver> maneuvers) {
         return new ScenarioState(name, cyclesNumber,
                                  inPlane, inPlaneDV, outOfPlane, outOfPlaneDV,
-                                 massConsumption,
                                  ascendingNodeDate, ascendingNodesSolarTime,
                                  descendingNodeDate, descendingNodesSolarTime,
                                  realStartState, estimatedStartState, realEndState,
@@ -473,7 +432,6 @@ public class ScenarioState {
     public ScenarioState updatePerformedManeuvers(final List<ScheduledManeuver> maneuvers) {
         return new ScenarioState(name, cyclesNumber,
                                  inPlane, inPlaneDV, outOfPlane, outOfPlaneDV,
-                                 massConsumption,
                                  ascendingNodeDate, ascendingNodesSolarTime,
                                  descendingNodeDate, descendingNodesSolarTime,
                                  realStartState, estimatedStartState, realEndState,

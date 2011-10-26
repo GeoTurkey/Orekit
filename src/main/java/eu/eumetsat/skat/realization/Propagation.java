@@ -22,13 +22,19 @@ import eu.eumetsat.skat.strategies.ScheduledManeuver;
  */
 public class Propagation implements ScenarioComponent {
 
-    /** Orbit propagator. */
-    private final Propagator propagator;
+    /** Indices of the spacecrafts managed by this component. */
+    private final int[] spacecraftIndices;
+
+    /** Orbit propagators. */
+    private final Propagator[] propagators;
 
     /** Simple constructor.
+     * @param spacecraftIndices indices of the spacecrafts managed by this component
+     * @param propagators propagators to use for each spacecraft
      */
-    public Propagation(final Propagator propagator) {
-        this.propagator = propagator;
+    public Propagation(final int[] spacecraftIndices, final Propagator[] propagators) {
+        this.spacecraftIndices = spacecraftIndices.clone();
+        this.propagators       = propagators.clone();
     }
 
     /** {@inheritDoc} */
@@ -38,23 +44,26 @@ public class Propagation implements ScenarioComponent {
         final ScenarioState[] updated = new ScenarioState[originals.length];
 
         // separately propagate each spacecraft
-        for (int i = 0; i < originals.length; ++i) {
+        for (int i = 0; i < spacecraftIndices.length; ++i) {
+
+            // select the current spacecraft affected by this component
+            final int index = spacecraftIndices[i];
 
             // set up the propagator with the maneuvers to perform
-            propagator.clearEventsDetectors();
-            for (final ScheduledManeuver maneuver : originals[i].getTheoreticalManeuvers()) {
-                propagator.addEventDetector(new ImpulseManeuver(new DateDetector(maneuver.getDate()),
-                                                                maneuver.getDeltaV(),
-                                                                maneuver.getIsp()));
+            propagators[i].clearEventsDetectors();
+            for (final ScheduledManeuver maneuver : originals[index].getTheoreticalManeuvers()) {
+                propagators[i].addEventDetector(new ImpulseManeuver(new DateDetector(maneuver.getDate()),
+                                                                    maneuver.getDeltaV(),
+                                                                    maneuver.getIsp()));
             }
-            propagator.setEphemerisMode();
+            propagators[i].setEphemerisMode();
 
             // perform propagation
-            propagator.resetInitialState(originals[i].getRealStartState());
-            updated[i] = originals[i].updateRealEndState(propagator.propagate(target));
+            propagators[i].resetInitialState(originals[index].getRealStartState());
+            updated[index] = originals[index].updateRealEndState(propagators[i].propagate(target));
 
             // retrieve continuous data
-            updated[i] = originals[i].updateEphemeris(propagator.getGeneratedEphemeris());
+            updated[index] = originals[index].updateEphemeris(propagators[i].getGeneratedEphemeris());
 
         }
 

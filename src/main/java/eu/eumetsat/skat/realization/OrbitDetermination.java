@@ -27,33 +27,39 @@ import eu.eumetsat.skat.scenario.ScenarioState;
  */
 public class OrbitDetermination implements ScenarioComponent {
 
-    /** Index of the spacecraft managed by this component. */
-    private final int spacecraftIndex;
+    /** Indices of the spacecrafts managed by this component. */
+    private final int[] spacecraftIndices;
 
     /** Vector generator. */
     private final CorrelatedRandomVectorGenerator generator;
+
+    /** Orbit type used in the covariance  matrix. */
+    private final OrbitType orbitType;
 
     /** Position angle used in the covariance matrix. */
     private final PositionAngle positionAngle;
 
     /** Simple constructor.
-     * @param spacecraftIndex index of the spacecraft managed by this component
+     * @param spacecraftIndices indices of the spacecrafts managed by this component
      * @param covariance covariance matrix to use for generating
      * orbit determination errors
+     * @param orbitType orbit type used in the covariance  matrix
      * @param positionAngle position angle used in the covariance matrix
      * @param small Diagonal elements threshold under which  column are
      * considered to be dependent on previous ones and are discarded
      * @param random raw random generator
      */
-    public OrbitDetermination(final int spacecraftIndex,
+    public OrbitDetermination(final int[] spacecraftIndices,
                               final RealMatrix covariance,
+                              final OrbitType orbitType,
                               final PositionAngle positionAngle,
                               final double small,
                               final RandomGenerator random) {
-        this.spacecraftIndex = spacecraftIndex;
+        this.spacecraftIndices = spacecraftIndices.clone();
         final double[] zeroMean = new double[covariance.getRowDimension()];
         generator = new CorrelatedRandomVectorGenerator(zeroMean, covariance, small,
                                                         new GaussianRandomGenerator(random));
+        this.orbitType     = orbitType;
         this.positionAngle = positionAngle;
     }
 
@@ -61,29 +67,43 @@ public class OrbitDetermination implements ScenarioComponent {
     public ScenarioState[] updateStates(final ScenarioState[] originals, AbsoluteDate target)
         throws OrekitException {
 
-        // get the real state vector
-        final SpacecraftState realState = originals[spacecraftIndex].getRealStartState();
-        final Orbit realOrbit           = originals[spacecraftIndex].getRealStartState().getOrbit();
-        final OrbitType type            = realOrbit.getType();
-        final double[] orbitArray       = new double[6];
-        type.mapOrbitToArray(realOrbit, positionAngle, orbitArray);
+        ScenarioState[] updated = originals.clone();
 
-        // add correlated random error vector
-        final double[] errorVector = generator.nextVector();
-        for (int i = 0; i < orbitArray.length; ++i) {
-            orbitArray[i] += errorVector[i];
+        for (int i = 0; i < spacecraftIndices.length; ++i) {
+
+            // select the current spacecraft affected by this component
+            final int index = spacecraftIndices[i];
+
+            // get the real state vector
+            final SpacecraftState realState = originals[index].getRealStartState();
+            final Orbit realOrbit           = orbitType.convertType(realState.getOrbit());
+            final double[] orbitArray       = new double[6];
+            orbitType.mapOrbitToArray(realOrbit, positionAngle, orbitArray);
+
+            // add correlated random error vector
+            final double[] errorVector = generator.nextVector();
+            for (int j = 0; j < orbitArray.length; ++j) {
+                orbitArray[j] += errorVector[j];
+            }
+
+            // create the estimated state vector
+            final Orbit randomizedOrbit =
+                    orbitType.mapArrayToOrbit(orbitArray, positionAngle, realOrbit.getDate(),
+                                              realOrbit.getMu(), realOrbit.getFrame());
+
+            // convert it to the same type as original one
+            // (which may be different from covariance matrix orbit type)
+            final OrbitType originalType = realState.getOrbit().getType();
+            final SpacecraftState estimatedState =
+                    new SpacecraftState(originalType.convertType(randomizedOrbit),
+                                        realState.getAttitude(),
+                                        realState.getMass());
+
+            // update the state
+            updated[index] = originals[index].updateEstimatedStartState(estimatedState);
         }
 
-        // create the estimated state vector
-        final Orbit estimatedOrbit =
-                type.mapArrayToOrbit(orbitArray, positionAngle, realOrbit.getDate(),
-                                     realOrbit.getMu(), realOrbit.getFrame());
-        final SpacecraftState estimatedState =
-                new SpacecraftState(estimatedOrbit, realState.getAttitude(),
-                                    realState.getMass());
-
-        ScenarioState[] updated = originals.clone();
-        updated[spacecraftIndex] = originals[spacecraftIndex].updateEstimatedStartState(estimatedState);
+        // return the updated states
         return updated;
 
     }

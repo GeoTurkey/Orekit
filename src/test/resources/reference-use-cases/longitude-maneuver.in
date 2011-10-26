@@ -1,119 +1,140 @@
-inertial_frame   = "EME2000";
-earth_frame      = "ITRF2008 with tides";
+# Base name of the various output files
 output_file_name = "longitude-maneuver.out";
 
-simulation     = {
-     start_date    = 2004-01-01T00:00:00.000;
-     duration      = 50.0;
-     cycle_number  = 3;
-     random_seed   = 156325253;
+# General simulation parameters
+simulation       = {
+    inertial_frame = "EME2000";
+    earth_frame    = "ITRF2008 with tides";
+    start_date     = 2004-01-01T00:00:00.000;
+    duration       = 50.0;
+    output_step    = 3600.0;
+    random_seed    = 156325253;
 };
 
-# array of spacecrafts, for multi-spacecrafts simulation
-spacecrafts    = [
-     {
-         orbit = {
-             date     = 2004-01-01T23:30:00.000;
-             a        = 42167290.0;
-             ex       = 1.0e-4;
-             ey       = 2.0e-5;
-             hx       =  0.00044;
-             hy       = -0.00012;
-             lambda_M = 104.99;
-         };
-         scenario = [
-             {
-                 component = ORBIT_DETERMINATION;
-                 covariance = {
-                     matrix     = [
-                         [ 1.0, 0.0, 0.0, 0.0, 0.0, 0.0 ],
-                         [ 0.0, 1.0, 0.0, 0.0, 0.0, 0.0 ],
-                         [ 0.0, 0.0, 1.0, 0.0, 0.0, 0.0 ],
-                         [ 0.0, 0.0, 0.0, 1.0, 0.0, 0.0 ],
-                         [ 0.0, 0.0, 0.0, 0.0, 1.0, 0.0 ],
-                         [ 0.0, 0.0, 0.0, 0.0, 0.0, 1.0 ]
-                     ];
-                     angle_type = MEAN;
-                     small      = 1.0e-6;
-                 }
-             },
-             {
-                 component  = CONTROL_LOOP;
-                 optimizer  = CMA_ES;
-                 max_eval   = 1000;
-                 nb_points  = 5;
-                 propagator = {
-                     method               = "numerical";
-                     position_tolerance   = 100.0;
-                     gravity_field_degree = 10;
-                     gravity_field_order  = 10;
-                 };
-                 controls   = [
-                     {
-                         scale         = 0.01;
-                         type          = LONGITUDE_MARGINS;
-                         name          = "longitude";
-                         east_boundary = 19.9;
-                         west_boundary = 20.1;
-                         target        =  0.0;
-                         sampling      = 3600.0;
-                     },
-                     {
-                         scale         = 1.0e-4;
-                         type          = ECCENTRICITY_CIRCLE;
-                         name          = "eccentricity";
-                         center_x      = 0.0;
-                         center_y      = 0.0;
-                         radius        = 1.0e-4;
-                         sampling      = 3600.0;
-                     }
-                 ];
-                 maneuvers  = [
-                     {
-                         in_plane     = true;
-                         name         = "E/W-1";
-                         direction    = [ 1.0, 0.0, 0.0 ];
-                         isp          = 315;
-                         dv_min       = -0.1;
-                         dv_max       =  0.1;
-                         nominal_date = 172800;
-                         dt_min       = -86400;
-                         dt_max       =  86400;
-                     },
-                     {
-                         in_plane     = true;
-                         name         = "E/W-2";
-                         direction    = [ 1.0, 0.0, 0.0 ];
-                         isp          = 315;
-                         dv_min       = -0.1;
-                         dv_max       =  0.1;
-                         nominal_date = 216000;
-                         dt_min       = -86400;
-                         dt_max       =  86400;
-                     }
-                 ];
-             },
-             {
-                 component          = MANEUVER_DATE_ERROR;
-                 in_plane           = true;
-                 out_of_plane       = true;
-                 standard_deviation = 60.0;
-             },
-             {
-                 component          = MANEUVER_MAGNITUDE_ERROR;
-                 in_plane           = true;
-                 out_of_plane       = true;
-                 standard_deviation = 0.001;
-             },
-             {
-                 component          = PROPAGATION;
-                 propagator         = {
-                     method               = "numerical";
-                     position_tolerance   = 100.0;
-                     gravity_field_degree = 10;
-                     gravity_field_order  = 10;
-                 }
-             }
-         ]
-     }
+# Array of initial states, there must be exactly one element for each spacecraft
+initial_states   = [
+    {
+        name                   = "Meteosat 9";
+        cycle_number           = 0;
+        in_plane_maneuvers     = 0;
+        in_plane_dV            = 0.0;
+        out_of_plane_maneuvers = 0;
+        out_of_plane_dV        = 0.0;
+        mass                   = 1200.0;   # this mass is completely arbitrary ... to be corrected
+
+        # the following orbit is very rough, it was converted from TLE position/velocity
+        # with a simple arithmetic mean on equinoctial parameters over a 2 days propagation
+        orbit                  = {
+            date               = 2011-10-23T01:47:06.165;
+            orbit_type         = EQUINOCTIAL;
+            angle_type         = MEAN;
+            a                  = 42168449.623;
+            ex                 = -6.66e-5;
+            ey                 =  2.17e-5;
+            hx                 =  0.0027459;
+            hy                 = -0.0015674;
+            longitude_argument =  0.153225665;
+        }
+
+    }
+];
+
+# Array of scenario components, each scenario component specifies to which spacecrafts it applies
+scenario         = [
+    {
+        component   = ORBIT_DETERMINATION;
+        spacecrafts = [ "Meteosat 9" ];
+        orbit_type  = EQUINOCTIAL;
+        angle_type  = MEAN;
+        covariance  = [
+            [  1555.13,   -5.831e-5,   3.503e-5,   1.385e-8,  -9.510e-10,  6.554e-5  ],
+            [ -5.831e-5,   2.186e-12, -1.313e-12, -5.196e-16,  3.566e-17, -2.458e-12 ],
+            [  3.503e-5,  -1.313e-12,  7.893e-13,  3.122e-16, -2.142e-17,  1.476e-12 ],
+            [  1.385e-8,  -5.196e-16,  3.122e-16,  1.234e-19, -8.474e-21,  5.841e-16 ],
+            [ -9.510e-10,  3.566e-17, -2.142e-17, -8.474e-21,  5.816e-22, -4.008e-17 ],
+            [  6.554e-5,  -2.458e-12,  1.476e-12,  5.841e-16, -4.008e-17,  2.762e-12 ]
+        ];
+        small       = 1.0e-12;
+    },
+    {
+        component   = CONTROL_LOOP;
+        spacecrafts = [ "Meteosat 9" ];
+        optimizer   = CMA_ES;
+        max_eval    = 1000;
+        nb_points   = 5;
+        propagator  = {
+            method               = "numerical";
+            position_tolerance   = 100.0;
+            gravity_field_degree = 10;
+            gravity_field_order  = 10;
+        };
+        controls    = [
+            {
+                scale         = 0.01;
+                type          = LONGITUDE_MARGINS;
+                name          = "longitude";
+                east_boundary = 19.9;
+                west_boundary = 20.1;
+                target        =  0.0;
+                sampling      = 3600.0;
+            },
+            {
+                scale         = 1.0e-4;
+                type          = ECCENTRICITY_CIRCLE;
+                name          = "eccentricity";
+                center_x      = 0.0;
+                center_y      = 0.0;
+                radius        = 1.0e-4;
+                sampling      = 3600.0;
+            }
+        ];
+        maneuvers   = [
+            {
+                in_plane     = true;
+                name         = "E/W-1";
+                direction    = [ 1.0, 0.0, 0.0 ];
+                isp          = 315;
+                dv_min       = -0.1;
+                dv_max       =  0.1;
+                nominal_date = 172800;
+                dt_min       = -86400;
+                dt_max       =  86400;
+            },
+            {
+                in_plane     = true;
+                name         = "E/W-2";
+                direction    = [ 1.0, 0.0, 0.0 ];
+                isp          = 315;
+                dv_min       = -0.1;
+                dv_max       =  0.1;
+                nominal_date = 216000;
+                dt_min       = -86400;
+                dt_max       =  86400;
+            }
+        ];
+    },
+    {
+        component          = MANEUVER_DATE_ERROR;
+        spacecrafts        = [ "Meteosat 9" ];
+        in_plane           = true;
+        out_of_plane       = true;
+        standard_deviation = 60.0;
+    },
+    {
+        component          = MANEUVER_MAGNITUDE_ERROR;
+        spacecrafts        = [ "Meteosat 9" ];
+        in_plane           = true;
+        out_of_plane       = true;
+        standard_deviation = 0.001;
+    },
+    {
+        component          = PROPAGATION;
+        spacecrafts        = [ "Meteosat 9" ];
+        propagator         = {
+            method               = "numerical";
+            position_tolerance   = 100.0;
+            gravity_field_degree = 10;
+            gravity_field_order  = 10;
+        }
+    }
 ]

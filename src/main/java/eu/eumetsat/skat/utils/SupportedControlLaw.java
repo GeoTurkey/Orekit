@@ -17,8 +17,7 @@ public enum SupportedControlLaw {
     LONGITUDE_MARGINS() {
 
         /** {@inheritDoc} */
-        public SKControl parse(final SkatFileParser parser, final Tree node,
-                               final int spacecraftIndex, final Skat skat)
+        public SKControl parse(final SkatFileParser parser, final Tree node, final Skat skat)
             throws OrekitException, SkatException {
             final String name         = parser.getString(node, ParameterKey.CONTROL_NAME);
             final double sampling     = parser.getDouble(node, ParameterKey.CONTROL_SAMPLING);
@@ -35,8 +34,7 @@ public enum SupportedControlLaw {
     ECCENTRICITY_CIRCLE() {
 
         /** {@inheritDoc} */
-        public SKControl parse(final SkatFileParser parser, final Tree node,
-                               final int spacecraftIndex, final Skat skat)
+        public SKControl parse(final SkatFileParser parser, final Tree node, final Skat skat)
             throws OrekitException, SkatException {
             final String name     = parser.getString(node, ParameterKey.CONTROL_NAME);
             final double sampling = parser.getDouble(node, ParameterKey.CONTROL_SAMPLING);
@@ -51,14 +49,12 @@ public enum SupportedControlLaw {
     /** Parse an input data tree to build a control law.
      * @param parser input file parser
      * @param node data node containing control law configuration parameters
-     * @param spacecraftIndex spacecraft index
      * @param skat enclosing Skat tool
      * @return parsed control law
      * @exception OrekitException if propagator cannot be set up
      * @exception SkatException if control law cannot be recognized
      */
-    public abstract SKControl parse(final SkatFileParser parser, final Tree node,
-                                    final int spacecraftIndex, final Skat skat)
+    public abstract SKControl parse(final SkatFileParser parser, final Tree node, final Skat skat)
         throws OrekitException, SkatException;
 
 }

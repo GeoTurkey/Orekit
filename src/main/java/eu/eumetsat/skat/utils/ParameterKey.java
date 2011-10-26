@@ -7,16 +7,26 @@ public enum ParameterKey {
 
     OUTPUT_FILE_NAME,
 
-    INERTIAL_FRAME,
-    EARTH_FRAME,
     SIMULATION,
+    SIMULATION_INERTIAL_FRAME("inertial_frame"),
+    SIMULATION_EARTH_FRAME("earth_frame"),
     SIMULATION_START_DATE("start_date"),
     SIMULATION_CYCLE_DURATION("duration"),
-    SIMULATION_CYCLE_NUMBER("cycle_number"),
+    SIMULATION_OUTPUT_STEP("output_step"),
     SIMULATION_RANDOM_SEED("random_seed"),
 
-    SPACECRAFTS,
-    ORBIT,
+    ORBIT_TYPE,
+    ANGLE_TYPE,
+
+    INITIAL_STATES,
+    INITIAL_STATE_NAME("name"),
+    INITIAL_STATE_CYCLE_NUMBER("cycle_number"),
+    INITIAL_STATE_IN_PLANE_MANEUVERS("in_plane_maneuvers"),
+    INITIAL_STATE_IN_PLANE_DV("in_plane_dV"),
+    INITIAL_STATE_OUT_OF_PLANE_MANEUVERS("out_of_plane_maneuvers"),
+    INITIAL_STATE_OUT_OF_PLANE_DV("out_of_plane_dV"),
+    INITIAL_STATE_MASS("mass"),
+    INITIAL_STATE_ORBIT("orbit"),
 
     ORBIT_CARTESIAN_DATE("date"),
     ORBIT_CARTESIAN_POSITION("position"),
@@ -28,7 +38,7 @@ public enum ParameterKey {
     ORBIT_KEPLERIAN_I("i"),
     ORBIT_KEPLERIAN_PA("pa"),
     ORBIT_KEPLERIAN_RAAN("raan"),
-    ORBIT_KEPLERIAN_MEAN_ANOMALY("M"),
+    ORBIT_KEPLERIAN_ANOMALY("anomaly"),
 
     ORBIT_CIRCULAR_DATE("date"),
     ORBIT_CIRCULAR_A("a"),
@@ -36,7 +46,7 @@ public enum ParameterKey {
     ORBIT_CIRCULAR_EY("ey"),
     ORBIT_CIRCULAR_I("i"),
     ORBIT_CIRCULAR_RAAN("raan"),
-    ORBIT_CIRCULAR_MEAN_LATITUDE_ARGUMENT("alpha_M"),
+    ORBIT_CIRCULAR_LATITUDE_ARGUMENT("latitude_argument"),
 
     ORBIT_EQUINOCTIAL_DATE("date"),
     ORBIT_EQUINOCTIAL_A("a"),
@@ -44,15 +54,14 @@ public enum ParameterKey {
     ORBIT_EQUINOCTIAL_EY("ey"),
     ORBIT_EQUINOCTIAL_HX("hx"),
     ORBIT_EQUINOCTIAL_HY("hy"),
-    ORBIT_EQUINOCTIAL_MEAN_LONGITUDE_ARGUMENT("lambda_M"),
+    ORBIT_EQUINOCTIAL_LONGITUDE_ARGUMENT("longitude_argument"),
 
     SCENARIO,
     COMPONENT_TYPE("component"),
+    COMPONENT_SPACECRAFTS("spacecrafts"),
 
-    COMPONENT_ORBIT_DETERMINATION_COVARIANCE("covariance"),
-    COVARIANCE_MATRIX("matrix"),
-    COVARIANCE_ANGLE_TYPE("angle_type"),
-    COVARIANCE_SMALL("small"),
+    ORBIT_DETERMINATION_COVARIANCE("covariance"),
+    ORBIT_DETERMINATION_SMALL("small"),
 
     COMPONENT_CONTROL_LOOP_OPTIMIZER("optimizer"),
     COMPONENT_CONTROL_LOOP_MAX_EVAL("max_eval"),

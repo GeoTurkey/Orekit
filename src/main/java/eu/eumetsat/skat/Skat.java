@@ -8,28 +8,35 @@ import java.io.PrintStream;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.antlr.runtime.RecognitionException;
 import org.antlr.runtime.tree.Tree;
 import org.apache.commons.math.random.RandomGenerator;
 import org.apache.commons.math.random.Well19937a;
+import org.apache.commons.math.util.FastMath;
 import org.orekit.bodies.BodyShape;
+import org.orekit.bodies.CelestialBody;
+import org.orekit.bodies.CelestialBodyFactory;
 import org.orekit.bodies.OneAxisEllipsoid;
 import org.orekit.data.DataProvidersManager;
 import org.orekit.data.DirectoryCrawler;
 import org.orekit.errors.OrekitException;
 import org.orekit.forces.gravity.potential.GravityFieldFactory;
 import org.orekit.frames.Frame;
+import org.orekit.frames.FramesFactory;
+import org.orekit.orbits.EquinoctialOrbit;
 import org.orekit.orbits.Orbit;
+import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
+import org.orekit.propagation.analytical.tle.TLE;
+import org.orekit.propagation.analytical.tle.TLEPropagator;
 import org.orekit.time.AbsoluteDate;
 import org.orekit.time.TimeScale;
 import org.orekit.time.TimeScalesFactory;
 import org.orekit.utils.Constants;
 
-import eu.eumetsat.skat.scenario.ScenarioComponent;
+import eu.eumetsat.skat.scenario.Scenario;
+import eu.eumetsat.skat.scenario.ScenarioState;
 import eu.eumetsat.skat.utils.ParameterKey;
 import eu.eumetsat.skat.utils.SkatException;
 import eu.eumetsat.skat.utils.SkatFileParser;
@@ -49,13 +56,16 @@ public class Skat {
     private final PrintStream output;
 
     /** Initial orbit. */
-    private final List<SpacecraftState> initialState;
+    private final ScenarioState[] initialStates;
 
-    /** Scenario components. */
-    private final List<List<ScenarioComponent>> scenarii;
+    /** Scenario. */
+    private final Scenario scenario;
 
     /** Earth model. */
     private final BodyShape earth;
+
+    /** Sun model. */
+    private final CelestialBody sun;
 
     /** Inertial frame. */
     private final Frame inertialFrame;
@@ -66,12 +76,6 @@ public class Skat {
     /** Start date. */
     private final AbsoluteDate startDate;
 
-    /** Number of cycles. */
-    private final int cyclesNumber;
-
-    /** Maximal cycle duration. */
-    private final double cycleDuration;
-
     /** Program entry point.
      * @param args program arguments (unused here)
      */
@@ -81,6 +85,34 @@ public class Skat {
             // configure Orekit
             final File orekitData = getResourceFile("/orekit-data");
             DataProvidersManager.getInstance().addProvider(new DirectoryCrawler(orekitData));
+
+            Frame eme2000 = FramesFactory.getEME2000();
+            TLE tle = new TLE("1 28912U 05049B   11296.07437691 -.00000007 +00000-0 +10000-3 0 09875",
+                              "2 28912 000.4043 325.1540 0000705 197.7075 255.5824 01.00262430021454");
+            Propagator propagator = TLEPropagator.selectExtrapolator(tle);
+            AbsoluteDate t0 = tle.getDate().shiftedBy(-Constants.JULIAN_DAY);
+            AbsoluteDate t1 = tle.getDate().shiftedBy( Constants.JULIAN_DAY);
+            double[] p = new double[6];
+            int i = 0;
+            for (AbsoluteDate date = t0; date.compareTo(t1) <= 0; date = date.shiftedBy(60)) {
+                EquinoctialOrbit eq = new EquinoctialOrbit(propagator.getPVCoordinates(date, eme2000),
+                                                           eme2000, date,
+                                                           GravityFieldFactory.getPotentialProvider().getMu());
+                ++i;
+                p[0] += eq.getA();
+                p[1] += eq.getEquinoctialEx();
+                p[2] += eq.getEquinoctialEy();
+                p[3] += eq.getHx();
+                p[4] += eq.getHy();
+                p[5] += eq.getLM();
+            }
+            System.out.println(tle.getDate() + " " +
+                    (p[0] / i) + " " +
+                    (p[1] / i) + " " +
+                    (p[2] / i) + " " +
+                    (p[3] / i) + " " +
+                    (p[4] / i) + " " +
+                    FastMath.toDegrees(p[5] / i));
 
             // read input file
             if (args.length != 1) {
@@ -149,47 +181,51 @@ public class Skat {
         Tree root = parser.getRoot();
         TimeScale utc = TimeScalesFactory.getUTC();
 
-        // set up inertial frame
-        inertialFrame = parser.getInertialFrame(root, ParameterKey.INERTIAL_FRAME);
-
-        // set up Earth model
-        earth = new OneAxisEllipsoid(Constants.WGS84_EARTH_EQUATORIAL_RADIUS,
-                                     Constants.WGS84_EARTH_FLATTENING,
-                                     parser.getEarthFrame(root, ParameterKey.EARTH_FRAME));
-
+        // general simulation parameters
         final Tree simulationNode = parser.getValue(root, ParameterKey.SIMULATION);
+        inertialFrame = parser.getInertialFrame(simulationNode, ParameterKey.SIMULATION_INERTIAL_FRAME);
+        earth         = new OneAxisEllipsoid(Constants.WGS84_EARTH_EQUATORIAL_RADIUS,
+                                             Constants.WGS84_EARTH_FLATTENING,
+                                             parser.getEarthFrame(simulationNode, ParameterKey.SIMULATION_EARTH_FRAME));
+        sun           = CelestialBodyFactory.getSun();
         startDate     = parser.getDate(simulationNode, ParameterKey.SIMULATION_START_DATE, utc);
-        cycleDuration = parser.getDouble(simulationNode, ParameterKey.SIMULATION_CYCLE_DURATION) * Constants.JULIAN_DAY;
-        cyclesNumber  = parser.getInt(simulationNode, ParameterKey.SIMULATION_CYCLE_NUMBER);
         generator     = new Well19937a(parser.getInt(simulationNode, ParameterKey.SIMULATION_RANDOM_SEED));
 
         // load gravity field
         final double mu = GravityFieldFactory.getPotentialProvider().getMu();
 
-        // set up multi-spacecrafts simulation
-        final Tree spacecraftsNode = parser.getValue(root, ParameterKey.SPACECRAFTS);
-        initialState = new ArrayList<SpacecraftState>();
-        scenarii     = new ArrayList<List<ScenarioComponent>>();
-        for (int i = 0; i < parser.getElementsNumber(spacecraftsNode); ++i) {
+        // set up initial states
+        final Tree initialStatesArrayNode = parser.getValue(root, ParameterKey.INITIAL_STATES);
+        initialStates = new ScenarioState[parser.getElementsNumber(initialStatesArrayNode)];
+        for (int i = 0; i < initialStates.length; ++i) {
 
-            // set up orbit
-            final Tree orbitNode = parser.getValue(parser.getElement(spacecraftsNode, i),
-                                                   ParameterKey.ORBIT);
-            final Orbit initialOrbit = parser.getOrbit(orbitNode, inertialFrame, utc, mu);
-            initialState.add(new SpacecraftState(initialOrbit));
+            // set up initial state
+            final Tree stateNode = parser.getElement(initialStatesArrayNode, i);
+            final Tree orbitNode = parser.getValue(stateNode, ParameterKey.INITIAL_STATE_ORBIT);
+            final SpacecraftState spacecraftState =
+                    new SpacecraftState(parser.getOrbit(orbitNode, inertialFrame, utc, mu),
+                                        parser.getDouble(stateNode, ParameterKey.INITIAL_STATE_MASS));
+            ScenarioState scenarioState =
+                    new ScenarioState(parser.getString(stateNode, ParameterKey.INITIAL_STATE_NAME),
+                                      parser.getInt(stateNode, ParameterKey.INITIAL_STATE_CYCLE_NUMBER),
+                                      spacecraftState);
+            scenarioState = scenarioState.updateInPlaneManeuvers(parser.getInt(stateNode, ParameterKey.INITIAL_STATE_IN_PLANE_MANEUVERS),
+                                                                 parser.getDouble(stateNode, ParameterKey.INITIAL_STATE_IN_PLANE_DV));
+            scenarioState = scenarioState.updateOutOfPlaneManeuvers(parser.getInt(stateNode, ParameterKey.INITIAL_STATE_OUT_OF_PLANE_MANEUVERS),
+                                                                    parser.getDouble(stateNode, ParameterKey.INITIAL_STATE_OUT_OF_PLANE_DV));
+            initialStates[i] = scenarioState;
+        }
 
-            // set up scenario components
-            final Tree scenarioNode =
-                    parser.getValue(parser.getElement(spacecraftsNode, i), ParameterKey.SCENARIO);
-            List<ScenarioComponent> components = new ArrayList<ScenarioComponent>();
-            for (int j = 0; j < parser.getElementsNumber(scenarioNode); ++j) {
-                final Tree componentNode = parser.getElement(scenarioNode, j);
-                final  String type = parser.getIdentifier(componentNode, ParameterKey.COMPONENT_TYPE);
-                final SupportedScenariocomponent component = SupportedScenariocomponent.valueOf(type);
-                components.add(component.parse(parser, componentNode, i, this));
-            }
-            scenarii.add(components);
-
+        // set up scenario components
+        final Tree scenarioNode = parser.getValue(root, ParameterKey.SCENARIO);
+        scenario = new Scenario(parser.getDouble(simulationNode, ParameterKey.SIMULATION_CYCLE_DURATION) * Constants.JULIAN_DAY,
+                                parser.getDouble(simulationNode, ParameterKey.SIMULATION_CYCLE_DURATION),
+                                earth, sun);
+        for (int j = 0; j < parser.getElementsNumber(scenarioNode); ++j) {
+            final Tree componentNode = parser.getElement(scenarioNode, j);
+            final  String type       = parser.getIdentifier(componentNode, ParameterKey.COMPONENT_TYPE);
+            final SupportedScenariocomponent component = SupportedScenariocomponent.valueOf(type);
+            scenario.addComponent(component.parse(parser, componentNode, this));
         }
 
         // open the output stream
@@ -224,7 +260,34 @@ public class Skat {
      * @return configured initial orbit for the specified spacecraft
      */
     public Orbit getInitialOrbit(final int spacecraftIndex) {
-        return initialState.get(spacecraftIndex).getOrbit();
+        return initialStates[spacecraftIndex].getRealStartState().getOrbit();
+    }
+
+    /** Get the spacecraft index corresponding to a specified name.
+     * @param name spacecraft name
+     * @return index of the specified spacecraft in the scenario states array
+     * @exception SkatException if name is not recognized
+     */
+    public int getSpacecraftIndex(final String name)
+        throws SkatException {
+
+        for (int j = 0; j < initialStates.length; ++j) {
+            if (name.equals(initialStates[j].getName())) {
+                // we have found an initial state corresponding to the name
+                return j;
+            }
+        }
+
+        // the name was not found in the initial states, generate an error
+        final StringBuilder known = new StringBuilder();
+        for (final ScenarioState state : initialStates) {
+            if (known.length() > 0) {
+                known.append(", ");
+            }
+            known.append(state.getName());
+        }
+        throw new SkatException(SkatMessages.UNKNOWN_SPACECRAFT, name, known.toString());
+
     }
 
     /** Run the simulation.
