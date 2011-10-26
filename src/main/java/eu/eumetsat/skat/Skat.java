@@ -86,34 +86,6 @@ public class Skat {
             final File orekitData = getResourceFile("/orekit-data");
             DataProvidersManager.getInstance().addProvider(new DirectoryCrawler(orekitData));
 
-            Frame eme2000 = FramesFactory.getEME2000();
-            TLE tle = new TLE("1 28912U 05049B   11296.07437691 -.00000007 +00000-0 +10000-3 0 09875",
-                              "2 28912 000.4043 325.1540 0000705 197.7075 255.5824 01.00262430021454");
-            Propagator propagator = TLEPropagator.selectExtrapolator(tle);
-            AbsoluteDate t0 = tle.getDate().shiftedBy(-Constants.JULIAN_DAY);
-            AbsoluteDate t1 = tle.getDate().shiftedBy( Constants.JULIAN_DAY);
-            double[] p = new double[6];
-            int i = 0;
-            for (AbsoluteDate date = t0; date.compareTo(t1) <= 0; date = date.shiftedBy(60)) {
-                EquinoctialOrbit eq = new EquinoctialOrbit(propagator.getPVCoordinates(date, eme2000),
-                                                           eme2000, date,
-                                                           GravityFieldFactory.getPotentialProvider().getMu());
-                ++i;
-                p[0] += eq.getA();
-                p[1] += eq.getEquinoctialEx();
-                p[2] += eq.getEquinoctialEy();
-                p[3] += eq.getHx();
-                p[4] += eq.getHy();
-                p[5] += eq.getLM();
-            }
-            System.out.println(tle.getDate() + " " +
-                    (p[0] / i) + " " +
-                    (p[1] / i) + " " +
-                    (p[2] / i) + " " +
-                    (p[3] / i) + " " +
-                    (p[4] / i) + " " +
-                    FastMath.toDegrees(p[5] / i));
-
             // read input file
             if (args.length != 1) {
                 System.err.println("usage: java eu.eumetsat.skat.Skat input-file");
@@ -227,6 +199,8 @@ public class Skat {
             final SupportedScenariocomponent component = SupportedScenariocomponent.valueOf(type);
             scenario.addComponent(component.parse(parser, componentNode, this));
         }
+
+        // TODO add monitorable values
 
         // open the output stream
         output = new PrintStream(new File(input.getParentFile(),
