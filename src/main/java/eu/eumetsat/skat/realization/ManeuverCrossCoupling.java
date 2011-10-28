@@ -10,7 +10,7 @@ import eu.eumetsat.skat.scenario.ScenarioState;
  * Class for computing cross-coupling in maneuvers.
  * @author Luc Maisonobe
  */
-public class ManeuverCrosscoupling implements ScenarioComponent {
+public class ManeuverCrossCoupling implements ScenarioComponent {
 
     /** {@inheritDoc} */
     public ScenarioState[] updateStates(final ScenarioState[] originals)
