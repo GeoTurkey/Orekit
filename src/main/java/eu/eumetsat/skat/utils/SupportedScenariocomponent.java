@@ -51,6 +51,10 @@ public enum SupportedScenariocomponent {
         public ScenarioComponent parse(final SkatFileParser parser, final Tree node, final Skat skat)
             throws OrekitException, SkatException {
 
+            // loop
+            final int firstCycle = parser.getInt(node, ParameterKey.COMPONENT_CONTROL_LOOP_FIRST_CYCLE);
+            final int lastCycle  = parser.getInt(node, ParameterKey.COMPONENT_CONTROL_LOOP_LAST_CYCLE);
+
             // optimizer
             final int maxEval   = parser.getInt(node, ParameterKey.COMPONENT_CONTROL_LOOP_MAX_EVAL);
             final int nbPoints  = parser.getInt(node, ParameterKey.COMPONENT_CONTROL_LOOP_NB_POINTS);
@@ -66,7 +70,8 @@ public enum SupportedScenariocomponent {
             }
 
 
-            final ControlLoop loop = new ControlLoop(indices, maxEval, nbPoints, optimizer, propagators,
+            final ControlLoop loop = new ControlLoop(indices, firstCycle, lastCycle, maxEval, nbPoints,
+                                                     optimizer, propagators,
                                                      skat.getCycleDuration(), skat.getRollingCycles());
 
             // control laws
@@ -165,7 +170,7 @@ public enum SupportedScenariocomponent {
         }
     };
 
-    /** Parse the indices of the spacecrafts affected by the component.
+    /** Parse the indices of the spacecrafts managed by the component.
      * @param parser input file parser
      * @param node data node containing component configuration parameters
      * @param skat enclosing Skat tool
@@ -174,7 +179,7 @@ public enum SupportedScenariocomponent {
      */
     private static int[] getIndices(final SkatFileParser parser, final Tree node, final Skat skat)
         throws SkatException {
-        final Tree namesArrayNode = parser.getValue(node, ParameterKey.COMPONENT_SPACECRAFTS);
+        final Tree namesArrayNode = parser.getValue(node, ParameterKey.COMPONENT_MANAGED_SPACECRAFTS);
         int[] indices = new int[parser.getElementsNumber(namesArrayNode)];
         for (int i = 0; i < indices.length; ++i) {
             indices[i] = skat.getSpacecraftIndex(parser.getElement(namesArrayNode, i).getText());

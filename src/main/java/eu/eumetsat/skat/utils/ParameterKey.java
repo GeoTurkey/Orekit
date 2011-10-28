@@ -13,6 +13,7 @@ public enum ParameterKey {
     SIMULATION_START_DATE("start_date"),
     SIMULATION_END_DATE("end_date"),
     SIMULATION_CYCLE_DURATION("cycle_duration"),
+    SIMULATION_ROLLING_CYCLES("rolling_cycles"),
     SIMULATION_OUTPUT_STEP("output_step"),
     SIMULATION_RANDOM_SEED("random_seed"),
 
@@ -59,12 +60,14 @@ public enum ParameterKey {
 
     SCENARIO,
     COMPONENT_TYPE("component"),
-    COMPONENT_SPACECRAFTS("spacecrafts"),
+    COMPONENT_MANAGED_SPACECRAFTS("managed_spacecrafts"),
 
     ORBIT_DETERMINATION_COVARIANCE("covariance"),
     ORBIT_DETERMINATION_SMALL("small"),
 
     COMPONENT_CONTROL_LOOP_OPTIMIZER("optimizer"),
+    COMPONENT_CONTROL_LOOP_FIRST_CYCLE("first_cycle"),
+    COMPONENT_CONTROL_LOOP_LAST_CYCLE("last_cycle"),
     COMPONENT_CONTROL_LOOP_MAX_EVAL("max_eval"),
     COMPONENT_CONTROL_LOOP_NB_POINTS("nb_points"),
     COMPONENT_CONTROL_LOOP_PROPAGATOR("propagator"),
