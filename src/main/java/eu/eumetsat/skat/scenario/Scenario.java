@@ -26,6 +26,7 @@ import org.orekit.time.AbsoluteDate;
 import eu.eumetsat.skat.strategies.ScheduledManeuver;
 import eu.eumetsat.skat.utils.MonitorableMonoSKData;
 import eu.eumetsat.skat.utils.SkatException;
+import eu.eumetsat.skat.utils.SkatMessages;
 
 /** Station-Keeping scenario.
  * <p>
@@ -40,7 +41,10 @@ public class Scenario implements ScenarioComponent {
     private final List<ScenarioComponent> components;
 
     /** Cycle duration. */
-    private final double duration;
+    private final double cycleDuration;
+
+    /** Simulation end date. */
+    private AbsoluteDate endDate;
 
     /** Output step for monitoring. */
     private final double outputstep;
@@ -69,13 +73,13 @@ public class Scenario implements ScenarioComponent {
      */
     public Scenario(final double cycleDuration, final double outputStep,
                     final BodyShape earth, final CelestialBody sun) {
-        this.components   = new ArrayList<ScenarioComponent>();
-        this.duration     = cycleDuration;
-        this.outputstep   = outputStep;
-        this.eme2000      = FramesFactory.getEME2000();
-        this.earth        = earth;
-        this.sun          = sun;
-        this.monitorables = new ArrayList<MonitorableMonoSKData>();
+        this.components    = new ArrayList<ScenarioComponent>();
+        this.cycleDuration = cycleDuration;
+        this.outputstep    = outputStep;
+        this.eme2000       = FramesFactory.getEME2000();
+        this.earth         = earth;
+        this.sun           = sun;
+        this.monitorables  = new ArrayList<MonitorableMonoSKData>();
     }
 
     /** Add a cycle component.
@@ -95,30 +99,35 @@ public class Scenario implements ScenarioComponent {
         monitorables.add(key);
     }
 
+    /** {@inheritDoc} */
+    public void setCycleEnd(final AbsoluteDate cycleEnd) {
+        endDate = cycleEnd;
+    }
+
     /** {@inheritDoc}
      * <p>The scenario will be run in loops until the target date
      * is reached. At each iteration of the loop, the target date of
      * the iteration will be set according to the cycle duration set at
      * construction.</p>
      */
-    public ScenarioState[] updateStates(final ScenarioState[] originals, final AbsoluteDate target)
-        throws OrekitException {
+    public ScenarioState[] updateStates(final ScenarioState[] originals)
+        throws OrekitException, SkatException {
 
         ScenarioState[] states = originals.clone();
         AbsoluteDate iterationTarget;
         do {
 
             // set target date for iteration using cycle duration
-            iterationTarget = states[0].getRealStartState().getDate().shiftedBy(duration);
+            iterationTarget = states[0].getRealStartState().getDate().shiftedBy(cycleDuration);
 
             // run all components of the scenario in order
             for (final ScenarioComponent component : components) {
-                states = component.updateStates(states, iterationTarget);
+                states = component.updateStates(states);
             }
 
             // monitor data
-            AbsoluteDate tMin = originals[0].getEphemeris().getMinDate();
-            AbsoluteDate tMax = originals[0].getEphemeris().getMaxDate();
+            AbsoluteDate tMin = originals[0].getPerformedEphemeris().getMinDate();
+            AbsoluteDate tMax = originals[0].getPerformedEphemeris().getMaxDate();
             for (AbsoluteDate date = tMin; date.compareTo(tMax) <= 0; date = date.shiftedBy(outputstep)) {
 
                 // check for maneuvers that have occurred
@@ -136,6 +145,9 @@ public class Scenario implements ScenarioComponent {
 
             // prepare next cycle
             for (int i = 0; i < states.length; ++i) {
+                if (states[i].getRealEndState() == null) {
+                    throw new SkatException(SkatMessages.NO_END_STATE, states[i].getName());
+                }
                 states[i] = states[i].updateCyclesNumber(states[i].getCyclesNumber() + 1);
                 states[i] = states[i].updateRealStartState(states[i].getRealEndState());
                 states[i] = states[i].updateEstimatedStartState(null);
@@ -144,7 +156,7 @@ public class Scenario implements ScenarioComponent {
                 states[i] = states[i].updatePerformedManeuvers(new ArrayList<ScheduledManeuver>());
             }
 
-        } while (iterationTarget.compareTo(target) < 0);
+        } while (iterationTarget.compareTo(endDate) < 0);
 
         return states;
 
@@ -154,13 +166,17 @@ public class Scenario implements ScenarioComponent {
      * @param date current date
      * @param states states array to update
      * @exception OrekitException if a maneuver cannot be checked
+     * @exception SkatException if there are no maneuvers
      */
     private void updatePendingManeuvers(final AbsoluteDate date, final ScenarioState[] states)
-        throws OrekitException {
+        throws OrekitException, SkatException {
 
         final AbsoluteDate previous = date.shiftedBy(-outputstep);
 
         for (int i = 0; i < states.length; ++i) {
+            if (states[i].getPerformedManeuvers() == null) {
+                throw new SkatException(SkatMessages.NO_PERFORMED_MANEUVERS_STATE, states[i].getName());
+            }
             for (final ScheduledManeuver maneuver : states[i].getPerformedManeuvers()) {
                 if ((maneuver.getDate().compareTo(previous) > 0) &&
                     (maneuver.getDate().compareTo(date) <= 0)) {
@@ -184,20 +200,24 @@ public class Scenario implements ScenarioComponent {
      * @param date current date
      * @param states states array to update
      * @exception OrekitException if a node cannot be computed
+     * @exception SkatException if there are no ephemerides
      */
     private void updateNodes(final AbsoluteDate date, final ScenarioState[] states)
-        throws OrekitException {
+        throws OrekitException, SkatException {
         for (int i = 0; i < states.length; ++i) {
+            if (states[i].getPerformedEphemeris() == null) {
+                throw new SkatException(SkatMessages.NO_EPHEMERIS_STATE, states[i].getName());
+            }
             final double dtA = date.durationFrom(states[i].getAscendingNodeDate());
             final double dtD = date.durationFrom(states[i].getDescendingNodeDate());
             if (dtA * dtD > 0) {
 
                 // the stored nodes do not bracket current date anymore, recompute them
-                final SpacecraftState firstState = findClosestNode(states[i].getEphemeris(), date);
+                final SpacecraftState firstState = findClosestNode(states[i].getPerformedEphemeris(), date);
                 final AbsoluteDate firstDate = firstState.getDate();
                 final double period = firstState.getKeplerianPeriod();
                 final double dt = (firstDate.compareTo(date) <= 0) ? 0.5 * period : -0.5 * period;
-                final SpacecraftState secondState = findClosestNode(states[i].getEphemeris(), firstDate.shiftedBy(dt));
+                final SpacecraftState secondState = findClosestNode(states[i].getPerformedEphemeris(), firstDate.shiftedBy(dt));
                 final AbsoluteDate secondDate = secondState.getDate();
 
                 if (date.durationFrom(firstDate) * date.durationFrom(secondDate) > 0) {

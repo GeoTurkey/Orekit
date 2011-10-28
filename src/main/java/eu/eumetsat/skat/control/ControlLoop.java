@@ -11,6 +11,7 @@ import org.apache.commons.math.optimization.direct.BOBYQAOptimizer;
 import org.apache.commons.math.optimization.direct.CMAESOptimizer;
 import org.orekit.errors.OrekitException;
 import org.orekit.propagation.Propagator;
+import org.orekit.propagation.SpacecraftState;
 import org.orekit.time.AbsoluteDate;
 
 import eu.eumetsat.skat.scenario.ScenarioComponent;
@@ -18,6 +19,7 @@ import eu.eumetsat.skat.scenario.ScenarioState;
 import eu.eumetsat.skat.strategies.ScheduledManeuver;
 import eu.eumetsat.skat.strategies.TunableManeuver;
 import eu.eumetsat.skat.utils.SkatException;
+import eu.eumetsat.skat.utils.SkatMessages;
 import eu.eumetsat.skat.utils.SupportedOptimizer;
 
 
@@ -54,6 +56,12 @@ public class ControlLoop implements ScenarioComponent {
     /** Orbit propagators. */
     private final Propagator[] propagators;
 
+    /** Cycle duration. */
+    private final double cycleDuration;
+
+    /** Number of cycles to use for rolling optimization. */
+    private final int rollingCycles;
+
     /** Tunable maneuvers. */
     private final List<TunableManeuver> tunables;
 
@@ -74,11 +82,13 @@ public class ControlLoop implements ScenarioComponent {
      * @param nbPoints number of smapling points
      * @param optimizer optimizing engine
      * @param propagators orbit propagators
+     * @param cycleDuration Cycle duration
+     * @param rollingCycles number of cycles to use for rolling optimization
      */
     public ControlLoop(final int[] spacecraftIndices,
                        final int maxEval, final int nbPoints,
-                       final SupportedOptimizer optimizer,
-                       final Propagator[] propagators) {
+                       final SupportedOptimizer optimizer, final Propagator[] propagators,
+                       final double cycleDuration, final int rollingCycles) {
         this.spacecraftIndices = spacecraftIndices.clone();
         this.maxEval           = maxEval;
         this.nbPoints          = nbPoints;
@@ -87,6 +97,8 @@ public class ControlLoop implements ScenarioComponent {
         tunables               = new ArrayList<TunableManeuver>();
         controls               = new ArrayList<ScaledControl>();
         parameters             = new ArrayList<SKParameter>();
+        this.cycleDuration     = cycleDuration;
+        this.rollingCycles     = rollingCycles;
     }
 
     /** Add a scaled control.
@@ -134,8 +146,8 @@ public class ControlLoop implements ScenarioComponent {
      * #addControl(double, SKControl) station keeping controls}.
      * </p>
      */
-    public ScenarioState[] updateStates(final ScenarioState[] originals, final AbsoluteDate target)
-        throws OrekitException {
+    public ScenarioState[] updateStates(final ScenarioState[] originals)
+        throws OrekitException, SkatException {
 
         ScenarioState[] updated = originals.clone();
 
@@ -152,13 +164,19 @@ public class ControlLoop implements ScenarioComponent {
 
             // set the reference date for maneuvers
             for (final TunableManeuver tunable : tunables) {
+                SpacecraftState estimated = originals[index].getEstimatedStartState();
+                if (estimated == null) {
+                    throw new SkatException(SkatMessages.NO_ESTIMATED_STATE, originals[index].getName());
+                }
                 tunable.setReferenceDate(originals[index].getEstimatedStartState().getDate());
             }
 
             // find the optimal parameters that minimize objective function
             // TODO introduce constraints
+            AbsoluteDate startDate  = originals[index].getEstimatedStartState().getDate();
+            AbsoluteDate targetDate = startDate.shiftedBy(rollingCycles * cycleDuration);
             final MultivariateRealFunction objective =
-                    new ObjectiveFunction(propagators[i], parameters, controls, target,
+                    new ObjectiveFunction(propagators[i], parameters, controls, targetDate,
                                           originals[index].getEstimatedStartState(),
                                           originals[index].getTheoreticalManeuvers());
             MultivariateRealOptimizer o;

@@ -89,8 +89,11 @@ public class Skat {
     /** Simulation start date. */
     private final AbsoluteDate startDate;
 
-    /** Simulation end date. */
-    private final AbsoluteDate endDate;
+    /** Cycle duration. */
+    private final double cycleDuration;
+
+    /** Number of cycles to use for rolling optimization. */
+    private final int rollingCycles;
 
     /** Program entry point.
      * @param args program arguments (unused here)
@@ -177,8 +180,9 @@ public class Skat {
                                              parser.getEarthFrame(simulationNode, ParameterKey.SIMULATION_EARTH_FRAME));
         sun           = CelestialBodyFactory.getSun();
         startDate     = parser.getDate(simulationNode, ParameterKey.SIMULATION_START_DATE, utc);
-        endDate       = parser.getDate(simulationNode, ParameterKey.SIMULATION_END_DATE,   utc);
         generator     = new Well19937a(parser.getInt(simulationNode, ParameterKey.SIMULATION_RANDOM_SEED));
+        cycleDuration = parser.getDouble(simulationNode, ParameterKey.SIMULATION_CYCLE_DURATION);
+        rollingCycles = parser.getInt(simulationNode, ParameterKey.SIMULATION_ROLLING_CYCLES);
 
         // load gravity field
         final double mu = GravityFieldFactory.getPotentialProvider().getMu();
@@ -211,6 +215,7 @@ public class Skat {
         scenario = new Scenario(parser.getDouble(simulationNode, ParameterKey.SIMULATION_CYCLE_DURATION) * Constants.JULIAN_DAY,
                                 parser.getDouble(simulationNode, ParameterKey.SIMULATION_CYCLE_DURATION),
                                 earth, sun);
+        scenario.setCycleEnd(parser.getDate(simulationNode, ParameterKey.SIMULATION_END_DATE, utc));
         for (int j = 0; j < parser.getElementsNumber(scenarioNode); ++j) {
             final Tree componentNode = parser.getElement(scenarioNode, j);
             final  String type       = parser.getIdentifier(componentNode, ParameterKey.COMPONENT_TYPE);
@@ -260,6 +265,20 @@ public class Skat {
      */
     public Orbit getInitialOrbit(final int spacecraftIndex) {
         return configuredStates[spacecraftIndex].getRealStartState().getOrbit();
+    }
+
+    /** Get the cycle duration.
+     * @return cycle duration
+     */
+    public double getCycleDuration() {
+        return cycleDuration;
+    }
+
+    /** Get the number of cycles to use for rolling optimization.
+     * @return number of cycles to use for rolling optimization
+     */
+    public int getRollingCycles() {
+        return rollingCycles;
     }
 
     /** Get the spacecraft name corresponding to a specified index.
@@ -320,9 +339,10 @@ public class Skat {
     }
 
     /** Run the simulation.
-     * @throws OrekitException if some computation cannot be performed
+     * @exception OrekitException if some computation cannot be performed
+     * @exception SkatException if some data is missing in the states
      */
-    public void run() throws OrekitException {
+    public void run() throws OrekitException, SkatException {
 
         // propagate all spacecrafts state to simulation start date
         final Set<Propagation> propagationComponents = new HashSet<Propagation>();
@@ -331,13 +351,14 @@ public class Skat {
         }
         ScenarioState[] initialStates = configuredStates;
         for (final Propagation propagation : propagationComponents) {
-            initialStates = propagation.updateStates(initialStates, startDate);
+            propagation.setCycleEnd(startDate);
+            initialStates = propagation.updateStates(initialStates);
         }
         for (int i = 0; i < initialStates.length; ++i) {
             initialStates[i] = initialStates[i].updateRealStartState(initialStates[i].getRealEndState());
         }
 
-        final ScenarioState[] finalStates = scenario.updateStates(initialStates, endDate);
+        final ScenarioState[] finalStates = scenario.updateStates(initialStates);
 
         dumpOutput(finalStates);
 

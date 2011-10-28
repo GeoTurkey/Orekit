@@ -66,7 +66,8 @@ public enum SupportedScenariocomponent {
             }
 
 
-            final ControlLoop loop = new ControlLoop(indices, maxEval, nbPoints, optimizer, propagators);
+            final ControlLoop loop = new ControlLoop(indices, maxEval, nbPoints, optimizer, propagators,
+                                                     skat.getCycleDuration(), skat.getRollingCycles());
 
             // control laws
             final Tree controlsNode = parser.getValue(node, ParameterKey.COMPONENT_CONTROL_LOOP_CONTROLS);

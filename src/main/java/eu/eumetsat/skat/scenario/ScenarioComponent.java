@@ -4,6 +4,8 @@ package eu.eumetsat.skat.scenario;
 import org.orekit.errors.OrekitException;
 import org.orekit.time.AbsoluteDate;
 
+import eu.eumetsat.skat.utils.SkatException;
+
 /**
  * Interface representing a component of a station-keeping scenario.
  * <p>
@@ -18,19 +20,12 @@ import org.orekit.time.AbsoluteDate;
 public interface ScenarioComponent {
 
     /** Update a scenario state by applying component process.
-     * <p>
-     * The exact meaning of the date depends on component. For orbit
-     * determination component, it may be the current date. For propagation
-     * it may be a target date. For control loop it may be end of station keeping
-     * cycle.
-     * </p>
      * @param originals original states of the scenario
-     * @param date date of the update (it's exact meaning depends
-     * on component)
      * @return updated state
      * @exception OrekitException if simulation cannot be performed
+     * @exception SkatException if some data is missing in the originals states
      */
-    ScenarioState[] updateStates(ScenarioState[] originals, AbsoluteDate target)
-        throws OrekitException;
+    ScenarioState[] updateStates(ScenarioState[] originals)
+        throws OrekitException, SkatException;
 
 }
