@@ -150,6 +150,12 @@ public class Scenario implements ScenarioComponent {
                                             states[i].getName(), states[i].getCyclesNumber());
                 }
                 states[i] = states[i].updateCyclesNumber(states[i].getCyclesNumber() + 1);
+                states[i] = states[i].updateInPlaneManeuvers(states[i].getInPlaneManeuvers(),
+                                                             0.0,
+                                                             states[i].getInPlaneTotalDV());
+                states[i] = states[i].updateOutOfPlaneManeuvers(states[i].getOutOfPlaneManeuvers(),
+                                                                0.0,
+                                                                states[i].getOutOfPlaneTotalDV());
                 states[i] = states[i].updateRealStartState(states[i].getRealEndState());
                 states[i] = states[i].updateEstimatedStartState(null);
                 states[i] = states[i].updateRealEndState(null);
@@ -183,14 +189,15 @@ public class Scenario implements ScenarioComponent {
                 if ((maneuver.getDate().compareTo(previous) > 0) &&
                     (maneuver.getDate().compareTo(date) <= 0)) {
                     // the maneuver occurred during last step, take it into account
+                    final double dv = maneuver.getDeltaV().getNorm();
                     if (maneuver.isInPlane()) {
-                        states[i] = states[i].updateInPlaneManeuvers(states[i].getInPlane() + 1,
-                                                                     states[i].getInPlaneDV() +
-                                                                     maneuver.getDeltaV().getNorm());
+                        states[i] = states[i].updateInPlaneManeuvers(states[i].getInPlaneManeuvers() + 1,
+                                                                     states[i].getInPlaneCycleDV() + dv,
+                                                                     states[i].getInPlaneTotalDV() + dv);
                     } else {
-                        states[i] = states[i].updateOutOfPlaneManeuvers(states[i].getOutOfPlane() + 1,
-                                                                        states[i].getOutOfPlaneDV() +
-                                                                        maneuver.getDeltaV().getNorm());
+                        states[i] = states[i].updateOutOfPlaneManeuvers(states[i].getOutOfPlaneManeuvers() + 1,
+                                                                        states[i].getOutOfPlaneCycleDV() + dv,
+                                                                        states[i].getOutOfPlaneTotalDV() + dv);
                     }
                 }
             }

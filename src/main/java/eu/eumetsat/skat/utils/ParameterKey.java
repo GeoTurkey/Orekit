@@ -25,9 +25,9 @@ public enum ParameterKey {
     INITIAL_STATE_BOL_MASS("bol_mass"),
     INITIAL_STATE_CYCLE_NUMBER("cycle_number"),
     INITIAL_STATE_IN_PLANE_MANEUVERS("in_plane_maneuvers"),
-    INITIAL_STATE_IN_PLANE_DV("in_plane_dV"),
+    INITIAL_STATE_IN_PLANE_TOTAL_DV("in_plane_total_dV"),
     INITIAL_STATE_OUT_OF_PLANE_MANEUVERS("out_of_plane_maneuvers"),
-    INITIAL_STATE_OUT_OF_PLANE_DV("out_of_plane_dV"),
+    INITIAL_STATE_OUT_OF_PLANE_TOTAL_DV("out_of_plane_total_dV"),
     INITIAL_STATE_MASS("mass"),
     INITIAL_STATE_ORBIT("orbit"),
 

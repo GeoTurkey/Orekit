@@ -42,16 +42,22 @@ public class ScenarioState {
     private final int cyclesNumber;
 
     /** Number of performed in-plane maneuvers. */
-    private final int inPlane;
+    private final int inPlaneManeuvers;
+
+    /** cycle dV in-plane maneuvers. */
+    private final double inPlaneCycleDV;
 
     /** Total dV in-plane maneuvers. */
-    private final double inPlaneDV;
+    private final double inPlaneTotalDV;
 
     /** Number of performed out-of-plane maneuvers. */
-    private final int outOfPlane;
+    private final int outOfPlaneManeuvers;
+
+    /** Cycle dV out-of-plane maneuvers. */
+    private final double outOfPlaneCycleDV;
 
     /** Total dV out-of-plane maneuvers. */
-    private final double outOfPlaneDV;
+    private final double outOfPlaneTotalDV;
 
     /** Date of previous ascending node. */
     private final AbsoluteDate ascendingNodeDate;
@@ -91,9 +97,9 @@ public class ScenarioState {
      * @param bolMass spacecraft mass at Begin Of Life
      * @param cyclesNumber cycle number
      * @param inplane number of performed in-plane maneuvers
-     * @param inPlaneDV total dV in-plane maneuvers
+     * @param inPlaneTotalDV total dV in-plane maneuvers
      * @param outOfPlane number of performed out-of-plane maneuvers
-     * @param outOfPlaneDV total dV out-of-plane maneuvers
+     * @param outOfPlaneTotalDV total dV out-of-plane maneuvers
      * @param ascendingNodeDate date of previous ascending node
      * @param ascendingNodesSolarTime solar time at previous ascending node
      * @param descendingNodeDate date of previous descending node
@@ -107,8 +113,8 @@ public class ScenarioState {
      * @param performedManeuvers list of performed maneuvers
      */
     private ScenarioState(final String name, final double bolMass, final int cyclesNumber,
-                          final int inPlane, final double inPlaneDV,
-                          final int outOfPlane, final double outOfPlaneDV,
+                          final int inPlane, final double inPlaneCycleDV, final double inPlaneTotalDV,
+                          final int outOfPlane, final double outOfPlaneCycleDV, final double outOfPlaneTotalDV,
                           final AbsoluteDate ascendingNodeDate,
                           final double ascendingNodesSolarTime,
                           final AbsoluteDate descendingNodeDate,
@@ -123,10 +129,12 @@ public class ScenarioState {
         this.name                     = name;
         this.bolMass                  = bolMass;
         this.cyclesNumber             = cyclesNumber;
-        this.inPlane                  = inPlane;
-        this.inPlaneDV                = inPlaneDV;
-        this.outOfPlane               = outOfPlane;
-        this.outOfPlaneDV             = outOfPlaneDV;
+        this.inPlaneManeuvers         = inPlane;
+        this.inPlaneCycleDV           = inPlaneCycleDV;
+        this.inPlaneTotalDV           = inPlaneTotalDV;
+        this.outOfPlaneManeuvers      = outOfPlane;
+        this.outOfPlaneCycleDV        = outOfPlaneCycleDV;
+        this.outOfPlaneTotalDV        = outOfPlaneTotalDV;
         this.ascendingNodeDate        = ascendingNodeDate;
         this.ascendingNodesSolarTime  = ascendingNodesSolarTime;
         this.descendingNodeDate       = descendingNodeDate;
@@ -149,7 +157,7 @@ public class ScenarioState {
     public ScenarioState(final String name, final double bolMass,
                          final int cyclesNumber, final SpacecraftState realState) {
         this(name, bolMass, cyclesNumber,
-             0, 0.0, 0, 0.0,
+             0, 0.0, 0.0, 0, 0.0, 0.0,
              AbsoluteDate.PAST_INFINITY, Double.NaN,
              AbsoluteDate.PAST_INFINITY, Double.NaN,
              realState, null, null, null, null,
@@ -187,7 +195,8 @@ public class ScenarioState {
      */
     public ScenarioState updateCyclesNumber(final int cyclesNumber) {
         return new ScenarioState(name, bolMass, cyclesNumber,
-                                 inPlane, inPlaneDV, outOfPlane, outOfPlaneDV,
+                                 inPlaneManeuvers, inPlaneCycleDV, inPlaneTotalDV,
+                                 outOfPlaneManeuvers, outOfPlaneCycleDV, outOfPlaneTotalDV,
                                  ascendingNodeDate, ascendingNodesSolarTime,
                                  descendingNodeDate, descendingNodesSolarTime,
                                  realStartState, estimatedStartState, realEndState,
@@ -198,15 +207,22 @@ public class ScenarioState {
     /** Get the number of performed in-plane maneuvers.
      * @return number of performed in-plane maneuvers
      */
-    public int getInPlane() {
-        return inPlane;
+    public int getInPlaneManeuvers() {
+        return inPlaneManeuvers;
+    }
+
+    /** Get the cycle dV in-plane maneuvers.
+     * @return cycle dV in-plane maneuvers
+     */
+    public double getInPlaneCycleDV() {
+        return inPlaneCycleDV;
     }
 
     /** Get the total dV in-plane maneuvers.
      * @return total dV in-plane maneuvers
      */
-    public double getInPlaneDV() {
-        return inPlaneDV;
+    public double getInPlaneTotalDV() {
+        return inPlaneTotalDV;
     }
 
     /** Update the in-plane maneuvers.
@@ -214,12 +230,14 @@ public class ScenarioState {
      * The instance is not changed, a new instance is created
      * </p>
      * @param number number of in-plane maneuvers
-     * @param dV total DV for in-plane maneuvers
+     * @param cycleDV cycle DV for in-plane maneuvers
+     * @param totalDV total DV for in-plane maneuvers
      * @return updated state
      */
-    public ScenarioState updateInPlaneManeuvers(final int number, final double dv) {
+    public ScenarioState updateInPlaneManeuvers(final int number, final double cycleDV, final double totalDV) {
         return new ScenarioState(name, bolMass, cyclesNumber,
-                                 number, dv, outOfPlane, outOfPlaneDV,
+                                 number, cycleDV, totalDV,
+                                 outOfPlaneManeuvers, outOfPlaneCycleDV, outOfPlaneTotalDV,
                                  ascendingNodeDate, ascendingNodesSolarTime,
                                  descendingNodeDate, descendingNodesSolarTime,
                                  realStartState, estimatedStartState, realEndState,
@@ -230,15 +248,22 @@ public class ScenarioState {
     /** Get the number of performed out-of-plane maneuvers.
      * @return number of performed out-of-plane maneuvers
      */
-    public int getOutOfPlane() {
-        return outOfPlane;
+    public int getOutOfPlaneManeuvers() {
+        return outOfPlaneManeuvers;
+    }
+
+    /** Get the cycle dV out-of-plane maneuvers.
+     * @return cycle dV out-of-plane maneuvers
+     */
+    public double getOutOfPlaneCycleDV() {
+        return outOfPlaneCycleDV;
     }
 
     /** Get the total dV out-of-plane maneuvers.
      * @return total dV out-of-plane maneuvers
      */
-    public double getOutOfPlaneDV() {
-        return outOfPlaneDV;
+    public double getOutOfPlaneTotalDV() {
+        return outOfPlaneTotalDV;
     }
 
     /** Update the out-of-plane maneuvers.
@@ -246,12 +271,14 @@ public class ScenarioState {
      * The instance is not changed, a new instance is created
      * </p>
      * @param number number of out-of-plane maneuvers
-     * @param dV total DV for iout-of-plane maneuvers
+     * @param cycleDV cycle DV for out-of-plane maneuvers
+     * @param totalDV total DV for out-of-plane maneuvers
      * @return updated state
      */
-    public ScenarioState updateOutOfPlaneManeuvers(final int number, final double dv) {
+    public ScenarioState updateOutOfPlaneManeuvers(final int number, final double cycleDV, final double totalDV) {
         return new ScenarioState(name, bolMass, cyclesNumber,
-                                 inPlane, inPlaneDV, number, dv,
+                                 inPlaneManeuvers, inPlaneCycleDV, inPlaneTotalDV,
+                                 number, cycleDV, totalDV,
                                  ascendingNodeDate, ascendingNodesSolarTime,
                                  descendingNodeDate, descendingNodesSolarTime,
                                  realStartState, estimatedStartState, realEndState,
@@ -284,7 +311,8 @@ public class ScenarioState {
     public ScenarioState updateAscendingNodeCrossing(final AbsoluteDate date,
                                                      final double solarTime) {
         return new ScenarioState(name, bolMass, cyclesNumber,
-                                 inPlane, inPlaneDV, outOfPlane, outOfPlaneDV,
+                                 inPlaneManeuvers, inPlaneCycleDV, inPlaneTotalDV,
+                                 outOfPlaneManeuvers, outOfPlaneCycleDV, outOfPlaneTotalDV,
                                  date, solarTime,
                                  descendingNodeDate, descendingNodesSolarTime,
                                  realStartState, estimatedStartState, realEndState,
@@ -317,7 +345,8 @@ public class ScenarioState {
     public ScenarioState updateDescendingNodeCrossing(final AbsoluteDate date,
                                                       final double solarTime) {
         return new ScenarioState(name, bolMass, cyclesNumber,
-                                 inPlane, inPlaneDV, outOfPlane, outOfPlaneDV,
+                                 inPlaneManeuvers, inPlaneCycleDV, inPlaneTotalDV,
+                                 outOfPlaneManeuvers, outOfPlaneCycleDV, outOfPlaneTotalDV,
                                  ascendingNodeDate, ascendingNodesSolarTime,
                                  date, solarTime,
                                  realStartState, estimatedStartState, realEndState,
@@ -341,7 +370,8 @@ public class ScenarioState {
      */
     public ScenarioState updateRealStartState(final SpacecraftState state) {
         return new ScenarioState(name, bolMass, cyclesNumber,
-                                 inPlane, inPlaneDV, outOfPlane, outOfPlaneDV,
+                                 inPlaneManeuvers, inPlaneCycleDV, inPlaneTotalDV,
+                                 outOfPlaneManeuvers, outOfPlaneCycleDV, outOfPlaneTotalDV,
                                  ascendingNodeDate, ascendingNodesSolarTime,
                                  descendingNodeDate, descendingNodesSolarTime,
                                  state, estimatedStartState, realEndState,
@@ -365,7 +395,8 @@ public class ScenarioState {
      */
     public ScenarioState updateEstimatedStartState(final SpacecraftState state) {
         return new ScenarioState(name, bolMass, cyclesNumber,
-                                 inPlane, inPlaneDV, outOfPlane, outOfPlaneDV,
+                                 inPlaneManeuvers, inPlaneCycleDV, inPlaneTotalDV,
+                                 outOfPlaneManeuvers, outOfPlaneCycleDV, outOfPlaneTotalDV,
                                  ascendingNodeDate, ascendingNodesSolarTime,
                                  descendingNodeDate, descendingNodesSolarTime,
                                  realStartState, state, realEndState,
@@ -389,7 +420,8 @@ public class ScenarioState {
      */
     public ScenarioState updateRealEndState(final SpacecraftState state) {
         return new ScenarioState(name, bolMass, cyclesNumber,
-                                 inPlane, inPlaneDV, outOfPlane, outOfPlaneDV,
+                                 inPlaneManeuvers, inPlaneCycleDV, inPlaneTotalDV,
+                                 outOfPlaneManeuvers, outOfPlaneCycleDV, outOfPlaneTotalDV,
                                  ascendingNodeDate, ascendingNodesSolarTime,
                                  descendingNodeDate, descendingNodesSolarTime,
                                  realStartState, estimatedStartState, state,
@@ -413,7 +445,8 @@ public class ScenarioState {
      */
     public ScenarioState updateTheoreticalEphemeris(final BoundedPropagator theoreticalEphemeris) {
         return new ScenarioState(name, bolMass, cyclesNumber,
-                                 inPlane, inPlaneDV, outOfPlane, outOfPlaneDV,
+                                 inPlaneManeuvers, inPlaneCycleDV, inPlaneTotalDV,
+                                 outOfPlaneManeuvers, outOfPlaneCycleDV, outOfPlaneTotalDV,
                                  ascendingNodeDate, ascendingNodesSolarTime,
                                  descendingNodeDate, descendingNodesSolarTime,
                                  realStartState, estimatedStartState, realEndState,
@@ -437,7 +470,8 @@ public class ScenarioState {
      */
     public ScenarioState updatePerformedEphemeris(final BoundedPropagator ephemeris) {
         return new ScenarioState(name, bolMass, cyclesNumber,
-                                 inPlane, inPlaneDV, outOfPlane, outOfPlaneDV,
+                                 inPlaneManeuvers, inPlaneCycleDV, inPlaneTotalDV,
+                                 outOfPlaneManeuvers, outOfPlaneCycleDV, outOfPlaneTotalDV,
                                  ascendingNodeDate, ascendingNodesSolarTime,
                                  descendingNodeDate, descendingNodesSolarTime,
                                  realStartState, estimatedStartState, realEndState,
@@ -461,7 +495,8 @@ public class ScenarioState {
      */
     public ScenarioState updateTheoreticalManeuvers(final List<ScheduledManeuver> maneuvers) {
         return new ScenarioState(name, bolMass, cyclesNumber,
-                                 inPlane, inPlaneDV, outOfPlane, outOfPlaneDV,
+                                 inPlaneManeuvers, inPlaneCycleDV, inPlaneTotalDV,
+                                 outOfPlaneManeuvers, outOfPlaneCycleDV, outOfPlaneTotalDV,
                                  ascendingNodeDate, ascendingNodesSolarTime,
                                  descendingNodeDate, descendingNodesSolarTime,
                                  realStartState, estimatedStartState, realEndState,
@@ -485,7 +520,8 @@ public class ScenarioState {
      */
     public ScenarioState updatePerformedManeuvers(final List<ScheduledManeuver> maneuvers) {
         return new ScenarioState(name, bolMass, cyclesNumber,
-                                 inPlane, inPlaneDV, outOfPlane, outOfPlaneDV,
+                                 inPlaneManeuvers, inPlaneCycleDV, inPlaneTotalDV,
+                                 outOfPlaneManeuvers, outOfPlaneCycleDV, outOfPlaneTotalDV,
                                  ascendingNodeDate, ascendingNodesSolarTime,
                                  descendingNodeDate, descendingNodesSolarTime,
                                  realStartState, estimatedStartState, realEndState,

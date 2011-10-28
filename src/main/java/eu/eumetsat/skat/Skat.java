@@ -205,9 +205,11 @@ public class Skat {
                                       parser.getInt(stateNode,    ParameterKey.INITIAL_STATE_CYCLE_NUMBER),
                                       spacecraftState);
             scenarioState = scenarioState.updateInPlaneManeuvers(parser.getInt(stateNode, ParameterKey.INITIAL_STATE_IN_PLANE_MANEUVERS),
-                                                                 parser.getDouble(stateNode, ParameterKey.INITIAL_STATE_IN_PLANE_DV));
+                                                                 0.0,
+                                                                 parser.getDouble(stateNode, ParameterKey.INITIAL_STATE_IN_PLANE_TOTAL_DV));
             scenarioState = scenarioState.updateOutOfPlaneManeuvers(parser.getInt(stateNode, ParameterKey.INITIAL_STATE_OUT_OF_PLANE_MANEUVERS),
-                                                                    parser.getDouble(stateNode, ParameterKey.INITIAL_STATE_OUT_OF_PLANE_DV));
+                                                                    0.0,
+                                                                    parser.getDouble(stateNode, ParameterKey.INITIAL_STATE_OUT_OF_PLANE_TOTAL_DV));
             configuredStates[i] = scenarioState;
         }
 
@@ -391,16 +393,16 @@ public class Skat {
                            "= " + state.getCyclesNumber() + ";");
             output.println(formatIndent(baseIndent) +
                            formatKey(keysWidth, ParameterKey.INITIAL_STATE_IN_PLANE_MANEUVERS) +
-                           "= " + state.getInPlane() + ";");
+                           "= " + state.getInPlaneManeuvers() + ";");
             output.println(formatIndent(baseIndent) +
-                           formatKey(keysWidth, ParameterKey.INITIAL_STATE_IN_PLANE_DV) +
-                           "= " + state.getInPlaneDV() + ";");
+                           formatKey(keysWidth, ParameterKey.INITIAL_STATE_IN_PLANE_TOTAL_DV) +
+                           "= " + state.getInPlaneTotalDV() + ";");
             output.println(formatIndent(baseIndent) +
                            formatKey(keysWidth, ParameterKey.INITIAL_STATE_OUT_OF_PLANE_MANEUVERS) +
-                           "= " + state.getOutOfPlane() + ";");
+                           "= " + state.getOutOfPlaneManeuvers() + ";");
             output.println(formatIndent(baseIndent) +
-                           formatKey(keysWidth, ParameterKey.INITIAL_STATE_OUT_OF_PLANE_DV) +
-                           "= " + state.getOutOfPlaneDV() + ";");
+                           formatKey(keysWidth, ParameterKey.INITIAL_STATE_OUT_OF_PLANE_TOTAL_DV) +
+                           "= " + state.getOutOfPlaneTotalDV() + ";");
             output.println(formatIndent(baseIndent) +
                            formatKey(keysWidth, ParameterKey.INITIAL_STATE_MASS) +
                            "= " + state.getRealStartState().getMass() + ";");

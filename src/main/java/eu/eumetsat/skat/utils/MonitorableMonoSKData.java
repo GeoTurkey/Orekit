@@ -36,7 +36,17 @@ public enum MonitorableMonoSKData implements MonitorableMono {
         /** {@inheritDoc} */
         @Override
         protected void extractData(final ScenarioState state, BodyShape earth, double[] data) {
-            data[0] = state.getInPlane();
+            data[0] = state.getInPlaneManeuvers();
+        }
+
+    },
+
+    IN_PLANE_MANEUVER_CYCLE_DV(1) {
+
+        /** {@inheritDoc} */
+        @Override
+        protected void extractData(final ScenarioState state, BodyShape earth, double[] data) {
+            data[0] = state.getInPlaneCycleDV();
         }
 
     },
@@ -46,7 +56,7 @@ public enum MonitorableMonoSKData implements MonitorableMono {
         /** {@inheritDoc} */
         @Override
         protected void extractData(final ScenarioState state, BodyShape earth, double[] data) {
-            data[0] = state.getInPlaneDV();
+            data[0] = state.getInPlaneTotalDV();
         }
 
     },
@@ -56,7 +66,17 @@ public enum MonitorableMonoSKData implements MonitorableMono {
         /** {@inheritDoc} */
         @Override
         protected void extractData(final ScenarioState state, BodyShape earth, double[] data) {
-            data[0] = state.getOutOfPlane();
+            data[0] = state.getOutOfPlaneManeuvers();
+        }
+
+    },
+
+    OUT_OF_PLANE_MANEUVER_CYCLE_DV(1) {
+
+        /** {@inheritDoc} */
+        @Override
+        protected void extractData(final ScenarioState state, BodyShape earth, double[] data) {
+            data[0] = state.getOutOfPlaneCycleDV();
         }
 
     },
@@ -66,7 +86,7 @@ public enum MonitorableMonoSKData implements MonitorableMono {
         /** {@inheritDoc} */
         @Override
         protected void extractData(final ScenarioState state, BodyShape earth, double[] data) {
-            data[0] = state.getOutOfPlaneDV();
+            data[0] = state.getOutOfPlaneTotalDV();
         }
 
     },
