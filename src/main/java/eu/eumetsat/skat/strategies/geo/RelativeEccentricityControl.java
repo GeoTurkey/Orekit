@@ -6,18 +6,15 @@ import org.orekit.propagation.events.EventDetector;
 import org.orekit.propagation.sampling.OrekitStepHandler;
 import org.orekit.propagation.sampling.OrekitStepInterpolator;
 
-import eu.eumetsat.skat.control.SKControl;
+import eu.eumetsat.skat.control.AbstractSKDuoControl;
 
 /**
  * Station-keeping control attempting to keep relative eccentricity vector between satellites.
  */
-public class RelativeEccentricityControl implements SKControl {
+public class RelativeEccentricityControl extends AbstractSKDuoControl {
 
     /** Associated step handler. */
     private final OrekitStepHandler stephandler;
-
-    /** Name of the control law. */
-    private final String name;
 
     /** Desired difference in ex. */
     private final double deltaEx;
@@ -30,30 +27,20 @@ public class RelativeEccentricityControl implements SKControl {
 
     /** Simple constructor.
      * @param name name of the control law
+     * @param scale of the control law
      * @param deltaEx desired difference in ex
      * @param deltaEy desired difference in ey
      * @param radius radius of the circle
      * @param samplingStep step to use for sampling throughout propagation
      */
-    public RelativeEccentricityControl(final String name,
+    public RelativeEccentricityControl(final String name, final double scale,
                                        final double deltaEx, final double deltaEy,
                                        final double samplingStep) {
+        super(name, scale, 0.0);
         this.stephandler  = new Handler();
-        this.name         = name;
         this.deltaEx      = deltaEx;
         this.deltaEy      = deltaEy;
         this.samplingStep = samplingStep;
-    }
-
-    /** {@inheritDoc} */
-    public String getName() {
-        return name;
-    }
-
-    /** {@inheritDoc} */
-    public double getTargetValue() {
-        // TODO
-        return Double.NaN;
     }
 
     /** {@inheritDoc} */

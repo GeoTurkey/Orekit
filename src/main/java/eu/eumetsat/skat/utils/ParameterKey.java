@@ -67,6 +67,7 @@ public enum ParameterKey {
     ORBIT_DETERMINATION_SMALL("small"),
 
     COMPONENT_CONTROL_LOOP_OPTIMIZER("optimizer"),
+    COMPONENT_CONTROL_LOOP_CONTROLLED_SPACECRAFT("controlled_spacecraft"),
     COMPONENT_CONTROL_LOOP_FIRST_CYCLE("first_cycle"),
     COMPONENT_CONTROL_LOOP_LAST_CYCLE("last_cycle"),
     COMPONENT_CONTROL_LOOP_MAX_EVAL("max_eval"),

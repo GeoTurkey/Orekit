@@ -4,8 +4,6 @@ package eu.eumetsat.skat.control;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.math.stat.descriptive.rank.Median;
-
 /**
  * Base class representing a station-keeping control parameter.
  * <p>
@@ -119,36 +117,6 @@ public abstract class SKParameter implements SKElement {
     public void setValue(final double value) {
         this.value = value;
         valueChanged();
-    }
-
-    /** Store the last optimum value found for the parameter.
-     * <p>
-     * This method is used to build up samples of optimal values,
-     * so the {@link #guessOptimalValue()} method can use them to
-     * provide better guesses for next optimization, based on previous
-     * results.
-     * </p>
-     * @see #guessOptimalValue()
-     */
-    public void storeLastOptimalValue(final double optimum) {
-        guessingBase.add(optimum);
-    }
-
-    /** Get a guess for the optimal value of the parameter.
-     * <p>
-     * The guess is based first on min/max settings and
-     * </p>
-     * @return guessed optimal value of the parameter
-     * @see #storeLastOptimalValue(double)
-     */
-    public double guessOptimalValue() {
-        final Median median = new Median();
-        final double[] data = new double[guessingBase.size()];
-        for (int i = 0; i < data.length; ++i) {
-            data[i] = guessingBase.get(i);
-        }
-        median.setData(data);
-        return median.evaluate();
     }
 
     /** Notify the implementation class that the parameter value has changed.

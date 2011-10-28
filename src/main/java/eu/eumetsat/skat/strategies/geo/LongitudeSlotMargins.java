@@ -14,7 +14,7 @@ import org.orekit.propagation.sampling.OrekitStepHandler;
 import org.orekit.propagation.sampling.OrekitStepInterpolator;
 import org.orekit.time.AbsoluteDate;
 
-import eu.eumetsat.skat.control.SKControl;
+import eu.eumetsat.skat.control.AbstractSKMonoControl;
 
 /**
  * Station-keeping control attempting to balance East-West margins
@@ -40,22 +40,16 @@ import eu.eumetsat.skat.control.SKControl;
  * </p>
  * @author Luc Maisonobe
  */
-public class LongitudeSlotMargins implements SKControl {
+public class LongitudeSlotMargins extends AbstractSKMonoControl {
 
     /** Associated step handler. */
     private final OrekitStepHandler stephandler;
-
-    /** Name of the control law. */
-    private final String name;
 
     /** Longitude slot westward boundary. */
     private final double westBoundary;
 
     /** Longitude slot eastward boundary. */
     private final double eastBoundary;
-
-    /** Target longitude margins difference. */
-    private final double target;
 
     /** Step to use for sampling throughout propagation. */
     private final double samplingStep;
@@ -71,6 +65,7 @@ public class LongitudeSlotMargins implements SKControl {
 
     /** Simple constructor.
      * @param name name of the control law
+     * @param scale of the control law
      * @param westBoundary longitude slot westward boundary
      * @param eastBoundary longitude slot eastward boundary
      * @param target longitude margins difference (should be set to 0.0 if
@@ -78,30 +73,18 @@ public class LongitudeSlotMargins implements SKControl {
      * @param samplingStep step to use for sampling throughout propagation
      * @param earth Earth model to use to compute longitudes
      */
-    public LongitudeSlotMargins(final String name,
+    public LongitudeSlotMargins(final String name, final double scale,
                                 final double westBoundary, final double eastBoundary,
                                 final double target, final double samplingStep,
                                 final BodyShape earth) {
+        super(name, scale, target);
         this.stephandler  = new Handler();
-        this.name         = name;
         this.westBoundary = westBoundary;
         this.eastBoundary = MathUtils.normalizeAngle(eastBoundary, westBoundary);
-        this.target       = target;
         this.samplingStep = samplingStep;
         this.earth        = earth;
     }
 
-    /** {@inheritDoc} */
-    public String getName() {
-        return name;
-    }
-
-    /** {@inheritDoc} */
-    public double getTargetValue() {
-        return target;
-    }
-
-    /** {@inheritDoc} */
     public double getAchievedValue() {
         return (eastBoundary - maxL) - (minL - westBoundary);
     }

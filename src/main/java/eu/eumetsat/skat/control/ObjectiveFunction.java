@@ -31,7 +31,7 @@ class ObjectiveFunction implements MultivariateRealFunction, OrekitStepHandler {
     private final Propagator propagator;
 
     /** Station-keeping controls. */
-    private final List<ScaledControl> controls;
+    private final List<SKControl> controls;
 
     /** Tunable control parameters. */
     private final List<SKParameter> parameters;
@@ -62,7 +62,7 @@ class ObjectiveFunction implements MultivariateRealFunction, OrekitStepHandler {
      */
     public ObjectiveFunction(final Propagator propagator,
                              final List<SKParameter> parameters,
-                             final List<ScaledControl> controls,
+                             final List<SKControl> controls,
                              final AbsoluteDate cycleEnd,
                              final SpacecraftState initialState,
                              final List<ScheduledManeuver> scheduledManeuvers) {
@@ -114,8 +114,10 @@ class ObjectiveFunction implements MultivariateRealFunction, OrekitStepHandler {
 
             // compute sum of squared scaled residuals
             double sum = 0;
-            for (final ScaledControl s : controls) {
-                sum += s.getScaledResidualSquared();
+            for (final SKControl s : controls) {
+                final double residual = s.getAchievedValue() - s.getTargetValue();
+                final double scaledResidual = residual / s.getScale();
+                sum += scaledResidual * scaledResidual;
             }
 
             // return the sum of squared scaled residuals
@@ -145,9 +147,9 @@ class ObjectiveFunction implements MultivariateRealFunction, OrekitStepHandler {
         }
 
         // get the step handlers associated with control laws
-        for (final ScaledControl sc : controls) {
-            if (sc.getControl().getStepHandler() != null) {
-                detectors.add(sc.getControl().getEventDetector());
+        for (final SKControl control : controls) {
+            if (control.getStepHandler() != null) {
+                detectors.add(control.getEventDetector());
             }
         }
 
@@ -171,9 +173,9 @@ class ObjectiveFunction implements MultivariateRealFunction, OrekitStepHandler {
         }
 
         // get the step handlers associated with control laws
-        for (final ScaledControl sc : controls) {
-            if (sc.getControl().getStepHandler() != null) {
-                handlers.add(sc.getControl().getStepHandler());
+        for (final SKControl control : controls) {
+            if (control.getStepHandler() != null) {
+                handlers.add(control.getStepHandler());
             }
         }
 

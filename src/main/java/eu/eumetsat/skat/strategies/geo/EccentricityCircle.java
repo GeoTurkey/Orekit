@@ -6,18 +6,15 @@ import org.orekit.propagation.events.EventDetector;
 import org.orekit.propagation.sampling.OrekitStepHandler;
 import org.orekit.propagation.sampling.OrekitStepInterpolator;
 
-import eu.eumetsat.skat.control.SKControl;
+import eu.eumetsat.skat.control.AbstractSKMonoControl;
 
 /**
  * Station-keeping control attempting to follow a specified eccentricity circle.
  */
-public class EccentricityCircle implements SKControl {
+public class EccentricityCircle extends AbstractSKMonoControl {
 
     /** Associated step handler. */
     private final OrekitStepHandler stephandler;
-
-    /** Name of the control law. */
-    private final String name;
 
     /** Abscissa of the circle center. */
     private final double centerX;
@@ -25,39 +22,25 @@ public class EccentricityCircle implements SKControl {
     /** Ordinate of the circle center. */
     private final double centerY;
 
-    /** radius of the circle. */
-    private final double radius;
-
     /** Step to use for sampling throughout propagation. */
     private final double samplingStep;
 
     /** Simple constructor.
      * @param name name of the control law
+     * @param scale of the control law
      * @param centerX abscissa of the circle center
      * @param centerY ordinate of the circle center
      * @param radius radius of the circle
      * @param samplingStep step to use for sampling throughout propagation
      */
-    public EccentricityCircle(final String name,
+    public EccentricityCircle(final String name, final double scale,
                               final double centerX, final double centerY, final double radius,
                               final double samplingStep) {
+        super(name, scale, radius);
         this.stephandler  = new Handler();
-        this.name         = name;
         this.centerX      = centerX;
         this.centerY      = centerY;
-        this.radius       = radius;
         this.samplingStep = samplingStep;
-    }
-
-    /** {@inheritDoc} */
-    public String getName() {
-        return name;
-    }
-
-    /** {@inheritDoc} */
-    public double getTargetValue() {
-        // TODO
-        return Double.NaN;
     }
 
     /** {@inheritDoc} */

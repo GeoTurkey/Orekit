@@ -64,8 +64,11 @@ public enum SupportedScenariocomponent {
             throws OrekitException, SkatException {
 
             // loop
-            final int firstCycle = parser.getInt(node, ParameterKey.COMPONENT_CONTROL_LOOP_FIRST_CYCLE);
-            final int lastCycle  = parser.getInt(node, ParameterKey.COMPONENT_CONTROL_LOOP_LAST_CYCLE);
+            final String spacecraft   = parser.getString(node, ParameterKey.COMPONENT_CONTROL_LOOP_CONTROLLED_SPACECRAFT);
+            final int spacecraftIndex = skat.getSpacecraftIndex(spacecraft);
+
+            final int firstCycle    = parser.getInt(node, ParameterKey.COMPONENT_CONTROL_LOOP_FIRST_CYCLE);
+            final int lastCycle     = parser.getInt(node, ParameterKey.COMPONENT_CONTROL_LOOP_LAST_CYCLE);
 
             // optimizer
             final int maxEval   = parser.getInt(node, ParameterKey.COMPONENT_CONTROL_LOOP_MAX_EVAL);
@@ -73,27 +76,23 @@ public enum SupportedScenariocomponent {
             final String method = parser.getIdentifier(node, ParameterKey.COMPONENT_CONTROL_LOOP_OPTIMIZER);
             final SupportedOptimizer optimizer = SupportedOptimizer.valueOf(method);
 
-            final int[] indices = getIndices(parser, node, skat);
-            final  Propagator[] propagators = new Propagator[indices.length];
-            for (int i = 0; i < propagators.length; ++i) {
-                propagators[i] = parser.getPropagator(parser.getValue(node, ParameterKey.COMPONENT_CONTROL_LOOP_PROPAGATOR),
-                                                      skat.getInitialOrbit(indices[i]),
-                                                      skat.getEarth().getBodyFrame());
-            }
+            final  Propagator propagator =
+                    parser.getPropagator(parser.getValue(node, ParameterKey.COMPONENT_CONTROL_LOOP_PROPAGATOR),
+                                         skat.getInitialOrbit(spacecraftIndex), skat.getEarth().getBodyFrame());
 
 
-            final ControlLoop loop = new ControlLoop(indices, firstCycle, lastCycle, maxEval, nbPoints,
-                                                     optimizer, propagators,
+            final ControlLoop loop = new ControlLoop(spacecraftIndex,
+                                                     firstCycle, lastCycle, maxEval, nbPoints,
+                                                     optimizer, propagator,
                                                      skat.getCycleDuration(), skat.getRollingCycles());
 
             // control laws
             final Tree controlsNode = parser.getValue(node, ParameterKey.COMPONENT_CONTROL_LOOP_CONTROLS);
             for (int i = 0; i < parser.getElementsNumber(controlsNode); ++i) {
                 final Tree control = parser.getElement(controlsNode, i);
-                final double scale = parser.getDouble(control, ParameterKey.CONTROL_SCALE);
                 final String type = parser.getIdentifier(control, ParameterKey.CONTROL_TYPE);
                 SupportedControlLaw law = SupportedControlLaw.valueOf(type);
-                loop.addControl(scale, law.parse(parser, control, skat));
+                loop.addControl(law.parse(parser, control, skat));
             }
 
             // tunable maneuvers

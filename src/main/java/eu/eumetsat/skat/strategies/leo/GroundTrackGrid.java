@@ -6,32 +6,27 @@ import org.orekit.propagation.events.EventDetector;
 import org.orekit.propagation.sampling.OrekitStepHandler;
 import org.orekit.propagation.sampling.OrekitStepInterpolator;
 
-import eu.eumetsat.skat.control.SKControl;
+import eu.eumetsat.skat.control.AbstractSKMonoControl;
 
 /**
  * Station-keeping control attempting to follow a specified ground-track
  * at a specified latitude.
  */
-public class GroundTrackGrid implements SKControl {
+public class GroundTrackGrid extends AbstractSKMonoControl {
 
     /** Associated step handler. */
     private final OrekitStepHandler stephandler;
 
     /** Simple constructor.
+     * @param name name of the control law
+     * @param scale of the control law
+     * @param solarTime target solar time
+     * @param samplingStep step to use for sampling throughout propagation
      */
-    public GroundTrackGrid() {
-        this.stephandler = new Handler();
-    }
-
-    /** {@inheritDoc} */
-    public String getName() {
-        return "ground track";
-    }
-
-    /** {@inheritDoc} */
-    public double getTargetValue() {
-        // TODO
-        return Double.NaN;
+    public GroundTrackGrid(final String name, final double scale,
+                           final double latitude, final double longitude, final double samplingStep) {
+        super(name, scale, 0.0);
+        this.stephandler  = new Handler();
     }
 
     /** {@inheritDoc} */

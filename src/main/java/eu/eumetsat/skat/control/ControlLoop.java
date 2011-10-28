@@ -41,8 +41,8 @@ import eu.eumetsat.skat.utils.SupportedOptimizer;
  */
 public class ControlLoop implements ScenarioComponent {
 
-    /** Indices of the spacecrafts managed by this component. */
-    private final int[] spacecraftIndices;
+    /** Index of the spacecraft controlled by this component. */
+    private final int spacecraftIndex;
 
     /** Maximal number of objective function evaluations. */
     private final int maxEval;
@@ -53,8 +53,8 @@ public class ControlLoop implements ScenarioComponent {
     /** Optimizing engine. */
     private final SupportedOptimizer optimizer;
 
-    /** Orbit propagators. */
-    private final Propagator[] propagators;
+    /** Orbit propagator. */
+    private final Propagator propagator;
 
     /** Cycle duration. */
     private final double cycleDuration;
@@ -72,7 +72,7 @@ public class ControlLoop implements ScenarioComponent {
     private final List<TunableManeuver> tunables;
 
     /** Station-keeping controls. */
-    private final List<ScaledControl> controls;
+    private final List<SKControl> controls;
 
     /** Station-keeping parameters. */
     private final List<SKParameter> parameters;
@@ -83,50 +83,40 @@ public class ControlLoop implements ScenarioComponent {
      * They must be added later on by {@link #addControl(double, SKControl)}
      * and {@link #addTunableManeuver(TunableManeuver)}.
      * </p>
-     * @param spacecraftIndices indices of the spacecrafts managed by this component
+     * @param spacecraftIndex index of the spacecraft controlled by this component
      * @param firstCycle first cycle this loop should control
      * @param lastCycle last cycle this loop should control
      * @param maxEval maximal number of objective function evaluations
-     * @param nbPoints number of smapling points
+     * @param nbPoints number of sampling points
      * @param optimizer optimizing engine
-     * @param propagators orbit propagators
+     * @param propagator orbit propagator
      * @param cycleDuration Cycle duration
      * @param rollingCycles number of cycles to use for rolling optimization
      */
-    public ControlLoop(final int[] spacecraftIndices,
+    public ControlLoop(final int spacecraftIndex,
                        final int firstCycle, final int lastCycle,
                        final int maxEval, final int nbPoints,
-                       final SupportedOptimizer optimizer, final Propagator[] propagators,
+                       final SupportedOptimizer optimizer, final Propagator propagator,
                        final double cycleDuration, final int rollingCycles) {
-        this.spacecraftIndices = spacecraftIndices.clone();
-        this.firstCycle        = firstCycle;
-        this.lastCycle         = lastCycle;
-        this.maxEval           = maxEval;
-        this.nbPoints          = nbPoints;
-        this.optimizer         = optimizer;
-        this.propagators       = propagators.clone();
-        tunables               = new ArrayList<TunableManeuver>();
-        controls               = new ArrayList<ScaledControl>();
-        parameters             = new ArrayList<SKParameter>();
-        this.cycleDuration     = cycleDuration;
-        this.rollingCycles     = rollingCycles;
+        this.spacecraftIndex = spacecraftIndex;
+        this.firstCycle      = firstCycle;
+        this.lastCycle       = lastCycle;
+        this.maxEval         = maxEval;
+        this.nbPoints        = nbPoints;
+        this.optimizer       = optimizer;
+        this.propagator      = propagator;
+        tunables             = new ArrayList<TunableManeuver>();
+        controls             = new ArrayList<SKControl>();
+        parameters           = new ArrayList<SKParameter>();
+        this.cycleDuration   = cycleDuration;
+        this.rollingCycles   = rollingCycles;
     }
 
-    /** Add a scaled control.
-     * <p>
-     * The scale of the control is a scalar parameter with the same physical unit
-     * as the control itself (radians, meters, seconds ...). It's purpose is to
-     * allow mixing controls in a global scalar objective function by computing<br>
-     *   J = &sum;(((control<sub>i</sub>.{@link SKControl#getAchievedValue() getAchievedValue()}
-     *             - control<sub>i</sub>.{@link SKControl#getTargetValue() getTargetValue()})
-     *             / scale<sub>i</sub>)<sup>2</sup>)<br>
-     * the sum being computed across all scaled controls.
-     * </p>
-     * @param scale scale of the control (must have the same physical unit as the control value)
-     * @param control control to add
+    /** Add a control law .
+     * @param control control law to add
      */
-    public void addControl(final double scale, final SKControl control) {
-        controls.add(new ScaledControl(scale, control));
+    public void addControl(final SKControl control) {
+        controls.add(control);
     }
 
     /** Add the tunable parameters from a control parameters list.
@@ -161,74 +151,63 @@ public class ControlLoop implements ScenarioComponent {
         throws OrekitException, SkatException {
 
         ScenarioState[] updated = originals.clone();
+        final ScenarioState original = originals[spacecraftIndex];
 
-        for (int i = 0; i < spacecraftIndices.length; ++i) {
+        if ((original.getCyclesNumber() >= firstCycle) && (original.getCyclesNumber() <= lastCycle)) {
 
-            // select the current spacecraft affected by this component
-            final int index = spacecraftIndices[i];
-
-            if ((originals[index].getCyclesNumber() >= firstCycle) &&
-                (originals[index].getCyclesNumber() <= lastCycle)) {
-
-                // guess a start point
-                double[] startPoint = new double[parameters.size()];
-                for (int j = 0; j < startPoint.length; ++j) {
-                    startPoint[j] = parameters.get(j).guessOptimalValue();
-                }
-
-                // set the reference date for maneuvers
-                for (final TunableManeuver tunable : tunables) {
-                    SpacecraftState estimated = originals[index].getEstimatedStartState();
-                    if (estimated == null) {
-                        throw new SkatException(SkatMessages.NO_ESTIMATED_STATE,
-                                                originals[index].getName(), originals[index].getCyclesNumber());
-                    }
-                    tunable.setReferenceDate(originals[index].getEstimatedStartState().getDate());
-                    tunable.setReferenceConsumedMass(originals[index].getBOLMass() -
-                                                     originals[index].getEstimatedStartState().getMass());
-                }
-
-                // find the optimal parameters that minimize objective function
-                // TODO introduce constraints
-                AbsoluteDate startDate  = originals[index].getEstimatedStartState().getDate();
-                AbsoluteDate targetDate = startDate.shiftedBy(rollingCycles * cycleDuration);
-                final MultivariateRealFunction objective =
-                        new ObjectiveFunction(propagators[i], parameters, controls, targetDate,
-                                              originals[index].getEstimatedStartState(),
-                                              originals[index].getTheoreticalManeuvers());
-                MultivariateRealOptimizer o;
-                switch (optimizer) {
-                case CMA_ES :
-                    o = new CMAESOptimizer(nbPoints);
-                    break;
-                case BOBYQA :
-                    o = new BOBYQAOptimizer(nbPoints);
-                    break;
-                default :
-                    throw SkatException.createInternalError(null);
-                }
-                double[] optimum = o.optimize(maxEval, objective, GoalType.MINIMIZE, startPoint).getPoint();
-
-                // set the parameters to the optimal values
-                for (int j = 0; j < optimum.length; ++j) {
-                    final SKParameter parameter = parameters.get(j);
-                    parameter.storeLastOptimalValue(optimum[j]);
-                    parameter.setValue(optimum[j]);
-                }
-
-                // update the scheduled maneuvers, adding the newly optimized set
-                final List<ScheduledManeuver> theoreticalManeuvers = new ArrayList<ScheduledManeuver>();
-                theoreticalManeuvers.addAll(originals[index].getTheoreticalManeuvers());
-                for (final TunableManeuver tunable : tunables) {
-                    // get the optimized maneuver, using the optimum value set above
-                    final ScheduledManeuver optimized = tunable.getManeuver();
-                    theoreticalManeuvers.add(optimized);
-                }
-
-                // build the updated scenario state
-                updated[index] = originals[index].updateTheoreticalManeuvers(theoreticalManeuvers);
+            // guess a start point
+            double[] startPoint = new double[parameters.size()];
+            for (int j = 0; j < startPoint.length; ++j) {
+                startPoint[j] = 0.5 * (parameters.get(j).getMin() + parameters.get(j).getMax());
             }
 
+            // set the reference date for maneuvers
+            for (final TunableManeuver tunable : tunables) {
+                SpacecraftState estimated = original.getEstimatedStartState();
+                if (estimated == null) {
+                    throw new SkatException(SkatMessages.NO_ESTIMATED_STATE,
+                                            original.getName(), original.getCyclesNumber());
+                }
+                tunable.setReferenceDate(original.getEstimatedStartState().getDate());
+                tunable.setReferenceConsumedMass(original.getBOLMass() -
+                                                 original.getEstimatedStartState().getMass());
+            }
+
+            // find the optimal parameters that minimize objective function
+            // TODO introduce constraints
+            AbsoluteDate startDate  = original.getEstimatedStartState().getDate();
+            AbsoluteDate targetDate = startDate.shiftedBy(rollingCycles * cycleDuration);
+            final MultivariateRealFunction objective =
+                    new ObjectiveFunction(propagator, parameters, controls, targetDate,
+                                          original.getEstimatedStartState(),
+                                          original.getTheoreticalManeuvers());
+            MultivariateRealOptimizer o;
+            switch (optimizer) {
+            case CMA_ES :
+                o = new CMAESOptimizer(nbPoints);
+                break;
+            case BOBYQA :
+                o = new BOBYQAOptimizer(nbPoints);
+                break;
+            default :
+                throw SkatException.createInternalError(null);
+            }
+            double[] optimum = o.optimize(maxEval, objective, GoalType.MINIMIZE, startPoint).getPoint();
+
+            // perform a last run so monitoring is updated with the optimal values
+            objective.value(optimum);
+
+            // update the scheduled maneuvers, adding the newly optimized set
+            final List<ScheduledManeuver> theoreticalManeuvers = new ArrayList<ScheduledManeuver>();
+            theoreticalManeuvers.addAll(original.getTheoreticalManeuvers());
+            for (final TunableManeuver tunable : tunables) {
+                // get the optimized maneuver, using the optimum value set above
+                final ScheduledManeuver optimized = tunable.getManeuver();
+                theoreticalManeuvers.add(optimized);
+            }
+
+            // build the updated scenario state
+            updated[spacecraftIndex] = original.updateTheoreticalManeuvers(theoreticalManeuvers);
         }
 
         // return the updated states

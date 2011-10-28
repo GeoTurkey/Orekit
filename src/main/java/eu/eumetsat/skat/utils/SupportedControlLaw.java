@@ -20,11 +20,12 @@ public enum SupportedControlLaw {
         public SKControl parse(final SkatFileParser parser, final Tree node, final Skat skat)
             throws OrekitException, SkatException {
             final String name         = parser.getString(node, ParameterKey.CONTROL_NAME);
+            final double scale        = parser.getDouble(node, ParameterKey.CONTROL_SCALE);
             final double sampling     = parser.getDouble(node, ParameterKey.CONTROL_SAMPLING);
             final double eastBoundary = parser.getAngle(node,  ParameterKey.CONTROL_LONGITUDE_MARGINS_EAST);
             final double westBoundary = parser.getAngle(node,  ParameterKey.CONTROL_LONGITUDE_MARGINS_WEST);
             final double target       = parser.getAngle(node,  ParameterKey.CONTROL_LONGITUDE_MARGINS_TARGET);
-            return new LongitudeSlotMargins(name, westBoundary, eastBoundary, target, sampling,
+            return new LongitudeSlotMargins(name, scale, westBoundary, eastBoundary, target, sampling,
                                             skat.getEarth());
         }
 
@@ -38,10 +39,11 @@ public enum SupportedControlLaw {
             throws OrekitException, SkatException {
             final String name     = parser.getString(node, ParameterKey.CONTROL_NAME);
             final double sampling = parser.getDouble(node, ParameterKey.CONTROL_SAMPLING);
+            final double scale        = parser.getDouble(node, ParameterKey.CONTROL_SCALE);
             final double centerX  = parser.getDouble(node, ParameterKey.CONTROL_ECCENTRICITY_CIRCLE_CENTER_X);
             final double centerY  = parser.getDouble(node, ParameterKey.CONTROL_ECCENTRICITY_CIRCLE_CENTER_Y);
             final double radius   = parser.getDouble(node, ParameterKey.CONTROL_ECCENTRICITY_CIRCLE_RADIUS);
-            return new EccentricityCircle(name, centerX, centerY, radius, sampling);
+            return new EccentricityCircle(name, scale, centerX, centerY, radius, sampling);
         }
 
     },
