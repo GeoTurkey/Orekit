@@ -11,8 +11,6 @@ import org.antlr.runtime.tree.Tree;
 import org.apache.commons.math.exception.DimensionMismatchException;
 import org.apache.commons.math.exception.util.LocalizedFormats;
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
-import org.apache.commons.math.linear.Array2DRowRealMatrix;
-import org.apache.commons.math.linear.RealMatrix;
 import org.apache.commons.math.ode.nonstiff.AdaptiveStepsizeIntegrator;
 import org.apache.commons.math.ode.nonstiff.DormandPrince853Integrator;
 import org.apache.commons.math.util.FastMath;
@@ -362,43 +360,39 @@ public class SkatFileParser {
 
     }
 
-    /** Get a covariance value.
+    /** Get a double[][] value.
      * @param node structure containing the parameter
      * @param key parameter key
-     * @return covariance value corresponding to the key
+     * @return double[][] value corresponding to the key
      * @exception IllegalArgumentException if node does not contains the key
      * or it is not a matrix
-     * @exception DimensionMismatchException if matrix does not have 6x6 elements
      */
-    public RealMatrix getCovariance(final Tree node, final ParameterKey key)
+    public double[][] getDoubleArray2(final Tree node, final ParameterKey key)
         throws IllegalArgumentException {
 
 
         // get the node
         final Tree value = getValue(node, key);
 
-        // check types and dimensions
+        // check types and get dimensions
         checkType(SkatParser.ARRAY, value);
-        if (getElementsNumber(value) != 6) {
-            throw new DimensionMismatchException(getElementsNumber(value), 6);
-        }
-        for (int i = 0; i < getElementsNumber(value); ++i) {
+        final int rows = getElementsNumber(value);
+        int columns = 0;
+        for (int i = 0; i < rows; ++i) {
             final Tree row = getElement(value, i);
             checkType(SkatParser.ARRAY, row);
-            if (getElementsNumber(row) != 6) {
-                throw new DimensionMismatchException(getElementsNumber(row), 6);
-            }
+            columns = getElementsNumber(row);
         }
 
         // parse the value
-        final double[][] matrix = new double[6][6];
-        for (int i = 0; i < matrix.length; ++i) {
+        final double[][] array = new double[rows][columns];
+        for (int i = 0; i < array.length; ++i) {
             final Tree row = getElement(value, i);
-            for (int j = 0; j < matrix[i].length; ++j) {
-                matrix[i][j] = Double.parseDouble(getElement(row, j).getText());
+            for (int j = 0; j < array[i].length; ++j) {
+                array[i][j] = Double.parseDouble(getElement(row, j).getText());
             }
         }
-        return new Array2DRowRealMatrix(matrix, false);
+        return array;
 
     }
 

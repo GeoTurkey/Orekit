@@ -2,7 +2,10 @@
 package eu.eumetsat.skat.utils;
 
 import org.antlr.runtime.tree.Tree;
+import org.apache.commons.math.exception.DimensionMismatchException;
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
+import org.apache.commons.math.linear.Array2DRowRealMatrix;
+import org.apache.commons.math.linear.RealMatrix;
 import org.orekit.errors.OrekitException;
 import org.orekit.orbits.OrbitType;
 import org.orekit.propagation.Propagator;
@@ -35,8 +38,17 @@ public enum SupportedScenariocomponent {
         /** {@inheritDoc} */
         public ScenarioComponent parse(final SkatFileParser parser, final Tree node, final Skat skat)
             throws OrekitException, SkatException {
+            RealMatrix matrix =
+                    new Array2DRowRealMatrix(parser.getDoubleArray2(node, ParameterKey.ORBIT_DETERMINATION_COVARIANCE),
+                                             false);
+            if (matrix.getRowDimension() != 6) {
+                throw new DimensionMismatchException(matrix.getRowDimension(), 6);
+            }
+            if (matrix.getColumnDimension() != 6) {
+                throw new DimensionMismatchException(matrix.getColumnDimension(), 6);
+            }
             return new OrbitDetermination(getIndices(parser, node, skat),
-                                          parser.getCovariance(node, ParameterKey.ORBIT_DETERMINATION_COVARIANCE),
+                                          matrix,
                                           OrbitType.valueOf(parser.getIdentifier(node, ParameterKey.ORBIT_TYPE)),
                                           parser.getPositionAngle(node, ParameterKey.ANGLE_TYPE),
                                           parser.getDouble(node, ParameterKey.ORBIT_DETERMINATION_SMALL),
@@ -91,7 +103,7 @@ public enum SupportedScenariocomponent {
                 final boolean inPlane    = parser.getBoolean(maneuver, ParameterKey.MANEUVERS_IN_PLANE);
                 final String name        = parser.getString(maneuver,  ParameterKey.MANEUVERS_NAME);
                 final Vector3D direction = parser.getVector(maneuver,  ParameterKey.MANEUVERS_DIRECTION).normalize();
-                final double isp         = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_ISP);
+                final double[][] isp     = parser.getDoubleArray2(maneuver,  ParameterKey.MANEUVERS_ISP_CURVE);
                 final double dvMin       = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DV_MIN);
                 final double dvMax       = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DV_MAX);
                 final double nominal     = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_NOMINAL_DATE);

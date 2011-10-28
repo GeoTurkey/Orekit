@@ -22,6 +22,7 @@ public enum ParameterKey {
 
     INITIAL_STATES,
     INITIAL_STATE_NAME("name"),
+    INITIAL_STATE_BOL_MASS("bol_mass"),
     INITIAL_STATE_CYCLE_NUMBER("cycle_number"),
     INITIAL_STATE_IN_PLANE_MANEUVERS("in_plane_maneuvers"),
     INITIAL_STATE_IN_PLANE_DV("in_plane_dV"),
@@ -88,7 +89,7 @@ public enum ParameterKey {
     MANEUVERS_IN_PLANE("in_plane"),
     MANEUVERS_NAME("name"),
     MANEUVERS_DIRECTION("direction"),
-    MANEUVERS_ISP("isp"),
+    MANEUVERS_ISP_CURVE("isp_curve"),
     MANEUVERS_DV_MIN("dv_min"),
     MANEUVERS_DV_MAX("dv_max"),
     MANEUVERS_NOMINAL_DATE("nominal_date"),

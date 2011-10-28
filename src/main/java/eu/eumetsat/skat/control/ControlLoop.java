@@ -184,6 +184,8 @@ public class ControlLoop implements ScenarioComponent {
                                                 originals[index].getName(), originals[index].getCyclesNumber());
                     }
                     tunable.setReferenceDate(originals[index].getEstimatedStartState().getDate());
+                    tunable.setReferenceConsumedMass(originals[index].getBOLMass() -
+                                                     originals[index].getEstimatedStartState().getMass());
                 }
 
                 // find the optimal parameters that minimize objective function

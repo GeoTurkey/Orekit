@@ -16,6 +16,10 @@ import eu.eumetsat.skat.control.SKParameter;
 /**
  * This class represents an impulse maneuver with free parameters for date
  * and velocity increment.
+ * <p>
+ * The specific impulse of the maneuver involves linearly between an ISP
+ * calibration curve according to consumed mass.
+ * </p>
  * @author Luc Maisonobe
  */
 public class TunableManeuver {
@@ -26,8 +30,8 @@ public class TunableManeuver {
     /** Thrust direction in spacecraft frame. */
     private final Vector3D direction;
 
-    /** Specific impulse. */
-    private final double isp;
+    /** Specific impulse calibration curve. */
+    private final double[][] isp;
 
     /** Tunable velocity increment. */
     private final SKParameter velocityIncrement;
@@ -37,6 +41,9 @@ public class TunableManeuver {
 
     /** Reference date of the maneuver. */
     private AbsoluteDate reference;
+
+    /** Current ISP. */
+    private double currentIsp;
 
     /** Tunable date offset. */
     private final SKParameter dateOffset;
@@ -48,7 +55,7 @@ public class TunableManeuver {
      * @param name name of the maneuver
      * @param inPlane if true, the maneuver is considered to be in-plane
      * @param direction thrust direction in spacecraft frame
-     * @param isp engine specific impulse (s)
+     * @param isp engine specific impulse calibration curve (seconds in row 0, consumed mass in row 1)
      * @param minIncrement minimal allowed value for velocity increment
      * @param maxIncrement maximal allowed value for velocity increment
      * @param nominal nominal offset with respect to reference date
@@ -56,13 +63,14 @@ public class TunableManeuver {
      * @param maxDateOffset offset for latest allowed maneuver date
      */
     public TunableManeuver(final String name, final boolean inPlane,
-                           final Vector3D direction, final double isp,
+                           final Vector3D direction,
+                           final double[][] isp,
                            final double minIncrement, final double maxIncrement,
                            final double nominal,
                            final double minDateOffset, final double maxDateOffset) {
         this.inPlane      = inPlane;
         this.direction    = direction.normalize();
-        this.isp          = isp;
+        this.isp          = isp.clone();
         this.nominal      = nominal;
         dateOffset        = new ManeuverParameter(name + " (date)",
                                                   minDateOffset, maxDateOffset,
@@ -78,8 +86,42 @@ public class TunableManeuver {
     /** Set the reference date.
      * @param reference reference date
      */
-    public void setReferenceDate(final AbsoluteDate reference) {
-        this.reference = reference;
+    public void setReferenceDate(final AbsoluteDate date) {
+        this.reference = date;
+    }
+
+    /** Set the reference consumed mass.
+     * <p>
+     * The reference consumed mass is used to interpolate the ISP to use from the calibration curve
+     * </p>
+     * @param consumedMass reference consumed mass
+     */
+    public void setReferenceConsumedMass(final double consumedMass) {
+
+        if (consumedMass >= isp[0][1]) {
+            // mass is greater than first curve point,
+            // we are in a regulated phase, ISP is constant
+            currentIsp = isp[0][0];
+            return;
+        }
+
+        for (int i = 1; i < isp.length; ++i) {
+            if (consumedMass >= isp[i][1]) {
+                // we are in an interval between two curve points
+                // we are in blow-down mode, ISP evolves linearly
+                final double isp0  = isp[i - 1][0];
+                final double mass0 = isp[i - 1][1];
+                final double isp1  = isp[i][0];
+                final double mass1 = isp[i][1];
+                currentIsp = (isp0 * (consumedMass - mass1) + isp1 * (mass0 - consumedMass)) /
+                             (mass0 - mass1);
+            }
+        }
+
+        // we have reached the end of the calibration curve,
+        // we consider remaining ISP is constant
+        currentIsp = isp[isp.length - 1][0];
+
     }
 
     /** Local class for control parameters invalidating maneuver at parameter changes. */
@@ -112,7 +154,7 @@ public class TunableManeuver {
                 AbsoluteDate triggerDate = reference.shiftedBy(nominal + dateOffset.getValue());
                 current = new ImpulseManeuver(new DateDetector(triggerDate),
                                               new Vector3D(velocityIncrement.getValue(), direction),
-                                              isp);
+                                              currentIsp);
             }
 
             return current;
@@ -143,7 +185,7 @@ public class TunableManeuver {
         return new ScheduledManeuver(inPlane,
                                      reference.shiftedBy(nominal + dateOffset.getValue()),
                                      new Vector3D(velocityIncrement.getValue(), direction),
-                                     isp);
+                                     currentIsp);
     }
 
 }
