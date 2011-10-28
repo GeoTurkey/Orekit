@@ -267,11 +267,11 @@ public enum MonitorableDuoSKData implements MonitorableDuo {
     }
 
     /** {@inheritDoc} */
-    public void register(final int nbSpacrafts, MonitorDuo monitor) {
+    public void register(final int nbSpacecrafts, MonitorDuo monitor) {
 
         // lazy memory allocation
         if (value == null) {
-            value = new double[nbSpacrafts][nbSpacrafts][dimension];
+            value = new double[nbSpacecrafts][nbSpacecrafts][dimension];
             for (final double[][] array : value) {
                 for (final double[] row : array) {
                     Arrays.fill(row, Double.NaN);

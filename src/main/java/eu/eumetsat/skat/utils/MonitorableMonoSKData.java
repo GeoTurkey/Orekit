@@ -332,11 +332,11 @@ public enum MonitorableMonoSKData implements MonitorableMono {
     }
 
     /** {@inheritDoc} */
-    public void register(final int nbSpacrafts, final MonitorMono monitor) {
+    public void register(final int nbSpacecrafts, final MonitorMono monitor) {
 
         // lazy memory allocation
         if (value == null) {
-            value = new double[nbSpacrafts][dimension];
+            value = new double[nbSpacecrafts][dimension];
             for (double[] row : value) {
                 Arrays.fill(row, Double.NaN);
             }
