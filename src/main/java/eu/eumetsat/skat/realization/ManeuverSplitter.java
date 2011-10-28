@@ -2,7 +2,6 @@
 package eu.eumetsat.skat.realization;
 
 import org.orekit.errors.OrekitException;
-import org.orekit.time.AbsoluteDate;
 
 import eu.eumetsat.skat.scenario.ScenarioComponent;
 import eu.eumetsat.skat.scenario.ScenarioState;
@@ -14,7 +13,7 @@ import eu.eumetsat.skat.scenario.ScenarioState;
 public class ManeuverSplitter implements ScenarioComponent {
 
     /** {@inheritDoc} */
-    public ScenarioState[] updateStates(final ScenarioState[] originals, final AbsoluteDate target)
+    public ScenarioState[] updateStates(final ScenarioState[] originals)
         throws OrekitException {
         // TODO Auto-generated method stub
         return null;

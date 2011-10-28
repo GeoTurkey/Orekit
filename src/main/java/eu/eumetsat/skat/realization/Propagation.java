@@ -28,6 +28,9 @@ public class Propagation implements ScenarioComponent {
     /** Orbit propagators. */
     private final Propagator[] propagators;
 
+    /** Cycle end date. */
+    private AbsoluteDate cycleEnd;
+
     /** Simple constructor.
      * @param spacecraftIndices indices of the spacecrafts managed by this component
      * @param propagators propagators to use for each spacecraft
@@ -37,8 +40,15 @@ public class Propagation implements ScenarioComponent {
         this.propagators       = propagators.clone();
     }
 
+    /** Set the end date for current cycle.
+     * @param cycleEnd end date for current cycle
+     */
+    public void setCycleEnd(final AbsoluteDate cycleEnd) {
+        this.cycleEnd = cycleEnd;
+    }
+
     /** {@inheritDoc} */
-    public ScenarioState[] updateStates(final ScenarioState[] originals, final AbsoluteDate target)
+    public ScenarioState[] updateStates(final ScenarioState[] originals)
         throws OrekitException {
 
         final ScenarioState[] updated = new ScenarioState[originals.length];
@@ -60,10 +70,10 @@ public class Propagation implements ScenarioComponent {
 
             // perform propagation
             propagators[i].resetInitialState(originals[index].getRealStartState());
-            updated[index] = originals[index].updateRealEndState(propagators[i].propagate(target));
+            updated[index] = originals[index].updateRealEndState(propagators[i].propagate(cycleEnd));
 
             // retrieve continuous data
-            updated[index] = originals[index].updateEphemeris(propagators[i].getGeneratedEphemeris());
+            updated[index] = updated[index].updatePerformedEphemeris(propagators[i].getGeneratedEphemeris());
 
         }
 

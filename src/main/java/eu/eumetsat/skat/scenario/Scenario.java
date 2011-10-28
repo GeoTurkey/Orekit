@@ -146,7 +146,8 @@ public class Scenario implements ScenarioComponent {
             // prepare next cycle
             for (int i = 0; i < states.length; ++i) {
                 if (states[i].getRealEndState() == null) {
-                    throw new SkatException(SkatMessages.NO_END_STATE, states[i].getName());
+                    throw new SkatException(SkatMessages.NO_END_STATE,
+                                            states[i].getName(), states[i].getCyclesNumber());
                 }
                 states[i] = states[i].updateCyclesNumber(states[i].getCyclesNumber() + 1);
                 states[i] = states[i].updateRealStartState(states[i].getRealEndState());
@@ -175,7 +176,8 @@ public class Scenario implements ScenarioComponent {
 
         for (int i = 0; i < states.length; ++i) {
             if (states[i].getPerformedManeuvers() == null) {
-                throw new SkatException(SkatMessages.NO_PERFORMED_MANEUVERS_STATE, states[i].getName());
+                throw new SkatException(SkatMessages.NO_PERFORMED_MANEUVERS_STATE,
+                                        states[i].getName(), states[i].getCyclesNumber());
             }
             for (final ScheduledManeuver maneuver : states[i].getPerformedManeuvers()) {
                 if ((maneuver.getDate().compareTo(previous) > 0) &&
@@ -206,7 +208,8 @@ public class Scenario implements ScenarioComponent {
         throws OrekitException, SkatException {
         for (int i = 0; i < states.length; ++i) {
             if (states[i].getPerformedEphemeris() == null) {
-                throw new SkatException(SkatMessages.NO_EPHEMERIS_STATE, states[i].getName());
+                throw new SkatException(SkatMessages.NO_EPHEMERIS_STATE,
+                                        states[i].getName(), states[i].getCyclesNumber());
             }
             final double dtA = date.durationFrom(states[i].getAscendingNodeDate());
             final double dtD = date.durationFrom(states[i].getDescendingNodeDate());

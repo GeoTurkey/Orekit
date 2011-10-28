@@ -62,6 +62,12 @@ public class ControlLoop implements ScenarioComponent {
     /** Number of cycles to use for rolling optimization. */
     private final int rollingCycles;
 
+    /** First cycle this loop should control. */
+    private final int firstCycle;
+
+    /** Last cycle this loop should control. */
+    private final int lastCycle;
+
     /** Tunable maneuvers. */
     private final List<TunableManeuver> tunables;
 
@@ -78,6 +84,8 @@ public class ControlLoop implements ScenarioComponent {
      * and {@link #addTunableManeuver(TunableManeuver)}.
      * </p>
      * @param spacecraftIndices indices of the spacecrafts managed by this component
+     * @param firstCycle first cycle this loop should control
+     * @param lastCycle last cycle this loop should control
      * @param maxEval maximal number of objective function evaluations
      * @param nbPoints number of smapling points
      * @param optimizer optimizing engine
@@ -86,10 +94,13 @@ public class ControlLoop implements ScenarioComponent {
      * @param rollingCycles number of cycles to use for rolling optimization
      */
     public ControlLoop(final int[] spacecraftIndices,
+                       final int firstCycle, final int lastCycle,
                        final int maxEval, final int nbPoints,
                        final SupportedOptimizer optimizer, final Propagator[] propagators,
                        final double cycleDuration, final int rollingCycles) {
         this.spacecraftIndices = spacecraftIndices.clone();
+        this.firstCycle        = firstCycle;
+        this.lastCycle         = lastCycle;
         this.maxEval           = maxEval;
         this.nbPoints          = nbPoints;
         this.optimizer         = optimizer;
@@ -156,60 +167,65 @@ public class ControlLoop implements ScenarioComponent {
             // select the current spacecraft affected by this component
             final int index = spacecraftIndices[i];
 
-            // guess a start point
-            double[] startPoint = new double[parameters.size()];
-            for (int j = 0; j < startPoint.length; ++j) {
-                startPoint[j] = parameters.get(j).guessOptimalValue();
-            }
+            if ((originals[index].getCyclesNumber() >= firstCycle) &&
+                (originals[index].getCyclesNumber() <= lastCycle)) {
 
-            // set the reference date for maneuvers
-            for (final TunableManeuver tunable : tunables) {
-                SpacecraftState estimated = originals[index].getEstimatedStartState();
-                if (estimated == null) {
-                    throw new SkatException(SkatMessages.NO_ESTIMATED_STATE, originals[index].getName());
+                // guess a start point
+                double[] startPoint = new double[parameters.size()];
+                for (int j = 0; j < startPoint.length; ++j) {
+                    startPoint[j] = parameters.get(j).guessOptimalValue();
                 }
-                tunable.setReferenceDate(originals[index].getEstimatedStartState().getDate());
-            }
 
-            // find the optimal parameters that minimize objective function
-            // TODO introduce constraints
-            AbsoluteDate startDate  = originals[index].getEstimatedStartState().getDate();
-            AbsoluteDate targetDate = startDate.shiftedBy(rollingCycles * cycleDuration);
-            final MultivariateRealFunction objective =
-                    new ObjectiveFunction(propagators[i], parameters, controls, targetDate,
-                                          originals[index].getEstimatedStartState(),
-                                          originals[index].getTheoreticalManeuvers());
-            MultivariateRealOptimizer o;
-            switch (optimizer) {
-            case CMA_ES :
-                o = new CMAESOptimizer(nbPoints);
-                break;
-            case BOBYQA :
-                o = new BOBYQAOptimizer(nbPoints);
-                break;
-            default :
-                throw SkatException.createInternalError(null);
-            }
-            double[] optimum = o.optimize(maxEval, objective, GoalType.MINIMIZE, startPoint).getPoint();
+                // set the reference date for maneuvers
+                for (final TunableManeuver tunable : tunables) {
+                    SpacecraftState estimated = originals[index].getEstimatedStartState();
+                    if (estimated == null) {
+                        throw new SkatException(SkatMessages.NO_ESTIMATED_STATE,
+                                                originals[index].getName(), originals[index].getCyclesNumber());
+                    }
+                    tunable.setReferenceDate(originals[index].getEstimatedStartState().getDate());
+                }
 
-            // set the parameters to the optimal values
-            for (int j = 0; j < optimum.length; ++j) {
-                final SKParameter parameter = parameters.get(j);
-                parameter.storeLastOptimalValue(optimum[j]);
-                parameter.setValue(optimum[j]);
-            }
+                // find the optimal parameters that minimize objective function
+                // TODO introduce constraints
+                AbsoluteDate startDate  = originals[index].getEstimatedStartState().getDate();
+                AbsoluteDate targetDate = startDate.shiftedBy(rollingCycles * cycleDuration);
+                final MultivariateRealFunction objective =
+                        new ObjectiveFunction(propagators[i], parameters, controls, targetDate,
+                                              originals[index].getEstimatedStartState(),
+                                              originals[index].getTheoreticalManeuvers());
+                MultivariateRealOptimizer o;
+                switch (optimizer) {
+                case CMA_ES :
+                    o = new CMAESOptimizer(nbPoints);
+                    break;
+                case BOBYQA :
+                    o = new BOBYQAOptimizer(nbPoints);
+                    break;
+                default :
+                    throw SkatException.createInternalError(null);
+                }
+                double[] optimum = o.optimize(maxEval, objective, GoalType.MINIMIZE, startPoint).getPoint();
 
-            // update the scheduled maneuvers, adding the newly optimized set
-            final List<ScheduledManeuver> theoreticalManeuvers = new ArrayList<ScheduledManeuver>();
-            theoreticalManeuvers.addAll(originals[index].getTheoreticalManeuvers());
-            for (final TunableManeuver tunable : tunables) {
-                // get the optimized maneuver, using the optimum value set above
-                final ScheduledManeuver optimized = tunable.getManeuver();
-                theoreticalManeuvers.add(optimized);
-            }
+                // set the parameters to the optimal values
+                for (int j = 0; j < optimum.length; ++j) {
+                    final SKParameter parameter = parameters.get(j);
+                    parameter.storeLastOptimalValue(optimum[j]);
+                    parameter.setValue(optimum[j]);
+                }
 
-            // build the updated scenario state
-            updated[index] = originals[index].updateTheoreticalManeuvers(theoreticalManeuvers);
+                // update the scheduled maneuvers, adding the newly optimized set
+                final List<ScheduledManeuver> theoreticalManeuvers = new ArrayList<ScheduledManeuver>();
+                theoreticalManeuvers.addAll(originals[index].getTheoreticalManeuvers());
+                for (final TunableManeuver tunable : tunables) {
+                    // get the optimized maneuver, using the optimum value set above
+                    final ScheduledManeuver optimized = tunable.getManeuver();
+                    theoreticalManeuvers.add(optimized);
+                }
+
+                // build the updated scenario state
+                updated[index] = originals[index].updateTheoreticalManeuvers(theoreticalManeuvers);
+            }
 
         }
 

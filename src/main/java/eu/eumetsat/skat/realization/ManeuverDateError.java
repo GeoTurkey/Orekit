@@ -6,11 +6,12 @@ import java.util.List;
 
 import org.apache.commons.math.random.RandomGenerator;
 import org.orekit.errors.OrekitException;
-import org.orekit.time.AbsoluteDate;
 
 import eu.eumetsat.skat.scenario.ScenarioComponent;
 import eu.eumetsat.skat.scenario.ScenarioState;
 import eu.eumetsat.skat.strategies.ScheduledManeuver;
+import eu.eumetsat.skat.utils.SkatException;
+import eu.eumetsat.skat.utils.SkatMessages;
 
 /**
  * Class for introducing random realization errors in date to maneuvers.
@@ -58,8 +59,8 @@ public class ManeuverDateError implements ScenarioComponent {
     }
 
     /** {@inheritDoc} */
-    public ScenarioState[] updateStates(final ScenarioState[] originals, AbsoluteDate target)
-        throws OrekitException {
+    public ScenarioState[] updateStates(final ScenarioState[] originals)
+        throws OrekitException, SkatException {
 
         ScenarioState[] updated = originals.clone();
 
@@ -68,12 +69,20 @@ public class ManeuverDateError implements ScenarioComponent {
             // select the current spacecraft affected by this component
             final int index = spacecraftIndices[i];
 
+            if (originals[index].getTheoreticalManeuvers() == null) {
+                throw new SkatException(SkatMessages.NO_THEORETICAL_MANEUVERS_STATE,
+                                        originals[index].getName(), originals[index].getCyclesNumber());
+            }
+
             // prepare a list for holding the modified maneuvers
-            List<ScheduledManeuver> modified =
-                    new ArrayList<ScheduledManeuver>(originals[index].getPerformedManeuvers().size());
+            List<ScheduledManeuver> modified = new ArrayList<ScheduledManeuver>();
+            if (originals[index].getPerformedManeuvers() != null) {
+                // add the maneuvers that have already been modified before
+                modified.addAll(originals[index].getPerformedManeuvers());
+            }
 
             // modify the maneuvers
-            for (final ScheduledManeuver maneuver : originals[index].getPerformedManeuvers()) {
+            for (final ScheduledManeuver maneuver : originals[index].getTheoreticalManeuvers()) {
                 if ((inPlane && maneuver.isInPlane()) || (outOfPlane && !(maneuver.isInPlane()))) {
                     // the maneuver is affected by the error
                     final double offset = standardDeviation * generator.nextGaussian();

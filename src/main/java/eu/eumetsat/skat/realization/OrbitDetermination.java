@@ -10,7 +10,6 @@ import org.orekit.orbits.Orbit;
 import org.orekit.orbits.OrbitType;
 import org.orekit.orbits.PositionAngle;
 import org.orekit.propagation.SpacecraftState;
-import org.orekit.time.AbsoluteDate;
 
 import eu.eumetsat.skat.scenario.ScenarioComponent;
 import eu.eumetsat.skat.scenario.ScenarioState;
@@ -64,7 +63,7 @@ public class OrbitDetermination implements ScenarioComponent {
     }
 
     /** {@inheritDoc} */
-    public ScenarioState[] updateStates(final ScenarioState[] originals, AbsoluteDate target)
+    public ScenarioState[] updateStates(final ScenarioState[] originals)
         throws OrekitException {
 
         ScenarioState[] updated = originals.clone();

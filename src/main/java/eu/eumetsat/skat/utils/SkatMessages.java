@@ -44,7 +44,12 @@ public enum SkatMessages implements Localizable {
     UNSUPPORTED_KEY("unsupported key \"{0}\" at line {1} of input file {2}, supported keys: {3}"),
     UNKNOWN_SPACECRAFT("unknown spacecraft {0}, known spacecrafts: {1}"),
     SPACECRAFT_MANAGED_TWICE("spacecraft {0} is managed by several propagation scenario components"),
-    SPACECRAFT_NOT_MANAGED("spacecraft {0} is not managed by any propagation scenario components");
+    SPACECRAFT_NOT_MANAGED("spacecraft {0} is not managed by any propagation scenario components"),
+    NO_ESTIMATED_STATE("no estimated state available for {0} at cycle {1}, maybe an orbit determination component is missing"),
+    NO_THEORETICAL_MANEUVERS_STATE("no theoretical maneuvers available for {0} at cycle {1}, maybe a control loop component is missing for this cycle"),
+    NO_PERFORMED_MANEUVERS_STATE("no performed maneuvers available for {0} at cycle {1}, maybe a maneuver realization component is missing"),
+    NO_EPHEMERIS_STATE("no ephemeris available for {0} at cycle {1}, maybe a propagation component is missing"),
+    NO_END_STATE("no end state available for {0} at cycle {1}, maybe a propagation component is missing");
 
     // CHECKSTYLE: resume JavadocVariable check
 

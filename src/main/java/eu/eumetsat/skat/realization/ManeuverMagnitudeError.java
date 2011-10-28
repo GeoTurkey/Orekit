@@ -7,11 +7,12 @@ import java.util.List;
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math.random.RandomGenerator;
 import org.orekit.errors.OrekitException;
-import org.orekit.time.AbsoluteDate;
 
 import eu.eumetsat.skat.scenario.ScenarioComponent;
 import eu.eumetsat.skat.scenario.ScenarioState;
 import eu.eumetsat.skat.strategies.ScheduledManeuver;
+import eu.eumetsat.skat.utils.SkatException;
+import eu.eumetsat.skat.utils.SkatMessages;
 
 /**
  * Class for introducing random realization errors in magnitude to maneuvers.
@@ -81,8 +82,8 @@ public class ManeuverMagnitudeError implements ScenarioComponent {
     }
 
     /** {@inheritDoc} */
-    public ScenarioState[] updateStates(final ScenarioState[] originals, AbsoluteDate target)
-        throws OrekitException {
+    public ScenarioState[] updateStates(final ScenarioState[] originals)
+        throws OrekitException, SkatException {
 
         ScenarioState[] updated = originals.clone();
 
@@ -91,9 +92,17 @@ public class ManeuverMagnitudeError implements ScenarioComponent {
             // select the current spacecraft affected by this component
             final int index = spacecraftIndices[i];
 
+            if (originals[index].getTheoreticalManeuvers() == null) {
+                throw new SkatException(SkatMessages.NO_THEORETICAL_MANEUVERS_STATE,
+                                        originals[index].getName(), originals[index].getCyclesNumber());
+            }
+
             // prepare a list for holding the modified maneuvers
-            List<ScheduledManeuver> modified =
-                    new ArrayList<ScheduledManeuver>(originals[index].getPerformedManeuvers().size());
+            List<ScheduledManeuver> modified = new ArrayList<ScheduledManeuver>();
+            if (originals[index].getPerformedManeuvers() != null) {
+                // add the maneuvers that have already been modified before
+                modified.addAll(originals[index].getPerformedManeuvers());
+            }
 
             // modify the maneuvers
             for (final ScheduledManeuver maneuver : originals[index].getPerformedManeuvers()) {
