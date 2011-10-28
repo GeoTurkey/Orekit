@@ -16,7 +16,7 @@ import eu.eumetsat.skat.control.SKControl;
  * Station-keeping control attempting to compensate inclination secular evolution.
  * @author Luc Maisonobe
  */
-public class InclinationControlBox implements SKControl {
+public class InclinationVectorSecularCompensation implements SKControl {
 
     /** Associated step handler. */
     private final OrekitStepHandler stephandler;
@@ -38,8 +38,8 @@ public class InclinationControlBox implements SKControl {
      * @param hy0 ordinate of target inclination vector
      * @param samplingStep step to use for sampling throughout propagation
      */
-    public InclinationControlBox(final double hx0, final double hy0,
-                                 final double samplingStep) {
+    public InclinationVectorSecularCompensation(final double hx0, final double hy0,
+                                                final double samplingStep) {
         this.stephandler  = new Handler();
         this.hx0          = hx0;
         this.hy0          = hy0;

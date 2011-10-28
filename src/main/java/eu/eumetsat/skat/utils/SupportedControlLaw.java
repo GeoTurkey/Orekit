@@ -30,7 +30,7 @@ public enum SupportedControlLaw {
 
     },
 
-    /** Constant for eccentricity circle_control law. */
+    /** Constant for eccentricity circle control law. */
     ECCENTRICITY_CIRCLE() {
 
         /** {@inheritDoc} */
@@ -42,6 +42,66 @@ public enum SupportedControlLaw {
             final double centerY  = parser.getDouble(node, ParameterKey.CONTROL_ECCENTRICITY_CIRCLE_CENTER_Y);
             final double radius   = parser.getDouble(node, ParameterKey.CONTROL_ECCENTRICITY_CIRCLE_RADIUS);
             return new EccentricityCircle(name, centerX, centerY, radius, sampling);
+        }
+
+    },
+
+    /** Constant for inclination vector secular compensation control law. */
+    INCLINATION_VECTOR_SECULAR_COMPENSATION() {
+
+        /** {@inheritDoc} */
+        public SKControl parse(final SkatFileParser parser, final Tree node, final Skat skat)
+            throws OrekitException, SkatException {
+            // TODO
+            throw SkatException.createInternalError(null);
+        }
+
+    },
+
+    /** Constant for relative eccentricity vector control law. */
+    RELATIVE_ECCENTRICITY_VECTOR() {
+
+        /** {@inheritDoc} */
+        public SKControl parse(final SkatFileParser parser, final Tree node, final Skat skat)
+            throws OrekitException, SkatException {
+            // TODO
+            throw SkatException.createInternalError(null);
+        }
+
+    },
+
+    /** Constant for relative inclination vector control law. */
+    RELATIVE_INCLINATION_VECTOR() {
+
+        /** {@inheritDoc} */
+        public SKControl parse(final SkatFileParser parser, final Tree node, final Skat skat)
+            throws OrekitException, SkatException {
+            // TODO
+            throw SkatException.createInternalError(null);
+        }
+
+    },
+
+    /** Constant for ground track grid control law. */
+    GROUND_TRACK_GRID() {
+
+        /** {@inheritDoc} */
+        public SKControl parse(final SkatFileParser parser, final Tree node, final Skat skat)
+            throws OrekitException, SkatException {
+            // TODO
+            throw SkatException.createInternalError(null);
+        }
+
+    },
+
+    /** Constant for mean solar time control law. */
+    MEAN_SOLAR_TIME() {
+
+        /** {@inheritDoc} */
+        public SKControl parse(final SkatFileParser parser, final Tree node, final Skat skat)
+            throws OrekitException, SkatException {
+            // TODO
+            throw SkatException.createInternalError(null);
         }
 
     };
