@@ -96,6 +96,9 @@ public class Skat {
     /** Cycle duration. */
     private final double cycleDuration;
 
+    /** Output step. */
+    private final double outputStep;
+
     /** Number of cycles to use for rolling optimization. */
     private final int rollingCycles;
 
@@ -192,6 +195,7 @@ public class Skat {
         startDate     = parser.getDate(simulationNode, ParameterKey.SIMULATION_START_DATE, utc);
         generator     = new Well19937a(parser.getInt(simulationNode, ParameterKey.SIMULATION_RANDOM_SEED));
         cycleDuration = parser.getDouble(simulationNode, ParameterKey.SIMULATION_CYCLE_DURATION);
+        outputStep    = parser.getDouble(simulationNode, ParameterKey.SIMULATION_OUTPUT_STEP);
         rollingCycles = parser.getInt(simulationNode, ParameterKey.SIMULATION_ROLLING_CYCLES);
 
         // load gravity field
@@ -229,16 +233,8 @@ public class Skat {
 
         // set up scenario components
         final Tree scenarioNode = parser.getValue(root, ParameterKey.SCENARIO);
-        scenario = new Scenario(parser.getDouble(simulationNode, ParameterKey.SIMULATION_CYCLE_DURATION) * Constants.JULIAN_DAY,
-                                parser.getDouble(simulationNode, ParameterKey.SIMULATION_CYCLE_DURATION),
-                                earth, sun);
+        scenario = (Scenario) SupportedScenariocomponent.SCENARIO.parse(parser, scenarioNode, this);
         scenario.setCycleEnd(parser.getDate(simulationNode, ParameterKey.SIMULATION_END_DATE, utc));
-        for (int j = 0; j < parser.getElementsNumber(scenarioNode); ++j) {
-            final Tree componentNode = parser.getElement(scenarioNode, j);
-            final  String type       = parser.getIdentifier(componentNode, ParameterKey.COMPONENT_TYPE);
-            final SupportedScenariocomponent component = SupportedScenariocomponent.valueOf(type);
-            scenario.addComponent(component.parse(parser, componentNode, this));
-        }
 
         // check that every spacecraft is managed by at least one propagation component
         for (int i = 0; i < managed.length; ++i) {
@@ -276,6 +272,13 @@ public class Skat {
         return earth;
     }
 
+    /** Get the configured Sun body.
+     * @return configured Sun body
+     */
+    public CelestialBody getSun() {
+        return sun;
+    }
+
     /** Get the configured initial orbit for one spacecraft.
      * @param spacecraftIndex index of the spacecraft considered
      * @return configured initial orbit for the specified spacecraft
@@ -289,6 +292,13 @@ public class Skat {
      */
     public double getCycleDuration() {
         return cycleDuration;
+    }
+
+    /** Get the output step.
+     * @return output step
+     */
+    public double getOutputStep() {
+        return outputStep;
     }
 
     /** Get the number of cycles to use for rolling optimization.

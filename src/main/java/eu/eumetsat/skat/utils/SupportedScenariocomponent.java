@@ -9,6 +9,7 @@ import org.apache.commons.math.linear.RealMatrix;
 import org.orekit.errors.OrekitException;
 import org.orekit.orbits.OrbitType;
 import org.orekit.propagation.Propagator;
+import org.orekit.utils.Constants;
 
 import eu.eumetsat.skat.Skat;
 import eu.eumetsat.skat.control.ControlLoop;
@@ -19,6 +20,7 @@ import eu.eumetsat.skat.realization.ManeuverDateError;
 import eu.eumetsat.skat.realization.ManeuverMagnitudeError;
 import eu.eumetsat.skat.realization.OrbitDetermination;
 import eu.eumetsat.skat.realization.Propagation;
+import eu.eumetsat.skat.scenario.Scenario;
 import eu.eumetsat.skat.scenario.ScenarioComponent;
 import eu.eumetsat.skat.strategies.TunableManeuver;
 
@@ -31,8 +33,15 @@ public enum SupportedScenariocomponent {
         /** {@inheritDoc} */
         public ScenarioComponent parse(final SkatFileParser parser, final Tree node, final Skat skat)
             throws OrekitException, SkatException {
-            // TODO
-            return null;
+            final Scenario scenario = new Scenario(skat.getCycleDuration() * Constants.JULIAN_DAY,
+                                                   skat.getOutputStep(), skat.getEarth(), skat.getSun());
+            for (int j = 0; j < parser.getElementsNumber(node); ++j) {
+                final Tree componentNode = parser.getElement(node, j);
+                final  String type       = parser.getIdentifier(componentNode, ParameterKey.COMPONENT_TYPE);
+                final SupportedScenariocomponent component = SupportedScenariocomponent.valueOf(type);
+                scenario.addComponent(component.parse(parser, componentNode, skat));
+            }
+            return scenario;
         }
     },
 
