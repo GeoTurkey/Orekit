@@ -12,6 +12,9 @@ import org.orekit.propagation.Propagator;
 
 import eu.eumetsat.skat.Skat;
 import eu.eumetsat.skat.control.ControlLoop;
+import eu.eumetsat.skat.control.MonitorableDuoSKControl;
+import eu.eumetsat.skat.control.MonitorableMonoSKControl;
+import eu.eumetsat.skat.control.SKControl;
 import eu.eumetsat.skat.realization.ManeuverDateError;
 import eu.eumetsat.skat.realization.ManeuverMagnitudeError;
 import eu.eumetsat.skat.realization.OrbitDetermination;
@@ -64,8 +67,8 @@ public enum SupportedScenariocomponent {
             throws OrekitException, SkatException {
 
             // loop
-            final String spacecraft   = parser.getString(node, ParameterKey.COMPONENT_CONTROL_LOOP_CONTROLLED_SPACECRAFT);
-            final int spacecraftIndex = skat.getSpacecraftIndex(spacecraft);
+            final String controlled   = parser.getString(node, ParameterKey.COMPONENT_CONTROL_LOOP_CONTROLLED_SPACECRAFT);
+            final int spacecraftIndex = skat.getSpacecraftIndex(controlled);
 
             final int firstCycle    = parser.getInt(node, ParameterKey.COMPONENT_CONTROL_LOOP_FIRST_CYCLE);
             final int lastCycle     = parser.getInt(node, ParameterKey.COMPONENT_CONTROL_LOOP_LAST_CYCLE);
@@ -91,8 +94,22 @@ public enum SupportedScenariocomponent {
             for (int i = 0; i < parser.getElementsNumber(controlsNode); ++i) {
                 final Tree control = parser.getElement(controlsNode, i);
                 final String type = parser.getIdentifier(control, ParameterKey.CONTROL_TYPE);
-                SupportedControlLaw law = SupportedControlLaw.valueOf(type);
-                loop.addControl(law.parse(parser, control, spacecraftIndex, skat));
+                final SKControl controlLaw =
+                        SupportedControlLaw.valueOf(type).parse(parser, control, controlled, skat);
+                if (controlLaw.getReferenceSpacecraftName() == null) {
+                    // this is a control law for a single spacecraft
+                    final MonitorableMonoSKControl monitorable = new MonitorableMonoSKControl(controlLaw);
+                    skat.addMonitorable(skat.getSpacecraftIndex(controlLaw.getControlledSpacecraftName()),
+                                        monitorable);
+                    loop.addControl(monitorable);
+                } else {
+                    // this is a control law for a spacecrafts pair
+                    final MonitorableDuoSKControl monitorable = new MonitorableDuoSKControl(controlLaw);
+                    skat.addMonitorable(skat.getSpacecraftIndex(controlLaw.getControlledSpacecraftName()),
+                                        skat.getSpacecraftIndex(controlLaw.getReferenceSpacecraftName()),
+                                        monitorable);
+                    loop.addControl(monitorable);
+                }
             }
 
             // tunable maneuvers

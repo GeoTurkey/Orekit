@@ -14,7 +14,7 @@ import org.orekit.propagation.sampling.OrekitStepHandler;
 import org.orekit.propagation.sampling.OrekitStepInterpolator;
 import org.orekit.time.AbsoluteDate;
 
-import eu.eumetsat.skat.control.SKControl;
+import eu.eumetsat.skat.control.AbstractSKControl;
 
 /**
  * Station-keeping control attempting to balance East-West margins
@@ -40,19 +40,10 @@ import eu.eumetsat.skat.control.SKControl;
  * </p>
  * @author Luc Maisonobe
  */
-public class LongitudeSlotMargins implements SKControl {
+public class LongitudeSlotMargins extends AbstractSKControl {
 
     /** Associated step handler. */
     private final OrekitStepHandler stephandler;
-
-    /** Name of the control law. */
-    private final String name;
-
-    /** Scale of the control law. */
-    private final double scale;
-
-    /** Longitude margins difference. */
-    private final double target;
 
     /** Longitude slot westward boundary. */
     private final double westBoundary;
@@ -75,6 +66,7 @@ public class LongitudeSlotMargins implements SKControl {
     /** Simple constructor.
      * @param name name of the control law
      * @param scale of the control law
+     * @param controlled name of the controlled spacecraft
      * @param westBoundary longitude slot westward boundary
      * @param eastBoundary longitude slot eastward boundary
      * @param target longitude margins difference (should be set to 0.0 if
@@ -83,51 +75,21 @@ public class LongitudeSlotMargins implements SKControl {
      * @param earth Earth model to use to compute longitudes
      */
     public LongitudeSlotMargins(final String name, final double scale,
+                                final String controlled,
                                 final double westBoundary, final double eastBoundary,
                                 final double target, final double samplingStep,
                                 final BodyShape earth) {
+        super(name, scale, controlled, null, target,
+              westBoundary - eastBoundary, eastBoundary - westBoundary);
         this.stephandler  = new Handler();
-        this.name         = name;
-        this.scale        = scale;
-        this.target       = target;
         this.westBoundary = westBoundary;
         this.eastBoundary = MathUtils.normalizeAngle(eastBoundary, westBoundary);
         this.samplingStep = samplingStep;
         this.earth        = earth;
     }
 
-    /** {@inheritDoc} */
-    public String getName() {
-        return name;
-    }
-
-    /** {@inheritDoc} */
-    public double getScale() {
-        return scale;
-    }
-
-    /** {@inheritDoc} */
-    public double getTargetValue() {
-        return target;
-    }
-
     public double getAchievedValue() {
         return (eastBoundary - maxL) - (minL - westBoundary);
-    }
-
-    /** {@inheritDoc} */
-    public boolean isConstrained() {
-        return true;
-    }
-
-    /** {@inheritDoc} */
-    public double getMin() {
-        return westBoundary - eastBoundary;
-    }
-
-    /** {@inheritDoc} */
-    public double getMax() {
-        return eastBoundary - westBoundary;
     }
 
     /** {@inheritDoc} */

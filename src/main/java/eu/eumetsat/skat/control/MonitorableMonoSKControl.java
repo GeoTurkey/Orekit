@@ -54,11 +54,6 @@ public class MonitorableMonoSKControl implements MonitorableMono, SKControl {
     }
 
     /** {@inheritDoc} */
-    public String getName() {
-        return control.getName();
-    }
-
-    /** {@inheritDoc} */
     public AbsoluteDate getDate() {
         return date;
     }
@@ -66,6 +61,21 @@ public class MonitorableMonoSKControl implements MonitorableMono, SKControl {
     /** {@inheritDoc} */
     public double[] getValue(int spacecraftIdx) {
         return value;
+    }
+
+    /** {@inheritDoc} */
+    public String getName() {
+        return control.getName();
+    }
+
+    /** {@inheritDoc} */
+    public String getControlledSpacecraftName() {
+        return control.getControlledSpacecraftName();
+    }
+
+    /** {@inheritDoc} */
+    public String getReferenceSpacecraftName() {
+        return control.getReferenceSpacecraftName();
     }
 
     /** {@inheritDoc} */

@@ -23,7 +23,7 @@ public interface SKElement {
      */
     boolean isConstrained();
 
-    /** Get the minimal allowed value for the parameter.
+    /** Get the minimal allowed value for the element.
      * <p>
      * If no constraint is enabled (i.e. if {@link #isConstrained()}
      * returns false, this method should return {@code Double.NEGATIVE_INFINITY}.
@@ -32,7 +32,7 @@ public interface SKElement {
      */
     double getMin();
 
-    /** Get the maximal allowed value for the parameter.
+    /** Get the maximal allowed value for the element.
      * <p>
      * If no constraint is enabled (i.e. if {@link #isConstrained()}
      * returns false, this method should return {@code Double.POSITIVE_INFINITY}.

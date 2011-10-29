@@ -6,74 +6,32 @@ import org.orekit.propagation.events.EventDetector;
 import org.orekit.propagation.sampling.OrekitStepHandler;
 import org.orekit.propagation.sampling.OrekitStepInterpolator;
 
-import eu.eumetsat.skat.control.SKControl;
+import eu.eumetsat.skat.control.AbstractSKControl;
 
 /**
  * Station-keeping control attempting to get mean local solar time in a deadband.
  */
-public class MeanLocalSolarTime implements SKControl {
+public class MeanLocalSolarTime extends AbstractSKControl {
 
     /** Associated step handler. */
     private final OrekitStepHandler stephandler;
 
-    /** Name of the control law. */
-    private final String name;
-
-    /** Scale of the control law. */
-    private final double scale;
-
-    /** Target solar time. */
-    private final double solarTime;
-
     /** Simple constructor.
      * @param name name of the control law
      * @param scale of the control law
+     * @param controlled name of the controlled spacecraft
      * @param solarTime target solar time
      * @param samplingStep step to use for sampling throughout propagation
      */
     public MeanLocalSolarTime(final String name, final double scale,
+                              final String controlled,
                               final double solarTime, final double samplingStep) {
+        super(name, scale, controlled, null, solarTime, 0.0, 24.0);
         this.stephandler = new Handler();
-        this.name        = name;
-        this.scale       = scale;
-        this.solarTime   = solarTime;
-    }
-
-    /** {@inheritDoc} */
-    public String getName() {
-        return name;
-    }
-
-    /** {@inheritDoc} */
-    public double getScale() {
-        return scale;
-    }
-
-    /** {@inheritDoc} */
-    public double getTargetValue() {
-        return solarTime;
     }
 
     /** {@inheritDoc} */
     public double getAchievedValue() {
-        // TODO
-        return Double.NaN;
-    }
-
-    /** {@inheritDoc} */
-    public boolean isConstrained() {
-        // TODO
-        return false;
-    }
-
-    /** {@inheritDoc} */
-    public double getMin() {
-        // TODO
-        return Double.NaN;
-    }
-
-    /** {@inheritDoc} */
-    public double getMax() {
         // TODO
         return Double.NaN;
     }

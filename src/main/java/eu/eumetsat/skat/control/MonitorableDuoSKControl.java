@@ -54,11 +54,6 @@ public class MonitorableDuoSKControl implements MonitorableDuo, SKControl {
     }
 
     /** {@inheritDoc} */
-    public String getName() {
-        return control.getName();
-    }
-
-    /** {@inheritDoc} */
     public AbsoluteDate getDate() {
         return date;
     }
@@ -66,6 +61,21 @@ public class MonitorableDuoSKControl implements MonitorableDuo, SKControl {
     /** {@inheritDoc} */
     public double[] getValue(int spacecraftIdx1, int spacecraftIdx2) {
         return value;
+    }
+
+    /** {@inheritDoc} */
+    public String getName() {
+        return control.getName();
+    }
+
+    /** {@inheritDoc} */
+    public String getControlledSpacecraftName() {
+        return control.getControlledSpacecraftName();
+    }
+
+    /** {@inheritDoc} */
+    public String getReferenceSpacecraftName() {
+        return control.getReferenceSpacecraftName();
     }
 
     /** {@inheritDoc} */

@@ -6,24 +6,15 @@ import org.orekit.propagation.events.EventDetector;
 import org.orekit.propagation.sampling.OrekitStepHandler;
 import org.orekit.propagation.sampling.OrekitStepInterpolator;
 
-import eu.eumetsat.skat.control.SKControl;
+import eu.eumetsat.skat.control.AbstractSKControl;
 
 /**
  * Station-keeping control attempting to follow a specified eccentricity circle.
  */
-public class EccentricityCircle implements SKControl {
+public class EccentricityCircle extends AbstractSKControl {
 
     /** Associated step handler. */
     private final OrekitStepHandler stephandler;
-
-    /** Name of the control law. */
-    private final String name;
-
-    /** Scale of the control law. */
-    private final double scale;
-
-    /** Radius of the circle. */
-    private final double radius;
 
     /** Abscissa of the circle center. */
     private final double centerX;
@@ -37,58 +28,24 @@ public class EccentricityCircle implements SKControl {
     /** Simple constructor.
      * @param name name of the control law
      * @param scale of the control law
+     * @param controlled name of the controlled spacecraft
      * @param centerX abscissa of the circle center
      * @param centerY ordinate of the circle center
      * @param radius radius of the circle
      * @param samplingStep step to use for sampling throughout propagation
      */
-    public EccentricityCircle(final String name, final double scale,
+    public EccentricityCircle(final String name, final double scale, final String controlled,
                               final double centerX, final double centerY, final double radius,
                               final double samplingStep) {
+        super(name, scale, controlled, null, radius, 0.0, Double.POSITIVE_INFINITY);
         this.stephandler  = new Handler();
-        this.name         = name;
-        this.scale        = scale;
-        this.radius       = radius;
         this.centerX      = centerX;
         this.centerY      = centerY;
         this.samplingStep = samplingStep;
     }
 
     /** {@inheritDoc} */
-    public String getName() {
-        return name;
-    }
-
-    /** {@inheritDoc} */
-    public double getScale() {
-        return scale;
-    }
-
-    /** {@inheritDoc} */
-    public double getTargetValue() {
-        return radius;
-    }
-
-    /** {@inheritDoc} */
     public double getAchievedValue() {
-        // TODO
-        return Double.NaN;
-    }
-
-    /** {@inheritDoc} */
-    public boolean isConstrained() {
-        // TODO
-        return false;
-    }
-
-    /** {@inheritDoc} */
-    public double getMin() {
-        // TODO
-        return Double.NaN;
-    }
-
-    /** {@inheritDoc} */
-    public double getMax() {
         // TODO
         return Double.NaN;
     }

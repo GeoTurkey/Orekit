@@ -50,4 +50,15 @@ public interface SKControl extends SKElement {
      */
     double getAchievedValue();
 
+    /** Get the name of the controlled spacecraft.
+     * @return name of the controlled spacecraft.
+     */
+    String getControlledSpacecraftName();
+
+    /** Get the name of the reference spacecraft.
+     * @return name of the reference spacecraft
+     * (null if control law does not depend on a reference spacecraft).
+     */
+    String getReferenceSpacecraftName();
+
 }
