@@ -1,16 +1,14 @@
-# Base name of the various output files
-output_file_name = "longitude-maneuver.out";
-
 # General simulation parameters
 simulation       = {
-    inertial_frame = "EME2000";
-    earth_frame    = "ITRF2008 with tides";
-    start_date     = 2011-10-23T00:00:00.000;
-    end_date       = 2011-12-31T23:59:59.999;
-    cycle_duration = 14.0;
-    rolling_cycles = 3;
-    output_step    = 3600.0;
-    random_seed    = 156325253;
+    output_base_name = "classical-single-geo";
+    inertial_frame   = "EME2000";
+    earth_frame      = "ITRF2008 with tides";
+    start_date       = 2011-10-23T00:00:00.000;
+    end_date         = 2011-12-31T23:59:59.999;
+    cycle_duration   = 14.0;
+    rolling_cycles   = 3;
+    output_step      = 3600.0;
+    random_seed      = 156325253;
 };
 
 # Array of initial states, there must be exactly one element for each spacecraft
@@ -49,6 +47,7 @@ scenario         = [
         managed_spacecrafts = [ "Meteosat 9" ];
         orbit_type          = EQUINOCTIAL;
         angle_type          = MEAN;
+        small               = 1.0e-12;  # this parameter is used to check covariance matrix semi-positiveness
         covariance          = [
             [  1555.13,   -5.831e-5,   3.503e-5,   1.385e-8,  -9.510e-10,  6.554e-5  ],
             [ -5.831e-5,   2.186e-12, -1.313e-12, -5.196e-16,  3.566e-17, -2.458e-12 ],
@@ -57,11 +56,10 @@ scenario         = [
             [ -9.510e-10,  3.566e-17, -2.142e-17, -8.474e-21,  5.816e-22, -4.008e-17 ],
             [  6.554e-5,  -2.458e-12,  1.476e-12,  5.841e-16, -4.008e-17,  2.762e-12 ]
         ];
-        small       = 1.0e-12;
     },
     {
         component             = CONTROL_LOOP;
-        controlled_spacecraft = "Meteosat 9";
+        controlled_spacecraft = "Meteosat 9";  # note: control loop components control only ONE spacecraft each
         first_cycle           = 1;
         last_cycle            = 999;
         optimizer             = CMA_ES;
@@ -155,4 +153,48 @@ scenario         = [
             gravity_field_order  = 10;
         }
     }
+];
+
+monitoring = [
+
+    # the following identifiers correspond to available monitorable values for a single spacecraft
+    IN_PLANE_MANEUVER_NUMBER,
+    IN_PLANE_MANEUVER_CYCLE_DV,
+    IN_PLANE_MANEUVER_TOTAL_DV,
+    OUT_OF_PLANE_MANEUVER_NUMBER,
+    OUT_OF_PLANE_MANEUVER_CYCLE_DV,
+    OUT_OF_PLANE_MANEUVER_TOTAL_DV,
+    SPACECRAFT_MASS,
+    POSITION_EME2000,
+    VELOCITY_EME2000,
+    POSITION_ITRF,
+    VELOCITY_ITRF,
+    LATITUDE,
+    LONGITUDE,
+    ALTITUDE,
+    SEMI_MAJOR_AXIS,
+    ECCENTRICITY,
+    INCLINATION,
+    CIRCULAR_ECCENTRICITY_VECTOR,
+    EQUINOCTIAL_ECCENTRICITY_VECTOR,
+    EQUINOCTIAL_INCLINATION_VECTOR,
+    SOLAR_TIME_AT_ASCENDING_NODE,
+    SOLAR_TIME_AT_DESCENDING_NODE,
+    CYCLES_NUMBER,
+
+    # the following identifiers correspond to available monitorable values for a spacecrafts pair
+    DISTANCE,
+    ANGULAR_SEPARATION_FROM_EARTH_CENTER,
+    ANGULAR_SEPARATION_FROM_REFERENCE_LOCATION,
+    RELATIVE_POSITION_EME2000,
+    RELATIVE_VELOCITY_EME2000,
+    RELATIVE_POSITION_ITRF,
+    RELATIVE_VELOCITY_ITRF,
+    SEMI_MAJOR_AXIS_DIFFERENCE,
+    ECCENTRICITY_DIFFERENCE,
+    INCLINATION_DIFFERENCE,
+    RELATIVE_CIRCULAR_ECCENTRICITY_VECTOR,
+    RELATIVE_EQUINOCTIAL_ECCENTRICITY_VECTOR,
+    RELATIVE_EQUINOCTIAL_INCLINATION_VECTOR
+
 ]

@@ -3,14 +3,19 @@ package eu.eumetsat.skat;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.text.Format;
 import java.text.ParseException;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Set;
 import java.util.TimeZone;
 
@@ -44,10 +49,13 @@ import org.orekit.utils.PVCoordinates;
 import eu.eumetsat.skat.realization.Propagation;
 import eu.eumetsat.skat.scenario.Scenario;
 import eu.eumetsat.skat.scenario.ScenarioState;
+import eu.eumetsat.skat.utils.CsvFileMonitor;
 import eu.eumetsat.skat.utils.MonitorDuo;
 import eu.eumetsat.skat.utils.MonitorMono;
 import eu.eumetsat.skat.utils.MonitorableDuo;
+import eu.eumetsat.skat.utils.MonitorableDuoSKData;
 import eu.eumetsat.skat.utils.MonitorableMono;
+import eu.eumetsat.skat.utils.MonitorableMonoSKData;
 import eu.eumetsat.skat.utils.ParameterKey;
 import eu.eumetsat.skat.utils.SkatException;
 import eu.eumetsat.skat.utils.SkatFileParser;
@@ -112,6 +120,8 @@ public class Skat {
      * @param args program arguments (unused here)
      */
     public static void main(String[] args) {
+
+        Skat stationKeeping = null;
         try {
 
             // configure Orekit
@@ -125,13 +135,10 @@ public class Skat {
             }
 
             // build the simulator
-            Skat stationKeeping = new Skat(new File(args[0]));
+            stationKeeping = new Skat(new File(args[0]));
 
             // perform simulation
             stationKeeping.run();
-
-            // close the output stream
-            stationKeeping.close();
 
         } catch (ParseException pe) {
             System.err.println(pe.getLocalizedMessage());
@@ -145,6 +152,13 @@ public class Skat {
             System.err.println(oe.getLocalizedMessage());
         } catch (SkatException se) {
             System.err.println(se.getLocalizedMessage());
+        } finally {
+
+            if (stationKeeping != null) {
+                // close the various output streams
+                stationKeeping.close();
+            }
+
         }
     }
 
@@ -187,6 +201,7 @@ public class Skat {
 
         // general simulation parameters
         final Tree simulationNode = parser.getValue(root, ParameterKey.SIMULATION);
+        final String baseName = parser.getString(simulationNode, ParameterKey.SIMULATION_OUTPUT_BASE_NAME);
         inertialFrame = parser.getInertialFrame(simulationNode, ParameterKey.SIMULATION_INERTIAL_FRAME);
         earth         = new OneAxisEllipsoid(Constants.WGS84_EARTH_EQUATORIAL_RADIUS,
                                              Constants.WGS84_EARTH_FLATTENING,
@@ -227,9 +242,33 @@ public class Skat {
             configuredStates[i] = scenarioState;
         }
 
+        final String headerMarker  = "#";
+        final String separator     = ",";
+        final Format format        = new DecimalFormat("#0.000000000000000E00", new DecimalFormatSymbols(Locale.US));
+        final double dateTolerance = 0.001;
+
+        // create monitors for single spacecraft
         monitorsMono = new MonitorMono[configuredStates.length];
+        for (int i = 0; i < configuredStates.length; ++i) {
+            final File monoFile = new File(input.getParentFile(),
+                                           baseName + "-" + configuredStates[i].getName() + ".csv");
+            monitorsMono[i] = new CsvFileMonitor(i, new FileOutputStream(monoFile),
+                                                 headerMarker, separator, format, startDate, dateTolerance);
+        }
+
+        // create monitors for spacecrafts pair
         monitorsDuo  = new MonitorDuo[configuredStates.length][configuredStates.length];
-        // TODO create the monitors
+        for (int i = 0; i < configuredStates.length; ++i) {
+            for (int j = 0; j < configuredStates.length; ++j) {
+                if (i != j) {
+                    final File duoFile = new File(input.getParentFile(),
+                                                   baseName + "-" + configuredStates[i].getName() +
+                                                   "-" + configuredStates[j].getName() + ".csv");
+                    monitorsDuo[i][j] = new CsvFileMonitor(i, j, new FileOutputStream(duoFile),
+                                                           headerMarker, separator, format, startDate, dateTolerance);
+                }
+            }
+        }
 
         // set up scenario components
         final Tree scenarioNode = parser.getValue(root, ParameterKey.SCENARIO);
@@ -243,11 +282,30 @@ public class Skat {
             }
         }
 
-        // TODO add monitorable values
+        // add regular data monitoring (control law monitoring is already set up)
+        final Tree monitoringNode = parser.getValue(root, ParameterKey.MONITORING);
+        for (int i = 0; i < parser.getElementsNumber(monitoringNode); ++i) {
+            final String identifier = parser.getIdentifier(monitoringNode, i);
+            try {
+                MonitorableMono monitorable = MonitorableMonoSKData.valueOf(identifier);
+                for (int j = 0; j < configuredStates.length; ++j) {
+                    monitorable.register(configuredStates.length, monitorsMono[j]);
+                }
+            } catch (IllegalArgumentException iae) {
+                // this was not a MonitorableMonoSKData, it must be a MonitorableDuoSKData
+                MonitorableDuo monitorable = MonitorableDuoSKData.valueOf(identifier);
+                for (int j = 0; j < configuredStates.length; ++j) {
+                    for (int k = 0; k < configuredStates.length; ++k) {
+                        if (j != k) {
+                            monitorable.register(configuredStates.length, monitorsDuo[j][k]);
+                        }
+                    }
+                }
+            }
+        }
 
         // open the output stream
-        output = new PrintStream(new File(input.getParentFile(),
-                                          parser.getString(root, ParameterKey.OUTPUT_FILE_NAME)));
+        output = new PrintStream(new File(input.getParentFile(), baseName + ".out"));
 
     }
 
@@ -586,9 +644,17 @@ public class Skat {
         return builder.toString();
     }
 
-    /** Close the output stream.
+    /** Close the various output streams.
      */
     public void close() {
+        for (final MonitorMono monitor : monitorsMono) {
+            monitor.stopMonitoring();
+        }
+        for (final MonitorDuo[] row : monitorsDuo) {
+            for (final MonitorDuo monitor : row) {
+                monitor.stopMonitoring();
+            }
+        }
         output.close();
     }
 

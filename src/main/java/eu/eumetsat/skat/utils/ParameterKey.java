@@ -5,9 +5,8 @@ package eu.eumetsat.skat.utils;
  */
 public enum ParameterKey {
 
-    OUTPUT_FILE_NAME,
-
     SIMULATION,
+    SIMULATION_OUTPUT_BASE_NAME("output_base_name"),
     SIMULATION_INERTIAL_FRAME("inertial_frame"),
     SIMULATION_EARTH_FRAME("earth_frame"),
     SIMULATION_START_DATE("start_date"),
@@ -109,7 +108,9 @@ public enum ParameterKey {
     COMPONENT_PROPAGATION_METHOD("method"),
     NUMERICAL_PROPAGATOR_TOLERANCE("position_tolerance"),
     NUMERICAL_PROPAGATOR_GRAVITY_FIELD_DEGREE("gravity_field_degree"),
-    NUMERICAL_PROPAGATOR_GRAVITY_FIELD_ORDER("gravity_field_order");
+    NUMERICAL_PROPAGATOR_GRAVITY_FIELD_ORDER("gravity_field_order"),
+
+    MONITORING;
 
     /** Key to be recognized in input files. */
     private final String key;

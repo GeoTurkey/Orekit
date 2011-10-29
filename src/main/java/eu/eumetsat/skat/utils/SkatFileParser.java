@@ -256,6 +256,26 @@ public class SkatFileParser {
 
     }
 
+    /** Get an identifier value.
+     * @param node array containing the parameter
+     * @param index index of the identifier in the array
+     * @return identifier value corresponding to the index
+     * @exception IllegalArgumentException if node does not contains the key
+     * or it is not a string
+     */
+    public String getIdentifier(final Tree node, final int index) throws IllegalArgumentException {
+
+        // get the node
+        final Tree value = getElement(node, index);
+
+        // check its type
+        checkType(SkatParser.IDENTIFIER, value);
+
+        // parse the value
+        return value.getText();
+
+    }
+
     /** Get a string value.
      * @param node structure containing the parameter
      * @param key parameter key
