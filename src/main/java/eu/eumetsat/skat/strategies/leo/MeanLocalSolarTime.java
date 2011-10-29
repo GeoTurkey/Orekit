@@ -6,15 +6,24 @@ import org.orekit.propagation.events.EventDetector;
 import org.orekit.propagation.sampling.OrekitStepHandler;
 import org.orekit.propagation.sampling.OrekitStepInterpolator;
 
-import eu.eumetsat.skat.control.AbstractSKMonoControl;
+import eu.eumetsat.skat.control.SKControl;
 
 /**
  * Station-keeping control attempting to get mean local solar time in a deadband.
  */
-public class MeanLocalSolarTime extends AbstractSKMonoControl {
+public class MeanLocalSolarTime implements SKControl {
 
     /** Associated step handler. */
     private final OrekitStepHandler stephandler;
+
+    /** Name of the control law. */
+    private final String name;
+
+    /** Scale of the control law. */
+    private final double scale;
+
+    /** Target solar time. */
+    private final double solarTime;
 
     /** Simple constructor.
      * @param name name of the control law
@@ -24,8 +33,25 @@ public class MeanLocalSolarTime extends AbstractSKMonoControl {
      */
     public MeanLocalSolarTime(final String name, final double scale,
                               final double solarTime, final double samplingStep) {
-        super(name, scale, solarTime);
-        this.stephandler  = new Handler();
+        this.stephandler = new Handler();
+        this.name        = name;
+        this.scale       = scale;
+        this.solarTime   = solarTime;
+    }
+
+    /** {@inheritDoc} */
+    public String getName() {
+        return name;
+    }
+
+    /** {@inheritDoc} */
+    public double getScale() {
+        return scale;
+    }
+
+    /** {@inheritDoc} */
+    public double getTargetValue() {
+        return solarTime;
     }
 
     /** {@inheritDoc} */

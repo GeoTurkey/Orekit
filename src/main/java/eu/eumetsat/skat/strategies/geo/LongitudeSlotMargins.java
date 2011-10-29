@@ -14,7 +14,7 @@ import org.orekit.propagation.sampling.OrekitStepHandler;
 import org.orekit.propagation.sampling.OrekitStepInterpolator;
 import org.orekit.time.AbsoluteDate;
 
-import eu.eumetsat.skat.control.AbstractSKMonoControl;
+import eu.eumetsat.skat.control.SKControl;
 
 /**
  * Station-keeping control attempting to balance East-West margins
@@ -40,10 +40,19 @@ import eu.eumetsat.skat.control.AbstractSKMonoControl;
  * </p>
  * @author Luc Maisonobe
  */
-public class LongitudeSlotMargins extends AbstractSKMonoControl {
+public class LongitudeSlotMargins implements SKControl {
 
     /** Associated step handler. */
     private final OrekitStepHandler stephandler;
+
+    /** Name of the control law. */
+    private final String name;
+
+    /** Scale of the control law. */
+    private final double scale;
+
+    /** Longitude margins difference. */
+    private final double target;
 
     /** Longitude slot westward boundary. */
     private final double westBoundary;
@@ -77,12 +86,29 @@ public class LongitudeSlotMargins extends AbstractSKMonoControl {
                                 final double westBoundary, final double eastBoundary,
                                 final double target, final double samplingStep,
                                 final BodyShape earth) {
-        super(name, scale, target);
         this.stephandler  = new Handler();
+        this.name         = name;
+        this.scale        = scale;
+        this.target       = target;
         this.westBoundary = westBoundary;
         this.eastBoundary = MathUtils.normalizeAngle(eastBoundary, westBoundary);
         this.samplingStep = samplingStep;
         this.earth        = earth;
+    }
+
+    /** {@inheritDoc} */
+    public String getName() {
+        return name;
+    }
+
+    /** {@inheritDoc} */
+    public double getScale() {
+        return scale;
+    }
+
+    /** {@inheritDoc} */
+    public double getTargetValue() {
+        return target;
     }
 
     public double getAchievedValue() {

@@ -44,6 +44,10 @@ import org.orekit.utils.PVCoordinates;
 import eu.eumetsat.skat.realization.Propagation;
 import eu.eumetsat.skat.scenario.Scenario;
 import eu.eumetsat.skat.scenario.ScenarioState;
+import eu.eumetsat.skat.utils.MonitorDuo;
+import eu.eumetsat.skat.utils.MonitorMono;
+import eu.eumetsat.skat.utils.MonitorableDuo;
+import eu.eumetsat.skat.utils.MonitorableMono;
 import eu.eumetsat.skat.utils.ParameterKey;
 import eu.eumetsat.skat.utils.SkatException;
 import eu.eumetsat.skat.utils.SkatFileParser;
@@ -94,6 +98,12 @@ public class Skat {
 
     /** Number of cycles to use for rolling optimization. */
     private final int rollingCycles;
+
+    /** Mono-spacecraft monitors. */
+    private MonitorMono[] monitorsMono;
+
+    /** Duo-spacecrafts monitors. */
+    private MonitorDuo[][] monitorsDuo;
 
     /** Program entry point.
      * @param args program arguments (unused here)
@@ -213,6 +223,10 @@ public class Skat {
             configuredStates[i] = scenarioState;
         }
 
+        monitorsMono = new MonitorMono[configuredStates.length];
+        monitorsDuo  = new MonitorDuo[configuredStates.length][configuredStates.length];
+        // TODO create the monitors
+
         // set up scenario components
         final Tree scenarioNode = parser.getValue(root, ParameterKey.SCENARIO);
         scenario = new Scenario(parser.getDouble(simulationNode, ParameterKey.SIMULATION_CYCLE_DURATION) * Constants.JULIAN_DAY,
@@ -319,6 +333,25 @@ public class Skat {
         }
         throw new SkatException(SkatMessages.UNKNOWN_SPACECRAFT, name, known.toString());
 
+    }
+
+    /** Set the monitor for a single spacecraft.
+     * @param index spacecraft index
+     * @param monitor monitor for the spacecraft
+     */
+    public void addMonitorable(final int index,
+                               final MonitorableMono monitorable) {
+        monitorable.register(configuredStates.length, monitorsMono[index]);
+    }
+
+    /** Set the monitor for a spacecrafts pair.
+     * @param index1 first spacecraft index
+     * @param index2 second spacecraft index
+     * @param monitor monitor for the spacecrafts pair
+     */
+    public void addMonitorable(final int index1, final int index2,
+                               final MonitorableDuo monitorable) {
+        monitorable.register(configuredStates.length, monitorsDuo[index1][index2]);
     }
 
     /** Check if a spacecraft is managed by a propagator.

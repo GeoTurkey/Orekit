@@ -92,7 +92,7 @@ public enum SupportedScenariocomponent {
                 final Tree control = parser.getElement(controlsNode, i);
                 final String type = parser.getIdentifier(control, ParameterKey.CONTROL_TYPE);
                 SupportedControlLaw law = SupportedControlLaw.valueOf(type);
-                loop.addControl(law.parse(parser, control, skat));
+                loop.addControl(law.parse(parser, control, spacecraftIndex, skat));
             }
 
             // tunable maneuvers

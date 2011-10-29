@@ -6,15 +6,21 @@ import org.orekit.propagation.events.EventDetector;
 import org.orekit.propagation.sampling.OrekitStepHandler;
 import org.orekit.propagation.sampling.OrekitStepInterpolator;
 
-import eu.eumetsat.skat.control.AbstractSKDuoControl;
+import eu.eumetsat.skat.control.SKControl;
 
 /**
  * Station-keeping control attempting to keep relative inclination vector between satellites.
  */
-public class RelativeInclinationControl extends AbstractSKDuoControl {
+public class RelativeInclinationControl implements SKControl {
 
     /** Associated step handler. */
     private final OrekitStepHandler stephandler;
+
+    /** Name of the control law. */
+    private final String name;
+
+    /** Scale of the control law. */
+    private final double scale;
 
     /** Desired difference in hx. */
     private final double deltaHx;
@@ -36,11 +42,27 @@ public class RelativeInclinationControl extends AbstractSKDuoControl {
     public RelativeInclinationControl(final String name, final double scale,
                                       final double deltaHx, final double deltaHy,
                                       final double samplingStep) {
-        super(name, scale, 0.0);
         this.stephandler  = new Handler();
+        this.name         = name;
+        this.scale        = scale;
         this.deltaHx      = deltaHx;
         this.deltaHy      = deltaHy;
         this.samplingStep = samplingStep;
+    }
+
+    /** {@inheritDoc} */
+    public String getName() {
+        return name;
+    }
+
+    /** {@inheritDoc} */
+    public double getScale() {
+        return scale;
+    }
+
+    /** {@inheritDoc} */
+    public double getTargetValue() {
+        return 0.0;
     }
 
     /** {@inheritDoc} */

@@ -10,16 +10,22 @@ import org.orekit.propagation.sampling.OrekitStepHandler;
 import org.orekit.propagation.sampling.OrekitStepInterpolator;
 import org.orekit.time.AbsoluteDate;
 
-import eu.eumetsat.skat.control.AbstractSKMonoControl;
+import eu.eumetsat.skat.control.SKControl;
 
 /**
  * Station-keeping control attempting to compensate inclination secular evolution.
  * @author Luc Maisonobe
  */
-public class InclinationVectorSecularCompensation extends AbstractSKMonoControl {
+public class InclinationVectorSecularCompensation implements SKControl {
 
     /** Associated step handler. */
     private final OrekitStepHandler stephandler;
+
+    /** Name of the control law. */
+    private final String name;
+
+    /** Scale of the control law. */
+    private final double scale;
 
     /** Abscissa of target inclination vector. */
     private final double hx0;
@@ -43,11 +49,27 @@ public class InclinationVectorSecularCompensation extends AbstractSKMonoControl 
     public InclinationVectorSecularCompensation(final String name, final double scale,
                                                 final double hx0, final double hy0,
                                                 final double samplingStep) {
-        super(name, scale, 0.0);
         this.stephandler  = new Handler();
+        this.name         = name;
+        this.scale        = scale;
         this.hx0          = hx0;
         this.hy0          = hy0;
         this.samplingStep = samplingStep;
+    }
+
+    /** {@inheritDoc} */
+    public String getName() {
+        return name;
+    }
+
+    /** {@inheritDoc} */
+    public double getScale() {
+        return scale;
+    }
+
+    /** {@inheritDoc} */
+    public double getTargetValue() {
+        return 0.0;
     }
 
     /** {@inheritDoc} */

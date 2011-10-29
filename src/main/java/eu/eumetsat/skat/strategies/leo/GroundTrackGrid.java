@@ -6,27 +6,59 @@ import org.orekit.propagation.events.EventDetector;
 import org.orekit.propagation.sampling.OrekitStepHandler;
 import org.orekit.propagation.sampling.OrekitStepInterpolator;
 
-import eu.eumetsat.skat.control.AbstractSKMonoControl;
+import eu.eumetsat.skat.control.SKControl;
 
 /**
  * Station-keeping control attempting to follow a specified ground-track
  * at a specified latitude.
  */
-public class GroundTrackGrid extends AbstractSKMonoControl {
+public class GroundTrackGrid implements SKControl {
 
     /** Associated step handler. */
     private final OrekitStepHandler stephandler;
 
+    /** Name of the control law. */
+    private final String name;
+
+    /** Scale of the control law. */
+    private final double scale;
+
+    /** Reference point latitude. */
+    private final double latitude;
+
+    /** Reference point longitude. */
+    private final double longitude;
+
     /** Simple constructor.
      * @param name name of the control law
      * @param scale of the control law
-     * @param solarTime target solar time
+     * @param latitude reference point latitude
+     * @param longitude reference point longitude
      * @param samplingStep step to use for sampling throughout propagation
      */
     public GroundTrackGrid(final String name, final double scale,
-                           final double latitude, final double longitude, final double samplingStep) {
-        super(name, scale, 0.0);
-        this.stephandler  = new Handler();
+                           final double latitude, final double longitude,
+                           final double samplingStep) {
+        this.stephandler = new Handler();
+        this.name        = name;
+        this.scale       = scale;
+        this.latitude    = latitude;
+        this.longitude   = longitude;
+    }
+
+    /** {@inheritDoc} */
+    public String getName() {
+        return name;
+    }
+
+    /** {@inheritDoc} */
+    public double getScale() {
+        return scale;
+    }
+
+    /** {@inheritDoc} */
+    public double getTargetValue() {
+        return 0.0;
     }
 
     /** {@inheritDoc} */
