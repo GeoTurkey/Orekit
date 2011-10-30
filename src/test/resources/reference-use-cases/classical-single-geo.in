@@ -80,7 +80,7 @@ scenario         = [
             {
                 scale         = 0.01;
                 type          = LONGITUDE_MARGINS;
-                name          = "longitude";
+                name          = "longitude margin";
                 time_horizon  = 1000000;
                 east_boundary = 19.9;
                 west_boundary = 20.1;
@@ -90,18 +90,7 @@ scenario         = [
             {
                 scale         = 1.0e-4;
                 type          = ECCENTRICITY_CIRCLE;
-                name          = "eccentricity";
-                time_horizon  = 1000000;
-                center_x      = 0.0;
-                center_y      = 0.0;
-                radius        = 1.0e-4;
-                sampling      = 3600.0;
-            }
-            {
-                scale         = 1.0e-4;
-                type          = DELTA_ECCENTRICITY_CIRCLE;
-                reference_spacecrafts = [ "METEOSAT-10"];
-                name          = "eccentricity";
+                name          = "eccentricity circle";
                 time_horizon  = 1000000;
                 center_x      = 0.0;
                 center_y      = 0.0;
