@@ -2,10 +2,12 @@
 package eu.eumetsat.skat.utils;
 
 import org.antlr.runtime.tree.Tree;
+import org.apache.commons.math.analysis.MultivariateRealFunction;
 import org.apache.commons.math.exception.DimensionMismatchException;
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math.linear.Array2DRowRealMatrix;
 import org.apache.commons.math.linear.RealMatrix;
+import org.apache.commons.math.optimization.BaseMultivariateRealOptimizer;
 import org.orekit.errors.OrekitException;
 import org.orekit.orbits.OrbitType;
 import org.orekit.propagation.Propagator;
@@ -86,18 +88,18 @@ public enum SupportedScenariocomponent {
 
             // optimizer
             final int maxEval   = parser.getInt(node, ParameterKey.COMPONENT_CONTROL_LOOP_MAX_EVAL);
-            final int nbPoints  = parser.getInt(node, ParameterKey.COMPONENT_CONTROL_LOOP_NB_POINTS);
-            final String method = parser.getIdentifier(node, ParameterKey.COMPONENT_CONTROL_LOOP_OPTIMIZER);
-            final SupportedOptimizer optimizer = SupportedOptimizer.valueOf(method);
+            final Tree optimizerNode = parser.getValue(node, ParameterKey.COMPONENT_CONTROL_LOOP_OPTIMIZER);
+            final String method = parser.getIdentifier(optimizerNode, ParameterKey.OPTIMIZER_METHOD);
+            final BaseMultivariateRealOptimizer<MultivariateRealFunction> optimizer =
+                    SupportedOptimizer.valueOf(method).parse(parser, optimizerNode);
 
             final  Propagator propagator =
                     parser.getPropagator(parser.getValue(node, ParameterKey.COMPONENT_CONTROL_LOOP_PROPAGATOR),
                                          skat.getInitialOrbit(spacecraftIndex), skat.getEarth().getBodyFrame());
 
 
-            final ControlLoop loop = new ControlLoop(spacecraftIndex,
-                                                     firstCycle, lastCycle, maxEval, nbPoints,
-                                                     optimizer, propagator,
+            final ControlLoop loop = new ControlLoop(spacecraftIndex, firstCycle, lastCycle,
+                                                     maxEval, optimizer, propagator,
                                                      skat.getCycleDuration(), skat.getRollingCycles());
 
             // control laws

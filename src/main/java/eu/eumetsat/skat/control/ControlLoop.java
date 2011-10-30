@@ -5,10 +5,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.math.analysis.MultivariateRealFunction;
+import org.apache.commons.math.optimization.BaseMultivariateRealOptimizer;
 import org.apache.commons.math.optimization.GoalType;
-import org.apache.commons.math.optimization.MultivariateRealOptimizer;
-import org.apache.commons.math.optimization.direct.BOBYQAOptimizer;
-import org.apache.commons.math.optimization.direct.CMAESOptimizer;
+import org.apache.commons.math.optimization.RealPointValuePair;
 import org.orekit.errors.OrekitException;
 import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
@@ -20,7 +19,6 @@ import eu.eumetsat.skat.strategies.ScheduledManeuver;
 import eu.eumetsat.skat.strategies.TunableManeuver;
 import eu.eumetsat.skat.utils.SkatException;
 import eu.eumetsat.skat.utils.SkatMessages;
-import eu.eumetsat.skat.utils.SupportedOptimizer;
 
 
 /**
@@ -47,11 +45,8 @@ public class ControlLoop implements ScenarioComponent {
     /** Maximal number of objective function evaluations. */
     private final int maxEval;
 
-    /** Number of sampling points. */
-    private final int nbPoints;
-
     /** Optimizing engine. */
-    private final SupportedOptimizer optimizer;
+    private final BaseMultivariateRealOptimizer<MultivariateRealFunction> optimizer;
 
     /** Orbit propagator. */
     private final Propagator propagator;
@@ -87,27 +82,25 @@ public class ControlLoop implements ScenarioComponent {
      * @param firstCycle first cycle this loop should control
      * @param lastCycle last cycle this loop should control
      * @param maxEval maximal number of objective function evaluations
-     * @param nbPoints number of sampling points
      * @param optimizer optimizing engine
      * @param propagator orbit propagator
      * @param cycleDuration Cycle duration
      * @param rollingCycles number of cycles to use for rolling optimization
      */
-    public ControlLoop(final int spacecraftIndex,
-                       final int firstCycle, final int lastCycle,
-                       final int maxEval, final int nbPoints,
-                       final SupportedOptimizer optimizer, final Propagator propagator,
+    public ControlLoop(final int spacecraftIndex, final int firstCycle, final int lastCycle,
+                       final int maxEval,
+                       final BaseMultivariateRealOptimizer<MultivariateRealFunction> optimizer,
+                       final Propagator propagator,
                        final double cycleDuration, final int rollingCycles) {
         this.spacecraftIndex = spacecraftIndex;
         this.firstCycle      = firstCycle;
         this.lastCycle       = lastCycle;
         this.maxEval         = maxEval;
-        this.nbPoints        = nbPoints;
         this.optimizer       = optimizer;
         this.propagator      = propagator;
-        tunables             = new ArrayList<TunableManeuver>();
-        controls             = new ArrayList<SKControl>();
-        parameters           = new ArrayList<SKParameter>();
+        this.tunables        = new ArrayList<TunableManeuver>();
+        this.controls        = new ArrayList<SKControl>();
+        this.parameters      = new ArrayList<SKParameter>();
         this.cycleDuration   = cycleDuration;
         this.rollingCycles   = rollingCycles;
     }
@@ -156,9 +149,13 @@ public class ControlLoop implements ScenarioComponent {
         if ((original.getCyclesNumber() >= firstCycle) && (original.getCyclesNumber() <= lastCycle)) {
 
             // guess a start point
+            double[] lower = new double[parameters.size()];
+            double[] upper = new double[parameters.size()];
             double[] startPoint = new double[parameters.size()];
             for (int j = 0; j < startPoint.length; ++j) {
-                startPoint[j] = 0.5 * (parameters.get(j).getMin() + parameters.get(j).getMax());
+                lower[j] = parameters.get(j).getMin();
+                upper[j] = parameters.get(j).getMax();
+                startPoint[j] = 0.5 * (lower[j] + upper[j]);
             }
 
             // set the reference date for maneuvers
@@ -174,25 +171,15 @@ public class ControlLoop implements ScenarioComponent {
             }
 
             // find the optimal parameters that minimize objective function
-            // TODO introduce constraints
             AbsoluteDate startDate  = original.getEstimatedStartState().getDate();
             AbsoluteDate targetDate = startDate.shiftedBy(rollingCycles * cycleDuration);
-            final MultivariateRealFunction objective =
+            final ObjectiveFunction objective =
                     new ObjectiveFunction(propagator, parameters, controls, targetDate,
                                           original.getEstimatedStartState(),
                                           original.getTheoreticalManeuvers());
-            MultivariateRealOptimizer o;
-            switch (optimizer) {
-            case CMA_ES :
-                o = new CMAESOptimizer(nbPoints);
-                break;
-            case BOBYQA :
-                o = new BOBYQAOptimizer(nbPoints);
-                break;
-            default :
-                throw SkatException.createInternalError(null);
-            }
-            double[] optimum = o.optimize(maxEval, objective, GoalType.MINIMIZE, startPoint).getPoint();
+            final RealPointValuePair pointValue =
+                    optimizer.optimize(maxEval, objective, GoalType.MINIMIZE, startPoint, lower, upper);
+            final double[] optimum = pointValue.getPoint();
 
             // perform a last run so monitoring is updated with the optimal values
             objective.value(optimum);

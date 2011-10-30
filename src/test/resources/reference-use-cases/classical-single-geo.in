@@ -67,9 +67,11 @@ scenario         = [
         controlled_spacecraft = "Meteosat 9";  # note: control loop components control only ONE spacecraft each
         first_cycle           = 1;
         last_cycle            = 999;
-        optimizer             = CMA_ES;
         max_eval              = 1000;
-        nb_points             = 5;
+        optimizer             = {
+            method     = CMA_ES;
+            nb_points  = 5;
+        };
         propagator  = {
             method               = "numerical";
             position_tolerance   = 100.0;
