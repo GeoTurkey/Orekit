@@ -95,7 +95,8 @@ public enum SupportedScenariocomponent {
 
             final  Propagator propagator =
                     parser.getPropagator(parser.getValue(node, ParameterKey.COMPONENT_CONTROL_LOOP_PROPAGATOR),
-                                         skat.getInitialOrbit(spacecraftIndex), skat.getEarth().getBodyFrame());
+                                         skat.getInitialOrbit(spacecraftIndex), skat.getEarth(),
+                                         skat.getSun(), skat.getMoon());
 
 
             final ControlLoop loop = new ControlLoop(spacecraftIndex, firstCycle, lastCycle,
@@ -191,8 +192,8 @@ public enum SupportedScenariocomponent {
             final  Propagator[] propagators = new Propagator[indices.length];
             for (int i = 0; i < propagators.length; ++i) {
                 propagators[i] = parser.getPropagator(parser.getValue(node, ParameterKey.COMPONENT_PROPAGATION_PROPAGATOR),
-                                                      skat.getInitialOrbit(indices[i]),
-                                                      skat.getEarth().getBodyFrame());
+                                                      skat.getInitialOrbit(indices[i]), skat.getEarth(),
+                                                      skat.getSun(), skat.getMoon());
             }
 
             // build the component

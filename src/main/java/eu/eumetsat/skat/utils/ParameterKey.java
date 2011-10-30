@@ -1,6 +1,7 @@
 /* Copyright 2011 Eumetsat */
 package eu.eumetsat.skat.utils;
 
+
 /** Input parameter keys for SKAT.
  */
 public enum ParameterKey {
@@ -114,6 +115,10 @@ public enum ParameterKey {
     NUMERICAL_PROPAGATOR_TOLERANCE("position_tolerance"),
     NUMERICAL_PROPAGATOR_GRAVITY_FIELD_DEGREE("gravity_field_degree"),
     NUMERICAL_PROPAGATOR_GRAVITY_FIELD_ORDER("gravity_field_order"),
+    NUMERICAL_PROPAGATOR_CROSS_SECTION("cross_section"),
+    NUMERICAL_PROPAGATOR_DRAG_COEFFICIENT("drag_coefficient"),
+    NUMERICAL_PROPAGATOR_ABSORPTION_COEFFICIENT("absorption_coefficient"),
+    NUMERICAL_PROPAGATOR_REFLECTION_COEFFICIENT("reflection_coefficient"),
 
     MONITORING;
 

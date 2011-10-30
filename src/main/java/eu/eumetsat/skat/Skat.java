@@ -27,7 +27,6 @@ import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math.random.RandomGenerator;
 import org.apache.commons.math.random.Well19937a;
 import org.apache.commons.math.util.FastMath;
-import org.orekit.bodies.BodyShape;
 import org.orekit.bodies.CelestialBody;
 import org.orekit.bodies.CelestialBodyFactory;
 import org.orekit.bodies.GeodeticPoint;
@@ -91,10 +90,13 @@ public class Skat {
     private final Scenario scenario;
 
     /** Earth model. */
-    private final BodyShape earth;
+    private final OneAxisEllipsoid earth;
 
     /** Sun model. */
     private final CelestialBody sun;
+
+    /** Moon model. */
+    private final CelestialBody moon;
 
     /** Reference ground location. */
     private TopocentricFrame groundLocation;
@@ -220,6 +222,7 @@ public class Skat {
                                              Constants.WGS84_EARTH_FLATTENING,
                                              parser.getEarthFrame(simulationNode, ParameterKey.SIMULATION_EARTH_FRAME));
         sun           = CelestialBodyFactory.getSun();
+        moon          = CelestialBodyFactory.getMoon();
         startDate     = parser.getDate(simulationNode, ParameterKey.SIMULATION_START_DATE, utc);
         generator     = new Well19937a(parser.getInt(simulationNode, ParameterKey.SIMULATION_RANDOM_SEED));
         cycleDuration = parser.getDouble(simulationNode, ParameterKey.SIMULATION_CYCLE_DURATION);
@@ -351,7 +354,7 @@ public class Skat {
     /** Get the configured Earth body.
      * @return configured Earth body
      */
-    public BodyShape getEarth() {
+    public OneAxisEllipsoid getEarth() {
         return earth;
     }
 
@@ -360,6 +363,13 @@ public class Skat {
      */
     public CelestialBody getSun() {
         return sun;
+    }
+
+    /** Get the configured Moon body.
+     * @return configured Moon body
+     */
+    public CelestialBody getMoon() {
+        return moon;
     }
 
     /** Get the configured ground location.

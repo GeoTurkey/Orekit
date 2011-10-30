@@ -143,10 +143,13 @@ scenario         = [
         component           = PROPAGATION;
         managed_spacecrafts = [ "Meteosat 9" ];
         propagator          = {
-            method               = "numerical";
-            position_tolerance   = 100.0;
-            gravity_field_degree = 10;
-            gravity_field_order  = 10;
+            method                 = "numerical";
+            position_tolerance     = 100.0;
+            gravity_field_degree   = 10;
+            gravity_field_order    = 10;
+            cross_section          = 20.0;
+            absorption_coefficient = 1.5;
+            reflection_coefficient = 2.0;
         }
     }
 ];
