@@ -12,9 +12,11 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.Format;
 import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.TimeZone;
@@ -28,12 +30,14 @@ import org.apache.commons.math.util.FastMath;
 import org.orekit.bodies.BodyShape;
 import org.orekit.bodies.CelestialBody;
 import org.orekit.bodies.CelestialBodyFactory;
+import org.orekit.bodies.GeodeticPoint;
 import org.orekit.bodies.OneAxisEllipsoid;
 import org.orekit.data.DataProvidersManager;
 import org.orekit.data.DirectoryCrawler;
 import org.orekit.errors.OrekitException;
 import org.orekit.forces.gravity.potential.GravityFieldFactory;
 import org.orekit.frames.Frame;
+import org.orekit.frames.TopocentricFrame;
 import org.orekit.orbits.CircularOrbit;
 import org.orekit.orbits.EquinoctialOrbit;
 import org.orekit.orbits.KeplerianOrbit;
@@ -92,6 +96,9 @@ public class Skat {
     /** Sun model. */
     private final CelestialBody sun;
 
+    /** Reference ground location. */
+    private TopocentricFrame groundLocation;
+
     /** Inertial frame. */
     private final Frame inertialFrame;
 
@@ -113,8 +120,14 @@ public class Skat {
     /** Mono-spacecraft monitors. */
     private MonitorMono[] monitorsMono;
 
+    /** Mono-spacecraft monitorables. */
+    private List<MonitorableMonoSKData> monitorablesMono;
+
     /** Duo-spacecrafts monitors. */
     private MonitorDuo[][] monitorsDuo;
+
+    /** Duo-spacecrafts monitorables. */
+    private List<MonitorableDuoSKData> monitorablesDuo;
 
     /** Program entry point.
      * @param args program arguments (unused here)
@@ -213,6 +226,13 @@ public class Skat {
         outputStep    = parser.getDouble(simulationNode, ParameterKey.SIMULATION_OUTPUT_STEP);
         rollingCycles = parser.getInt(simulationNode, ParameterKey.SIMULATION_ROLLING_CYCLES);
 
+        final Tree locationNode = parser.getValue(simulationNode, ParameterKey.SIMULATION_GROUND_LOCATION);
+        groundLocation = new TopocentricFrame(earth,
+                                              new GeodeticPoint(parser.getAngle(locationNode,  ParameterKey.SIMULATION_GROUND_LOCATION_LATITUDE),
+                                                                parser.getAngle(locationNode,  ParameterKey.SIMULATION_GROUND_LOCATION_LONGITUDE),
+                                                                parser.getDouble(locationNode, ParameterKey.SIMULATION_GROUND_LOCATION_ALTITUDE)),
+                                              "skat-ground-location");
+
         // load gravity field
         final double mu = GravityFieldFactory.getPotentialProvider().getMu();
 
@@ -249,6 +269,7 @@ public class Skat {
 
         // create monitors for single spacecraft
         monitorsMono = new MonitorMono[configuredStates.length];
+        monitorablesMono = new ArrayList<MonitorableMonoSKData>();
         for (int i = 0; i < configuredStates.length; ++i) {
             final File monoFile = new File(input.getParentFile(),
                                            baseName + "-" + configuredStates[i].getName() + ".csv");
@@ -258,6 +279,7 @@ public class Skat {
 
         // create monitors for spacecrafts pair
         monitorsDuo  = new MonitorDuo[configuredStates.length][configuredStates.length];
+        monitorablesDuo = new ArrayList<MonitorableDuoSKData>();
         for (int i = 0; i < configuredStates.length; ++i) {
             for (int j = 0; j < configuredStates.length; ++j) {
                 if (i != j) {
@@ -270,6 +292,31 @@ public class Skat {
             }
         }
 
+        // add regular data monitoring
+        final Tree monitoringNode = parser.getValue(root, ParameterKey.MONITORING);
+        for (int i = 0; i < parser.getElementsNumber(monitoringNode); ++i) {
+            final String identifier = parser.getIdentifier(monitoringNode, i);
+            try {
+                MonitorableMonoSKData monitorable = MonitorableMonoSKData.valueOf(identifier);
+                for (int j = 0; j < configuredStates.length; ++j) {
+                    monitorable.register(configuredStates.length, monitorsMono[j]);
+                }
+                monitorablesMono.add(monitorable);
+            } catch (IllegalArgumentException iae) {
+                // this was not a MonitorableMonoSKData, it must be a MonitorableDuoSKData
+                MonitorableDuoSKData monitorable = MonitorableDuoSKData.valueOf(identifier);
+                for (int j = 0; j < configuredStates.length; ++j) {
+                    for (int k = 0; k < configuredStates.length; ++k) {
+                        if (j != k) {
+                            monitorable.register(configuredStates.length, monitorsDuo[j][k]);
+                        }
+                    }
+                }
+                monitorablesDuo.add(monitorable);
+            }
+        }
+
+
         // set up scenario components
         final Tree scenarioNode = parser.getValue(root, ParameterKey.SCENARIO);
         scenario = (Scenario) SupportedScenariocomponent.SCENARIO.parse(parser, scenarioNode, this);
@@ -279,28 +326,6 @@ public class Skat {
         for (int i = 0; i < managed.length; ++i) {
             if (managed[i] == null) {
                 throw new SkatException(SkatMessages.SPACECRAFT_NOT_MANAGED, getSpacecraftName(i));
-            }
-        }
-
-        // add regular data monitoring (control law monitoring is already set up)
-        final Tree monitoringNode = parser.getValue(root, ParameterKey.MONITORING);
-        for (int i = 0; i < parser.getElementsNumber(monitoringNode); ++i) {
-            final String identifier = parser.getIdentifier(monitoringNode, i);
-            try {
-                MonitorableMono monitorable = MonitorableMonoSKData.valueOf(identifier);
-                for (int j = 0; j < configuredStates.length; ++j) {
-                    monitorable.register(configuredStates.length, monitorsMono[j]);
-                }
-            } catch (IllegalArgumentException iae) {
-                // this was not a MonitorableMonoSKData, it must be a MonitorableDuoSKData
-                MonitorableDuo monitorable = MonitorableDuoSKData.valueOf(identifier);
-                for (int j = 0; j < configuredStates.length; ++j) {
-                    for (int k = 0; k < configuredStates.length; ++k) {
-                        if (j != k) {
-                            monitorable.register(configuredStates.length, monitorsDuo[j][k]);
-                        }
-                    }
-                }
             }
         }
 
@@ -335,6 +360,27 @@ public class Skat {
      */
     public CelestialBody getSun() {
         return sun;
+    }
+
+    /** Get the configured ground location.
+     * @return configured ground location
+     */
+    public TopocentricFrame getGroundLocation() {
+        return groundLocation;
+    }
+
+    /** Get the list of mono-spacecraft monitorables.
+     * @return list of mono-spacecraft monitorables
+     */
+    public List<MonitorableMonoSKData> getMonitorablesMono() {
+        return monitorablesMono;
+    }
+
+    /** Get the list of duo-spacecraft monitorables.
+     * @return list of duo-spacecraft monitorables
+     */
+    public List<MonitorableDuoSKData> getMonitorablesDuo() {
+        return monitorablesDuo;
     }
 
     /** Get the configured initial orbit for one spacecraft.

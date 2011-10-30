@@ -17,6 +17,7 @@ import org.orekit.errors.OrekitException;
 import org.orekit.errors.OrekitExceptionWrapper;
 import org.orekit.frames.Frame;
 import org.orekit.frames.FramesFactory;
+import org.orekit.frames.TopocentricFrame;
 import org.orekit.orbits.CircularOrbit;
 import org.orekit.orbits.OrbitType;
 import org.orekit.propagation.BoundedPropagator;
@@ -24,6 +25,7 @@ import org.orekit.propagation.SpacecraftState;
 import org.orekit.time.AbsoluteDate;
 
 import eu.eumetsat.skat.strategies.ScheduledManeuver;
+import eu.eumetsat.skat.utils.MonitorableDuoSKData;
 import eu.eumetsat.skat.utils.MonitorableMonoSKData;
 import eu.eumetsat.skat.utils.SkatException;
 import eu.eumetsat.skat.utils.SkatMessages;
@@ -58,8 +60,14 @@ public class Scenario implements ScenarioComponent {
     /** Sun model. */
     private final CelestialBody sun;
 
-    /** Monitored values. */
-    private final List<MonitorableMonoSKData> monitorables;
+    /** Reference ground location. */
+    private TopocentricFrame groundLocation;
+
+    /** Mono-spacecraft monitorables. */
+    private List<MonitorableMonoSKData> monitorablesMono;
+
+    /** Duo-spacecrafts monitorables. */
+    private List<MonitorableDuoSKData> monitorablesDuo;
 
     /** Simple constructor.
      * <p>
@@ -68,18 +76,26 @@ public class Scenario implements ScenarioComponent {
      * </p>
      * @param cycleDuration duration of one cycle (s)
      * @param outputStep output step for monitoring (s)
-     * @param propagator propagator to use
      * @param earth Earth model
+     * @param sun Sun model
+     * @param groundLocation reference ground location
+     * @param monitorablesMono list of monitorables for mono-spacecraft
+     * @param monitorablesDuo list of monitorables for duo-spacecrafts
      */
     public Scenario(final double cycleDuration, final double outputStep,
-                    final BodyShape earth, final CelestialBody sun) {
-        this.components    = new ArrayList<ScenarioComponent>();
-        this.cycleDuration = cycleDuration;
-        this.outputstep    = outputStep;
-        this.eme2000       = FramesFactory.getEME2000();
-        this.earth         = earth;
-        this.sun           = sun;
-        this.monitorables  = new ArrayList<MonitorableMonoSKData>();
+                    final BodyShape earth, final CelestialBody sun,
+                    final TopocentricFrame groundLocation,
+                    final List<MonitorableMonoSKData> monitorablesMono,
+                    final List<MonitorableDuoSKData> monitorablesDuo) {
+        this.components       = new ArrayList<ScenarioComponent>();
+        this.cycleDuration    = cycleDuration;
+        this.outputstep       = outputStep;
+        this.eme2000          = FramesFactory.getEME2000();
+        this.earth            = earth;
+        this.sun              = sun;
+        this.groundLocation   = groundLocation;
+        this.monitorablesMono = monitorablesMono;
+        this.monitorablesDuo  = monitorablesDuo;
     }
 
     /** Add a cycle component.
@@ -90,13 +106,6 @@ public class Scenario implements ScenarioComponent {
      */
     public void addComponent(final ScenarioComponent component) {
         components.add(component);
-    }
-
-    /** Monitor a station-keeping data.
-     * @param key key of station-keeping data to monitor
-     */
-    public void monitor(final MonitorableMonoSKData key) {
-        monitorables.add(key);
     }
 
     /** {@inheritDoc} */
@@ -137,8 +146,11 @@ public class Scenario implements ScenarioComponent {
                 updateNodes(date, states);
 
                 // perform monitoring
-                for (final MonitorableMonoSKData monitorable : monitorables) {
+                for (final MonitorableMonoSKData monitorable : monitorablesMono) {
                     monitorable.update(states, earth);
+                }
+                for (final MonitorableDuoSKData monitorable : monitorablesDuo) {
+                    monitorable.update(states, earth, groundLocation);
                 }
 
             }

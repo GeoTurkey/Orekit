@@ -34,7 +34,9 @@ public enum SupportedScenariocomponent {
         public ScenarioComponent parse(final SkatFileParser parser, final Tree node, final Skat skat)
             throws OrekitException, SkatException {
             final Scenario scenario = new Scenario(skat.getCycleDuration() * Constants.JULIAN_DAY,
-                                                   skat.getOutputStep(), skat.getEarth(), skat.getSun());
+                                                   skat.getOutputStep(), skat.getEarth(), skat.getSun(),
+                                                   skat.getGroundLocation(),
+                                                   skat.getMonitorablesMono(), skat.getMonitorablesDuo());
             for (int j = 0; j < parser.getElementsNumber(node); ++j) {
                 final Tree componentNode = parser.getElement(node, j);
                 final  String type       = parser.getIdentifier(componentNode, ParameterKey.COMPONENT_TYPE);
