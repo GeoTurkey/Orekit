@@ -68,8 +68,8 @@ public class ManeuverDateError implements ScenarioComponent {
 
             // select the current spacecraft affected by this component
             final int index = spacecraftIndices[i];
-
-            if (originals[index].getTheoreticalManeuvers() == null) {
+            final List<ScheduledManeuver> theoretical = originals[index].getTheoreticalManeuvers();
+            if (theoretical == null) {
                 throw new SkatException(SkatMessages.NO_THEORETICAL_MANEUVERS_STATE,
                                         originals[index].getName(), originals[index].getCyclesNumber());
             }
@@ -82,7 +82,7 @@ public class ManeuverDateError implements ScenarioComponent {
             }
 
             // modify the maneuvers
-            for (final ScheduledManeuver maneuver : originals[index].getTheoreticalManeuvers()) {
+            for (final ScheduledManeuver maneuver : theoretical) {
                 if ((inPlane && maneuver.isInPlane()) || (outOfPlane && !(maneuver.isInPlane()))) {
                     // the maneuver is affected by the error
                     final double offset = standardDeviation * generator.nextGaussian();

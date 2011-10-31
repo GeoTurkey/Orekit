@@ -52,6 +52,7 @@ import org.orekit.utils.PVCoordinates;
 import eu.eumetsat.skat.realization.Propagation;
 import eu.eumetsat.skat.scenario.Scenario;
 import eu.eumetsat.skat.scenario.ScenarioState;
+import eu.eumetsat.skat.strategies.ScheduledManeuver;
 import eu.eumetsat.skat.utils.CsvFileMonitor;
 import eu.eumetsat.skat.utils.MonitorDuo;
 import eu.eumetsat.skat.utils.MonitorMono;
@@ -165,8 +166,10 @@ public class Skat {
             System.err.println(re.getLocalizedMessage());
         } catch (OrekitException oe) {
             System.err.println(oe.getLocalizedMessage());
+            oe.printStackTrace(System.err);
         } catch (SkatException se) {
             System.err.println(se.getLocalizedMessage());
+            se.printStackTrace(System.err);
         } finally {
 
             if (stationKeeping != null) {
@@ -504,12 +507,18 @@ public class Skat {
      */
     public void run() throws OrekitException, SkatException {
 
-        // propagate all spacecrafts state to simulation start date
         final Set<Propagation> propagationComponents = new HashSet<Propagation>();
         for (final Propagation propagation : managed) {
             propagationComponents.add(propagation);
         }
-        ScenarioState[] initialStates = configuredStates;
+
+        // set up empty maneuvers lists
+        ScenarioState[] initialStates = new ScenarioState[configuredStates.length];
+        for (int i = 0; i < initialStates.length; ++i) {
+            initialStates[i] = configuredStates[i].updatePerformedManeuvers(new ArrayList<ScheduledManeuver>());
+        }
+
+        // propagate all spacecrafts state to simulation start date
         for (final Propagation propagation : propagationComponents) {
             propagation.setCycleEnd(startDate);
             initialStates = propagation.updateStates(initialStates);
@@ -518,6 +527,7 @@ public class Skat {
             initialStates[i] = initialStates[i].updateRealStartState(initialStates[i].getRealEndState());
         }
 
+        // perform the complete simulation
         final ScenarioState[] finalStates = scenario.updateStates(initialStates);
 
         dumpOutput(finalStates);
@@ -708,7 +718,9 @@ public class Skat {
         }
         for (final MonitorDuo[] row : monitorsDuo) {
             for (final MonitorDuo monitor : row) {
-                monitor.stopMonitoring();
+                if (monitor != null) {
+                    monitor.stopMonitoring();
+                }
             }
         }
         output.close();

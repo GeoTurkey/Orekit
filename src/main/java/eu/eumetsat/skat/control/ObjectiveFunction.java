@@ -58,7 +58,7 @@ class ObjectiveFunction implements MultivariateRealFunction, OrekitStepHandler {
      * @param cycleEnd target date for end of cycle
      * @param initialState initial state
      * @param scheduledManeuvers maneuvers that are already scheduled
-     * (and hence not optimized themselves)
+     * and hence not optimized themselves, may be null
      */
     public ObjectiveFunction(final Propagator propagator,
                              final List<SKParameter> parameters,
@@ -101,11 +101,13 @@ class ObjectiveFunction implements MultivariateRealFunction, OrekitStepHandler {
             }
             propagator.setMasterMode(this);
 
-            // set up the scheduled maneuvers that are not optimized
-            for (final ScheduledManeuver maneuver : scheduledManeuvers) {
-                propagator.addEventDetector(new ImpulseManeuver(new DateDetector(maneuver.getDate()),
-                                                                maneuver.getDeltaV(),
-                                                                maneuver.getIsp()));
+            if (scheduledManeuvers != null) {
+                // set up the scheduled maneuvers that are not optimized
+                for (final ScheduledManeuver maneuver : scheduledManeuvers) {
+                    propagator.addEventDetector(new ImpulseManeuver(new DateDetector(maneuver.getDate()),
+                                                                    maneuver.getDeltaV(),
+                                                                    maneuver.getIsp()));
+                }
             }
 
             // perform propagation
@@ -141,14 +143,14 @@ class ObjectiveFunction implements MultivariateRealFunction, OrekitStepHandler {
 
         // get the step handlers associated with parameters
         for (final SKParameter parameter : parameters) {
-            if (parameter.getStepHandler() != null) {
+            if (parameter.getEventDetector() != null) {
                 detectors.add(parameter.getEventDetector());
             }
         }
 
         // get the step handlers associated with control laws
         for (final SKControl control : controls) {
-            if (control.getStepHandler() != null) {
+            if (control.getEventDetector() != null) {
                 detectors.add(control.getEventDetector());
             }
         }

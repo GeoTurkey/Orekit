@@ -17,39 +17,28 @@ import org.orekit.time.AbsoluteDate;
 import eu.eumetsat.skat.control.AbstractSKControl;
 
 /**
- * Station-keeping control attempting to balance East-West margins
- * throughout a cycle.
+ * Station-keeping control attempting to center East-West longitude
+ * excursion around a specified center throughout a cycle.
  * <p>
  * This control value is:
  * <pre>
- *   (l<sub>E</sub> - max(l(t))) - (min(l(t)) - l<sub>W</sub>)
+ *   (max(l(t) + min(l(t)) / 2
  * </pre>
- * where l<sub>E</sub> is the East boundary of the longitude slot,
- * l<sub>W</sub> is the West boundary of the longitude slot, l(t) is
- * the spacecraft longitude at time t and the min and max functions
- * are evaluated for the complete cycle duration.
+ * where l(t) is the spacecraft longitude at time t and the min and max
+ * functions are evaluated for the complete cycle duration.
  * </p>
  * <p>
  * The previous definition implies that setting the target of this control
- * to zero attempts to have a longitude excursion covered by the satellite
- * during the station-keeping cycle that is well balanced near the center
- * of the longitude slot, the same margin being available on both sides.
- * Setting the target of this control to a non-zero value attempts to have
- * a shifted longitude excursion, the shift being towards West if the target
- * value is positive, and towards East otherwise.
+ * to l<sub>c</sub> attempts to have a longitude excursion covered by the
+ * satellite centered around the l<sub>c</sub> longitude during the
+ * station-keeping, the same margin being available on both sides.
  * </p>
  * @author Luc Maisonobe
  */
-public class LongitudeSlotMargins extends AbstractSKControl {
+public class CenteredLongitude extends AbstractSKControl {
 
     /** Associated step handler. */
     private final OrekitStepHandler stephandler;
-
-    /** Longitude slot westward boundary. */
-    private final double westBoundary;
-
-    /** Longitude slot eastward boundary. */
-    private final double eastBoundary;
 
     /** Step to use for sampling throughout propagation. */
     private final double samplingStep;
@@ -67,29 +56,25 @@ public class LongitudeSlotMargins extends AbstractSKControl {
      * @param name name of the control law
      * @param scale of the control law
      * @param controlled name of the controlled spacecraft
-     * @param westBoundary longitude slot westward boundary
-     * @param eastBoundary longitude slot eastward boundary
-     * @param target longitude margins difference (should be set to 0.0 if
-     * balanced longitude excursion is desired)
+     * @param center longitude slot center
      * @param samplingStep step to use for sampling throughout propagation
      * @param earth Earth model to use to compute longitudes
      */
-    public LongitudeSlotMargins(final String name, final double scale,
+    public CenteredLongitude(final String name, final double scale,
                                 final String controlled,
-                                final double westBoundary, final double eastBoundary,
-                                final double target, final double samplingStep,
+                                final double center, final double samplingStep,
                                 final BodyShape earth) {
-        super(name, scale, controlled, null, target,
-              westBoundary - eastBoundary, eastBoundary - westBoundary);
+        super(name, scale, controlled, null,
+              MathUtils.normalizeAngle(center, 0),
+              MathUtils.normalizeAngle(center, 0) - FastMath.PI,
+              MathUtils.normalizeAngle(center, 0) + FastMath.PI);
         this.stephandler  = new Handler();
-        this.westBoundary = westBoundary;
-        this.eastBoundary = MathUtils.normalizeAngle(eastBoundary, westBoundary);
         this.samplingStep = samplingStep;
         this.earth        = earth;
     }
 
     public double getAchievedValue() {
-        return (eastBoundary - maxL) - (minL - westBoundary);
+        return 0.5 * (minL + maxL);
     }
 
     /** {@inheritDoc} */
@@ -106,7 +91,7 @@ public class LongitudeSlotMargins extends AbstractSKControl {
     private class Handler implements OrekitStepHandler {
 
         /** Serializable UID. */
-        private static final long serialVersionUID = 1817488123211175376L;
+        private static final long serialVersionUID = 7101089708717693731L;
 
         /** {@inheritDoc} */
         public void reset() {
@@ -138,10 +123,11 @@ public class LongitudeSlotMargins extends AbstractSKControl {
 
                     // convert to latitude/longitude/altitude
                     final GeodeticPoint gp = earth.transform(position, earth.getBodyFrame(), date);
+                    final double l = MathUtils.normalizeAngle(gp.getLongitude(), getTargetValue());
 
                     // update longitude excursion
-                    minL = FastMath.min(minL, gp.getLongitude());
-                    maxL = FastMath.max(maxL, gp.getLongitude());
+                    minL = FastMath.min(minL, l);
+                    maxL = FastMath.max(maxL, l);
 
                 }
 

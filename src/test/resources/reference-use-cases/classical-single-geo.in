@@ -19,9 +19,9 @@ simulation       = {
 # Array of initial states, there must be exactly one element for each spacecraft
 initial_states   = [
     {
-        name                   = "Meteosat 9";
+        name                   = "Meteosat 7";
         bol_mass               = 1800;
-        cycle_number           = 0;
+        cycle_number           = 1;
         in_plane_maneuvers     = 0;
         in_plane_total_dV      = 0.0;
         out_of_plane_maneuvers = 0;
@@ -49,7 +49,7 @@ initial_states   = [
 scenario         = [
     {
         component           = ORBIT_DETERMINATION;
-        managed_spacecrafts = [ "Meteosat 9" ];
+        managed_spacecrafts = [ "Meteosat 7" ];
         orbit_type          = EQUINOCTIAL;
         angle_type          = MEAN;
         small               = 1.0e-12;  # this parameter is used to check covariance matrix semi-positiveness
@@ -64,7 +64,7 @@ scenario         = [
     },
     {
         component             = CONTROL_LOOP;
-        controlled_spacecraft = "Meteosat 9";  # note: control loop components control only ONE spacecraft each
+        controlled_spacecraft = "Meteosat 7";  # note: control loop components control only ONE spacecraft each
         first_cycle           = 1;
         last_cycle            = 999;
         max_eval              = 1000;
@@ -73,31 +73,30 @@ scenario         = [
             nb_points  = 5;
         };
         propagator  = {
-            method               = "numerical";
-            position_tolerance   = 100.0;
-            gravity_field_degree = 10;
-            gravity_field_order  = 10;
+            method                 = "numerical";
+            position_tolerance     = 500.0;
+            gravity_field_degree   = 6;
+            gravity_field_order    = 6;
+            cross_section          = 20.0;
+            absorption_coefficient = 1.5;
+            reflection_coefficient = 2.0;
         };
         controls    = [
             {
-                scale         = 0.01;
-                type          = LONGITUDE_MARGINS;
-                name          = "longitude margin";
-                time_horizon  = 1000000;
-                east_boundary = 19.9;
-                west_boundary = 20.1;
-                target        =  0.0;
-                sampling      = 3600.0;
+                scale            = 0.1;
+                type             = CENTERED_LONGITUDE;
+                name             = "centered longitude";
+                center_longitude =  -57.0;
+                sampling         = 3600.0;
             },
             {
-                scale         = 1.0e-4;
-                type          = ECCENTRICITY_CIRCLE;
-                name          = "eccentricity circle";
-                time_horizon  = 1000000;
-                center_x      = 0.0;
-                center_y      = 0.0;
-                radius        = 1.0e-4;
-                sampling      = 3600.0;
+                scale            = 1.0e-4;
+                type             = ECCENTRICITY_CIRCLE;
+                name             = "eccentricity circle";
+                center_x         = -3.0e-5;
+                center_y         =  0.0;
+                radius           = 1.0e-4;
+                sampling         = 3600.0;
             }
         ];
         maneuvers   = [
@@ -127,21 +126,21 @@ scenario         = [
     },
     {
         component           = MANEUVER_DATE_ERROR;
-        managed_spacecrafts = [ "Meteosat 9" ];
+        managed_spacecrafts = [ "Meteosat 7" ];
         in_plane            = true;
         out_of_plane        = true;
         standard_deviation  = 60.0;
     },
     {
         component           = MANEUVER_MAGNITUDE_ERROR;
-        managed_spacecrafts = [ "Meteosat 9" ];
+        managed_spacecrafts = [ "Meteosat 7" ];
         in_plane            = true;
         out_of_plane        = true;
         standard_deviation  = 0.001;
     },
     {
         component           = PROPAGATION;
-        managed_spacecrafts = [ "Meteosat 9" ];
+        managed_spacecrafts = [ "Meteosat 7" ];
         propagator          = {
             method                 = "numerical";
             position_tolerance     = 100.0;

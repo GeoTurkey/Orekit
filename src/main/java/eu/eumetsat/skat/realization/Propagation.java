@@ -1,6 +1,8 @@
 /* Copyright 2011 Eumetsat */
 package eu.eumetsat.skat.realization;
 
+import java.util.List;
+
 import org.orekit.errors.OrekitException;
 import org.orekit.forces.maneuvers.ImpulseManeuver;
 import org.orekit.propagation.Propagator;
@@ -10,6 +12,8 @@ import org.orekit.time.AbsoluteDate;
 import eu.eumetsat.skat.scenario.ScenarioComponent;
 import eu.eumetsat.skat.scenario.ScenarioState;
 import eu.eumetsat.skat.strategies.ScheduledManeuver;
+import eu.eumetsat.skat.utils.SkatException;
+import eu.eumetsat.skat.utils.SkatMessages;
 
 /**
  * Class for simple propagation of a station-keeping cycle.
@@ -49,7 +53,7 @@ public class Propagation implements ScenarioComponent {
 
     /** {@inheritDoc} */
     public ScenarioState[] updateStates(final ScenarioState[] originals)
-        throws OrekitException {
+        throws OrekitException, SkatException {
 
         final ScenarioState[] updated = new ScenarioState[originals.length];
 
@@ -58,10 +62,15 @@ public class Propagation implements ScenarioComponent {
 
             // select the current spacecraft affected by this component
             final int index = spacecraftIndices[i];
+            final List<ScheduledManeuver> performed = originals[index].getPerformedManeuvers();
+            if (performed == null) {
+                throw new SkatException(SkatMessages.NO_PERFORMED_MANEUVERS_STATE,
+                                        originals[index].getName(), originals[index].getCyclesNumber());
+            }
 
             // set up the propagator with the maneuvers to perform
             propagators[i].clearEventsDetectors();
-            for (final ScheduledManeuver maneuver : originals[index].getTheoreticalManeuvers()) {
+            for (final ScheduledManeuver maneuver : performed) {
                 propagators[i].addEventDetector(new ImpulseManeuver(new DateDetector(maneuver.getDate()),
                                                                     maneuver.getDeltaV(),
                                                                     maneuver.getIsp()));

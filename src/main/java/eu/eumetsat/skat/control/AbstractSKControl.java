@@ -20,7 +20,7 @@ public abstract class AbstractSKControl implements SKControl {
     private final String reference;
 
     /** Control target used to compute residuals. */
-    private double target;
+    private final double target;
 
     /** Minimal value for the residual. */
     private final double min;
@@ -45,6 +45,7 @@ public abstract class AbstractSKControl implements SKControl {
         this.scale      = scale;
         this.controlled = controlled;
         this.reference  = reference;
+        this.target     = target;
         this.min        = min;
         this.max        = max;
     }

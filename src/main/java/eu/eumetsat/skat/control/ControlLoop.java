@@ -12,6 +12,7 @@ import org.orekit.errors.OrekitException;
 import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
 import org.orekit.time.AbsoluteDate;
+import org.orekit.utils.Constants;
 
 import eu.eumetsat.skat.scenario.ScenarioComponent;
 import eu.eumetsat.skat.scenario.ScenarioState;
@@ -172,7 +173,7 @@ public class ControlLoop implements ScenarioComponent {
 
             // find the optimal parameters that minimize objective function
             AbsoluteDate startDate  = original.getEstimatedStartState().getDate();
-            AbsoluteDate targetDate = startDate.shiftedBy(rollingCycles * cycleDuration);
+            AbsoluteDate targetDate = startDate.shiftedBy(rollingCycles * cycleDuration * Constants.JULIAN_DAY);
             final ObjectiveFunction objective =
                     new ObjectiveFunction(propagator, parameters, controls, targetDate,
                                           original.getEstimatedStartState(),
@@ -180,13 +181,23 @@ public class ControlLoop implements ScenarioComponent {
             final RealPointValuePair pointValue =
                     optimizer.optimize(maxEval, objective, GoalType.MINIMIZE, startPoint, lower, upper);
             final double[] optimum = pointValue.getPoint();
+            System.out.print("cycle " + original.getCyclesNumber() + ": ");
+            for (int i = 0; i < optimum.length; ++i) {
+                if (i > 0) {
+                    System.out.print(", ");
+                }
+                System.out.print(optimum[i]);
+            }
+            System.out.println(" -> " + pointValue.getValue());
 
             // perform a last run so monitoring is updated with the optimal values
             objective.value(optimum);
 
             // update the scheduled maneuvers, adding the newly optimized set
             final List<ScheduledManeuver> theoreticalManeuvers = new ArrayList<ScheduledManeuver>();
-            theoreticalManeuvers.addAll(original.getTheoreticalManeuvers());
+            if (original.getTheoreticalManeuvers() != null) {
+                theoreticalManeuvers.addAll(original.getTheoreticalManeuvers());
+            }
             for (final TunableManeuver tunable : tunables) {
                 // get the optimized maneuver, using the optimum value set above
                 final ScheduledManeuver optimized = tunable.getManeuver();

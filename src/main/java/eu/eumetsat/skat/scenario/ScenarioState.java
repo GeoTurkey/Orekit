@@ -1,7 +1,6 @@
 /* Copyright 2011 Eumetsat */
 package eu.eumetsat.skat.scenario;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.orekit.propagation.BoundedPropagator;
@@ -160,9 +159,7 @@ public class ScenarioState {
              0, 0.0, 0.0, 0, 0.0, 0.0,
              AbsoluteDate.PAST_INFINITY, Double.NaN,
              AbsoluteDate.PAST_INFINITY, Double.NaN,
-             realState, null, null, null, null,
-             new ArrayList<ScheduledManeuver>(),
-             new ArrayList<ScheduledManeuver>());
+             realState, null, null, null, null, null, null);
     }
 
     /** Get the spacecraft name.

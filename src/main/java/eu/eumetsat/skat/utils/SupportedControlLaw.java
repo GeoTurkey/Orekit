@@ -7,27 +7,24 @@ import org.orekit.errors.OrekitException;
 import eu.eumetsat.skat.Skat;
 import eu.eumetsat.skat.control.SKControl;
 import eu.eumetsat.skat.strategies.geo.EccentricityCircle;
-import eu.eumetsat.skat.strategies.geo.LongitudeSlotMargins;
+import eu.eumetsat.skat.strategies.geo.CenteredLongitude;
 
 /** Enumerate for parsing the supported scenario components.
  */
 public enum SupportedControlLaw {
 
-    /** Constant for longitude margins control law. */
-    LONGITUDE_MARGINS() {
+    /** Constant for centered longitude control law. */
+    CENTERED_LONGITUDE() {
 
         /** {@inheritDoc} */
         public SKControl parse(final SkatFileParser parser, final Tree node,
                                final String controlled, final Skat skat)
             throws OrekitException, SkatException {
             final String name         = parser.getString(node, ParameterKey.CONTROL_NAME);
-            final double scale        = parser.getDouble(node, ParameterKey.CONTROL_SCALE);
+            final double scale        = parser.getAngle(node,  ParameterKey.CONTROL_SCALE);
             final double sampling     = parser.getDouble(node, ParameterKey.CONTROL_SAMPLING);
-            final double eastBoundary = parser.getAngle(node,  ParameterKey.CONTROL_LONGITUDE_MARGINS_EAST);
-            final double westBoundary = parser.getAngle(node,  ParameterKey.CONTROL_LONGITUDE_MARGINS_WEST);
-            final double target       = parser.getAngle(node,  ParameterKey.CONTROL_LONGITUDE_MARGINS_TARGET);
-            return new LongitudeSlotMargins(name, scale, controlled, westBoundary, eastBoundary, target,
-                                            sampling, skat.getEarth());
+            final double center       = parser.getAngle(node,  ParameterKey.CONTROL_CENTERED_LONGITUDE_CENTER);
+            return new CenteredLongitude(name, scale, controlled, center, sampling, skat.getEarth());
         }
 
     },
