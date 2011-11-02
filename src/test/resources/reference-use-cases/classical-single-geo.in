@@ -69,8 +69,10 @@ scenario         = [
         last_cycle            = 999;
         max_eval              = 1000;
         optimizer             = {
-            method     = CMA_ES;
-            nb_points  = 5;
+            method            = CMA_ES;
+            population_size   = 5;
+            max_iterations    = 100;
+            stop_fitness      = 0.01;
         };
         propagator  = {
             method                 = "numerical";

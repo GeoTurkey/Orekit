@@ -387,6 +387,32 @@ public class SkatFileParser {
 
     }
 
+    /** Get a double[] value.
+     * @param node structure containing the parameter
+     * @param key parameter key
+     * @return double[] value corresponding to the key
+     * @exception IllegalArgumentException if node does not contains the key
+     * or it is not a matrix
+     */
+    public double[] getDoubleArray1(final Tree node, final ParameterKey key)
+        throws IllegalArgumentException {
+
+
+        // get the node
+        final Tree value = getValue(node, key);
+
+        // check types and get dimensions
+        checkType(SkatParser.ARRAY, value);
+
+        // parse the value
+        final double[] array = new double[getElementsNumber(value)];
+        for (int i = 0; i < array.length; ++i) {
+            array[i] = Double.parseDouble(getElement(value, i).getText());
+        }
+        return array;
+
+    }
+
     /** Get a double[][] value.
      * @param node structure containing the parameter
      * @param key parameter key

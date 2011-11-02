@@ -72,13 +72,13 @@ public class TunableManeuver {
         this.direction    = direction.normalize();
         this.isp          = isp.clone();
         this.nominal      = nominal;
-        dateOffset        = new ManeuverParameter(name + " (date)",
-                                                  minDateOffset, maxDateOffset,
-                                                  0.5 * (minDateOffset + maxDateOffset),
-                                                  true);
         velocityIncrement = new ManeuverParameter(name + " (dV)",
                                                   minIncrement, maxIncrement,
                                                   0.5 * (minIncrement + maxIncrement),
+                                                  true);
+        dateOffset        = new ManeuverParameter(name + " (date)",
+                                                  minDateOffset, maxDateOffset,
+                                                  0.5 * (minDateOffset + maxDateOffset),
                                                   true);
         current           = null;
     }
@@ -173,8 +173,8 @@ public class TunableManeuver {
      */
     public List<SKParameter> getParameters() {
         final List<SKParameter> list = new ArrayList<SKParameter>(2);
-        list.add(dateOffset);
         list.add(velocityIncrement);
+        list.add(dateOffset);
         return list;
     }
 

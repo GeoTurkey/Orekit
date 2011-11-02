@@ -86,12 +86,35 @@ public enum SupportedScenariocomponent {
             final int firstCycle    = parser.getInt(node, ParameterKey.COMPONENT_CONTROL_LOOP_FIRST_CYCLE);
             final int lastCycle     = parser.getInt(node, ParameterKey.COMPONENT_CONTROL_LOOP_LAST_CYCLE);
 
+            // tunable maneuvers
+            final Tree maneuversNode = parser.getValue(node, ParameterKey.COMPONENT_CONTROL_LOOP_MANEUVERS);
+            TunableManeuver[] maneuvers = new TunableManeuver[parser.getElementsNumber(maneuversNode)];
+            final double[][] boundaries = new double[2][2 * maneuvers.length];
+            for (int i = 0; i < maneuvers.length; ++i) {
+                final Tree maneuver     = parser.getElement(maneuversNode, i);
+                final boolean inPlane    = parser.getBoolean(maneuver, ParameterKey.MANEUVERS_IN_PLANE);
+                final String name        = parser.getString(maneuver,  ParameterKey.MANEUVERS_NAME);
+                final Vector3D direction = parser.getVector(maneuver,  ParameterKey.MANEUVERS_DIRECTION).normalize();
+                final double[][] isp     = parser.getDoubleArray2(maneuver,  ParameterKey.MANEUVERS_ISP_CURVE);
+                final double dvMin       = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DV_MIN);
+                final double dvMax       = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DV_MAX);
+                final double nominal     = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_NOMINAL_DATE);
+                final double dtMin       = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DT_MIN);
+                final double dtMax       = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DT_MAX);
+                maneuvers[i] = new TunableManeuver(name, inPlane, direction, isp,
+                                                   dvMin, dvMax, nominal, dtMin, dtMax);
+                boundaries[0][2 * i]     = dvMin;
+                boundaries[1][2 * i]     = dvMax;
+                boundaries[0][2 * i + 1] = dtMin;
+                boundaries[1][2 * i + 1] = dtMax;
+            }
+
             // optimizer
             final int maxEval   = parser.getInt(node, ParameterKey.COMPONENT_CONTROL_LOOP_MAX_EVAL);
             final Tree optimizerNode = parser.getValue(node, ParameterKey.COMPONENT_CONTROL_LOOP_OPTIMIZER);
             final String method = parser.getIdentifier(optimizerNode, ParameterKey.OPTIMIZER_METHOD);
             final BaseMultivariateRealOptimizer<MultivariateRealFunction> optimizer =
-                    SupportedOptimizer.valueOf(method).parse(parser, optimizerNode);
+                    SupportedOptimizer.valueOf(method).parse(parser, optimizerNode, boundaries, skat);
 
             final  Propagator propagator =
                     parser.getPropagator(parser.getValue(node, ParameterKey.COMPONENT_CONTROL_LOOP_PROPAGATOR),
@@ -126,21 +149,8 @@ public enum SupportedScenariocomponent {
                 }
             }
 
-            // tunable maneuvers
-            final Tree maneuversNode = parser.getValue(node, ParameterKey.COMPONENT_CONTROL_LOOP_MANEUVERS);
-            for (int i = 0; i < parser.getElementsNumber(maneuversNode); ++i) {
-                final Tree maneuver     = parser.getElement(maneuversNode, i);
-                final boolean inPlane    = parser.getBoolean(maneuver, ParameterKey.MANEUVERS_IN_PLANE);
-                final String name        = parser.getString(maneuver,  ParameterKey.MANEUVERS_NAME);
-                final Vector3D direction = parser.getVector(maneuver,  ParameterKey.MANEUVERS_DIRECTION).normalize();
-                final double[][] isp     = parser.getDoubleArray2(maneuver,  ParameterKey.MANEUVERS_ISP_CURVE);
-                final double dvMin       = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DV_MIN);
-                final double dvMax       = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DV_MAX);
-                final double nominal     = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_NOMINAL_DATE);
-                final double dtMin       = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DT_MIN);
-                final double dtMax       = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DT_MAX);
-                loop.addTunableManeuver(new TunableManeuver(name, inPlane, direction, isp,
-                                                            dvMin, dvMax, nominal, dtMin, dtMax));
+            for (final TunableManeuver maneuver : maneuvers) {
+                loop.addTunableManeuver(maneuver);
             }
 
             return loop;

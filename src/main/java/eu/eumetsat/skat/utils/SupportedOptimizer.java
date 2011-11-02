@@ -7,6 +7,8 @@ import org.apache.commons.math.optimization.BaseMultivariateRealOptimizer;
 import org.apache.commons.math.optimization.direct.BOBYQAOptimizer;
 import org.apache.commons.math.optimization.direct.CMAESOptimizer;
 
+import eu.eumetsat.skat.Skat;
+
 /** Enumerate for the supported optimizers.
  */
 public enum SupportedOptimizer {
@@ -15,8 +17,18 @@ public enum SupportedOptimizer {
     CMA_ES() {
         /** {@inheritDoc} */
         public BaseMultivariateRealOptimizer<MultivariateRealFunction>
-            parse(final SkatFileParser parser, final Tree node) {
-            return new CMAESOptimizer(parser.getInt(node, ParameterKey.OPTIMIZER_NB_POINTS));
+            parse(final SkatFileParser parser, final Tree node,
+                  final double[][] boundaries, final Skat skat) {
+            final double[] inputSigma = new double[boundaries[0].length];
+            for (int i = 0; i < inputSigma.length; ++i) {
+                // the advice for CMA-ES is to use 1/3 of the search range for input sigma
+                inputSigma[i] = (boundaries[1][i] - boundaries[0][i]) / 3.0;
+            }
+            return new CMAESOptimizer(parser.getInt(node, ParameterKey.CMAES_POPULATION_SIZE),
+                                      inputSigma, boundaries,
+                                      parser.getInt(node, ParameterKey.CMAES_MAX_ITERATIONS),
+                                      parser.getDouble(node, ParameterKey.CMAES_STOP_FITNESS),
+                                      true, 0, 0, skat.getGenerator(), false);
         }
     },
 
@@ -24,17 +36,20 @@ public enum SupportedOptimizer {
     BOBYQA() {
         /** {@inheritDoc} */
         public BaseMultivariateRealOptimizer<MultivariateRealFunction>
-            parse(final SkatFileParser parser, final Tree node) {
-            return new BOBYQAOptimizer(parser.getInt(node, ParameterKey.OPTIMIZER_NB_POINTS));
+            parse(final SkatFileParser parser, final Tree node,
+                  final double[][] boundaries, final Skat skat) {
+            return new BOBYQAOptimizer(parser.getInt(node, ParameterKey.BOBYQA_INTERPOLATION_POINTS));
         }
     };
 
     /** Parse an input data tree to build a scenario component.
      * @param parser input file parser
      * @param node data node containing component configuration parameters
+     * @param boundaries parameters boundaries
+     * @param skat enclosing Skat tool
      * @return parsed component
      */
     public abstract BaseMultivariateRealOptimizer<MultivariateRealFunction>
-        parse(final SkatFileParser parser, final Tree node);
+        parse(final SkatFileParser parser, final Tree node, final double[][] boundaries, final Skat skat);
 
 }
