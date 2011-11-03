@@ -268,11 +268,6 @@ public class Scenario implements ScenarioComponent {
                 final SpacecraftState secondState = findClosestNode(ephemeris, firstDate.shiftedBy(dt));
                 final AbsoluteDate secondDate = secondState.getDate();
 
-                if (date.durationFrom(firstDate) * date.durationFrom(secondDate) > 0) {
-                    // we failed to bracket date between two nodes, this should never happen
-                    throw SkatException.createInternalError(null);
-                }
-
                 final double firstSolarTime  = solarTime(firstState);
                 final double secondSolarTime = solarTime(secondState);
 
