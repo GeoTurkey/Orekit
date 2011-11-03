@@ -130,6 +130,11 @@ public class ControlLoop implements ScenarioComponent {
 
     }
 
+    /** {@inheritDoc} */
+    public void setCycleEnd(final AbsoluteDate cycleEnd) {
+        // nothing to do here (we handle several cycles at once, not only the current one)
+    }
+
     /** {@inheritDoc}
      * <p>
      * Optimize the control parameters to achieve the controls.
@@ -174,6 +179,7 @@ public class ControlLoop implements ScenarioComponent {
             // find the optimal parameters that minimize objective function
             AbsoluteDate startDate  = original.getEstimatedStartState().getDate();
             AbsoluteDate targetDate = startDate.shiftedBy(rollingCycles * cycleDuration * Constants.JULIAN_DAY);
+            System.out.println("starting optimization for cycle from " + startDate + " to " + targetDate);
             final ObjectiveFunction objective =
                     new ObjectiveFunction(propagator, parameters, controls, targetDate,
                                           original.getEstimatedStartState(),

@@ -44,9 +44,7 @@ public class Propagation implements ScenarioComponent {
         this.propagators       = propagators.clone();
     }
 
-    /** Set the end date for current cycle.
-     * @param cycleEnd end date for current cycle
-     */
+    /** {@inheritDoc} */
     public void setCycleEnd(final AbsoluteDate cycleEnd) {
         this.cycleEnd = cycleEnd;
     }

@@ -10,6 +10,7 @@ import org.orekit.orbits.Orbit;
 import org.orekit.orbits.OrbitType;
 import org.orekit.orbits.PositionAngle;
 import org.orekit.propagation.SpacecraftState;
+import org.orekit.time.AbsoluteDate;
 
 import eu.eumetsat.skat.scenario.ScenarioComponent;
 import eu.eumetsat.skat.scenario.ScenarioState;
@@ -60,6 +61,11 @@ public class OrbitDetermination implements ScenarioComponent {
                                                         new GaussianRandomGenerator(random));
         this.orbitType     = orbitType;
         this.positionAngle = positionAngle;
+    }
+
+    /** {@inheritDoc} */
+    public void setCycleEnd(final AbsoluteDate cycleEnd) {
+        // nothing to do here
     }
 
     /** {@inheritDoc} */

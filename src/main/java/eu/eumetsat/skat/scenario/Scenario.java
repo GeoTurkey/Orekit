@@ -45,9 +45,6 @@ public class Scenario implements ScenarioComponent {
     /** Cycle duration. */
     private final double cycleDuration;
 
-    /** Simulation end date. */
-    private AbsoluteDate endDate;
-
     /** Output step for monitoring. */
     private final double outputstep;
 
@@ -59,6 +56,9 @@ public class Scenario implements ScenarioComponent {
 
     /** Sun model. */
     private final CelestialBody sun;
+
+    /** Cycle end date. */
+    private AbsoluteDate cycleEnd;
 
     /** Reference ground location. */
     private TopocentricFrame groundLocation;
@@ -110,7 +110,7 @@ public class Scenario implements ScenarioComponent {
 
     /** {@inheritDoc} */
     public void setCycleEnd(final AbsoluteDate cycleEnd) {
-        endDate = cycleEnd;
+        this.cycleEnd = cycleEnd;
     }
 
     /** {@inheritDoc}
@@ -131,6 +131,10 @@ public class Scenario implements ScenarioComponent {
 
             // run all components of the scenario in order
             for (final ScenarioComponent component : components) {
+                System.out.println("calling updateState for " + component.getClass().getName() +
+                                   " from " + states[0].getRealStartState().getDate() +
+                                   " to " + iterationTarget);
+                component.setCycleEnd(iterationTarget);
                 states = component.updateStates(states);
             }
 
@@ -175,7 +179,7 @@ public class Scenario implements ScenarioComponent {
                 states[i] = states[i].updatePerformedManeuvers(new ArrayList<ScheduledManeuver>());
             }
 
-        } while (iterationTarget.compareTo(endDate) < 0);
+        } while (iterationTarget.compareTo(cycleEnd) < 0);
 
         return states;
 
@@ -235,11 +239,33 @@ public class Scenario implements ScenarioComponent {
             if (dtA * dtD > 0) {
 
                 // the stored nodes do not bracket current date anymore, recompute them
-                final SpacecraftState firstState = findClosestNode(states[i].getPerformedEphemeris(), date);
+                final BoundedPropagator ephemeris = states[i].getPerformedEphemeris();
+                final SpacecraftState firstState = findClosestNode(ephemeris, date);
                 final AbsoluteDate firstDate = firstState.getDate();
-                final double period = firstState.getKeplerianPeriod();
-                final double dt = (firstDate.compareTo(date) <= 0) ? 0.5 * period : -0.5 * period;
-                final SpacecraftState secondState = findClosestNode(states[i].getPerformedEphemeris(), firstDate.shiftedBy(dt));
+                final double halfPeriod = 0.5 * firstState.getKeplerianPeriod();
+                final double dt;
+                if (firstDate.compareTo(date) <= 0) {
+                    // first node is before the date, the bracketing other node is therefore after it
+                    // are we allowed to select this one and ensure bracketing ?
+                    if (ephemeris.getMaxDate().durationFrom(firstDate) > halfPeriod) {
+                        // OK, we can bracket the date
+                        dt =  halfPeriod;
+                    } else {
+                        // no, the ephemeris is not long enough, we must select an earlier node
+                        dt = -halfPeriod;
+                    }
+                } else {
+                    // first node is after the date, the bracketing other node is therefore before it
+                    // are we allowed to select this one and ensure bracketing ?
+                    if (firstDate.durationFrom(ephemeris.getMinDate()) > halfPeriod) {
+                        // OK, we can bracket the date
+                        dt = -halfPeriod;
+                    } else {
+                        // no, the ephemeris is not long enough, we must select a later node
+                        dt =  halfPeriod;
+                    }
+                }
+                final SpacecraftState secondState = findClosestNode(ephemeris, firstDate.shiftedBy(dt));
                 final AbsoluteDate secondDate = secondState.getDate();
 
                 if (date.durationFrom(firstDate) * date.durationFrom(secondDate) > 0) {
@@ -283,18 +309,32 @@ public class Scenario implements ScenarioComponent {
             // rough estimate of time to closest node using Keplerian motion
             final double alphaM = MathUtils.normalizeAngle(orbit.getAlphaM(), 0);
             final double n      = orbit.getKeplerianMeanMotion();
-            final double dt     = ((FastMath.abs(alphaM) <= FastMath.PI) ? -alphaM : FastMath.PI - alphaM) / n;
+            double dt     = ((FastMath.abs(alphaM) <= FastMath.PI) ? -alphaM : FastMath.PI - alphaM) / n;
+            final double quarterPeriod = FastMath.PI / (2 * n);
 
-            // set up search range to the half orbit around node
-            final double ephemerideMin  = ephemeris.getMinDate().durationFrom(date);
-            final double ephemerideMax  = ephemeris.getMaxDate().durationFrom(date);
-            final double halfSearchSpan = FastMath.PI / (2 * n);
-            double dtMin = FastMath.max(ephemerideMin, dt - halfSearchSpan);
-            double dtMax = FastMath.min(ephemerideMax, dtMin + 2 * halfSearchSpan);
-            dtMin = dtMax - 2 * halfSearchSpan;
+            // set up search range to the half orbit around node, within ephemeris
+            final double ephemerisMin  = ephemeris.getMinDate().durationFrom(date);
+            final double ephemerisMax  = ephemeris.getMaxDate().durationFrom(date);
+            double dtMin;
+            double dtMax;
+            if (dt <= ephemerisMin + quarterPeriod) {
+                // the closest node lies near ephemeris start
+                dtMin = ephemerisMin;
+                dt    = dtMin + quarterPeriod;
+                dtMax = dt + quarterPeriod;
+            } else if (dt >= ephemerisMax - quarterPeriod) {
+                // the closest node lies after ephemeris, just use one half-period at ephemeris end
+                dtMax = ephemerisMax;
+                dt    = dtMax - quarterPeriod;
+                dtMin = dt - quarterPeriod;
+            } else {
+                // the closest node is well within ephemeris range
+                dtMin = dt - quarterPeriod;
+                dtMax = dt + quarterPeriod;
+            }
 
             // search the node, defined by spacecraft crossing equator in EME2000
-            final UnivariateRealSolver solver = new BracketingNthOrderBrentSolver(1.0e-6, 5);
+            final UnivariateRealSolver solver = new BracketingNthOrderBrentSolver(1.0e-3, 5);
             double dtNode = solver.solve(1000, new UnivariateRealFunction() {
                 /** {@inheritDoc} */
                 public double value(double x) {
