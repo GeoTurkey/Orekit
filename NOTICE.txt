@@ -1,6 +1,20 @@
 Skat
 Copyright 2011 Eumetsat
 
+Skat depends on the Orekit library (http://wwww.orekit.org/), which is published
+under the terms of the Apache V2 license (see the Orekit-LICENSE.txt file or
+https://www.orekit.org/blog/index.php?pages/License).
+
+Skat depends on the Apache Commons Math library (http://commons.apache.org/math), which is published
+under the terms of the Apache V2 license (see the Apache-Commons-Math-LICENSE.txt file or
+http://www.apache.org/licenses/).
+
+Skat depends at compile time (not at runtime) on the Antlr 3 library (http://www.antlr.org), which
+is published under the terms of the 3-clauses BSD license (see the Antlr-LICENSE.txt file or
+http://www.antlr.org/license.html).
+
+##### what follows is the content of the Orekit NOTICE.txt file, which is a dependency of Skat #####
+
 This product includes software developed by
 Communication et Systèmes (http://www.c-s.fr/)
 
@@ -21,3 +35,64 @@ The Apache Software Foundation (http://www.apache.org/)
 
 This product depends on software developed by
 The Apache Software Foundation (http://www.apache.org/)
+
+##### end of Orekit NOTICE.txt file #####
+
+##### what follows is the content of the Apache Commons Math NOTICE.txt file, which is a dependency of Skat #####
+Apache Commons Math
+Copyright 2001-2010 The Apache Software Foundation
+
+This product includes software developed by
+The Apache Software Foundation (http://www.apache.org/).
+
+===============================================================================
+
+The BracketFinder (package org.apache.commons.math.optimization.univariate)
+and PowellOptimizer (package org.apache.commons.math.optimization.general)
+classes are based on the Python code in module "optimize.py" (version 0.5)
+developed by Travis E. Oliphant for the SciPy library (http://www.scipy.org/)
+Copyright © 2003-2009 SciPy Developers.
+===============================================================================
+
+The LinearConstraint, LinearObjectiveFunction, LinearOptimizer,
+RelationShip, SimplexSolver and SimplexTableau classes in package
+org.apache.commons.math.optimization.linear include software developed by
+Benjamin McCann (http://www.benmccann.com) and distributed with
+the following copyright: Copyright 2009 Google Inc.
+===============================================================================
+
+This product includes software developed by the
+University of Chicago, as Operator of Argonne National
+Laboratory.
+The LevenbergMarquardtOptimizer class in package
+org.apache.commons.math.optimization.general includes software
+translated from the lmder, lmpar and qrsolv Fortran routines
+from the Minpack package
+Minpack Copyright Notice (1999) University of Chicago.  All rights reserved
+===============================================================================
+
+The GraggBulirschStoerIntegrator class in package
+org.apache.commons.math.ode.nonstiff includes software translated
+from the odex Fortran routine developed by E. Hairer and G. Wanner.
+Original source copyright:
+Copyright (c) 2004, Ernst Hairer
+===============================================================================
+
+The EigenDecompositionImpl class in package
+org.apache.commons.math.linear includes software translated
+from some LAPACK Fortran routines.  Original source copyright:
+Copyright (c) 1992-2008 The University of Tennessee.  All rights reserved.
+===============================================================================
+
+The MersenneTwister class in package org.apache.commons.math.random
+includes software translated from the 2002-01-26 version of
+the Mersenne-Twister generator written in C by Makoto Matsumoto and Takuji
+Nishimura. Original source copyright:
+Copyright (C) 1997 - 2002, Makoto Matsumoto and Takuji Nishimura,
+All rights reserved
+===============================================================================
+
+The complete text of licenses and disclaimers associated with the the original
+sources enumerated above at the time of code translation are in the LICENSE.txt
+file.
+##### end of Apache Commons Math NOTICE.txt file #####

@@ -1,0 +1,7 @@
+Copyright 2011 Eumetsat.
+
+Skat is a Eumetsat proprietary product.
+Unless otherwise stated in a dedicated agreement, it is not published.
+
+See the various Xxx-LICENSE.txt files and the NOTICE.txt file for the
+licenses of the free software products Skat depends on.
