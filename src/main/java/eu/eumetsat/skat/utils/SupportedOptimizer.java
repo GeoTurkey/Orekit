@@ -21,8 +21,7 @@ public enum SupportedOptimizer {
                   final double[][] boundaries, final Skat skat) {
             final double[] inputSigma = new double[boundaries[0].length];
             for (int i = 0; i < inputSigma.length; ++i) {
-                // the advice for CMA-ES is to use 1/3 of the search range for input sigma
-                inputSigma[i] = (boundaries[1][i] - boundaries[0][i]) / 3.0;
+                inputSigma[i] = 0.3;
             }
             return new CMAESOptimizer(parser.getInt(node, ParameterKey.CMAES_POPULATION_SIZE),
                                       inputSigma, boundaries,
