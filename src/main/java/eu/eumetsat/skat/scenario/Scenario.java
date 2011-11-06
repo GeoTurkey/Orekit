@@ -131,16 +131,13 @@ public class Scenario implements ScenarioComponent {
 
             // run all components of the scenario in order
             for (final ScenarioComponent component : components) {
-                System.out.println("calling updateState for " + component.getClass().getName() +
-                                   " from " + states[0].getRealStartState().getDate() +
-                                   " to " + iterationTarget);
                 component.setCycleEnd(iterationTarget);
                 states = component.updateStates(states);
             }
 
             // monitor data
-            AbsoluteDate tMin = originals[0].getPerformedEphemeris().getMinDate();
-            AbsoluteDate tMax = originals[0].getPerformedEphemeris().getMaxDate();
+            AbsoluteDate tMin = states[0].getPerformedEphemeris().getMinDate();
+            AbsoluteDate tMax = states[0].getPerformedEphemeris().getMaxDate();
             for (AbsoluteDate date = tMin; date.compareTo(tMax) <= 0; date = date.shiftedBy(outputstep)) {
 
                 // check for maneuvers that have occurred
@@ -230,16 +227,19 @@ public class Scenario implements ScenarioComponent {
     private void updateNodes(final AbsoluteDate date, final ScenarioState[] states)
         throws OrekitException, SkatException {
         for (int i = 0; i < states.length; ++i) {
-            if (states[i].getPerformedEphemeris() == null) {
+            final BoundedPropagator ephemeris = states[i].getPerformedEphemeris();
+            if (ephemeris == null) {
                 throw new SkatException(SkatMessages.NO_EPHEMERIS_STATE,
                                         states[i].getName(), states[i].getCyclesNumber());
             }
             final double dtA = date.durationFrom(states[i].getAscendingNodeDate());
             final double dtD = date.durationFrom(states[i].getDescendingNodeDate());
-            if (dtA * dtD > 0) {
+            final double margin = 0.001; // margin set up to avoid searching out of ephemeris range
+            if (dtA * dtD > 0 &&
+                date.durationFrom(ephemeris.getMinDate()) >  margin &&
+                date.durationFrom(ephemeris.getMaxDate()) < -margin) {
 
                 // the stored nodes do not bracket current date anymore, recompute them
-                final BoundedPropagator ephemeris = states[i].getPerformedEphemeris();
                 final SpacecraftState firstState = findClosestNode(ephemeris, date);
                 final AbsoluteDate firstDate = firstState.getDate();
                 final double halfPeriod = 0.5 * firstState.getKeplerianPeriod();
@@ -302,24 +302,28 @@ public class Scenario implements ScenarioComponent {
                     (CircularOrbit) OrbitType.CIRCULAR.convertType(ephemeris.propagate(date).getOrbit());
 
             // rough estimate of time to closest node using Keplerian motion
-            final double alphaM = MathUtils.normalizeAngle(orbit.getAlphaM(), 0);
-            final double n      = orbit.getKeplerianMeanMotion();
-            double dt     = ((FastMath.abs(alphaM) <= FastMath.PI) ? -alphaM : FastMath.PI - alphaM) / n;
-            final double quarterPeriod = FastMath.PI / (2 * n);
+            final double halfPi        = 0.5 * FastMath.PI;
+            final double alphaM        = MathUtils.normalizeAngle(orbit.getAlphaM(), 0);
+            final double n             = orbit.getKeplerianMeanMotion();
+            final double targetAlphaM  =
+                (alphaM < -halfPi) ? -FastMath.PI : ((alphaM < halfPi) ? 0 : FastMath.PI);
+            double dt                  = (targetAlphaM - alphaM) / n;
+            final double quarterPeriod = halfPi / n;
 
             // set up search range to the half orbit around node, within ephemeris
+            final double margin        = 1.0e-3;
             final double ephemerisMin  = ephemeris.getMinDate().durationFrom(date);
             final double ephemerisMax  = ephemeris.getMaxDate().durationFrom(date);
             double dtMin;
             double dtMax;
             if (dt <= ephemerisMin + quarterPeriod) {
                 // the closest node lies near ephemeris start
-                dtMin = ephemerisMin;
+                dtMin = ephemerisMin + margin;
                 dt    = dtMin + quarterPeriod;
                 dtMax = dt + quarterPeriod;
             } else if (dt >= ephemerisMax - quarterPeriod) {
                 // the closest node lies after ephemeris, just use one half-period at ephemeris end
-                dtMax = ephemerisMax;
+                dtMax = ephemerisMax - margin;
                 dt    = dtMax - quarterPeriod;
                 dtMin = dt - quarterPeriod;
             } else {
@@ -344,6 +348,8 @@ public class Scenario implements ScenarioComponent {
             }, dtMin, dtMax, dt);
 
             return ephemeris.propagate(date.shiftedBy(dtNode));
+        } catch (OrekitExceptionWrapper oew) {
+            throw oew.getException();
         } catch (NoBracketingException nbe) {
             throw new OrekitException(nbe);
         }

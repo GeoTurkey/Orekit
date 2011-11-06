@@ -35,6 +35,7 @@ import org.orekit.data.DataProvidersManager;
 import org.orekit.data.DirectoryCrawler;
 import org.orekit.errors.OrekitException;
 import org.orekit.forces.gravity.potential.GravityFieldFactory;
+import org.orekit.forces.gravity.potential.PotentialCoefficientsProvider;
 import org.orekit.frames.Frame;
 import org.orekit.frames.TopocentricFrame;
 import org.orekit.orbits.CircularOrbit;
@@ -98,6 +99,9 @@ public class Skat {
 
     /** Moon model. */
     private final CelestialBody moon;
+
+    /** Gravity field. */
+    private final PotentialCoefficientsProvider gravityField;
 
     /** Reference ground location. */
     private TopocentricFrame groundLocation;
@@ -226,6 +230,7 @@ public class Skat {
                                              parser.getEarthFrame(simulationNode, ParameterKey.SIMULATION_EARTH_FRAME));
         sun           = CelestialBodyFactory.getSun();
         moon          = CelestialBodyFactory.getMoon();
+        gravityField  = GravityFieldFactory.getPotentialProvider();
         startDate     = parser.getDate(simulationNode, ParameterKey.SIMULATION_START_DATE, utc);
         generator     = new Well19937a(parser.getInt(simulationNode, ParameterKey.SIMULATION_RANDOM_SEED));
         cycleDuration = parser.getDouble(simulationNode, ParameterKey.SIMULATION_CYCLE_DURATION);
@@ -373,6 +378,13 @@ public class Skat {
      */
     public CelestialBody getMoon() {
         return moon;
+    }
+
+    /** Get the configured gravity field.
+     * @return configured gravity field
+     */
+    public PotentialCoefficientsProvider getgravityField() {
+        return gravityField;
     }
 
     /** Get the configured ground location.

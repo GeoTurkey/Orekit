@@ -113,6 +113,8 @@ public enum ParameterKey {
 
     COMPONENT_PROPAGATION_PROPAGATOR("propagator"),
     COMPONENT_PROPAGATION_METHOD("method"),
+    NUMERICAL_PROPAGATOR_MIN_STEP("min_step"),
+    NUMERICAL_PROPAGATOR_MAX_STEP("max_step"),
     NUMERICAL_PROPAGATOR_TOLERANCE("position_tolerance"),
     NUMERICAL_PROPAGATOR_GRAVITY_FIELD_DEGREE("gravity_field_degree"),
     NUMERICAL_PROPAGATOR_GRAVITY_FIELD_ORDER("gravity_field_order"),

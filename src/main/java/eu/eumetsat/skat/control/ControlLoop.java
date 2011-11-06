@@ -187,7 +187,8 @@ public class ControlLoop implements ScenarioComponent {
             final RealPointValuePair pointValue =
                     optimizer.optimize(maxEval, objective, GoalType.MINIMIZE, startPoint, lower, upper);
             final double[] optimum = pointValue.getPoint();
-            System.out.print("cycle " + original.getCyclesNumber() + ": ");
+            System.out.print("cycle " + original.getCyclesNumber() + "[ " + startDate +
+                             " ; " + targetDate + "]: ");
             for (int i = 0; i < optimum.length; ++i) {
                 if (i > 0) {
                     System.out.print(", ");

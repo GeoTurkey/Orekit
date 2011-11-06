@@ -42,7 +42,6 @@ import org.orekit.propagation.Propagator;
 import org.orekit.propagation.numerical.NumericalPropagator;
 import org.orekit.time.AbsoluteDate;
 import org.orekit.time.TimeScale;
-import org.orekit.utils.Constants;
 import org.orekit.utils.PVCoordinates;
 
 /** Simple parser for key/value files with embedded structures and arrays.
@@ -575,95 +574,6 @@ public class SkatFileParser {
         default :
             // this should never happen
             throw SkatException.createInternalError(null);
-        }
-
-    }
-
-    /** Get a propagator.
-     * @param node structure containing the parameter
-     * @param initialOrbit initial orbit
-     * @param earth Earth model
-     * @param sun Sun model
-     * @param moon Moon model
-     * @return propagator
-     * @exception OrekitException if propagator cannot be set up
-     * @exception SkatException if propagation method is not recognized
-     */
-    public Propagator getPropagator(final Tree node, final Orbit initialOrbit,
-                                    final OneAxisEllipsoid earth,
-                                    final CelestialBody sun, final CelestialBody moon)
-        throws OrekitException, SkatException {
-
-        try {
-            // set up propagator
-            final String method = getString(node, ParameterKey.COMPONENT_PROPAGATION_METHOD);
-            if (method.equals(NUMERICAL_PROPAGATOR)) {
-                final double minStep = 0.01;
-                final double maxStep = Constants.JULIAN_DAY;
-                final double dP      = getDouble(node, ParameterKey.NUMERICAL_PROPAGATOR_TOLERANCE);
-                final double[][] tolerance = NumericalPropagator.tolerances(dP, initialOrbit, initialOrbit.getType());
-                final AdaptiveStepsizeIntegrator integrator =
-                        new DormandPrince853Integrator(minStep, maxStep, tolerance[0], tolerance[1]);
-                integrator.setInitialStepSize(initialOrbit.getKeplerianPeriod() / 100.0);
-                final NumericalPropagator numPropagator = new NumericalPropagator(integrator);
-                numPropagator.setAttitudeProvider(new LofOffset(initialOrbit.getFrame(), LOFType.TNW));
-
-                // Earth gravity field
-                PotentialCoefficientsProvider gravityField = GravityFieldFactory.getPotentialProvider();
-                final int degree = getInt(node, ParameterKey.NUMERICAL_PROPAGATOR_GRAVITY_FIELD_DEGREE);
-                final int order  = getInt(node, ParameterKey.NUMERICAL_PROPAGATOR_GRAVITY_FIELD_ORDER);
-                ForceModel gravity = new CunninghamAttractionModel(earth.getBodyFrame(),
-                                                                   gravityField.getAe(),
-                                                                   gravityField.getMu(),
-                                                                   gravityField.getC(degree, order, false),
-                                                                   gravityField.getS(degree, order, false));
-                numPropagator.addForceModel(gravity);
-
-                double dragCoeff =
-                    containsKey(node, ParameterKey.NUMERICAL_PROPAGATOR_DRAG_COEFFICIENT) ?
-                    getDouble(node, ParameterKey.NUMERICAL_PROPAGATOR_DRAG_COEFFICIENT) : 0.0;
-                double absorptionCoeff =
-                    containsKey(node, ParameterKey.NUMERICAL_PROPAGATOR_ABSORPTION_COEFFICIENT) ?
-                    getDouble(node, ParameterKey.NUMERICAL_PROPAGATOR_ABSORPTION_COEFFICIENT) : 0.0;
-                double reflectionCoeff =
-                    containsKey(node, ParameterKey.NUMERICAL_PROPAGATOR_REFLECTION_COEFFICIENT) ?
-                    getDouble(node, ParameterKey.NUMERICAL_PROPAGATOR_REFLECTION_COEFFICIENT) : 0.0;
-                double crossSection =
-                    containsKey(node, ParameterKey.NUMERICAL_PROPAGATOR_CROSS_SECTION) ?
-                    getDouble(node, ParameterKey.NUMERICAL_PROPAGATOR_CROSS_SECTION) : 0.0;
-
-                // third bodies
-                numPropagator.addForceModel(new ThirdBodyAttraction(sun));
-                numPropagator.addForceModel(new ThirdBodyAttraction(moon));
-
-                // radiation pressure
-                SphericalSpacecraft s =
-                    new SphericalSpacecraft(crossSection, dragCoeff, absorptionCoeff, reflectionCoeff);
-
-                if ((absorptionCoeff > 0) || (reflectionCoeff > 0)) {
-                    numPropagator.addForceModel(new SolarRadiationPressure(sun, earth.getEquatorialRadius(), s));
-                }
-
-                // drag
-                if (dragCoeff > 0) {
-                    numPropagator.addForceModel(new DragForce(new HarrisPriester(sun, earth), s));
-                }
-
-                numPropagator.setOrbitType(initialOrbit.getType());
-                return numPropagator;
-
-            } else if (method.equals(SEMI_ANALYTICAL_PROPAGATOR)){
-                // TODO implement semi-analytical propagation
-                throw SkatException.createInternalError(null);
-            } else {
-                throw new SkatException(SkatMessages.UNSUPPORTED_KEY, method,
-                                        node.getLine(), inputName,
-                                        NUMERICAL_PROPAGATOR + ", " + SEMI_ANALYTICAL_PROPAGATOR);
-            }
-        } catch (ParseException pe) {
-            throw new SkatException(pe, LocalizedFormats.SIMPLE_MESSAGE, pe.getLocalizedMessage());
-        } catch (IOException ioe) {
-            throw new SkatException(ioe, LocalizedFormats.SIMPLE_MESSAGE, ioe.getLocalizedMessage());
         }
 
     }

@@ -112,14 +112,15 @@ public enum SupportedScenariocomponent {
             // optimizer
             final int maxEval   = parser.getInt(node, ParameterKey.COMPONENT_CONTROL_LOOP_MAX_EVAL);
             final Tree optimizerNode = parser.getValue(node, ParameterKey.COMPONENT_CONTROL_LOOP_OPTIMIZER);
-            final String method = parser.getIdentifier(optimizerNode, ParameterKey.OPTIMIZER_METHOD);
+            final String optimizationMethod = parser.getIdentifier(optimizerNode, ParameterKey.OPTIMIZER_METHOD);
             final BaseMultivariateRealOptimizer<MultivariateRealFunction> optimizer =
-                    SupportedOptimizer.valueOf(method).parse(parser, optimizerNode, boundaries, skat);
+                    SupportedOptimizer.valueOf(optimizationMethod).parse(parser, optimizerNode, boundaries, skat);
 
+            // propagator
+            final Tree propagatorNode = parser.getValue(node, ParameterKey.COMPONENT_CONTROL_LOOP_PROPAGATOR);
+            final  String propagationMethod = parser.getIdentifier(propagatorNode, ParameterKey.COMPONENT_PROPAGATION_METHOD);
             final  Propagator propagator =
-                    parser.getPropagator(parser.getValue(node, ParameterKey.COMPONENT_CONTROL_LOOP_PROPAGATOR),
-                                         skat.getInitialOrbit(spacecraftIndex), skat.getEarth(),
-                                         skat.getSun(), skat.getMoon());
+                    SupportedPropagator.valueOf(propagationMethod).parse(parser, propagatorNode, skat, spacecraftIndex);
 
 
             final ControlLoop loop = new ControlLoop(spacecraftIndex, firstCycle, lastCycle,
@@ -201,9 +202,10 @@ public enum SupportedScenariocomponent {
             final int[] indices = getIndices(parser, node, skat);
             final  Propagator[] propagators = new Propagator[indices.length];
             for (int i = 0; i < propagators.length; ++i) {
-                propagators[i] = parser.getPropagator(parser.getValue(node, ParameterKey.COMPONENT_PROPAGATION_PROPAGATOR),
-                                                      skat.getInitialOrbit(indices[i]), skat.getEarth(),
-                                                      skat.getSun(), skat.getMoon());
+                final Tree propagatorNode = parser.getValue(node, ParameterKey.COMPONENT_PROPAGATION_PROPAGATOR);
+                final  String propagationMethod = parser.getIdentifier(propagatorNode, ParameterKey.COMPONENT_PROPAGATION_METHOD);
+                propagators[i] =
+                        SupportedPropagator.valueOf(propagationMethod).parse(parser, propagatorNode, skat, i);
             }
 
             // build the component
