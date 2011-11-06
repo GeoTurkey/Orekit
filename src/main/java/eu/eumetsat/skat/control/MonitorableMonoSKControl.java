@@ -90,10 +90,18 @@ public class MonitorableMonoSKControl implements MonitorableMono, SKControl {
 
     /** {@inheritDoc} */
     public double getAchievedValue() {
+
         // monitor the residuals
         final double achieved = control.getAchievedValue();
         value[0] = achieved - getTargetValue();
+
+        // notifies monitors
+        for (final MonitorMono monitor : monitors) {
+            monitor.valueChanged(this);
+        }
+
         return achieved;
+
     }
 
     /** {@inheritDoc} */

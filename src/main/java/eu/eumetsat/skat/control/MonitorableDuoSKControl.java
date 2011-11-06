@@ -90,10 +90,18 @@ public class MonitorableDuoSKControl implements MonitorableDuo, SKControl {
 
     /** {@inheritDoc} */
     public double getAchievedValue() {
+
         // monitor the residuals
         final double achieved = control.getAchievedValue();
         value[0] = achieved - getTargetValue();
+
+        // notifies monitors
+        for (final MonitorDuo monitor : monitors) {
+            monitor.valueChanged(this);
+        }
+
         return achieved;
+
     }
 
     /** {@inheritDoc} */
