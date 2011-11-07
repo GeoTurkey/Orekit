@@ -33,6 +33,9 @@ public abstract class SKParameter implements SKElement {
     /** Maximal allowed value for the parameter. */
     private final double max;
 
+    /** Convergence threshold for the parameter. */
+    private final double convergence;
+
     /** Current value of the parameter. */
     private double value;
 
@@ -46,16 +49,18 @@ public abstract class SKParameter implements SKElement {
      * @param name name of the parameter
      * @param min minimal allowed value for the parameter
      * @param max maximal allowed value for the parameter
+     * @param convergence convergence threshold for the parameter
      * @param value current value of the parameter
      * @param tunable tunable flag
      */
     protected SKParameter(final String name,
-                          final double min, final double max,
+                          final double min, final double max, final double convergence,
                           final double value, final boolean tunable) {
 
-        this.name    = name;
-        this.min     = min;
-        this.max     = max;
+        this.name        = name;
+        this.min         = min;
+        this.max         = max;
+        this.convergence = convergence;
 
         // initialize the guessing base for min and max only
         guessingBase = new ArrayList<Double>();
@@ -95,6 +100,13 @@ public abstract class SKParameter implements SKElement {
      */
     public double getMax() {
         return max;
+    }
+
+    /** Get the convergence threshold for the parameter.
+     * @return convergence threshold
+     */
+    public double getConvergence() {
+        return convergence;
     }
 
     /** Get the name of the parameter.

@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
+import org.apache.commons.math.util.FastMath;
 import org.orekit.forces.maneuvers.ImpulseManeuver;
 import org.orekit.propagation.events.DateDetector;
 import org.orekit.propagation.events.EventDetector;
@@ -26,6 +27,9 @@ public class TunableManeuver {
 
     /** Indicator for in-plane maneuvers. */
     private final boolean inPlane;
+
+    /** Indicator for maneuver relative to the previous one. */
+    private final boolean relative;
 
     /** Thrust direction in spacecraft frame. */
     private final Vector3D direction;
@@ -54,33 +58,48 @@ public class TunableManeuver {
     /** Simple constructor.
      * @param name name of the maneuver
      * @param inPlane if true, the maneuver is considered to be in-plane
+     * @param relative if true, the maneuver date is relative to the previous maneuver
      * @param direction thrust direction in spacecraft frame
      * @param isp engine specific impulse calibration curve (seconds in row 0, consumed mass in row 1)
      * @param minIncrement minimal allowed value for velocity increment
      * @param maxIncrement maximal allowed value for velocity increment
+     * @param convergenceIncrement convergence threshold for velocity increment
      * @param nominal nominal offset with respect to reference date
      * @param minDateOffset offset for earliest allowed maneuver date
      * @param maxDateOffset offset for latest allowed maneuver date
+     * @param convergenceDateOffset convergence threshold for sate offset
      */
     public TunableManeuver(final String name, final boolean inPlane,
-                           final Vector3D direction,
+                           final boolean relative, final Vector3D direction,
                            final double[][] isp,
                            final double minIncrement, final double maxIncrement,
+                           final double convergenceIncrement,
                            final double nominal,
-                           final double minDateOffset, final double maxDateOffset) {
+                           final double minDateOffset, final double maxDateOffset,
+                           final double convergenceDateOffset) {
         this.inPlane      = inPlane;
+        this.relative     = relative;
         this.direction    = direction.normalize();
         this.isp          = isp.clone();
         this.nominal      = nominal;
         velocityIncrement = new ManeuverParameter(name + " (dV)",
                                                   minIncrement, maxIncrement,
+                                                  convergenceIncrement,
                                                   0.5 * (minIncrement + maxIncrement),
-                                                  true);
+                                                  FastMath.abs(maxIncrement - minIncrement) > 1.0e-6);
         dateOffset        = new ManeuverParameter(name + " (date)",
                                                   minDateOffset, maxDateOffset,
+                                                  convergenceDateOffset,
                                                   0.5 * (minDateOffset + maxDateOffset),
-                                                  true);
+                                                  FastMath.abs(maxDateOffset - minDateOffset) > 1.0e-6);
         current           = null;
+    }
+
+    /** Check if maneuver date is relative to the previous one.
+     * @return true if maneuver date is relative to the previous one
+     */
+    public boolean isRelativeToPrevious() {
+        return relative;
     }
 
     /** Set the reference date.
@@ -131,13 +150,14 @@ public class TunableManeuver {
          * @param name name of the parameter
          * @param min minimal allowed value for the parameter
          * @param max maximal allowed value for the parameter
+         * @param convergence convergence threshold for the parameter
          * @param value current value of the parameter
          * @param tunable tunable flag
          */
         public ManeuverParameter(final String name,
-                                 final double min, final double max,
+                                 final double min, final double max, final double convergence,
                                  final double value, final boolean tunable) {
-            super(name, min, max, value, tunable);
+            super(name, min, max, convergence, value, tunable);
         }
 
         /** {@inheritDoc} */
@@ -182,10 +202,16 @@ public class TunableManeuver {
      * @return maneuver corresponding to the current value of the parameters
      */
     public ScheduledManeuver getManeuver() {
-        return new ScheduledManeuver(inPlane,
-                                     reference.shiftedBy(nominal + dateOffset.getValue()),
+        return new ScheduledManeuver(inPlane, getDate(),
                                      new Vector3D(velocityIncrement.getValue(), direction),
                                      currentIsp);
+    }
+
+    /** Get the maneuver date.
+     * @return maneuver date
+     */
+    public AbsoluteDate getDate() {
+        return reference.shiftedBy(nominal + dateOffset.getValue());
     }
 
 }

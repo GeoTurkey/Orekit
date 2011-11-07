@@ -89,32 +89,35 @@ public enum SupportedScenariocomponent {
             // tunable maneuvers
             final Tree maneuversNode = parser.getValue(node, ParameterKey.COMPONENT_CONTROL_LOOP_MANEUVERS);
             TunableManeuver[] maneuvers = new TunableManeuver[parser.getElementsNumber(maneuversNode)];
-            final double[][] boundaries = new double[2][2 * maneuvers.length];
             for (int i = 0; i < maneuvers.length; ++i) {
-                final Tree maneuver     = parser.getElement(maneuversNode, i);
+                final Tree maneuver      = parser.getElement(maneuversNode, i);
                 final boolean inPlane    = parser.getBoolean(maneuver, ParameterKey.MANEUVERS_IN_PLANE);
-                final String name        = parser.getString(maneuver,  ParameterKey.MANEUVERS_NAME);
-                final Vector3D direction = parser.getVector(maneuver,  ParameterKey.MANEUVERS_DIRECTION).normalize();
-                final double[][] isp     = parser.getDoubleArray2(maneuver,  ParameterKey.MANEUVERS_ISP_CURVE);
-                final double dvMin       = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DV_MIN);
-                final double dvMax       = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DV_MAX);
-                final double nominal     = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_NOMINAL_DATE);
-                final double dtMin       = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DT_MIN);
-                final double dtMax       = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DT_MAX);
-                maneuvers[i] = new TunableManeuver(name, inPlane, direction, isp,
-                                                   dvMin, dvMax, nominal, dtMin, dtMax);
-                boundaries[0][2 * i]     = dvMin;
-                boundaries[1][2 * i]     = dvMax;
-                boundaries[0][2 * i + 1] = dtMin;
-                boundaries[1][2 * i + 1] = dtMax;
+                final boolean relative   = parser.getBoolean(maneuver, ParameterKey.MANEUVERS_RELATIVE_TO_PREVIOUS);
+                if (i == 0 && relative) {
+                    throw new SkatException(SkatMessages.FIRST_MANEUVER_CANNOT_BE_RELATIVE_TO_PREVIOUS,
+                                            parser.getValue(maneuver, ParameterKey.MANEUVERS_RELATIVE_TO_PREVIOUS).getLine(),
+                                            parser.getInputName());
+                }
+                final String name          = parser.getString(maneuver,  ParameterKey.MANEUVERS_NAME);
+                final Vector3D direction   = parser.getVector(maneuver,  ParameterKey.MANEUVERS_DIRECTION).normalize();
+                final double[][] isp       = parser.getDoubleArray2(maneuver,  ParameterKey.MANEUVERS_ISP_CURVE);
+                final double dvMin         = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DV_MIN);
+                final double dvMax         = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DV_MAX);
+                final double dvConvergence = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DV_CONVERGENCE);
+                final double nominal       = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_NOMINAL_DATE);
+                final double dtMin         = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DT_MIN);
+                final double dtMax         = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DT_MAX);
+                final double dtConvergence = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DT_CONVERGENCE);
+                maneuvers[i] = new TunableManeuver(name, inPlane, relative, direction, isp,
+                                                   dvMin, dvMax, dvConvergence, nominal, dtMin, dtMax, dtConvergence);
             }
 
             // optimizer
-            final int maxEval   = parser.getInt(node, ParameterKey.COMPONENT_CONTROL_LOOP_MAX_EVAL);
+            final int maxEval = parser.getInt(node, ParameterKey.COMPONENT_CONTROL_LOOP_MAX_EVAL);
             final Tree optimizerNode = parser.getValue(node, ParameterKey.COMPONENT_CONTROL_LOOP_OPTIMIZER);
             final String optimizationMethod = parser.getIdentifier(optimizerNode, ParameterKey.OPTIMIZER_METHOD);
             final BaseMultivariateRealOptimizer<MultivariateRealFunction> optimizer =
-                    SupportedOptimizer.valueOf(optimizationMethod).parse(parser, optimizerNode, boundaries, skat);
+                    SupportedOptimizer.valueOf(optimizationMethod).parse(parser, optimizerNode, maneuvers, skat);
 
             // propagator
             final Tree propagatorNode = parser.getValue(node, ParameterKey.COMPONENT_CONTROL_LOOP_PROPAGATOR);
@@ -123,8 +126,9 @@ public enum SupportedScenariocomponent {
                     SupportedPropagator.valueOf(propagationMethod).parse(parser, propagatorNode, skat, spacecraftIndex);
 
 
+            // set up boundaries for tunable parameters
             final ControlLoop loop = new ControlLoop(spacecraftIndex, firstCycle, lastCycle,
-                                                     maxEval, optimizer, propagator,
+                                                     maneuvers, maxEval, optimizer, propagator,
                                                      skat.getCycleDuration(), skat.getRollingCycles());
 
             // control laws
@@ -148,10 +152,6 @@ public enum SupportedScenariocomponent {
                                         monitorable);
                     loop.addControl(monitorable);
                 }
-            }
-
-            for (final TunableManeuver maneuver : maneuvers) {
-                loop.addTunableManeuver(maneuver);
             }
 
             return loop;
