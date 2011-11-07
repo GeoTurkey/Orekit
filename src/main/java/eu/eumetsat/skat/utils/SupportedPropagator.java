@@ -68,20 +68,6 @@ public enum SupportedPropagator {
                 parser.containsKey(node, ParameterKey.NUMERICAL_PROPAGATOR_CROSS_SECTION) ?
                 parser.getDouble(node, ParameterKey.NUMERICAL_PROPAGATOR_CROSS_SECTION) : 0.0;
 
-            // third bodies
-            final Tree thirdBodiesNode = parser.getValue(node, ParameterKey.NUMERICAL_PROPAGATOR_THIRD_BODIES);
-            for (int i = 0; i < parser.getElementsNumber(thirdBodiesNode); ++i) {
-                final String body = parser.getIdentifier(thirdBodiesNode, i);
-                if (body.equals("SUN")) {
-                    numPropagator.addForceModel(new ThirdBodyAttraction(skat.getSun()));
-                } else if (body.equals("MOON")) {
-                    numPropagator.addForceModel(new ThirdBodyAttraction(skat.getMoon()));
-                } else {
-                    throw new SkatException(SkatMessages.UNSUPPORTED_KEY, body, thirdBodiesNode.getLine(),
-                                            parser.getInputName(), "SUN, MOON");
-                }
-            }
-
             // radiation pressure
             SphericalSpacecraft s =
                 new SphericalSpacecraft(crossSection, dragCoeff, absorptionCoeff, reflectionCoeff);
@@ -96,6 +82,20 @@ public enum SupportedPropagator {
             if (dragCoeff > 0) {
                 numPropagator.addForceModel(new DragForce(new HarrisPriester(skat.getSun(), skat.getEarth()),
                                                           s));
+            }
+
+            // third bodies
+            final Tree thirdBodiesNode = parser.getValue(node, ParameterKey.NUMERICAL_PROPAGATOR_THIRD_BODIES);
+            for (int i = 0; i < parser.getElementsNumber(thirdBodiesNode); ++i) {
+                final String body = parser.getIdentifier(thirdBodiesNode, i);
+                if (body.equals("SUN")) {
+                    numPropagator.addForceModel(new ThirdBodyAttraction(skat.getSun()));
+                } else if (body.equals("MOON")) {
+                    numPropagator.addForceModel(new ThirdBodyAttraction(skat.getMoon()));
+                } else {
+                    throw new SkatException(SkatMessages.UNSUPPORTED_KEY, body, thirdBodiesNode.getLine(),
+                                            parser.getInputName(), "SUN, MOON");
+                }
             }
 
             numPropagator.setOrbitType(initialOrbit.getType());
