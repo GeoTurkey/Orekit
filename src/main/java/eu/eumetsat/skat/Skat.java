@@ -160,20 +160,8 @@ public class Skat {
             // perform simulation
             stationKeeping.run();
 
-        } catch (ParseException pe) {
-            System.err.println(pe.getLocalizedMessage());
-        } catch (IOException ioe) {
-            System.err.println(ioe.getLocalizedMessage());
-        } catch (NoSuchFieldException nsfe) {
-            System.err.println(nsfe.getLocalizedMessage());
-        } catch ( RecognitionException re) {
-            System.err.println(re.getLocalizedMessage());
-        } catch (OrekitException oe) {
-            System.err.println(oe.getLocalizedMessage());
-            oe.printStackTrace(System.err);
-        } catch (SkatException se) {
-            System.err.println(se.getLocalizedMessage());
-            se.printStackTrace(System.err);
+        } catch (Exception e) {
+            System.err.println(e.getLocalizedMessage());
         } finally {
 
             if (stationKeeping != null) {
