@@ -36,9 +36,7 @@ public class MonitorableMonoSKControl implements MonitorableMono, SKControl {
     private double[] value;
 
     /** Simple constructor.
-     * @param name name of the control law
-     * @param scale of the control law
-     * @param targetValue target value of the control law
+     * @param control raw control law
      */
     public MonitorableMonoSKControl(final SKControl control) {
         this.control  = control;
@@ -47,10 +45,24 @@ public class MonitorableMonoSKControl implements MonitorableMono, SKControl {
         this.value    = new double[1];
     }
 
+    /** Get the raw (unmonitored) control law.
+     * @return raw control law
+     */
+    public SKControl getControlLaw() {
+        return control;
+    }
+
     /** {@inheritDoc} */
     public void register(final int nbSpacecrafts, final MonitorMono monitor) {
         monitors.add(monitor);
         monitor.startMonitoring(this);
+    }
+
+    /** Set the date of the monitoring.
+     * @param date date of the monitoring
+     */
+    public void setDate(final AbsoluteDate date) {
+        this.date = date;
     }
 
     /** {@inheritDoc} */
