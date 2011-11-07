@@ -84,6 +84,7 @@ scenario         = [
             cross_section          = 20.0;
             absorption_coefficient = 1.5;
             reflection_coefficient = 2.0;
+            third_bodies           = [ SUN, MOON ];
         };
         controls    = [
             {
@@ -155,6 +156,7 @@ scenario         = [
             cross_section          = 20.0;
             absorption_coefficient = 1.5;
             reflection_coefficient = 2.0;
+            third_bodies           = [ SUN, MOON ];
         }
     }
 ];

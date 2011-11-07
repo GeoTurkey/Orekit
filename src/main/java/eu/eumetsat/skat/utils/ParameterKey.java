@@ -122,6 +122,7 @@ public enum ParameterKey {
     NUMERICAL_PROPAGATOR_DRAG_COEFFICIENT("drag_coefficient"),
     NUMERICAL_PROPAGATOR_ABSORPTION_COEFFICIENT("absorption_coefficient"),
     NUMERICAL_PROPAGATOR_REFLECTION_COEFFICIENT("reflection_coefficient"),
+    NUMERICAL_PROPAGATOR_THIRD_BODIES("third_bodies"),
 
     MONITORING;
 

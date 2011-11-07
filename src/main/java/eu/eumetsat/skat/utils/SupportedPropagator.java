@@ -31,7 +31,7 @@ public enum SupportedPropagator {
         /** {@inheritDoc} */
         public Propagator parse(final SkatFileParser parser, final Tree node,
                                 final Skat skat, final int spacecraftIndex)
-            throws OrekitException {
+            throws OrekitException, SkatException {
 
             final Orbit initialOrbit = skat.getInitialOrbit(spacecraftIndex);
             final double minStep = parser.getDouble(node, ParameterKey.NUMERICAL_PROPAGATOR_MIN_STEP);
@@ -69,8 +69,18 @@ public enum SupportedPropagator {
                 parser.getDouble(node, ParameterKey.NUMERICAL_PROPAGATOR_CROSS_SECTION) : 0.0;
 
             // third bodies
-            numPropagator.addForceModel(new ThirdBodyAttraction(skat.getSun()));
-            numPropagator.addForceModel(new ThirdBodyAttraction(skat.getMoon()));
+            final Tree thirdBodiesNode = parser.getValue(node, ParameterKey.NUMERICAL_PROPAGATOR_THIRD_BODIES);
+            for (int i = 0; i < parser.getElementsNumber(thirdBodiesNode); ++i) {
+                final String body = parser.getIdentifier(thirdBodiesNode, i);
+                if (body.equals("SUN")) {
+                    numPropagator.addForceModel(new ThirdBodyAttraction(skat.getSun()));
+                } else if (body.equals("MOON")) {
+                    numPropagator.addForceModel(new ThirdBodyAttraction(skat.getMoon()));
+                } else {
+                    throw new SkatException(SkatMessages.UNSUPPORTED_KEY, body, thirdBodiesNode.getLine(),
+                                            parser.getInputName(), "SUN, MOON");
+                }
+            }
 
             // radiation pressure
             SphericalSpacecraft s =
@@ -99,7 +109,7 @@ public enum SupportedPropagator {
         /** {@inheritDoc} */
         public Propagator parse(final SkatFileParser parser, final Tree node,
                                 final Skat skat, final int spacecraftIndex)
-            throws OrekitException {
+            throws OrekitException, SkatException {
             // TODO implement semi-analytical propagation
             throw SkatException.createInternalError(null);
         }
@@ -112,9 +122,10 @@ public enum SupportedPropagator {
      * @param spacecraftIndex index of the spacecraft to be propagated
      * @return parsed component
      * @exception OrekitException if propagator cannot be built
+     * @exception if a third body name is not recognized
      */
     public abstract Propagator parse(final SkatFileParser parser, final Tree node,
                                      final Skat skat, final int spacecraftIndex)
-        throws OrekitException;
+        throws OrekitException, SkatException;
 
 }
