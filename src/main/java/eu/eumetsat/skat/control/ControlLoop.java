@@ -8,6 +8,7 @@ import org.apache.commons.math.analysis.MultivariateRealFunction;
 import org.apache.commons.math.optimization.BaseMultivariateRealOptimizer;
 import org.apache.commons.math.optimization.GoalType;
 import org.apache.commons.math.optimization.RealPointValuePair;
+import org.apache.commons.math.optimization.direct.CMAESOptimizer;
 import org.orekit.errors.OrekitException;
 import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
@@ -65,13 +66,16 @@ public class ControlLoop implements ScenarioComponent {
     private final int lastCycle;
 
     /** Tunable maneuvers. */
-    private final List<TunableManeuver> tunables;
+    private final TunableManeuver[] tunables;
 
-    /** Station-keeping controls. */
-    private final List<SKControl> controls;
+    /** Parameters boundaries. */
+    private final double[][] boundaries;
 
-    /** Station-keeping parameters. */
-    private final List<SKParameter> parameters;
+    /** Station-keeping controls for single spacecraft. */
+    private final List<MonitorableMonoSKControl> monoControls;
+
+    /** Station-keeping controls for several spacecrafts. */
+    private final List<MonitorableDuoSKControl> duoControls;
 
     /** Simple constructor.
      * <p>
@@ -82,6 +86,7 @@ public class ControlLoop implements ScenarioComponent {
      * @param spacecraftIndex index of the spacecraft controlled by this component
      * @param firstCycle first cycle this loop should control
      * @param lastCycle last cycle this loop should control
+     * @param tunables tunable maneuvers
      * @param maxEval maximal number of objective function evaluations
      * @param optimizer optimizing engine
      * @param propagator orbit propagator
@@ -89,45 +94,58 @@ public class ControlLoop implements ScenarioComponent {
      * @param rollingCycles number of cycles to use for rolling optimization
      */
     public ControlLoop(final int spacecraftIndex, final int firstCycle, final int lastCycle,
-                       final int maxEval,
+                       final TunableManeuver[] tunables, final int maxEval,
                        final BaseMultivariateRealOptimizer<MultivariateRealFunction> optimizer,
-                       final Propagator propagator,
-                       final double cycleDuration, final int rollingCycles) {
+                       final Propagator propagator, final double cycleDuration, final int rollingCycles) {
         this.spacecraftIndex = spacecraftIndex;
         this.firstCycle      = firstCycle;
         this.lastCycle       = lastCycle;
         this.maxEval         = maxEval;
         this.optimizer       = optimizer;
         this.propagator      = propagator;
-        this.tunables        = new ArrayList<TunableManeuver>();
-        this.controls        = new ArrayList<SKControl>();
-        this.parameters      = new ArrayList<SKParameter>();
+        this.tunables        = tunables.clone();
+        this.monoControls    = new ArrayList<MonitorableMonoSKControl>();
+        this.duoControls     = new ArrayList<MonitorableDuoSKControl>();
         this.cycleDuration   = cycleDuration;
         this.rollingCycles   = rollingCycles;
+
+        // set the parameters boundaries.
+        int nbParameters = 0;
+        for (int i = 0; i < tunables.length; ++i) {
+            for (final SKParameter parameter : tunables[i].getParameters()) {
+                if (parameter.isTunable()) {
+                    ++nbParameters;
+                }
+            }
+        }
+
+        this.boundaries = new double[2][nbParameters];
+
+        int index = 0;
+        for (int i = 0; i < tunables.length; ++i) {
+            for (final SKParameter parameter : tunables[i].getParameters()) {
+                if (parameter.isTunable()) {
+                    boundaries[0][index] = parameter.getMin();
+                    boundaries[1][index] = parameter.getMax();
+                    ++index;
+                }
+            }
+        }
+
     }
 
     /** Add a control law .
      * @param control control law to add
      */
-    public void addControl(final SKControl control) {
-        controls.add(control);
+    public void addControl(final MonitorableMonoSKControl control) {
+        monoControls.add(control);
     }
 
-    /** Add the tunable parameters from a control parameters list.
-     * @param tunable maneuver that should be tuned by this control loop
+    /** Add a control law .
+     * @param control control law to add
      */
-    public void addTunableManeuver(final TunableManeuver tunable) {
-
-        // store a reference to the maneuver
-        tunables.add(tunable);
-
-        // extract the station-keeping parameters
-        for (final SKParameter parameter : tunable.getParameters()) {
-            if (parameter.isTunable()) {
-                parameters.add(parameter);
-            }
-        }
-
+    public void addControl(final MonitorableDuoSKControl control) {
+        duoControls.add(control);
     }
 
     /** {@inheritDoc} */
@@ -155,23 +173,19 @@ public class ControlLoop implements ScenarioComponent {
         if ((original.getCyclesNumber() >= firstCycle) && (original.getCyclesNumber() <= lastCycle)) {
 
             // guess a start point
-            double[] lower = new double[parameters.size()];
-            double[] upper = new double[parameters.size()];
-            double[] startPoint = new double[parameters.size()];
+            double[] startPoint = new double[boundaries[0].length];
             for (int j = 0; j < startPoint.length; ++j) {
-                lower[j] = parameters.get(j).getMin();
-                upper[j] = parameters.get(j).getMax();
-                startPoint[j] = 0.5 * (lower[j] + upper[j]);
+                startPoint[j] = 0.5 * (boundaries[0][j] + boundaries[1][j]);
             }
 
-            // set the reference date for maneuvers
-            for (final TunableManeuver tunable : tunables) {
+            // set the reference consumed mass for maneuvers
+            for (int i = 0; i < tunables.length; ++i) {
+                final TunableManeuver tunable = tunables[i];
                 SpacecraftState estimated = original.getEstimatedStartState();
                 if (estimated == null) {
                     throw new SkatException(SkatMessages.NO_ESTIMATED_STATE,
                                             original.getName(), original.getCyclesNumber());
                 }
-                tunable.setReferenceDate(original.getEstimatedStartState().getDate());
                 tunable.setReferenceConsumedMass(original.getBOLMass() -
                                                  original.getEstimatedStartState().getMass());
             }
@@ -180,25 +194,50 @@ public class ControlLoop implements ScenarioComponent {
             AbsoluteDate startDate  = original.getEstimatedStartState().getDate();
             AbsoluteDate targetDate = startDate.shiftedBy(rollingCycles * cycleDuration * Constants.JULIAN_DAY);
             System.out.println("starting optimization for cycle from " + startDate + " to " + targetDate);
+            final List<SKControl> unmonitoredControls = new ArrayList<SKControl>(monoControls.size() + duoControls.size());
+            for (final MonitorableMonoSKControl control : monoControls) {
+                unmonitoredControls.add(control.getControlLaw());
+            }
+            for (final MonitorableDuoSKControl control : duoControls) {
+                unmonitoredControls.add(control.getControlLaw());
+            }
             final ObjectiveFunction objective =
-                    new ObjectiveFunction(propagator, parameters, controls, targetDate,
+                    new ObjectiveFunction(propagator, tunables, unmonitoredControls, targetDate,
                                           original.getEstimatedStartState(),
                                           original.getTheoreticalManeuvers());
             final RealPointValuePair pointValue =
-                    optimizer.optimize(maxEval, objective, GoalType.MINIMIZE, startPoint, lower, upper);
+                    optimizer.optimize(maxEval, objective, GoalType.MINIMIZE, startPoint, boundaries[0], boundaries[1]);
             final double[] optimum = pointValue.getPoint();
-            System.out.print("cycle " + original.getCyclesNumber() + "[ " + startDate +
-                             " ; " + targetDate + "]: ");
+            System.out.println("cycle " + original.getCyclesNumber() + " [ " + startDate +
+                             " ; " + targetDate + "]:");
             for (int i = 0; i < optimum.length; ++i) {
-                if (i > 0) {
-                    System.out.print(", ");
-                }
-                System.out.print(optimum[i]);
+                System.out.print((i == 0 ? "    " : ", ") + optimum[i]);
             }
             System.out.println(" -> " + pointValue.getValue());
+            List<Double> fitness = ((CMAESOptimizer) optimizer).getStatisticsFitnessHistory();
+            for (int i = 0; i < fitness.size(); ++i) {
+                System.out.print((i == 0 ? "    fitness: " : ", ") + fitness.get(i));
+            }
+            System.out.println();
+            List<Double> sigma = ((CMAESOptimizer) optimizer).getStatisticsSigmaHistory();
+            for (int i = 0; i < fitness.size(); ++i) {
+                System.out.print((i == 0 ? "    sigma: " : ", ") + sigma.get(i));
+            }
+            System.out.println();
 
-            // perform a last run so monitoring is updated with the optimal values
-            objective.value(optimum);
+            // perform a last run with monitoring enabled, using the optimum values
+            final List<SKControl> monitoredControls = new ArrayList<SKControl>(monoControls.size() + duoControls.size());
+            for (final MonitorableMonoSKControl control : monoControls) {
+                control.setDate(startDate);
+                monitoredControls.add(control);
+            }
+            for (final MonitorableDuoSKControl control : duoControls) {
+                control.setDate(startDate);
+                monitoredControls.add(control);
+            }
+            new ObjectiveFunction(propagator, tunables, monitoredControls, targetDate,
+                                  original.getEstimatedStartState(),
+                                  original.getTheoreticalManeuvers()).value(optimum);
 
             // update the scheduled maneuvers, adding the newly optimized set
             final List<ScheduledManeuver> theoreticalManeuvers = new ArrayList<ScheduledManeuver>();

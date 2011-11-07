@@ -94,14 +94,17 @@ public enum ParameterKey {
     CONTROL_ECCENTRICITY_CIRCLE_RADIUS("radius"),
 
     MANEUVERS_IN_PLANE("in_plane"),
+    MANEUVERS_RELATIVE_TO_PREVIOUS("relative_to_previous"),
     MANEUVERS_NAME("name"),
     MANEUVERS_DIRECTION("direction"),
     MANEUVERS_ISP_CURVE("isp_curve"),
     MANEUVERS_DV_MIN("dv_min"),
     MANEUVERS_DV_MAX("dv_max"),
+    MANEUVERS_DV_CONVERGENCE("dv_convergence"),
     MANEUVERS_NOMINAL_DATE("nominal_date"),
     MANEUVERS_DT_MIN("dt_min"),
     MANEUVERS_DT_MAX("dt_max"),
+    MANEUVERS_DT_CONVERGENCE("dt_convergence"),
 
     COMPONENT_MANEUVER_DATE_ERROR_IN_PLANE("in_plane"),
     COMPONENT_MANEUVER_DATE_ERROR_OUT_OF_PLANE("out_of_plane"),

@@ -106,26 +106,32 @@ scenario         = [
         ];
         maneuvers   = [
             {
-                in_plane     = true;
-                name         = "E/W-1";
-                direction    = [ 1.0, 0.0, 0.0 ];
-                isp_curve    = [ [ 315, 0.0 ], [ 300, 600.0 ] ];
-                dv_min       = -0.1;
-                dv_max       =  0.1;
-                nominal_date = 172800;
-                dt_min       = -86400;
-                dt_max       =  86400;
+                in_plane             = true;
+                relative_to_previous = false;
+                name                 = "E/W-1";
+                direction            = [ 1.0, 0.0, 0.0 ];
+                isp_curve            = [ [ 315, 0.0 ], [ 300, 600.0 ] ];
+                dv_min               = -0.1;
+                dv_max               =  0.1;
+                dv_convergence       =  0.001;
+                nominal_date         = 172800;
+                dt_min               = -86400;
+                dt_max               =  86400;
+                dt_convergence       =  1.0;
             },
             {
-                in_plane     = true;
-                name         = "E/W-2";
-                direction    = [ 1.0, 0.0, 0.0 ];
-                isp_curve    = [ [ 315, 0.0 ], [ 300, 600.0 ] ];
-                dv_min       = -0.1;
-                dv_max       =  0.1;
-                nominal_date = 216000;
-                dt_min       = -86400;
-                dt_max       =  86400;
+                in_plane             = true;
+                relative_to_previous = true;
+                name                 = "E/W-2";
+                direction            = [ 1.0, 0.0, 0.0 ];
+                isp_curve            = [ [ 315, 0.0 ], [ 300, 600.0 ] ];
+                dv_min               = -0.1;
+                dv_max               =  0.1;
+                dv_convergence       =  0.001;
+                nominal_date         = 43200;
+                dt_min               = -3600;
+                dt_max               =  3600;
+                dt_convergence       =  1.0;
             }
         ];
     },

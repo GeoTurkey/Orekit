@@ -17,6 +17,7 @@ import org.orekit.propagation.sampling.OrekitStepInterpolator;
 import org.orekit.time.AbsoluteDate;
 
 import eu.eumetsat.skat.strategies.ScheduledManeuver;
+import eu.eumetsat.skat.strategies.TunableManeuver;
 
 /** Objective function to be optimized by the {@link ControlLoop}.
  * @see ControlLoop
@@ -25,7 +26,7 @@ import eu.eumetsat.skat.strategies.ScheduledManeuver;
 class ObjectiveFunction implements MultivariateRealFunction, OrekitStepHandler {
 
     /** Serializable UID. */
-    private static final long serialVersionUID = 1547228582323575520L;
+    private static final long serialVersionUID = -9141080565559615146L;
 
     /** Orbit propagator. */
     private final Propagator propagator;
@@ -33,8 +34,8 @@ class ObjectiveFunction implements MultivariateRealFunction, OrekitStepHandler {
     /** Station-keeping controls. */
     private final List<SKControl> controls;
 
-    /** Tunable control parameters. */
-    private final List<SKParameter> parameters;
+    /** Maneuvers. */
+    private final TunableManeuver[] maneuvers;
 
     /** Target date for end of cycle. */
     private final AbsoluteDate cycleEnd;
@@ -53,22 +54,20 @@ class ObjectiveFunction implements MultivariateRealFunction, OrekitStepHandler {
 
     /** Simple constructor.
      * @param propagator propagator to use
-     * @param parameters station-keeping parameters
+     * @param maneuvers station-keeping maneuvers
      * @param controls station-keeping controls
      * @param cycleEnd target date for end of cycle
      * @param initialState initial state
      * @param scheduledManeuvers maneuvers that are already scheduled
      * and hence not optimized themselves, may be null
      */
-    public ObjectiveFunction(final Propagator propagator,
-                             final List<SKParameter> parameters,
+    public ObjectiveFunction(final Propagator propagator, final TunableManeuver[] maneuvers,
                              final List<SKControl> controls,
-                             final AbsoluteDate cycleEnd,
-                             final SpacecraftState initialState,
+                             final AbsoluteDate cycleEnd, final SpacecraftState initialState,
                              final List<ScheduledManeuver> scheduledManeuvers) {
 
         this.propagator         = propagator;
-        this.parameters         = parameters;
+        this.maneuvers          = maneuvers.clone();
         this.controls           = controls;
         this.cycleEnd           = cycleEnd;
         this.initialState       = initialState;
@@ -85,8 +84,22 @@ class ObjectiveFunction implements MultivariateRealFunction, OrekitStepHandler {
         try {
 
             // set the parameters to the current test values
-            for (int i = 0; i < point.length; ++i) {
-                parameters.get(i).setValue(point[i]);
+            int index = 0;
+            for (int i = 0; i < maneuvers.length; ++i) {
+                final TunableManeuver maneuver = maneuvers[i];
+                if (maneuver.isRelativeToPrevious()) {
+                    // the date of this maneuver is relative to the date of the previous one which
+                    // has just been set at the previous iteration of this parameters setting loop
+                    maneuver.setReferenceDate(maneuvers[i - 1].getDate());
+                } else {
+                    // the date of this maneuver is relative to the cycle start
+                    maneuver.setReferenceDate(initialState.getDate());
+                }
+                for (final SKParameter parameter : maneuver.getParameters()) {
+                    if (parameter.isTunable()) {
+                        parameter.setValue(point[index++]);
+                    }
+                }
             }
 
             // setting the parameters may have changed the detectors and handlers
@@ -142,9 +155,11 @@ class ObjectiveFunction implements MultivariateRealFunction, OrekitStepHandler {
         detectors.clear();
 
         // get the step handlers associated with parameters
-        for (final SKParameter parameter : parameters) {
-            if (parameter.getEventDetector() != null) {
-                detectors.add(parameter.getEventDetector());
+        for (final TunableManeuver maneuver : maneuvers) {
+            for (final SKParameter parameter : maneuver.getParameters()) {
+                if (parameter.getEventDetector() != null) {
+                    detectors.add(parameter.getEventDetector());
+                }
             }
         }
 
@@ -168,9 +183,11 @@ class ObjectiveFunction implements MultivariateRealFunction, OrekitStepHandler {
         handlers.clear();
 
         // get the step handlers associated with parameters
-        for (final SKParameter parameter : parameters) {
-            if (parameter.getStepHandler() != null) {
-                handlers.add(parameter.getStepHandler());
+        for (final TunableManeuver maneuver : maneuvers) {
+            for (final SKParameter parameter : maneuver.getParameters()) {
+                if (parameter.getStepHandler() != null) {
+                    handlers.add(parameter.getStepHandler());
+                }
             }
         }
 
