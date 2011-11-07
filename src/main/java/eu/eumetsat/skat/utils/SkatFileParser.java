@@ -2,34 +2,17 @@ package eu.eumetsat.skat.utils;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.text.ParseException;
 
 import org.antlr.runtime.ANTLRInputStream;
 import org.antlr.runtime.CommonTokenStream;
 import org.antlr.runtime.RecognitionException;
 import org.antlr.runtime.tree.Tree;
 import org.apache.commons.math.exception.DimensionMismatchException;
-import org.apache.commons.math.exception.util.LocalizedFormats;
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
-import org.apache.commons.math.ode.nonstiff.AdaptiveStepsizeIntegrator;
-import org.apache.commons.math.ode.nonstiff.DormandPrince853Integrator;
 import org.apache.commons.math.util.FastMath;
-import org.orekit.attitudes.LofOffset;
-import org.orekit.bodies.CelestialBody;
-import org.orekit.bodies.OneAxisEllipsoid;
 import org.orekit.errors.OrekitException;
-import org.orekit.forces.ForceModel;
-import org.orekit.forces.SphericalSpacecraft;
-import org.orekit.forces.drag.DragForce;
-import org.orekit.forces.drag.HarrisPriester;
-import org.orekit.forces.gravity.CunninghamAttractionModel;
-import org.orekit.forces.gravity.ThirdBodyAttraction;
-import org.orekit.forces.gravity.potential.GravityFieldFactory;
-import org.orekit.forces.gravity.potential.PotentialCoefficientsProvider;
-import org.orekit.forces.radiation.SolarRadiationPressure;
 import org.orekit.frames.Frame;
 import org.orekit.frames.FramesFactory;
-import org.orekit.frames.LOFType;
 import org.orekit.frames.Predefined;
 import org.orekit.orbits.CartesianOrbit;
 import org.orekit.orbits.CircularOrbit;
@@ -38,8 +21,6 @@ import org.orekit.orbits.KeplerianOrbit;
 import org.orekit.orbits.Orbit;
 import org.orekit.orbits.OrbitType;
 import org.orekit.orbits.PositionAngle;
-import org.orekit.propagation.Propagator;
-import org.orekit.propagation.numerical.NumericalPropagator;
 import org.orekit.time.AbsoluteDate;
 import org.orekit.time.TimeScale;
 import org.orekit.utils.PVCoordinates;
@@ -47,12 +28,6 @@ import org.orekit.utils.PVCoordinates;
 /** Simple parser for key/value files with embedded structures and arrays.
  */
 public class SkatFileParser {
-
-    /** Constant for numerical propagator. */
-    private static final String NUMERICAL_PROPAGATOR = "numerical";
-
-    /** Constant for numerical propagator. */
-    private static final String SEMI_ANALYTICAL_PROPAGATOR = "semi-analytical";
 
     /** Name of the input for error messages. */
     private String inputName;
