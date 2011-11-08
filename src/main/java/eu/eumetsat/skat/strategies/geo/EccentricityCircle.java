@@ -118,6 +118,7 @@ public class EccentricityCircle extends AbstractSKControl {
                 for (AbsoluteDate date = minDate; date.compareTo(maxDate) < 0; date = date.shiftedBy(samplingStep)) {
 
                     // compute distance to circle center
+                    interpolator.setInterpolatedDate(date);
                     final SpacecraftState state  = interpolator.getInterpolatedState();
                     final EquinoctialOrbit orbit = (EquinoctialOrbit) OrbitType.EQUINOCTIAL.convertType(state.getOrbit());
                     final double delta           = FastMath.hypot(orbit.getEquinoctialEx() - centerX,
