@@ -82,14 +82,16 @@ public enum SupportedScenariocomponent {
             // loop
             final String controlled   = parser.getString(node, ParameterKey.COMPONENT_CONTROL_LOOP_CONTROLLED_SPACECRAFT);
             final int spacecraftIndex = skat.getSpacecraftIndex(controlled);
+            final int rollingCycles   = skat.getRollingCycles();
 
             final int firstCycle    = parser.getInt(node, ParameterKey.COMPONENT_CONTROL_LOOP_FIRST_CYCLE);
             final int lastCycle     = parser.getInt(node, ParameterKey.COMPONENT_CONTROL_LOOP_LAST_CYCLE);
 
             // tunable maneuvers
             final Tree maneuversNode = parser.getValue(node, ParameterKey.COMPONENT_CONTROL_LOOP_MANEUVERS);
-            TunableManeuver[] maneuvers = new TunableManeuver[parser.getElementsNumber(maneuversNode)];
-            for (int i = 0; i < maneuvers.length; ++i) {
+            final int maneuversPerCycle = parser.getElementsNumber(maneuversNode);
+            TunableManeuver[] maneuvers = new TunableManeuver[rollingCycles * maneuversPerCycle];
+            for (int i = 0; i < maneuversPerCycle; ++i) {
                 final Tree maneuver      = parser.getElement(maneuversNode, i);
                 final boolean inPlane    = parser.getBoolean(maneuver, ParameterKey.MANEUVERS_IN_PLANE);
                 final boolean relative   = parser.getBoolean(maneuver, ParameterKey.MANEUVERS_RELATIVE_TO_PREVIOUS);
@@ -108,8 +110,12 @@ public enum SupportedScenariocomponent {
                 final double dtMin         = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DT_MIN);
                 final double dtMax         = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DT_MAX);
                 final double dtConvergence = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DT_CONVERGENCE);
-                maneuvers[i] = new TunableManeuver(name, inPlane, relative, direction, isp,
-                                                   dvMin, dvMax, dvConvergence, nominal, dtMin, dtMax, dtConvergence);
+                for (int j = 0; j < rollingCycles; ++j) {
+                    // set up the maneuver for several cycles that will be optimized together
+                    maneuvers[j * rollingCycles + i] = new TunableManeuver(name, inPlane, relative, direction, isp,
+                                                                           dvMin, dvMax, dvConvergence, nominal,
+                                                                           dtMin, dtMax, dtConvergence);
+                }
             }
 
             // optimizer
@@ -129,7 +135,7 @@ public enum SupportedScenariocomponent {
             // set up boundaries for tunable parameters
             final ControlLoop loop = new ControlLoop(spacecraftIndex, firstCycle, lastCycle,
                                                      maneuvers, maxEval, optimizer, propagator,
-                                                     skat.getCycleDuration(), skat.getRollingCycles());
+                                                     skat.getCycleDuration(), rollingCycles);
 
             // control laws
             final Tree controlsNode = parser.getValue(node, ParameterKey.COMPONENT_CONTROL_LOOP_CONTROLS);

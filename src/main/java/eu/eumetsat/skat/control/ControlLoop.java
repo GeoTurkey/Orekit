@@ -71,6 +71,9 @@ public class ControlLoop implements ScenarioComponent {
     /** Parameters boundaries. */
     private final double[][] boundaries;
 
+    /** Start point. */
+    private final double[] startPoint;
+
     /** Station-keeping controls for single spacecraft. */
     private final List<MonitorableMonoSKControl> monoControls;
 
@@ -86,7 +89,7 @@ public class ControlLoop implements ScenarioComponent {
      * @param spacecraftIndex index of the spacecraft controlled by this component
      * @param firstCycle first cycle this loop should control
      * @param lastCycle last cycle this loop should control
-     * @param tunables tunable maneuvers
+     * @param tunables tunable maneuvers (for all rolling cycles)
      * @param maxEval maximal number of objective function evaluations
      * @param optimizer optimizing engine
      * @param propagator orbit propagator
@@ -109,7 +112,7 @@ public class ControlLoop implements ScenarioComponent {
         this.cycleDuration   = cycleDuration;
         this.rollingCycles   = rollingCycles;
 
-        // set the parameters boundaries.
+        // set the parameters boundaries and start point
         int nbParameters = 0;
         for (int i = 0; i < tunables.length; ++i) {
             for (final SKParameter parameter : tunables[i].getParameters()) {
@@ -120,6 +123,7 @@ public class ControlLoop implements ScenarioComponent {
         }
 
         this.boundaries = new double[2][nbParameters];
+        this.startPoint = new double[nbParameters];
 
         int index = 0;
         for (int i = 0; i < tunables.length; ++i) {
@@ -127,6 +131,7 @@ public class ControlLoop implements ScenarioComponent {
                 if (parameter.isTunable()) {
                     boundaries[0][index] = parameter.getMin();
                     boundaries[1][index] = parameter.getMax();
+                    startPoint[index]    = 0.5 * (parameter.getMin() + parameter.getMax());
                     ++index;
                 }
             }
@@ -172,12 +177,6 @@ public class ControlLoop implements ScenarioComponent {
 
         if ((original.getCyclesNumber() >= firstCycle) && (original.getCyclesNumber() <= lastCycle)) {
 
-            // guess a start point
-            double[] startPoint = new double[boundaries[0].length];
-            for (int j = 0; j < startPoint.length; ++j) {
-                startPoint[j] = 0.5 * (boundaries[0][j] + boundaries[1][j]);
-            }
-
             // set the reference consumed mass for maneuvers
             for (int i = 0; i < tunables.length; ++i) {
                 final TunableManeuver tunable = tunables[i];
@@ -192,8 +191,9 @@ public class ControlLoop implements ScenarioComponent {
 
             // find the optimal parameters that minimize objective function
             AbsoluteDate startDate  = original.getEstimatedStartState().getDate();
-            AbsoluteDate targetDate = startDate.shiftedBy(rollingCycles * cycleDuration * Constants.JULIAN_DAY);
-            System.out.println("starting optimization for cycle from " + startDate + " to " + targetDate);
+            AbsoluteDate targetDate = startDate.shiftedBy(cycleDuration * rollingCycles * Constants.JULIAN_DAY);
+            System.out.println("starting optimization for cycle " + original.getCyclesNumber() +
+                               "from " + startDate + " to " + targetDate);
             final List<SKControl> unmonitoredControls = new ArrayList<SKControl>(monoControls.size() + duoControls.size());
             for (final MonitorableMonoSKControl control : monoControls) {
                 unmonitoredControls.add(control.getControlLaw());
@@ -208,8 +208,6 @@ public class ControlLoop implements ScenarioComponent {
             final RealPointValuePair pointValue =
                     optimizer.optimize(maxEval, objective, GoalType.MINIMIZE, startPoint, boundaries[0], boundaries[1]);
             final double[] optimum = pointValue.getPoint();
-            System.out.println("cycle " + original.getCyclesNumber() + " [ " + startDate +
-                             " ; " + targetDate + "]:");
             for (int i = 0; i < optimum.length; ++i) {
                 System.out.print((i == 0 ? "    " : ", ") + optimum[i]);
             }
@@ -252,6 +250,15 @@ public class ControlLoop implements ScenarioComponent {
 
             // build the updated scenario state
             updated[spacecraftIndex] = original.updateTheoreticalManeuvers(theoreticalManeuvers);
+
+            // prepare start point for next cycle by shifting already optimized maneuvers one cycle
+            final int parametersPerCycle = tunables.length / rollingCycles;
+            for (int i = 1; i < rollingCycles; ++i) {
+                for (int j = 0; j < parametersPerCycle; ++j) {
+                    startPoint[(i - 1) * rollingCycles + j] = startPoint[i * rollingCycles + j];
+                }
+            }
+
         }
 
         // return the updated states
