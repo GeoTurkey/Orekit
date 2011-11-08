@@ -144,15 +144,15 @@ public class Skat {
         Skat stationKeeping = null;
         try {
 
-            // configure Orekit
-            final File orekitData = getResourceFile("/orekit-data");
-            DataProvidersManager.getInstance().addProvider(new DirectoryCrawler(orekitData));
-
-            // read input file
+            // check input file
             if (args.length != 1) {
                 System.err.println("usage: java eu.eumetsat.skat.Skat input-file");
                 System.exit(1);
             }
+
+            // configure Orekit
+            final File orekitData = getResourceFile("/orekit-data");
+            DataProvidersManager.getInstance().addProvider(new DirectoryCrawler(orekitData));
 
             // build the simulator
             stationKeeping = new Skat(new File(args[0]));
@@ -180,7 +180,7 @@ public class Skat {
     private static File getResourceFile(final String name)
         throws SkatException {
         try {
-            URL resourceURL = LatestEscapeTimeStationKeeping.class.getResource(name);
+            URL resourceURL = Skat.class.getResource(name);
             if (resourceURL == null) {
                 throw new SkatException(SkatMessages.UNABLE_TO_FIND_RESOURCE, name);
             }
