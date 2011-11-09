@@ -681,6 +681,7 @@ public class Skat {
             output.println(formatIndent(baseIndent) + ((i < finalStates.length - 1) ? "}," : "}"));
 
         }
+        output.println("]");
 
     }
 
