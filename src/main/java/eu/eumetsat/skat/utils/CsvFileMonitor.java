@@ -150,9 +150,9 @@ public class CsvFileMonitor implements MonitorMono, MonitorDuo {
             final Date now = Calendar.getInstance(TimeZone.getTimeZone("Etc/UTC")).getTime();
 
             // start the header
-            out.println(headerMarker + "file generated on " + new AbsoluteDate(now, utc).toString(utc));
+            out.println(headerMarker + " file generated on " + new AbsoluteDate(now, utc).toString(utc));
             out.println(headerMarker);
-            out.println(headerMarker + "column 1: date offset since " + referenceDate.toString(utc));
+            out.println(headerMarker + " column 1: date offset since " + referenceDate.toString(utc));
 
         }
 
@@ -193,10 +193,10 @@ public class CsvFileMonitor implements MonitorMono, MonitorDuo {
         // write header
         if (headerMarker != null) {
             if (dimension == 1) {
-                out.println(headerMarker + "column " + (columns + 2) + ": " + name);
+                out.println(headerMarker + " column " + (columns + 2) + ": " + name);
             } else {
                 for (int i = 0; i < dimension; ++i) {
-                    out.println(headerMarker + "column " + (columns + i + 2) + ": " + name + "[" + i + "]");
+                    out.println(headerMarker + " column " + (columns + i + 2) + ": " + name + "[" + i + "]");
                 }
             }
         }
