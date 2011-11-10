@@ -13,7 +13,6 @@ import org.orekit.errors.OrekitException;
 import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
 import org.orekit.time.AbsoluteDate;
-import org.orekit.utils.Constants;
 
 import eu.eumetsat.skat.scenario.ScenarioComponent;
 import eu.eumetsat.skat.scenario.ScenarioState;
@@ -191,9 +190,7 @@ public class ControlLoop implements ScenarioComponent {
 
             // find the optimal parameters that minimize objective function
             AbsoluteDate startDate  = original.getEstimatedStartState().getDate();
-            AbsoluteDate targetDate = startDate.shiftedBy(cycleDuration * rollingCycles * Constants.JULIAN_DAY);
-            System.out.println("starting optimization for cycle " + original.getCyclesNumber() +
-                               "from " + startDate + " to " + targetDate);
+            System.out.println("starting optimization for cycle " + original.getCyclesNumber() + " " + startDate);
             final List<SKControl> unmonitoredControls = new ArrayList<SKControl>(monoControls.size() + duoControls.size());
             for (final MonitorableMonoSKControl control : monoControls) {
                 unmonitoredControls.add(control.getControlLaw());
@@ -202,8 +199,8 @@ public class ControlLoop implements ScenarioComponent {
                 unmonitoredControls.add(control.getControlLaw());
             }
             final ObjectiveFunction objective =
-                    new ObjectiveFunction(propagator, tunables, unmonitoredControls, targetDate,
-                                          original.getEstimatedStartState(),
+                    new ObjectiveFunction(propagator, tunables, cycleDuration, rollingCycles,
+                                          unmonitoredControls, original.getEstimatedStartState(),
                                           original.getTheoreticalManeuvers());
             final RealPointValuePair pointValue =
                     optimizer.optimize(maxEval, objective, GoalType.MINIMIZE, startPoint, boundaries[0], boundaries[1]);
@@ -233,8 +230,8 @@ public class ControlLoop implements ScenarioComponent {
                 control.setDate(startDate);
                 monitoredControls.add(control);
             }
-            new ObjectiveFunction(propagator, tunables, monitoredControls, targetDate,
-                                  original.getEstimatedStartState(),
+            new ObjectiveFunction(propagator, tunables, cycleDuration, rollingCycles,
+                                  monitoredControls, original.getEstimatedStartState(),
                                   original.getTheoreticalManeuvers()).value(optimum);
 
             // update the scheduled maneuvers, adding the newly optimized set

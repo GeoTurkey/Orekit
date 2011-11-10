@@ -15,6 +15,7 @@ import org.orekit.propagation.events.EventDetector;
 import org.orekit.propagation.sampling.OrekitStepHandler;
 import org.orekit.propagation.sampling.OrekitStepInterpolator;
 import org.orekit.time.AbsoluteDate;
+import org.orekit.utils.Constants;
 
 import eu.eumetsat.skat.strategies.ScheduledManeuver;
 import eu.eumetsat.skat.strategies.TunableManeuver;
@@ -37,8 +38,11 @@ class ObjectiveFunction implements MultivariateRealFunction, OrekitStepHandler {
     /** Maneuvers. */
     private final TunableManeuver[] maneuvers;
 
-    /** Target date for end of cycle. */
-    private final AbsoluteDate cycleEnd;
+    /** Number of cycles to use for rolling optimization. */
+    private final int rollingCycles;
+
+    /** Duration of cycle. */
+    private final double cycleDuration;
 
     /** Initial state. */
     private final SpacecraftState initialState;
@@ -55,21 +59,23 @@ class ObjectiveFunction implements MultivariateRealFunction, OrekitStepHandler {
     /** Simple constructor.
      * @param propagator propagator to use
      * @param maneuvers station-keeping maneuvers
+     * @param cycleDuration Cycle duration
+     * @param rollingCycles number of cycles to use for rolling optimization
      * @param controls station-keeping controls
-     * @param cycleEnd target date for end of cycle
      * @param initialState initial state
      * @param scheduledManeuvers maneuvers that are already scheduled
      * and hence not optimized themselves, may be null
      */
     public ObjectiveFunction(final Propagator propagator, final TunableManeuver[] maneuvers,
-                             final List<SKControl> controls,
-                             final AbsoluteDate cycleEnd, final SpacecraftState initialState,
+                             final double cycleDuration, final int rollingCycles,
+                             final List<SKControl> controls, final SpacecraftState initialState,
                              final List<ScheduledManeuver> scheduledManeuvers) {
 
         this.propagator         = propagator;
         this.maneuvers          = maneuvers.clone();
+        this.rollingCycles      = rollingCycles;
+        this.cycleDuration      = cycleDuration;
         this.controls           = controls;
-        this.cycleEnd           = cycleEnd;
         this.initialState       = initialState;
         this.scheduledManeuvers = scheduledManeuvers;
 
@@ -93,7 +99,11 @@ class ObjectiveFunction implements MultivariateRealFunction, OrekitStepHandler {
                     maneuver.setReferenceDate(maneuvers[i - 1].getDate());
                 } else {
                     // the date of this maneuver is relative to the cycle start
-                    maneuver.setReferenceDate(initialState.getDate());
+                    final int maneuversPerCycle   = maneuvers.length / rollingCycles;
+                    final int cycleIndex          = i / maneuversPerCycle;
+                    final double offset           = cycleIndex * cycleDuration * Constants.JULIAN_DAY;
+                    final AbsoluteDate cycleStart = initialState.getDate().shiftedBy(offset);
+                    maneuver.setReferenceDate(cycleStart);
                 }
                 for (final SKParameter parameter : maneuver.getParameters()) {
                     if (parameter.isTunable()) {
@@ -125,7 +135,7 @@ class ObjectiveFunction implements MultivariateRealFunction, OrekitStepHandler {
 
             // perform propagation
             propagator.resetInitialState(initialState);
-            propagator.propagate(cycleEnd);
+            propagator.propagate(initialState.getDate().shiftedBy(rollingCycles * cycleDuration));
 
             // compute sum of squared scaled residuals
             double sum = 0;
