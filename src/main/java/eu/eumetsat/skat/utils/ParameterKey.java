@@ -80,7 +80,6 @@ public enum ParameterKey {
     CMAES_POPULATION_SIZE("population_size"),
     CMAES_MAX_ITERATIONS("max_iterations"),
     CMAES_STOP_FITNESS("stop_fitness"),
-    BOBYQA_INTERPOLATION_POINTS("interpolation_points"),
     COMPONENT_CONTROL_LOOP_PROPAGATOR("propagator"),
     COMPONENT_CONTROL_LOOP_CONTROLS("controls"),
     COMPONENT_CONTROL_LOOP_MANEUVERS("maneuvers"),

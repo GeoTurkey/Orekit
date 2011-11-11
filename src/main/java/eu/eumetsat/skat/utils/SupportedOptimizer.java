@@ -48,17 +48,6 @@ public enum SupportedOptimizer {
                                       true, 0, 0, skat.getGenerator(), true,
                                       new Checker(maneuvers));
         }
-    },
-
-    /** Constant for BOBYQA. */
-    BOBYQA() {
-        /** {@inheritDoc} */
-        public BaseMultivariateRealOptimizer<MultivariateRealFunction>
-            parse(final SkatFileParser parser, final Tree node,
-                  final TunableManeuver[] maneuvers, final Skat skat) {
-            // TODO add convergence checker
-            return new BOBYQAOptimizer(parser.getInt(node, ParameterKey.BOBYQA_INTERPOLATION_POINTS));
-        }
     };
 
     /** Parse an input data tree to build a scenario component.
