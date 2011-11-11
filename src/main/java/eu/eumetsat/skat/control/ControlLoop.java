@@ -2,17 +2,21 @@
 package eu.eumetsat.skat.control;
 
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
+import java.util.TimeZone;
 
 import org.apache.commons.math.analysis.MultivariateRealFunction;
 import org.apache.commons.math.optimization.BaseMultivariateRealOptimizer;
 import org.apache.commons.math.optimization.GoalType;
 import org.apache.commons.math.optimization.RealPointValuePair;
-import org.apache.commons.math.optimization.direct.CMAESOptimizer;
 import org.orekit.errors.OrekitException;
 import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
 import org.orekit.time.AbsoluteDate;
+import org.orekit.time.TimeScale;
+import org.orekit.time.TimeScalesFactory;
 
 import eu.eumetsat.skat.scenario.ScenarioComponent;
 import eu.eumetsat.skat.scenario.ScenarioState;
@@ -190,7 +194,11 @@ public class ControlLoop implements ScenarioComponent {
 
             // find the optimal parameters that minimize objective function
             AbsoluteDate startDate  = original.getEstimatedStartState().getDate();
-            System.out.println("starting optimization for cycle " + original.getCyclesNumber() + " " + startDate);
+            final TimeScale utc = TimeScalesFactory.getUTC();
+            final Date now = Calendar.getInstance(TimeZone.getTimeZone("Etc/UTC")).getTime();
+            System.out.println(new AbsoluteDate(now, utc).toString(utc) +
+                               ": starting optimization for cycle " + original.getCyclesNumber() + " " + startDate);
+            final long t0 = System.currentTimeMillis();
             final List<SKControl> unmonitoredControls = new ArrayList<SKControl>(monoControls.size() + duoControls.size());
             for (final MonitorableMonoSKControl control : monoControls) {
                 unmonitoredControls.add(control.getControlLaw());
@@ -205,20 +213,12 @@ public class ControlLoop implements ScenarioComponent {
             final RealPointValuePair pointValue =
                     optimizer.optimize(maxEval, objective, GoalType.MINIMIZE, startPoint, boundaries[0], boundaries[1]);
             final double[] optimum = pointValue.getPoint();
+            final long t1 = System.currentTimeMillis();
+            System.out.print("optimization time = " + ((t1 - t0) / 1000) + ", evaluations = " + optimizer.getEvaluations());
             for (int i = 0; i < optimum.length; ++i) {
-                System.out.print((i == 0 ? "    " : ", ") + optimum[i]);
+                System.out.print((i == 0 ? ": " : ", ") + optimum[i]);
             }
             System.out.println(" -> " + pointValue.getValue());
-            List<Double> fitness = ((CMAESOptimizer) optimizer).getStatisticsFitnessHistory();
-            for (int i = 0; i < fitness.size(); ++i) {
-                System.out.print((i == 0 ? "    fitness: " : ", ") + fitness.get(i));
-            }
-            System.out.println();
-            List<Double> sigma = ((CMAESOptimizer) optimizer).getStatisticsSigmaHistory();
-            for (int i = 0; i < fitness.size(); ++i) {
-                System.out.print((i == 0 ? "    sigma: " : ", ") + sigma.get(i));
-            }
-            System.out.println();
 
             // perform a last run with monitoring enabled, using the optimum values
             final List<SKControl> monitoredControls = new ArrayList<SKControl>(monoControls.size() + duoControls.size());
@@ -239,10 +239,9 @@ public class ControlLoop implements ScenarioComponent {
             if (original.getTheoreticalManeuvers() != null) {
                 theoreticalManeuvers.addAll(original.getTheoreticalManeuvers());
             }
-            for (final TunableManeuver tunable : tunables) {
-                // get the optimized maneuver, using the optimum value set above
-                final ScheduledManeuver optimized = tunable.getManeuver();
-                theoreticalManeuvers.add(optimized);
+            for (int i = 0; i < tunables.length / rollingCycles; ++i) {
+                // get the optimized maneuver for the next cycle, using the optimum value set above
+                theoreticalManeuvers.add(tunables[i].getManeuver());
             }
 
             // build the updated scenario state

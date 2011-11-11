@@ -135,7 +135,7 @@ class ObjectiveFunction implements MultivariateRealFunction, OrekitStepHandler {
 
             // perform propagation
             propagator.resetInitialState(initialState);
-            propagator.propagate(initialState.getDate().shiftedBy(rollingCycles * cycleDuration));
+            propagator.propagate(initialState.getDate().shiftedBy(rollingCycles * cycleDuration * Constants.JULIAN_DAY));
 
             // compute sum of squared scaled residuals
             double sum = 0;
@@ -144,6 +144,11 @@ class ObjectiveFunction implements MultivariateRealFunction, OrekitStepHandler {
                 final double scaledResidual = residual / s.getScale();
                 sum += scaledResidual * scaledResidual;
             }
+            for (final TunableManeuver maneuver : maneuvers) {
+                final ScheduledManeuver s = maneuver.getManeuver();
+                System.out.print(" " + s.getDate() + " " + s.getDeltaV());
+            }
+            System.out.println(" -> " + sum);
 
             // return the sum of squared scaled residuals
             return sum;
