@@ -6,7 +6,6 @@ import org.apache.commons.math.analysis.MultivariateRealFunction;
 import org.apache.commons.math.optimization.BaseMultivariateRealOptimizer;
 import org.apache.commons.math.optimization.ConvergenceChecker;
 import org.apache.commons.math.optimization.RealPointValuePair;
-import org.apache.commons.math.optimization.direct.BOBYQAOptimizer;
 import org.apache.commons.math.optimization.direct.CMAESOptimizer;
 import org.apache.commons.math.util.FastMath;
 
