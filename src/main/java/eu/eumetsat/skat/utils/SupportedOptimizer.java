@@ -11,12 +11,24 @@ import org.apache.commons.math.optimization.direct.CMAESOptimizer;
 import org.apache.commons.math.util.FastMath;
 
 import eu.eumetsat.skat.Skat;
+import eu.eumetsat.skat.control.BoundedNelderMead;
 import eu.eumetsat.skat.control.SKParameter;
 import eu.eumetsat.skat.strategies.TunableManeuver;
 
 /** Enumerate for the supported optimizers.
  */
 public enum SupportedOptimizer {
+
+    /** Constant for Nelder-Mead. */
+    NELDER_MEAD() {
+        /** {@inheritDoc} */
+        public BaseMultivariateRealOptimizer<MultivariateRealFunction>
+            parse(final SkatFileParser parser, final Tree node,
+                  final TunableManeuver[] maneuvers, final Skat skat) {
+            return new BoundedNelderMead(parser.getDouble(node, ParameterKey.NELDER_MEAD_INITIAL_SIMPLEX_SIZE_RATIO),
+                                         new Checker(maneuvers));
+        }
+    },
 
     /** Constant for Covariance Matrix Adaptation Evolution Strategy (CMA-ES). */
     CMA_ES() {
@@ -26,12 +38,8 @@ public enum SupportedOptimizer {
                   final TunableManeuver[] maneuvers, final Skat skat) {
             double[][] boundaries = getBoundaries(maneuvers);
             final double[] inputSigma        = new double[boundaries[0].length];
-            final double[] relativeThreshold = new double[boundaries[0].length];
-            final double[] absoluteThreshold = new double[boundaries[0].length];
             for (int i = 0; i < inputSigma.length; ++i) {
-                inputSigma[i]        = (boundaries[1][i] - boundaries[0][i]) / 3.0;
-                relativeThreshold[i] = 0.0;
-                absoluteThreshold[i] = 0.0;
+                inputSigma[i] = (boundaries[1][i] - boundaries[0][i]) / 3.0;
             }
             return new CMAESOptimizer(parser.getInt(node, ParameterKey.CMAES_POPULATION_SIZE),
                                       inputSigma, boundaries,

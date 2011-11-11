@@ -76,6 +76,7 @@ public enum ParameterKey {
     COMPONENT_CONTROL_LOOP_MAX_EVAL("max_eval"),
     COMPONENT_CONTROL_LOOP_OPTIMIZER("optimizer"),
     OPTIMIZER_METHOD("method"),
+    NELDER_MEAD_INITIAL_SIMPLEX_SIZE_RATIO("initial_simplex_size_ratio"),
     CMAES_POPULATION_SIZE("population_size"),
     CMAES_MAX_ITERATIONS("max_iterations"),
     CMAES_STOP_FITNESS("stop_fitness"),
