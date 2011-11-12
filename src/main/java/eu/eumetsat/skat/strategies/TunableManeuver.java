@@ -171,7 +171,7 @@ public class TunableManeuver {
             if (current == null) {
                 // the parameters value have changed, thus invalidating the maneuver,
                 // build a new valid one
-                AbsoluteDate triggerDate = reference.shiftedBy(nominal + dateOffset.getValue());
+                final AbsoluteDate triggerDate = reference.shiftedBy(nominal + dateOffset.getValue());
                 current = new ImpulseManeuver(new DateDetector(triggerDate),
                                               new Vector3D(velocityIncrement.getValue(), direction),
                                               currentIsp);
