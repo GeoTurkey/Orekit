@@ -248,12 +248,14 @@ public class ControlLoop implements ScenarioComponent {
             updated[spacecraftIndex] = original.updateTheoreticalManeuvers(theoreticalManeuvers);
 
             // prepare start point for next cycle by shifting already optimized maneuvers one cycle
-            final int parametersPerCycle = tunables.length / rollingCycles;
-            for (int i = 1; i < rollingCycles; ++i) {
-                for (int j = 0; j < parametersPerCycle; ++j) {
-                    startPoint[(i - 1) * rollingCycles + j] = startPoint[i * rollingCycles + j];
-                }
-            }
+            // and repeating last cycle
+            final int parametersPerCycle = startPoint.length / rollingCycles;
+            System.arraycopy(optimum,    parametersPerCycle,
+                             startPoint, 0,
+                             startPoint.length - parametersPerCycle);
+            System.arraycopy(startPoint, startPoint.length - 2 * parametersPerCycle,
+                             startPoint, startPoint.length - parametersPerCycle,
+                             parametersPerCycle);
 
         }
 
