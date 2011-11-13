@@ -21,6 +21,9 @@ import eu.eumetsat.skat.control.SKParameter;
  */
 public class TunableManeuver {
 
+    /** Name of the maneuver.*/
+    private final String name;
+
     /** Indicator for in-plane maneuvers. */
     private final boolean inPlane;
 
@@ -70,6 +73,7 @@ public class TunableManeuver {
                            final double nominal,
                            final double minDateOffset, final double maxDateOffset,
                            final double convergenceDateOffset) {
+        this.name         = name;
         this.inPlane      = inPlane;
         this.relative     = relative;
         this.direction    = direction.normalize();
@@ -83,6 +87,13 @@ public class TunableManeuver {
                                             convergenceDateOffset,
                                             0.5 * (minDateOffset + maxDateOffset),
                                             FastMath.abs(maxDateOffset - minDateOffset) > 1.0e-6);
+    }
+
+    /** Get the name of the maneuver.
+     * @return name of the maneuver
+     */
+    public String getName() {
+        return name;
     }
 
     /** Check if maneuver date is relative to the previous one.
