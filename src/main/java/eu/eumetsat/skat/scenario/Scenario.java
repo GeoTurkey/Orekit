@@ -148,10 +148,10 @@ public class Scenario implements ScenarioComponent {
 
                 // perform monitoring
                 for (final MonitorableMonoSKData monitorable : monitorablesMono) {
-                    monitorable.update(states, earth);
+                    monitorable.update(date, states, earth);
                 }
                 for (final MonitorableDuoSKData monitorable : monitorablesDuo) {
-                    monitorable.update(states, earth, groundLocation);
+                    monitorable.update(date, states, earth, groundLocation);
                 }
 
             }

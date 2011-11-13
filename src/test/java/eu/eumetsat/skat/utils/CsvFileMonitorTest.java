@@ -21,6 +21,7 @@ import org.orekit.frames.FramesFactory;
 import org.orekit.orbits.CartesianOrbit;
 import org.orekit.orbits.Orbit;
 import org.orekit.propagation.SpacecraftState;
+import org.orekit.propagation.precomputed.Ephemeris;
 import org.orekit.time.AbsoluteDate;
 import org.orekit.utils.Constants;
 import org.orekit.utils.PVCoordinates;
@@ -83,13 +84,13 @@ public class CsvFileMonitorTest {
         position.register(1, monitor);
         velocity.register(1, monitor);
         ScenarioState[] snapshots0 = createStates(10.0, 1000.0, 11111.11, 22222.22, 33333.33, 44444.44, 55555.55, 66666.66);
-        mass.update(snapshots0, earth);
-        velocity.update(snapshots0, earth);
-        position.update(snapshots0, earth);
+        mass.update(AbsoluteDate.J2000_EPOCH.shiftedBy(10 * Constants.JULIAN_DAY), snapshots0, earth);
+        velocity.update(AbsoluteDate.J2000_EPOCH.shiftedBy(10 * Constants.JULIAN_DAY), snapshots0, earth);
+        position.update(AbsoluteDate.J2000_EPOCH.shiftedBy(10 * Constants.JULIAN_DAY), snapshots0, earth);
         ScenarioState[] snapshots1 = createStates(20.0, 1000.0, 44444.44, 55555.55, 66666.66, 11111.11, 22222.22, 33333.33);
-        mass.update(snapshots1, earth);
-        velocity.update(snapshots1, earth);
-        position.update(snapshots1, earth);
+        mass.update(AbsoluteDate.J2000_EPOCH.shiftedBy(20 * Constants.JULIAN_DAY), snapshots1, earth);
+        velocity.update(AbsoluteDate.J2000_EPOCH.shiftedBy(20 * Constants.JULIAN_DAY), snapshots1, earth);
+        position.update(AbsoluteDate.J2000_EPOCH.shiftedBy(20 * Constants.JULIAN_DAY), snapshots1, earth);
         monitor.stopMonitoring();
         String[] lines = out.toString().split(System.getProperty("line.separator"));
         Assert.assertEquals(12, lines.length);
@@ -104,18 +105,18 @@ public class CsvFileMonitorTest {
         position.register(1, monitor);
         velocity.register(1, monitor);
         ScenarioState[] snapshots0 = createStates(10.0, 1000.0, 11111.11, 22222.22, 33333.33, 44444.44, 55555.55, 66666.66);
-        mass.update(snapshots0, earth);
-        velocity.update(snapshots0, earth);
-        position.update(snapshots0, earth);
-        ScenarioState[] snapshots1 = createStates(10.000008, 1000.0, 11111.11, 22222.22, 33333.33, 77777.77, 88888.88, 99999.99);
-        velocity.update(snapshots1, earth);
+        mass.update(AbsoluteDate.J2000_EPOCH.shiftedBy(10 * Constants.JULIAN_DAY), snapshots0, earth);
+        velocity.update(AbsoluteDate.J2000_EPOCH.shiftedBy(10 * Constants.JULIAN_DAY), snapshots0, earth);
+        position.update(AbsoluteDate.J2000_EPOCH.shiftedBy(10 * Constants.JULIAN_DAY), snapshots0, earth);
+        ScenarioState[] snapshots1 = createStates(10.000008, 1000.0, 11111.11, 22222.22, 33333.33, 7777.77, 8888.88, 9999.99);
+        velocity.update(AbsoluteDate.J2000_EPOCH.shiftedBy(10.000008 * Constants.JULIAN_DAY), snapshots1, earth);
         ScenarioState[] snapshots2 = createStates(20.0, 1000.0, 44444.44, 55555.55, 66666.66, 11111.11, 22222.22, 33333.33);
-        velocity.update(snapshots2, earth);
-        position.update(snapshots2, earth);
+        velocity.update(AbsoluteDate.J2000_EPOCH.shiftedBy(20 * Constants.JULIAN_DAY), snapshots2, earth);
+        position.update(AbsoluteDate.J2000_EPOCH.shiftedBy(20 * Constants.JULIAN_DAY), snapshots2, earth);
         monitor.stopMonitoring();
         String[] lines = out.toString().split(System.getProperty("line.separator"));
         Assert.assertEquals(12, lines.length);
-        Assert.assertEquals("10.00,1000.00,11111.11,22222.22,33333.33,77777.77,88888.88,99999.99", lines[10]);
+        Assert.assertEquals("10.00,1000.00,11111.11,22222.22,33333.33,7777.77,8888.88,9999.99", lines[10]);
         Assert.assertEquals("20.00,1000.00,44444.44,55555.55,66666.66,11111.11,22222.22,33333.33", lines[11]);
     }
 
@@ -159,8 +160,8 @@ public class CsvFileMonitorTest {
         position.register(1, monitor);
         velocity.register(1, monitor);
         ScenarioState[] snapshots = createStates(10.0, 1000.0, 44444.44, 55555.55, 66666.66, 11111.11, 22222.22, 33333.33);
-        mass.update(snapshots, earth);
-        velocity.update(snapshots, earth);
+        mass.update(AbsoluteDate.J2000_EPOCH.shiftedBy(10 * Constants.JULIAN_DAY), snapshots, earth);
+        velocity.update(AbsoluteDate.J2000_EPOCH.shiftedBy(10 * Constants.JULIAN_DAY), snapshots, earth);
         MonitorableMonoSKData.CYCLES_NUMBER.register(1, monitor);
     }
 
@@ -173,10 +174,12 @@ public class CsvFileMonitorTest {
         Orbit orbit = new CartesianOrbit(pv, FramesFactory.getEME2000(),
                                          AbsoluteDate.J2000_EPOCH.shiftedBy(dt * Constants.JULIAN_DAY),
                                          Constants.EIGEN5C_EARTH_MU);
-        SpacecraftState state = new SpacecraftState(orbit, mass);
-        return new ScenarioState[] {
-            new ScenarioState("dummy", 1000.0, 1, state)
+        SpacecraftState state1 = new SpacecraftState(orbit, mass);
+        SpacecraftState state2 = state1.shiftedBy(100.0);
+        ScenarioState[] states = new ScenarioState[] {
+            new ScenarioState("dummy", 1000.0, 1, state1).updatePerformedEphemeris(new Ephemeris(new SpacecraftState[] { state1, state2 }))
         };
+       return states;
     }
 
     @Before
