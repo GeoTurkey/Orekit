@@ -6,10 +6,6 @@ import java.util.List;
 
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math.util.FastMath;
-import org.orekit.forces.maneuvers.ImpulseManeuver;
-import org.orekit.propagation.events.DateDetector;
-import org.orekit.propagation.events.EventDetector;
-import org.orekit.propagation.sampling.OrekitStepHandler;
 import org.orekit.time.AbsoluteDate;
 
 import eu.eumetsat.skat.control.SKParameter;
@@ -52,9 +48,6 @@ public class TunableManeuver {
     /** Tunable date offset. */
     private final SKParameter dateOffset;
 
-    /** Current impulse maneuver (with already set parameters). */
-    private ImpulseManeuver current;
-
     /** Simple constructor.
      * @param name name of the maneuver
      * @param inPlane if true, the maneuver is considered to be in-plane
@@ -82,17 +75,14 @@ public class TunableManeuver {
         this.direction    = direction.normalize();
         this.isp          = isp.clone();
         this.nominal      = nominal;
-        velocityIncrement = new ManeuverParameter(name + " (dV)",
-                                                  minIncrement, maxIncrement,
-                                                  convergenceIncrement,
-                                                  0.5 * (minIncrement + maxIncrement),
-                                                  FastMath.abs(maxIncrement - minIncrement) > 1.0e-6);
-        dateOffset        = new ManeuverParameter(name + " (date)",
-                                                  minDateOffset, maxDateOffset,
-                                                  convergenceDateOffset,
-                                                  0.5 * (minDateOffset + maxDateOffset),
-                                                  FastMath.abs(maxDateOffset - minDateOffset) > 1.0e-6);
-        current           = null;
+        velocityIncrement = new SKParameter(name + " (dV)", minIncrement, maxIncrement,
+                                            convergenceIncrement,
+                                            0.5 * (minIncrement + maxIncrement),
+                                            FastMath.abs(maxIncrement - minIncrement) > 1.0e-6);
+        dateOffset        = new SKParameter(name + " (date)", minDateOffset, maxDateOffset,
+                                            convergenceDateOffset,
+                                            0.5 * (minDateOffset + maxDateOffset),
+                                            FastMath.abs(maxDateOffset - minDateOffset) > 1.0e-6);
     }
 
     /** Check if maneuver date is relative to the previous one.
@@ -140,51 +130,6 @@ public class TunableManeuver {
         // we have reached the end of the calibration curve,
         // we consider remaining ISP is constant
         currentIsp = isp[isp.length - 1][0];
-
-    }
-
-    /** Local class for control parameters invalidating maneuver at parameter changes. */
-    private class ManeuverParameter extends SKParameter {
-
-        /** Simple constructor.
-         * @param name name of the parameter
-         * @param min minimal allowed value for the parameter
-         * @param max maximal allowed value for the parameter
-         * @param convergence convergence threshold for the parameter
-         * @param value current value of the parameter
-         * @param tunable tunable flag
-         */
-        public ManeuverParameter(final String name,
-                                 final double min, final double max, final double convergence,
-                                 final double value, final boolean tunable) {
-            super(name, min, max, convergence, value, tunable);
-        }
-
-        /** {@inheritDoc} */
-        protected void valueChanged() {
-            current = null;
-        }
-
-        /** {@inheritDoc} */
-        public EventDetector getEventDetector() {
-
-            if (current == null) {
-                // the parameters value have changed, thus invalidating the maneuver,
-                // build a new valid one
-                final AbsoluteDate triggerDate = reference.shiftedBy(nominal + dateOffset.getValue());
-                current = new ImpulseManeuver(new DateDetector(triggerDate),
-                                              new Vector3D(velocityIncrement.getValue(), direction),
-                                              currentIsp);
-            }
-
-            return current;
-
-        }
-
-        /** {@inheritDoc} */
-        public OrekitStepHandler getStepHandler() {
-            return null;
-        }
 
     }
 

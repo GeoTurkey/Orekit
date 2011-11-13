@@ -1,6 +1,9 @@
 /* Copyright 2011 Eumetsat */
 package eu.eumetsat.skat.control;
 
+import org.orekit.propagation.events.EventDetector;
+import org.orekit.propagation.sampling.OrekitStepHandler;
+
 
 /**
  * Interface representing a station-keeping control that should be achieved.
@@ -60,5 +63,15 @@ public interface SKControl extends SKElement {
      * (null if control law does not depend on a reference spacecraft).
      */
     String getReferenceSpacecraftName();
+
+    /** Get the event detector associated with this element.
+     * @return event detector associated with this element (may be null)
+     */
+    EventDetector getEventDetector();
+
+    /** Get the step handler associated with this element.
+     * @return step handler associated with this element (may be null)
+     */
+    OrekitStepHandler getStepHandler();
 
 }

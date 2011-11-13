@@ -22,7 +22,7 @@ import java.util.List;
  * </p>
  * @author Luc Maisonobe
  */
-public abstract class SKParameter implements SKElement {
+public class SKParameter implements SKElement {
 
     /** Name of the parameter. */
     private final String name;
@@ -53,9 +53,9 @@ public abstract class SKParameter implements SKElement {
      * @param value current value of the parameter
      * @param tunable tunable flag
      */
-    protected SKParameter(final String name,
-                          final double min, final double max, final double convergence,
-                          final double value, final boolean tunable) {
+    public SKParameter(final String name,
+                       final double min, final double max, final double convergence,
+                       final double value, final boolean tunable) {
 
         this.name        = name;
         this.min         = min;
@@ -128,12 +128,7 @@ public abstract class SKParameter implements SKElement {
      */
     public void setValue(final double value) {
         this.value = value;
-        valueChanged();
     }
-
-    /** Notify the implementation class that the parameter value has changed.
-     */
-    protected abstract void valueChanged();
 
     /** Check if the parameter can be tuned.
      * <p>
