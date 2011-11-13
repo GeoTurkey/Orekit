@@ -146,8 +146,8 @@ public class ScenarioState {
                          final int cyclesNumber, final SpacecraftState realState) {
         this(name, bolMass, cyclesNumber,
              0, 0.0, 0.0, 0, 0.0, 0.0,
-             AbsoluteDate.PAST_INFINITY, Double.NaN,
-             AbsoluteDate.PAST_INFINITY, Double.NaN,
+             AbsoluteDate.PAST_INFINITY, 0.0,
+             AbsoluteDate.PAST_INFINITY, 0.0,
              realState, null, null, null, null, null);
     }
 
