@@ -6,11 +6,11 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.math.analysis.MultivariateRealFunction;
+import org.orekit.errors.OrekitException;
 import org.orekit.errors.PropagationException;
-import org.orekit.forces.maneuvers.ImpulseManeuver;
-import org.orekit.propagation.Propagator;
+import org.orekit.propagation.BoundedPropagator;
 import org.orekit.propagation.SpacecraftState;
-import org.orekit.propagation.events.DateDetector;
+import org.orekit.propagation.analytical.ManeuverAdapterPropagator;
 import org.orekit.propagation.events.EventDetector;
 import org.orekit.propagation.sampling.OrekitStepHandler;
 import org.orekit.propagation.sampling.OrekitStepInterpolator;
@@ -24,19 +24,16 @@ import eu.eumetsat.skat.strategies.TunableManeuver;
  * @see ControlLoop
  * @author Luc Maisonobe
  */
-class ObjectiveFunction implements MultivariateRealFunction, OrekitStepHandler {
+class ObjectiveFunction implements MultivariateRealFunction {
 
-    /** Serializable UID. */
-    private static final long serialVersionUID = -9141080565559615146L;
-
-    /** Orbit propagator. */
-    private final Propagator propagator;
+    /** Reference ephemeris. */
+    private final BoundedPropagator reference;
 
     /** Station-keeping controls. */
     private final List<SKControl> controls;
 
-    /** Maneuvers. */
-    private final TunableManeuver[] maneuvers;
+    /** Tunable maneuvers. */
+    private final TunableManeuver[] tunables;
 
     /** Number of cycles to use for rolling optimization. */
     private final int rollingCycles;
@@ -47,40 +44,24 @@ class ObjectiveFunction implements MultivariateRealFunction, OrekitStepHandler {
     /** Initial state. */
     private final SpacecraftState initialState;
 
-    /** Maneuvers that are already scheduled. */
-    private final List<ScheduledManeuver> scheduledManeuvers;
-
-    /** Current set of event detectors. */
-    private final Set<EventDetector> detectors;
-
-    /** Current set of step handlers. */
-    private final Set<OrekitStepHandler> handlers;
-
     /** Simple constructor.
-     * @param propagator propagator to use
-     * @param maneuvers station-keeping maneuvers
+     * @param reference reference ephemeris on which maneuvers will be added
+     * @param tunables station-keeping maneuvers
      * @param cycleDuration Cycle duration
      * @param rollingCycles number of cycles to use for rolling optimization
      * @param controls station-keeping controls
      * @param initialState initial state
-     * @param scheduledManeuvers maneuvers that are already scheduled
-     * and hence not optimized themselves, may be null
      */
-    public ObjectiveFunction(final Propagator propagator, final TunableManeuver[] maneuvers,
+    public ObjectiveFunction(final BoundedPropagator reference, final TunableManeuver[] tunables,
                              final double cycleDuration, final int rollingCycles,
-                             final List<SKControl> controls, final SpacecraftState initialState,
-                             final List<ScheduledManeuver> scheduledManeuvers) {
+                             final List<SKControl> controls, final SpacecraftState initialState) {
 
-        this.propagator         = propagator;
-        this.maneuvers          = maneuvers.clone();
-        this.rollingCycles      = rollingCycles;
-        this.cycleDuration      = cycleDuration;
-        this.controls           = controls;
-        this.initialState       = initialState;
-        this.scheduledManeuvers = scheduledManeuvers;
-
-        detectors = new HashSet<EventDetector>();
-        handlers  = new HashSet<OrekitStepHandler>();
+        this.reference     = reference;
+        this.tunables      = tunables.clone();
+        this.rollingCycles = rollingCycles;
+        this.cycleDuration = cycleDuration;
+        this.controls      = controls;
+        this.initialState  = initialState;
 
     }
 
@@ -89,17 +70,20 @@ class ObjectiveFunction implements MultivariateRealFunction, OrekitStepHandler {
 
         try {
 
+            // set up the fast propagator
+            final ManeuverAdapterPropagator propagator = new ManeuverAdapterPropagator(reference);
+
             // set the parameters to the current test values
             int index = 0;
-            for (int i = 0; i < maneuvers.length; ++i) {
-                final TunableManeuver maneuver = maneuvers[i];
+            for (int i = 0; i < tunables.length; ++i) {
+                final TunableManeuver maneuver = tunables[i];
                 if (maneuver.isRelativeToPrevious()) {
                     // the date of this maneuver is relative to the date of the previous one which
                     // has just been set at the previous iteration of this parameters setting loop
-                    maneuver.setReferenceDate(maneuvers[i - 1].getDate());
+                    maneuver.setReferenceDate(tunables[i - 1].getDate());
                 } else {
                     // the date of this maneuver is relative to the cycle start
-                    final int maneuversPerCycle   = maneuvers.length / rollingCycles;
+                    final int maneuversPerCycle   = tunables.length / rollingCycles;
                     final int cycleIndex          = i / maneuversPerCycle;
                     final double offset           = cycleIndex * cycleDuration * Constants.JULIAN_DAY;
                     final AbsoluteDate cycleStart = initialState.getDate().shiftedBy(offset);
@@ -112,30 +96,57 @@ class ObjectiveFunction implements MultivariateRealFunction, OrekitStepHandler {
                 }
             }
 
-            // setting the parameters may have changed the detectors and handlers
-            resetEventDetectors();
-            resetStepHandlers();
-
-            // set up the propagator with the station-keeping elements
-            // that are part of the optimization process in the control loop
-            propagator.clearEventsDetectors();
-            for (final EventDetector detector : detectors) {
-                propagator.addEventDetector(detector);
+            // add the maneuvers
+            for (final TunableManeuver tunable : tunables) {
+                final ScheduledManeuver maneuver = tunable.getManeuver();
+                propagator.addManeuver(maneuver.getDate(), maneuver.getDeltaV(), maneuver.getIsp());
             }
-            propagator.setMasterMode(this);
 
-            if (scheduledManeuvers != null) {
-                // set up the scheduled maneuvers that are not optimized
-                for (final ScheduledManeuver maneuver : scheduledManeuvers) {
-                    propagator.addEventDetector(new ImpulseManeuver(new DateDetector(maneuver.getDate()),
-                                                                    maneuver.getDeltaV(),
-                                                                    maneuver.getIsp()));
+            // get the detectors associated with control laws
+            final Set<EventDetector> detectors = new HashSet<EventDetector>();
+            for (final SKControl control : controls) {
+                if (control.getEventDetector() != null) {
+                    detectors.add(control.getEventDetector());
                 }
             }
 
-            // perform propagation
-            propagator.resetInitialState(initialState);
-            propagator.propagate(initialState.getDate().shiftedBy(rollingCycles * cycleDuration * Constants.JULIAN_DAY));
+            // get the step handlers associated with control laws
+            final Set<OrekitStepHandler> handlers = new HashSet<OrekitStepHandler>();
+            for (final SKControl control : controls) {
+                if (control.getStepHandler() != null) {
+                    handlers.add(control.getStepHandler());
+                }
+            }
+
+            // set up the propagator with the station-keeping elements
+            // that are part of the optimization process in the control loop
+            for (final EventDetector detector : detectors) {
+                propagator.addEventDetector(detector);
+            }
+            propagator.setMasterMode(new OrekitStepHandler() {
+                
+                /** Serializable UID. */
+                private static final long serialVersionUID = -4124598479100617688L;
+
+                /** {@inheritDoc} */
+                public void reset() {
+                    for (final OrekitStepHandler handler : handlers) {
+                        handler.reset();
+                    }
+                }
+                
+                /** {@inheritDoc} */
+                public void handleStep(OrekitStepInterpolator interpolator, boolean isLast)
+                    throws PropagationException {
+                    for (final OrekitStepHandler handler : handlers) {
+                        handler.handleStep(interpolator, isLast);
+                    }
+                }
+
+            });
+
+             // perform propagation
+            propagator.propagate(reference.getMaxDate());
 
             // compute sum of squared scaled residuals
             double sum = 0;
@@ -144,90 +155,14 @@ class ObjectiveFunction implements MultivariateRealFunction, OrekitStepHandler {
                 final double scaledResidual = residual / s.getScale();
                 sum += scaledResidual * scaledResidual;
             }
-            for (final TunableManeuver maneuver : maneuvers) {
-                final ScheduledManeuver s = maneuver.getManeuver();
-                System.out.print(" " + s.getDate() + " " + s.getDeltaV());
-            }
-            System.out.println(" -> " + sum);
 
             // return the sum of squared scaled residuals
             return sum;
 
-        } catch (PropagationException pe) {
+        } catch (OrekitException oe) {
             return Double.POSITIVE_INFINITY;
         }
 
-    }
-
-    /** Reset the event detectors.
-     * <p>
-     * Different station-keeping elements may be associated with the same detector,
-     * so we must gather them in a set to avoid notifying them several times
-     * </p>
-     */
-    private void resetEventDetectors() {
-
-        detectors.clear();
-
-        // get the step handlers associated with parameters
-        for (final TunableManeuver maneuver : maneuvers) {
-            for (final SKParameter parameter : maneuver.getParameters()) {
-                if (parameter.getEventDetector() != null) {
-                    detectors.add(parameter.getEventDetector());
-                }
-            }
-        }
-
-        // get the step handlers associated with control laws
-        for (final SKControl control : controls) {
-            if (control.getEventDetector() != null) {
-                detectors.add(control.getEventDetector());
-            }
-        }
-
-    }
-
-    /** reset the step handlers.
-     * <p>
-     * Different station-keeping elements may be associated with the same handler,
-     * so we must gather them in a set to avoid notifying them several times
-     * </p>
-     */
-    private void resetStepHandlers() {
-
-        handlers.clear();
-
-        // get the step handlers associated with parameters
-        for (final TunableManeuver maneuver : maneuvers) {
-            for (final SKParameter parameter : maneuver.getParameters()) {
-                if (parameter.getStepHandler() != null) {
-                    handlers.add(parameter.getStepHandler());
-                }
-            }
-        }
-
-        // get the step handlers associated with control laws
-        for (final SKControl control : controls) {
-            if (control.getStepHandler() != null) {
-                handlers.add(control.getStepHandler());
-            }
-        }
-
-    }
-
-    /** {@inheritDoc} */
-    public void reset() {
-        for (final OrekitStepHandler handler : handlers) {
-            handler.reset();
-        }
-    }
-
-    /** {@inheritDoc} */
-    public void handleStep(final OrekitStepInterpolator interpolator, final boolean isLast)
-        throws PropagationException {
-        for (final OrekitStepHandler handler : handlers) {
-            handler.handleStep(interpolator, isLast);
-        }
     }
 
 }
