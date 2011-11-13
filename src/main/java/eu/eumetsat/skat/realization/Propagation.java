@@ -60,9 +60,9 @@ public class Propagation implements ScenarioComponent {
 
             // select the current spacecraft affected by this component
             final int index = spacecraftIndices[i];
-            final List<ScheduledManeuver> performed = originals[index].getPerformedManeuvers();
+            final List<ScheduledManeuver> performed = originals[index].getManeuvers();
             if (performed == null) {
-                throw new SkatException(SkatMessages.NO_PERFORMED_MANEUVERS_STATE,
+                throw new SkatException(SkatMessages.NO_MANEUVERS_STATE,
                                         originals[index].getName(), originals[index].getCyclesNumber());
             }
 

@@ -520,7 +520,7 @@ public class Skat {
         // set up empty maneuvers lists
         ScenarioState[] initialStates = new ScenarioState[configuredStates.length];
         for (int i = 0; i < initialStates.length; ++i) {
-            initialStates[i] = configuredStates[i].updatePerformedManeuvers(new ArrayList<ScheduledManeuver>());
+            initialStates[i] = configuredStates[i].updateManeuvers(new ArrayList<ScheduledManeuver>());
         }
 
         // propagate all spacecrafts state to simulation start date

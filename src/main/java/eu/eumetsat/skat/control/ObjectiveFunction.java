@@ -146,7 +146,7 @@ class ObjectiveFunction implements MultivariateRealFunction {
             });
 
              // perform propagation
-            propagator.propagate(reference.getMaxDate());
+            propagator.propagate(reference.getMinDate().shiftedBy(rollingCycles * cycleDuration * Constants.JULIAN_DAY));
 
             // compute sum of squared scaled residuals
             double sum = 0;

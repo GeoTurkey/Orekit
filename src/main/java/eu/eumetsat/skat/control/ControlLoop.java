@@ -198,9 +198,8 @@ public class ControlLoop implements ScenarioComponent {
             }
 
             // compute a reference ephemeris, on which tunable maneuvers will be added
-            final BoundedPropagator referenceEphemeris =
-                    computeReferenceEphemeris(original.getEstimatedStartState(),
-                                              original.getTheoreticalManeuvers());
+            final BoundedPropagator reference =
+                    computeReferenceEphemeris(original.getEstimatedStartState(), original.getManeuvers());
 
             // find the optimal parameters that minimize objective function
             AbsoluteDate startDate  = original.getEstimatedStartState().getDate();
@@ -217,7 +216,7 @@ public class ControlLoop implements ScenarioComponent {
                 unmonitoredControls.add(control.getControlLaw());
             }
             final ObjectiveFunction objective =
-                    new ObjectiveFunction(referenceEphemeris, tunables, cycleDuration, rollingCycles,
+                    new ObjectiveFunction(reference, tunables, cycleDuration, rollingCycles,
                                           unmonitoredControls, original.getEstimatedStartState());
             final RealPointValuePair pointValue =
                     optimizer.optimize(maxEval, objective, GoalType.MINIMIZE, startPoint, boundaries[0], boundaries[1]);
@@ -240,15 +239,15 @@ public class ControlLoop implements ScenarioComponent {
                 monitoredControls.add(control);
             }
 
-            // we explicitly ignore the return value,
+            // we limit ourselves to one cycle only, and explicitly ignore the return value,
             // we just evaluate the function for its side effects (i.e. monitoring)
-            new ObjectiveFunction(referenceEphemeris, tunables, cycleDuration, rollingCycles,
+            new ObjectiveFunction(reference, tunables, cycleDuration, 1,
                                   monitoredControls, original.getEstimatedStartState()).value(optimum);
 
             // update the scheduled maneuvers, adding the newly optimized set
             final List<ScheduledManeuver> theoreticalManeuvers = new ArrayList<ScheduledManeuver>();
-            if (original.getTheoreticalManeuvers() != null) {
-                theoreticalManeuvers.addAll(original.getTheoreticalManeuvers());
+            if (original.getManeuvers() != null) {
+                theoreticalManeuvers.addAll(original.getManeuvers());
             }
             for (int i = 0; i < tunables.length / rollingCycles; ++i) {
                 // get the optimized maneuver for the next cycle, using the optimum value set above
@@ -256,7 +255,7 @@ public class ControlLoop implements ScenarioComponent {
             }
 
             // build the updated scenario state
-            updated[spacecraftIndex] = original.updateTheoreticalManeuvers(theoreticalManeuvers);
+            updated[spacecraftIndex] = original.updateManeuvers(theoreticalManeuvers);
 
             // prepare start point for next cycle by shifting already optimized maneuvers one cycle
             // and repeating last cycle

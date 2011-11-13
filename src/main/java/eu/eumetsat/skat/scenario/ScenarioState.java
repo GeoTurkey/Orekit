@@ -20,11 +20,6 @@ import eu.eumetsat.skat.strategies.ScheduledManeuver;
  * and applying theoretical maneuver without errors.
  * </p>
  * <p>
- * There are also two types of maneuvers, the theoretical ones computed
- * by the station-keeping ground system, and the ones really performed by
- * the spacecraft.
- * </p>
- * <p>
  * Instances of this class are guaranteed to be immutable
  * </p>
  * @author Luc Maisonobe
@@ -85,11 +80,8 @@ public class ScenarioState {
     /** Performed ephemeris throughout cycle. */
     private final BoundedPropagator performedEphemeris;
 
-    /** Theoretical maneuvers. */
-    private final List<ScheduledManeuver> theoreticalManeuvers;
-
-    /** Performed maneuvers. */
-    private final List<ScheduledManeuver> performedManeuvers;
+    /** Maneuvers. */
+    private final List<ScheduledManeuver> maneuvers;
 
     /** complete constructor.
      * @param name spacecraft name
@@ -108,8 +100,7 @@ public class ScenarioState {
      * @param realEndState real state at cycle end
      * @param theoreticalEphemeris theoretical ephemeris throughout cycle
      * @param performedEphemeris performed ephemeris throughout cycle
-     * @param theoreticalManeuvers list of scheduled theoretical maneuvers
-     * @param performedManeuvers list of performed maneuvers
+     * @param maneuvers list of maneuvers
      */
     private ScenarioState(final String name, final double bolMass, final int cyclesNumber,
                           final int inPlane, final double inPlaneCycleDV, final double inPlaneTotalDV,
@@ -123,8 +114,7 @@ public class ScenarioState {
                           final SpacecraftState realEndState,
                           final BoundedPropagator theoreticalEphemeris,
                           final BoundedPropagator performedEphemeris,
-                          final List<ScheduledManeuver> theoreticalManeuvers,
-                          final List<ScheduledManeuver> performedManeuvers) {
+                          final List<ScheduledManeuver> maneuvers) {
         this.name                     = name;
         this.bolMass                  = bolMass;
         this.cyclesNumber             = cyclesNumber;
@@ -143,8 +133,7 @@ public class ScenarioState {
         this.realEndState             = realEndState;
         this.theoreticalEphemeris     = theoreticalEphemeris;
         this.performedEphemeris       = performedEphemeris;
-        this.theoreticalManeuvers     = theoreticalManeuvers;
-        this.performedManeuvers       = performedManeuvers;
+        this.maneuvers                = maneuvers;
     }
 
     /** Simple constructor.
@@ -159,7 +148,7 @@ public class ScenarioState {
              0, 0.0, 0.0, 0, 0.0, 0.0,
              AbsoluteDate.PAST_INFINITY, Double.NaN,
              AbsoluteDate.PAST_INFINITY, Double.NaN,
-             realState, null, null, null, null, null, null);
+             realState, null, null, null, null, null);
     }
 
     /** Get the spacecraft name.
@@ -198,7 +187,7 @@ public class ScenarioState {
                                  descendingNodeDate, descendingNodesSolarTime,
                                  realStartState, estimatedStartState, realEndState,
                                  theoreticalEphemeris, performedEphemeris,
-                                 theoreticalManeuvers, performedManeuvers);
+                                 maneuvers);
     }
 
     /** Get the number of performed in-plane maneuvers.
@@ -239,7 +228,7 @@ public class ScenarioState {
                                  descendingNodeDate, descendingNodesSolarTime,
                                  realStartState, estimatedStartState, realEndState,
                                  theoreticalEphemeris, performedEphemeris,
-                                 theoreticalManeuvers, performedManeuvers);
+                                 maneuvers);
     }
 
     /** Get the number of performed out-of-plane maneuvers.
@@ -280,7 +269,7 @@ public class ScenarioState {
                                  descendingNodeDate, descendingNodesSolarTime,
                                  realStartState, estimatedStartState, realEndState,
                                  theoreticalEphemeris, performedEphemeris,
-                                 theoreticalManeuvers, performedManeuvers);
+                                 maneuvers);
     }
 
     /** Get the date of previous ascending node.
@@ -314,7 +303,7 @@ public class ScenarioState {
                                  descendingNodeDate, descendingNodesSolarTime,
                                  realStartState, estimatedStartState, realEndState,
                                  theoreticalEphemeris, performedEphemeris,
-                                 theoreticalManeuvers, performedManeuvers);
+                                 maneuvers);
     }
 
     /** Get the date of previous descending node.
@@ -348,7 +337,7 @@ public class ScenarioState {
                                  date, solarTime,
                                  realStartState, estimatedStartState, realEndState,
                                  theoreticalEphemeris, performedEphemeris,
-                                 theoreticalManeuvers, performedManeuvers);
+                                 maneuvers);
     }
 
     /** Get the real state at cycle start.
@@ -373,7 +362,7 @@ public class ScenarioState {
                                  descendingNodeDate, descendingNodesSolarTime,
                                  state, estimatedStartState, realEndState,
                                  theoreticalEphemeris, performedEphemeris,
-                                 theoreticalManeuvers, performedManeuvers);
+                                 maneuvers);
     }
 
     /** Get the estimated state at cycle start.
@@ -398,7 +387,7 @@ public class ScenarioState {
                                  descendingNodeDate, descendingNodesSolarTime,
                                  realStartState, state, realEndState,
                                  theoreticalEphemeris, performedEphemeris,
-                                 theoreticalManeuvers, performedManeuvers);
+                                 maneuvers);
     }
 
     /** Get the real state at cycle end.
@@ -423,7 +412,7 @@ public class ScenarioState {
                                  descendingNodeDate, descendingNodesSolarTime,
                                  realStartState, estimatedStartState, state,
                                  theoreticalEphemeris, performedEphemeris,
-                                 theoreticalManeuvers, performedManeuvers);
+                                 maneuvers);
     }
 
     /** Get the theoretical ephemeris throughout cycle.
@@ -448,7 +437,7 @@ public class ScenarioState {
                                  descendingNodeDate, descendingNodesSolarTime,
                                  realStartState, estimatedStartState, realEndState,
                                  theoreticalEphemeris, performedEphemeris,
-                                 theoreticalManeuvers, performedManeuvers);
+                                 maneuvers);
     }
 
     /** Get the performed ephemeris throughout cycle.
@@ -473,24 +462,24 @@ public class ScenarioState {
                                  descendingNodeDate, descendingNodesSolarTime,
                                  realStartState, estimatedStartState, realEndState,
                                  theoreticalEphemeris, ephemeris,
-                                 theoreticalManeuvers, performedManeuvers);
+                                 maneuvers);
     }
 
-    /** Get the scheduled theoretical maneuvers.
-     * @return scheduled theoretical maneuvers
+    /** Get the scheduled maneuvers.
+     * @return scheduled maneuvers
      */
-    public List<ScheduledManeuver> getTheoreticalManeuvers() {
-        return theoreticalManeuvers;
+    public List<ScheduledManeuver> getManeuvers() {
+        return maneuvers;
     }
 
-    /** Update the theoretical maneuvers.
+    /** Update the maneuvers.
      * <p>
      * The instance is not changed, a new instance is created
      * </p>
-     * @param maneuvers theoretical maneuvers
+     * @param maneuvers maneuvers
      * @return updated state
      */
-    public ScenarioState updateTheoreticalManeuvers(final List<ScheduledManeuver> maneuvers) {
+    public ScenarioState updateManeuvers(final List<ScheduledManeuver> maneuvers) {
         return new ScenarioState(name, bolMass, cyclesNumber,
                                  inPlaneManeuvers, inPlaneCycleDV, inPlaneTotalDV,
                                  outOfPlaneManeuvers, outOfPlaneCycleDV, outOfPlaneTotalDV,
@@ -498,32 +487,7 @@ public class ScenarioState {
                                  descendingNodeDate, descendingNodesSolarTime,
                                  realStartState, estimatedStartState, realEndState,
                                  theoreticalEphemeris, performedEphemeris,
-                                 maneuvers, performedManeuvers);
-    }
-
-    /** Get the performed maneuvers.
-     * @return performed maneuvers
-     */
-    public List<ScheduledManeuver> getPerformedManeuvers() {
-        return performedManeuvers;
-    }
-
-    /** Update the performed maneuvers.
-     * <p>
-     * The instance is not changed, a new instance is created
-     * </p>
-     * @param maneuvers performed maneuvers
-     * @return updated state
-     */
-    public ScenarioState updatePerformedManeuvers(final List<ScheduledManeuver> maneuvers) {
-        return new ScenarioState(name, bolMass, cyclesNumber,
-                                 inPlaneManeuvers, inPlaneCycleDV, inPlaneTotalDV,
-                                 outOfPlaneManeuvers, outOfPlaneCycleDV, outOfPlaneTotalDV,
-                                 ascendingNodeDate, ascendingNodesSolarTime,
-                                 descendingNodeDate, descendingNodesSolarTime,
-                                 realStartState, estimatedStartState, realEndState,
-                                 theoreticalEphemeris, performedEphemeris,
-                                 theoreticalManeuvers, maneuvers);
+                                 maneuvers);
     }
 
 }

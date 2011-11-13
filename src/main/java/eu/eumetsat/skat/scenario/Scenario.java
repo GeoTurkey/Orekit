@@ -172,8 +172,7 @@ public class Scenario implements ScenarioComponent {
                 states[i] = states[i].updateRealStartState(states[i].getRealEndState());
                 states[i] = states[i].updateEstimatedStartState(null);
                 states[i] = states[i].updateRealEndState(null);
-                states[i] = states[i].updateTheoreticalManeuvers(new ArrayList<ScheduledManeuver>());
-                states[i] = states[i].updatePerformedManeuvers(new ArrayList<ScheduledManeuver>());
+                states[i] = states[i].updateManeuvers(null);
             }
 
         } while (iterationTarget.compareTo(cycleEnd) < 0);
@@ -194,11 +193,11 @@ public class Scenario implements ScenarioComponent {
         final AbsoluteDate previous = date.shiftedBy(-outputstep);
 
         for (int i = 0; i < states.length; ++i) {
-            if (states[i].getPerformedManeuvers() == null) {
-                throw new SkatException(SkatMessages.NO_PERFORMED_MANEUVERS_STATE,
+            if (states[i].getManeuvers() == null) {
+                throw new SkatException(SkatMessages.NO_MANEUVERS_STATE,
                                         states[i].getName(), states[i].getCyclesNumber());
             }
-            for (final ScheduledManeuver maneuver : states[i].getPerformedManeuvers()) {
+            for (final ScheduledManeuver maneuver : states[i].getManeuvers()) {
                 if ((maneuver.getDate().compareTo(previous) > 0) &&
                     (maneuver.getDate().compareTo(date) <= 0)) {
                     // the maneuver occurred during last step, take it into account
