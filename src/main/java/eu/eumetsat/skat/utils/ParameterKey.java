@@ -74,6 +74,7 @@ public enum ParameterKey {
     COMPONENT_CONTROL_LOOP_FIRST_CYCLE("first_cycle"),
     COMPONENT_CONTROL_LOOP_LAST_CYCLE("last_cycle"),
     COMPONENT_CONTROL_LOOP_MAX_EVAL("max_eval"),
+    COMPONENT_CONTROL_LOOP_GLOBAL_STOP_CRITERION("global_stop_criterion"),
     COMPONENT_CONTROL_LOOP_OPTIMIZER("optimizer"),
     OPTIMIZER_METHOD("method"),
     NELDER_MEAD_INITIAL_SIMPLEX_SIZE_RATIO("initial_simplex_size_ratio"),

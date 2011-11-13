@@ -68,6 +68,7 @@ scenario         = [
         first_cycle           = 1;
         last_cycle            = 999;
         max_eval              = 1000;
+        global_stop_criterion = 0.001;
         optimizer             = {
             method                     = NELDER_MEAD;
             initial_simplex_size_ratio = 0.01

@@ -23,9 +23,9 @@ public enum SupportedOptimizer {
         /** {@inheritDoc} */
         public BaseMultivariateRealOptimizer<MultivariateRealFunction>
             parse(final SkatFileParser parser, final Tree node,
-                  final TunableManeuver[] maneuvers, final Skat skat) {
+                  final TunableManeuver[] maneuvers, final double stopCriterion, final Skat skat) {
             return new BoundedNelderMead(parser.getDouble(node, ParameterKey.NELDER_MEAD_INITIAL_SIMPLEX_SIZE_RATIO),
-                                         new Checker(maneuvers));
+                                         new Checker(maneuvers, stopCriterion));
         }
     },
 
@@ -34,7 +34,7 @@ public enum SupportedOptimizer {
         /** {@inheritDoc} */
         public BaseMultivariateRealOptimizer<MultivariateRealFunction>
             parse(final SkatFileParser parser, final Tree node,
-                  final TunableManeuver[] maneuvers, final Skat skat) {
+                  final TunableManeuver[] maneuvers, final double stopCriterion, final Skat skat) {
             double[][] boundaries = getBoundaries(maneuvers);
             final double[] inputSigma        = new double[boundaries[0].length];
             for (int i = 0; i < inputSigma.length; ++i) {
@@ -45,7 +45,7 @@ public enum SupportedOptimizer {
                                       parser.getInt(node, ParameterKey.CMAES_MAX_ITERATIONS),
                                       parser.getDouble(node, ParameterKey.CMAES_STOP_FITNESS),
                                       true, 0, 0, skat.getGenerator(), true,
-                                      new Checker(maneuvers));
+                                      new Checker(maneuvers, stopCriterion));
         }
     };
 
@@ -53,11 +53,12 @@ public enum SupportedOptimizer {
      * @param parser input file parser
      * @param node data node containing component configuration parameters
      * @param maneuvers maneuvers to optimize
+     * @param stopCriterion stop criterion on global value
      * @param skat enclosing Skat tool
      * @return parsed component
      */
     public abstract BaseMultivariateRealOptimizer<MultivariateRealFunction>
-        parse(final SkatFileParser parser, final Tree node, final TunableManeuver[] maneuvers, final Skat skat);
+        parse(SkatFileParser parser, Tree node, TunableManeuver[] maneuvers, double stopCriterion, Skat skat);
 
     /** Get the parameters boundaries.
      * @param maneuvers maneuvers to optimize
@@ -97,16 +98,26 @@ public enum SupportedOptimizer {
         /** Maneuvers. */
         private final TunableManeuver[] maneuvers;
 
+        /** Stop criterion on global value. */
+        private final double stopCriterion;
+
         /** Simple constructor.
          * @param maneuvers maneuvers to optimize
+         * @param stopCriterion stop criterion on global value
          */
-        public Checker(final TunableManeuver[] maneuvers) {
-            this.maneuvers = maneuvers.clone();
+        public Checker(final TunableManeuver[] maneuvers, final double stopCriterion) {
+            this.maneuvers     = maneuvers.clone();
+            this.stopCriterion = stopCriterion;
         }
 
         /** {@inheritDoc} */
         public boolean converged(final int iteration, final RealPointValuePair previous,
                                  final RealPointValuePair current) {
+
+            // first check directly the criterion on the function value
+            if (current.getValue() <= stopCriterion) {
+                return true;
+            }
 
             // get the optimal parameters values on the last iterations
             final double[] p = previous.getPoint();

@@ -119,11 +119,11 @@ public enum SupportedScenariocomponent {
             }
 
             // optimizer
-            final int maxEval = parser.getInt(node, ParameterKey.COMPONENT_CONTROL_LOOP_MAX_EVAL);
+            final double stopCriterion = parser.getDouble(node, ParameterKey.COMPONENT_CONTROL_LOOP_GLOBAL_STOP_CRITERION);
             final Tree optimizerNode = parser.getValue(node, ParameterKey.COMPONENT_CONTROL_LOOP_OPTIMIZER);
             final String optimizationMethod = parser.getIdentifier(optimizerNode, ParameterKey.OPTIMIZER_METHOD);
             final BaseMultivariateRealOptimizer<MultivariateRealFunction> optimizer =
-                    SupportedOptimizer.valueOf(optimizationMethod).parse(parser, optimizerNode, maneuvers, skat);
+                    SupportedOptimizer.valueOf(optimizationMethod).parse(parser, optimizerNode, maneuvers, stopCriterion, skat);
 
             // propagator
             final Tree propagatorNode = parser.getValue(node, ParameterKey.COMPONENT_CONTROL_LOOP_PROPAGATOR);
@@ -133,6 +133,7 @@ public enum SupportedScenariocomponent {
 
 
             // set up boundaries for tunable parameters
+            final int maxEval = parser.getInt(node, ParameterKey.COMPONENT_CONTROL_LOOP_MAX_EVAL);
             final ControlLoop loop = new ControlLoop(spacecraftIndex, firstCycle, lastCycle,
                                                      maneuvers, maxEval, optimizer, propagator,
                                                      skat.getCycleDuration(), rollingCycles);
