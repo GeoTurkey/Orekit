@@ -42,7 +42,7 @@ public enum SupportedPropagator {
                     new DormandPrince853Integrator(minStep, maxStep, tolerance[0], tolerance[1]);
             integrator.setInitialStepSize(FastMath.sqrt(minStep * maxStep));
             final NumericalPropagator numPropagator = new NumericalPropagator(integrator);
-            numPropagator.setAttitudeProvider(new LofOffset(initialOrbit.getFrame(), LOFType.TNW));
+            numPropagator.setAttitudeProvider(new LofOffset(initialOrbit.getFrame(), LOFType.VNC));
 
             // Earth gravity field
             PotentialCoefficientsProvider gravityField = skat.getgravityField();
