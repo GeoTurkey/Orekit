@@ -112,9 +112,9 @@ public enum SupportedScenariocomponent {
                 final double dtConvergence = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DT_CONVERGENCE);
                 for (int j = 0; j < rollingCycles; ++j) {
                     // set up the maneuver for several cycles that will be optimized together
-                    maneuvers[j * rollingCycles + i] = new TunableManeuver(name, inPlane, relative, direction, isp,
-                                                                           dvMin, dvMax, dvConvergence, nominal,
-                                                                           dtMin, dtMax, dtConvergence);
+                    maneuvers[j * maneuversPerCycle + i] = new TunableManeuver(name, inPlane, relative, direction, isp,
+                                                                               dvMin, dvMax, dvConvergence, nominal,
+                                                                               dtMin, dtMax, dtConvergence);
                 }
             }
 

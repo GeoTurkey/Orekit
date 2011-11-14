@@ -97,13 +97,35 @@ scenario         = [
                 scale            = 1.0e-4;
                 type             = ECCENTRICITY_CIRCLE;
                 name             = "eccentricity circle";
-                center_x         = -3.0e-5;
+                center_x         = -1.5e-4;
                 center_y         =  0.0;
-                radius           = 1.0e-4;
+                radius           = 2.0e-4;
+                sampling         = 7200.0;
+            },
+            {
+                scale            = 1.0e-4;
+                type             = INCLINATION_VECTOR;
+                name             = "inclination vector";
+                target_x         = -6.0e-4;
+                target_y         =  0.0;
                 sampling         = 7200.0;
             }
         ];
         maneuvers   = [
+            {
+                in_plane             = false;
+                relative_to_previous = false;
+                name                 = "N/S";
+                direction            = [ 0.0, 1.0, 0.0 ];
+                isp_curve            = [ [ 315, 0.0 ], [ 300, 600.0 ] ];
+                dv_min               = -3.0;
+                dv_max               =  3.0;
+                dv_convergence       =  0.01;
+                nominal_date         = 172800;
+                dt_min               = -43200;
+                dt_max               =  43200;
+                dt_convergence       =  60.0;
+            },
             {
                 in_plane             = true;
                 relative_to_previous = false;
@@ -113,7 +135,7 @@ scenario         = [
                 dv_min               = -0.3;
                 dv_max               =  0.3;
                 dv_convergence       =  0.01;
-                nominal_date         = 172800;
+                nominal_date         = 345600;
                 dt_min               = -43200;
                 dt_max               =  43200;
                 dt_convergence       =  60.0;
@@ -128,8 +150,8 @@ scenario         = [
                 dv_max               =  0.3;
                 dv_convergence       =  0.01;
                 nominal_date         = 43200;
-                dt_min               =  0.0;
-                dt_max               =  0.0;
+                dt_min               = -3600.0;
+                dt_max               =  3600.0;
                 dt_convergence       =  60.0;
             }
         ];
@@ -167,8 +189,7 @@ scenario         = [
 ];
 
 monitoring = [
-
-    # the following identifiers correspond to available monitorable values for a single spacecraft
+    CYCLES_NUMBER,
     IN_PLANE_MANEUVER_NUMBER,
     IN_PLANE_MANEUVER_CYCLE_DV,
     IN_PLANE_MANEUVER_TOTAL_DV,
@@ -176,36 +197,9 @@ monitoring = [
     OUT_OF_PLANE_MANEUVER_CYCLE_DV,
     OUT_OF_PLANE_MANEUVER_TOTAL_DV,
     SPACECRAFT_MASS,
-    POSITION_EME2000,
-    VELOCITY_EME2000,
-    POSITION_ITRF,
-    VELOCITY_ITRF,
-    LATITUDE,
-    LONGITUDE,
-    ALTITUDE,
     SEMI_MAJOR_AXIS,
-    ECCENTRICITY,
-    INCLINATION,
-    CIRCULAR_ECCENTRICITY_VECTOR,
     EQUINOCTIAL_ECCENTRICITY_VECTOR,
     EQUINOCTIAL_INCLINATION_VECTOR,
-    SOLAR_TIME_AT_ASCENDING_NODE,
-    SOLAR_TIME_AT_DESCENDING_NODE,
-    CYCLES_NUMBER,
-
-    # the following identifiers correspond to available monitorable values for a spacecrafts pair
-    DISTANCE,
-    ANGULAR_SEPARATION_FROM_EARTH_CENTER,
-    ANGULAR_SEPARATION_FROM_REFERENCE_LOCATION,
-    RELATIVE_POSITION_EME2000,
-    RELATIVE_VELOCITY_EME2000,
-    RELATIVE_POSITION_ITRF,
-    RELATIVE_VELOCITY_ITRF,
-    SEMI_MAJOR_AXIS_DIFFERENCE,
-    ECCENTRICITY_DIFFERENCE,
-    INCLINATION_DIFFERENCE,
-    RELATIVE_CIRCULAR_ECCENTRICITY_VECTOR,
-    RELATIVE_EQUINOCTIAL_ECCENTRICITY_VECTOR,
-    RELATIVE_EQUINOCTIAL_INCLINATION_VECTOR
-
+    LATITUDE,
+    LONGITUDE
 ]

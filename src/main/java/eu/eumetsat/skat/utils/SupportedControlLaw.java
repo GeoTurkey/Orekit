@@ -8,6 +8,7 @@ import eu.eumetsat.skat.Skat;
 import eu.eumetsat.skat.control.SKControl;
 import eu.eumetsat.skat.strategies.geo.EccentricityCircle;
 import eu.eumetsat.skat.strategies.geo.CenteredLongitude;
+import eu.eumetsat.skat.strategies.geo.InclinationVector;
 
 /** Enumerate for parsing the supported scenario components.
  */
@@ -47,15 +48,19 @@ public enum SupportedControlLaw {
 
     },
 
-    /** Constant for inclination vector secular compensation control law. */
-    INCLINATION_VECTOR_SECULAR_COMPENSATION() {
+    /** Constant for inclination vector. */
+    INCLINATION_VECTOR() {
 
         /** {@inheritDoc} */
         public SKControl parse(final SkatFileParser parser, final Tree node,
                                final String controlled, final Skat skat)
             throws OrekitException, SkatException {
-            // TODO
-            throw SkatException.createInternalError(null);
+            final String name         = parser.getString(node, ParameterKey.CONTROL_NAME);
+            final double sampling     = parser.getDouble(node, ParameterKey.CONTROL_SAMPLING);
+            final double scale        = parser.getDouble(node, ParameterKey.CONTROL_SCALE);
+            final double targetHx     = parser.getDouble(node, ParameterKey.CONTROL_INCLINATION_VECTOR_TARGET_X);
+            final double targetHy     = parser.getDouble(node, ParameterKey.CONTROL_INCLINATION_VECTOR_TARGET_Y);
+            return new InclinationVector(name, scale, controlled, targetHx, targetHy, sampling);
         }
 
     },
