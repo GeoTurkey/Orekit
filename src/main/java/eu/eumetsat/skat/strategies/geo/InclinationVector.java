@@ -93,18 +93,15 @@ public class InclinationVector extends AbstractSKControl {
                         interpolator.isForward() ? interpolator.getCurrentDate() : interpolator.getPreviousDate();
 
                 // loop throughout step
-                for (AbsoluteDate date = minDate;
-                        date.compareTo(maxDate) < 0;
-                        date = date.shiftedBy(samplingStep)) {
+                for (AbsoluteDate date = minDate; date.compareTo(maxDate) < 0; date = date.shiftedBy(samplingStep)) {
 
                     // compute position in Earth frame
                     interpolator.setInterpolatedDate(date);
                     final SpacecraftState state = interpolator.getInterpolatedState();
 
                     // update inclination excursion
-                    final double dx = state.getHx() - targetHx;
-                    final double dy = state.getHy() - targetHy;
-                    maxDelta        = FastMath.max(maxDelta, FastMath.hypot(dx, dy));
+                    final double delta = FastMath.hypot(state.getHx() - targetHx, state.getHy() - targetHy);
+                    maxDelta = FastMath.max(maxDelta, delta);
 
                 }
 
