@@ -29,6 +29,7 @@ import org.orekit.time.AbsoluteDate;
 import org.orekit.time.TimeScale;
 import org.orekit.time.TimeScalesFactory;
 
+import eu.eumetsat.skat.control.SKControl;
 import eu.eumetsat.skat.strategies.ScheduledManeuver;
 import eu.eumetsat.skat.utils.MonitorableDuoSKData;
 import eu.eumetsat.skat.utils.MonitorableMonoSKData;
@@ -74,6 +75,9 @@ public class Scenario implements ScenarioComponent {
     /** Duo-spacecrafts monitorables. */
     private List<MonitorableDuoSKData> monitorablesDuo;
 
+    /** Monitored control laws. */
+    private List<SKControl> controls;
+
     /** Simple constructor.
      * <p>
      * Create an empty scenario without any components. Components
@@ -86,12 +90,14 @@ public class Scenario implements ScenarioComponent {
      * @param groundLocation reference ground location
      * @param monitorablesMono list of monitorables for mono-spacecraft
      * @param monitorablesDuo list of monitorables for duo-spacecrafts
+     * @param monitored control laws controls
      */
     public Scenario(final double cycleDuration, final double outputStep,
                     final BodyShape earth, final CelestialBody sun,
                     final TopocentricFrame groundLocation,
                     final List<MonitorableMonoSKData> monitorablesMono,
-                    final List<MonitorableDuoSKData> monitorablesDuo) {
+                    final List<MonitorableDuoSKData> monitorablesDuo,
+                    final List<SKControl> controls) {
         this.components       = new ArrayList<ScenarioComponent>();
         this.cycleDuration    = cycleDuration;
         this.outputstep       = outputStep;
@@ -101,6 +107,7 @@ public class Scenario implements ScenarioComponent {
         this.groundLocation   = groundLocation;
         this.monitorablesMono = monitorablesMono;
         this.monitorablesDuo  = monitorablesDuo;
+        this.controls         = controls;
     }
 
     /** Add a cycle component.
@@ -145,6 +152,11 @@ public class Scenario implements ScenarioComponent {
             for (final ScenarioComponent component : components) {
                 component.setCycleEnd(iterationTarget);
                 states = component.updateStates(states);
+            }
+
+            // trigger control laws monitoring
+            for (final SKControl control : controls) {
+                control.getAchievedValue(); // we ignore the result, it automatically updates monitors
             }
 
             // monitor data

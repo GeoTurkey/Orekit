@@ -50,6 +50,9 @@ import org.orekit.time.TimeScalesFactory;
 import org.orekit.utils.Constants;
 import org.orekit.utils.PVCoordinates;
 
+import eu.eumetsat.skat.control.MonitorableDuoSKControl;
+import eu.eumetsat.skat.control.MonitorableMonoSKControl;
+import eu.eumetsat.skat.control.SKControl;
 import eu.eumetsat.skat.realization.Propagation;
 import eu.eumetsat.skat.scenario.Scenario;
 import eu.eumetsat.skat.scenario.ScenarioState;
@@ -57,9 +60,7 @@ import eu.eumetsat.skat.strategies.ScheduledManeuver;
 import eu.eumetsat.skat.utils.CsvFileMonitor;
 import eu.eumetsat.skat.utils.MonitorDuo;
 import eu.eumetsat.skat.utils.MonitorMono;
-import eu.eumetsat.skat.utils.MonitorableDuo;
 import eu.eumetsat.skat.utils.MonitorableDuoSKData;
-import eu.eumetsat.skat.utils.MonitorableMono;
 import eu.eumetsat.skat.utils.MonitorableMonoSKData;
 import eu.eumetsat.skat.utils.ParameterKey;
 import eu.eumetsat.skat.utils.SkatException;
@@ -135,6 +136,9 @@ public class Skat {
 
     /** Duo-spacecrafts monitorables. */
     private List<MonitorableDuoSKData> monitorablesDuo;
+
+    /** Station-keeping control laws. */
+    private final List<SKControl> controls;
 
     /** Program entry point.
      * @param args program arguments (unused here)
@@ -321,6 +325,7 @@ public class Skat {
             }
         }
 
+        controls  = new ArrayList<SKControl>();
 
         // set up scenario components
         final Tree scenarioNode = parser.getValue(root, ParameterKey.SCENARIO);
@@ -468,26 +473,36 @@ public class Skat {
 
     }
 
-    /** Set the monitor for a single spacecraft.
-     * @param index spacecraft index
-     * @param monitor monitor for the spacecraft
+    /** Add a control law to be monitored.
+     * @param controlLaw control law to add
+     * @exception SkatException if index of controlled spacecraft cannot be determined
      */
-    public void addMonitorable(final int index,
-                               final MonitorableMono monitorable) {
-        monitorable.register(configuredStates.length, monitorsMono[index]);
+    public void addControl(final SKControl controlLaw)
+        throws SkatException {
+        if (controlLaw.getReferenceSpacecraftName() == null) {
+            // this is a control law for a single spacecraft
+            final MonitorableMonoSKControl monitorableControlLaw =new MonitorableMonoSKControl(controlLaw);
+            controls.add(monitorableControlLaw);
+            final int index = getSpacecraftIndex(controlLaw.getControlledSpacecraftName());
+            monitorableControlLaw.register(configuredStates.length, monitorsMono[index]);
+        } else {
+            // this is a control law for a spacecrafts pair
+            final MonitorableDuoSKControl monitorableControlLaw = new MonitorableDuoSKControl(controlLaw);
+            controls.add(monitorableControlLaw);
+            final int index1 = getSpacecraftIndex(controlLaw.getControlledSpacecraftName());
+            final int index2 = getSpacecraftIndex(controlLaw.getReferenceSpacecraftName());
+            monitorableControlLaw.register(configuredStates.length, monitorsDuo[index1][index2]);
+        }
     }
 
-    /** Set the monitor for a spacecrafts pair.
-     * @param index1 first spacecraft index
-     * @param index2 second spacecraft index
-     * @param monitor monitor for the spacecrafts pair
+    /** Get the control laws.
+     * @return control laws
      */
-    public void addMonitorable(final int index1, final int index2,
-                               final MonitorableDuo monitorable) {
-        monitorable.register(configuredStates.length, monitorsDuo[index1][index2]);
+    public List<SKControl> getControlLaws() {
+        return controls;
     }
 
-    /** Check if a spacecraft is managed by a propagator.
+    /**
      * @param index spacecraft index
      * @return true if spacecraft is managed by a propagator
      * @see #getSpacecraftIndex(String)

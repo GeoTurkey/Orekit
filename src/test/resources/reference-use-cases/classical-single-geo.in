@@ -90,7 +90,7 @@ scenario         = [
                 scale            = 1.0e-4;
                 type             = INCLINATION_VECTOR;
                 name             = "inclination vector";
-                target_x         = -6.0e-4;
+                target_x         = 9.0e-4;
                 target_y         =  0.0;
                 sampling         = 7200.0;
             }
@@ -189,14 +189,21 @@ scenario         = [
         managed_spacecrafts = [ "Meteosat 7" ];
         in_plane            = true;
         out_of_plane        = true;
-        standard_deviation  = 60.0;
+        standard_deviation  = 10.0;
+    },
+    {
+        component           = MANEUVER_MAGNITUDE_ERROR;
+        managed_spacecrafts = [ "Meteosat 7" ];
+        in_plane            = false;
+        out_of_plane        = true;
+        standard_deviation  = 0.01;
     },
     {
         component           = MANEUVER_MAGNITUDE_ERROR;
         managed_spacecrafts = [ "Meteosat 7" ];
         in_plane            = true;
-        out_of_plane        = true;
-        standard_deviation  = 0.001;
+        out_of_plane        = false;
+        standard_deviation  = 0.02;
     },
     {
         component           = PROPAGATION;

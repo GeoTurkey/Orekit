@@ -77,11 +77,8 @@ public class ControlLoop implements ScenarioComponent {
     /** Start point. */
     private final double[] startPoint;
 
-    /** Station-keeping controls for single spacecraft. */
-    private final List<MonitorableMonoSKControl> monoControls;
-
-    /** Station-keeping controls for several spacecrafts. */
-    private final List<MonitorableDuoSKControl> duoControls;
+    /** Station-keeping control laws. */
+    private final List<SKControl> controls;
 
     /** Simple constructor.
      * <p>
@@ -110,8 +107,7 @@ public class ControlLoop implements ScenarioComponent {
         this.optimizer       = optimizer;
         this.propagator      = propagator;
         this.tunables        = tunables.clone();
-        this.monoControls    = new ArrayList<MonitorableMonoSKControl>();
-        this.duoControls     = new ArrayList<MonitorableDuoSKControl>();
+        this.controls        = new ArrayList<SKControl>();
         this.cycleDuration   = cycleDuration;
         this.rollingCycles   = rollingCycles;
 
@@ -143,17 +139,10 @@ public class ControlLoop implements ScenarioComponent {
     }
 
     /** Add a control law .
-     * @param control control law to add
+     * @param controlLaw control law to add
      */
-    public void addControl(final MonitorableMonoSKControl control) {
-        monoControls.add(control);
-    }
-
-    /** Add a control law .
-     * @param control control law to add
-     */
-    public void addControl(final MonitorableDuoSKControl control) {
-        duoControls.add(control);
+    public void addControl(final SKControl controlLaw) {
+        controls.add(controlLaw);
     }
 
     /** {@inheritDoc} */
@@ -192,42 +181,18 @@ public class ControlLoop implements ScenarioComponent {
                                                  original.getEstimatedStartState().getMass());
             }
 
-            AbsoluteDate startDate  = original.getEstimatedStartState().getDate();
-
             // compute a reference ephemeris, on which tunable maneuvers will be added
             final BoundedPropagator reference =
                     computeReferenceEphemeris(original.getEstimatedStartState(), original.getManeuvers());
 
             // find the optimal parameters that minimize objective function
-            final List<SKControl> unmonitoredControls = new ArrayList<SKControl>(monoControls.size() + duoControls.size());
-            for (final MonitorableMonoSKControl control : monoControls) {
-                unmonitoredControls.add(control.getControlLaw());
-            }
-            for (final MonitorableDuoSKControl control : duoControls) {
-                unmonitoredControls.add(control.getControlLaw());
-            }
             final ObjectiveFunction objective =
                     new ObjectiveFunction(reference, tunables, cycleDuration, rollingCycles,
-                                          unmonitoredControls, original.getEstimatedStartState());
+                                          controls, original.getEstimatedStartState());
             final RealPointValuePair pointValue =
                     optimizer.optimize(maxEval, objective, GoalType.MINIMIZE, startPoint, boundaries[0], boundaries[1]);
             final double[] optimum = pointValue.getPoint();
-
-            // perform a last run with monitoring enabled, using the optimum values
-            final List<SKControl> monitoredControls = new ArrayList<SKControl>(monoControls.size() + duoControls.size());
-            for (final MonitorableMonoSKControl control : monoControls) {
-                control.setDate(startDate);
-                monitoredControls.add(control);
-            }
-            for (final MonitorableDuoSKControl control : duoControls) {
-                control.setDate(startDate);
-                monitoredControls.add(control);
-            }
-
-            // we limit ourselves to one cycle only, and explicitly ignore the return value,
-            // we just evaluate the function for its side effects (i.e. monitoring)
-            new ObjectiveFunction(reference, tunables, cycleDuration, 1,
-                                  monitoredControls, original.getEstimatedStartState()).value(optimum);
+            objective.setParameters(optimum);
 
             // update the scheduled maneuvers, adding the newly optimized set
             final List<ScheduledManeuver> theoreticalManeuvers = new ArrayList<ScheduledManeuver>();

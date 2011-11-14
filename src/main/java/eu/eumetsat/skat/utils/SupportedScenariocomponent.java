@@ -15,8 +15,6 @@ import org.orekit.utils.Constants;
 
 import eu.eumetsat.skat.Skat;
 import eu.eumetsat.skat.control.ControlLoop;
-import eu.eumetsat.skat.control.MonitorableDuoSKControl;
-import eu.eumetsat.skat.control.MonitorableMonoSKControl;
 import eu.eumetsat.skat.control.SKControl;
 import eu.eumetsat.skat.realization.ManeuverDateError;
 import eu.eumetsat.skat.realization.ManeuverMagnitudeError;
@@ -38,7 +36,8 @@ public enum SupportedScenariocomponent {
             final Scenario scenario = new Scenario(skat.getCycleDuration() * Constants.JULIAN_DAY,
                                                    skat.getOutputStep(), skat.getEarth(), skat.getSun(),
                                                    skat.getGroundLocation(),
-                                                   skat.getMonitorablesMono(), skat.getMonitorablesDuo());
+                                                   skat.getMonitorablesMono(), skat.getMonitorablesDuo(),
+                                                   skat.getControlLaws());
             for (int j = 0; j < parser.getElementsNumber(node); ++j) {
                 final Tree componentNode = parser.getElement(node, j);
                 final  String type       = parser.getIdentifier(componentNode, ParameterKey.COMPONENT_TYPE);
@@ -145,20 +144,8 @@ public enum SupportedScenariocomponent {
                 final String type = parser.getIdentifier(control, ParameterKey.CONTROL_TYPE);
                 final SKControl controlLaw =
                         SupportedControlLaw.valueOf(type).parse(parser, control, controlled, skat);
-                if (controlLaw.getReferenceSpacecraftName() == null) {
-                    // this is a control law for a single spacecraft
-                    final MonitorableMonoSKControl monitorable = new MonitorableMonoSKControl(controlLaw);
-                    skat.addMonitorable(skat.getSpacecraftIndex(controlLaw.getControlledSpacecraftName()),
-                                        monitorable);
-                    loop.addControl(monitorable);
-                } else {
-                    // this is a control law for a spacecrafts pair
-                    final MonitorableDuoSKControl monitorable = new MonitorableDuoSKControl(controlLaw);
-                    skat.addMonitorable(skat.getSpacecraftIndex(controlLaw.getControlledSpacecraftName()),
-                                        skat.getSpacecraftIndex(controlLaw.getReferenceSpacecraftName()),
-                                        monitorable);
-                    loop.addControl(monitorable);
-                }
+                skat.addControl(controlLaw);
+                loop.addControl(controlLaw);
             }
 
             return loop;
@@ -209,10 +196,25 @@ public enum SupportedScenariocomponent {
             final int[] indices = getIndices(parser, node, skat);
             final  Propagator[] propagators = new Propagator[indices.length];
             for (int i = 0; i < propagators.length; ++i) {
+
+                // build the propagator for the selected spacecraft
                 final Tree propagatorNode = parser.getValue(node, ParameterKey.COMPONENT_PROPAGATION_PROPAGATOR);
                 final  String propagationMethod = parser.getIdentifier(propagatorNode, ParameterKey.COMPONENT_PROPAGATION_METHOD);
                 propagators[i] =
                         SupportedPropagator.valueOf(propagationMethod).parse(parser, propagatorNode, skat, i);
+
+                // register the control law handlers to the propagator
+                for (final SKControl controlLaw : skat.getControlLaws()) {
+                    if (indices[i] == skat.getSpacecraftIndex(controlLaw.getControlledSpacecraftName())) {
+                        if (controlLaw.getEventDetector() != null) {
+                            propagators[i].addEventDetector(controlLaw.getEventDetector());
+                        }
+                        if (controlLaw.getStepHandler() != null) {
+                            propagators[i].setMasterMode(controlLaw.getStepHandler());
+                        }
+                    }
+                }
+
             }
 
             // build the component
