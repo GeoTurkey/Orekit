@@ -2,10 +2,7 @@
 package eu.eumetsat.skat.control;
 
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
 import java.util.List;
-import java.util.TimeZone;
 
 import org.apache.commons.math.analysis.MultivariateRealFunction;
 import org.apache.commons.math.optimization.BaseMultivariateRealOptimizer;
@@ -19,8 +16,6 @@ import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
 import org.orekit.propagation.events.DateDetector;
 import org.orekit.time.AbsoluteDate;
-import org.orekit.time.TimeScale;
-import org.orekit.time.TimeScalesFactory;
 import org.orekit.utils.Constants;
 
 import eu.eumetsat.skat.scenario.ScenarioComponent;
@@ -198,10 +193,6 @@ public class ControlLoop implements ScenarioComponent {
             }
 
             AbsoluteDate startDate  = original.getEstimatedStartState().getDate();
-            final TimeScale utc = TimeScalesFactory.getUTC();
-            final Date now = Calendar.getInstance(TimeZone.getTimeZone("Etc/UTC")).getTime();
-            System.out.println(new AbsoluteDate(now, utc).toString(utc) +
-                               ": starting optimization for cycle " + original.getCyclesNumber() + " " + startDate);
 
             // compute a reference ephemeris, on which tunable maneuvers will be added
             final BoundedPropagator reference =

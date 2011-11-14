@@ -2,7 +2,10 @@
 package eu.eumetsat.skat.scenario;
 
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
+import java.util.TimeZone;
 
 import org.apache.commons.math.analysis.UnivariateRealFunction;
 import org.apache.commons.math.analysis.solvers.BracketingNthOrderBrentSolver;
@@ -23,6 +26,8 @@ import org.orekit.orbits.OrbitType;
 import org.orekit.propagation.BoundedPropagator;
 import org.orekit.propagation.SpacecraftState;
 import org.orekit.time.AbsoluteDate;
+import org.orekit.time.TimeScale;
+import org.orekit.time.TimeScalesFactory;
 
 import eu.eumetsat.skat.strategies.ScheduledManeuver;
 import eu.eumetsat.skat.utils.MonitorableDuoSKData;
@@ -127,7 +132,14 @@ public class Scenario implements ScenarioComponent {
         do {
 
             // set target date for iteration using cycle duration
-            iterationTarget = states[0].getRealStartState().getDate().shiftedBy(cycleDuration);
+            final AbsoluteDate startDate = states[0].getRealStartState().getDate();
+            iterationTarget = startDate.shiftedBy(cycleDuration);
+
+            final TimeScale utc = TimeScalesFactory.getUTC();
+            final Date now = Calendar.getInstance(TimeZone.getTimeZone("Etc/UTC")).getTime();
+            System.out.println(new AbsoluteDate(now, utc).toString(utc) +
+                               ": starting cycle " + states[0].getCyclesNumber() + " " +
+                               startDate + " -> " + iterationTarget);
 
             // run all components of the scenario in order
             for (final ScenarioComponent component : components) {
