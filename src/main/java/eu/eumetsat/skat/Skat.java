@@ -144,6 +144,8 @@ public class Skat {
         Skat stationKeeping = null;
         try {
 
+            final long startTime = System.currentTimeMillis();
+
             // check input file
             if (args.length != 1) {
                 System.err.println("usage: java eu.eumetsat.skat.Skat input-file");
@@ -159,6 +161,9 @@ public class Skat {
 
             // perform simulation
             stationKeeping.run();
+
+            final long endTime = System.currentTimeMillis();
+            System.out.println("simulation computing time: " + ((endTime - startTime) / 1000) + " seconds");
 
         } catch (Exception e) {
             System.err.println(e.getLocalizedMessage());
@@ -515,7 +520,7 @@ public class Skat {
         // set up empty maneuvers lists
         ScenarioState[] initialStates = new ScenarioState[configuredStates.length];
         for (int i = 0; i < initialStates.length; ++i) {
-            initialStates[i] = configuredStates[i].updatePerformedManeuvers(new ArrayList<ScheduledManeuver>());
+            initialStates[i] = configuredStates[i].updateManeuvers(new ArrayList<ScheduledManeuver>());
         }
 
         // propagate all spacecrafts state to simulation start date

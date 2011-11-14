@@ -47,8 +47,7 @@ public enum SkatMessages implements Localizable {
     SPACECRAFT_MANAGED_TWICE("spacecraft {0} is managed by several propagation scenario components"),
     SPACECRAFT_NOT_MANAGED("spacecraft {0} is not managed by any propagation scenario components"),
     NO_ESTIMATED_STATE("no estimated state available for {0} at cycle {1}, maybe an orbit determination component is missing"),
-    NO_THEORETICAL_MANEUVERS_STATE("no theoretical maneuvers available for {0} at cycle {1}, maybe a control loop component is missing for this cycle"),
-    NO_PERFORMED_MANEUVERS_STATE("no performed maneuvers available for {0} at cycle {1}, maybe a maneuver realization component is missing"),
+    NO_MANEUVERS_STATE("no maneuvers available for {0} at cycle {1}, maybe a control loop component is missing for this cycle"),
     NO_EPHEMERIS_STATE("no ephemeris available for {0} at cycle {1}, maybe a propagation component is missing"),
     NO_END_STATE("no end state available for {0} at cycle {1}, maybe a propagation component is missing");
 

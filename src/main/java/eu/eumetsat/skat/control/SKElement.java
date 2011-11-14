@@ -1,8 +1,6 @@
 /* Copyright 2011 Eumetsat */
 package eu.eumetsat.skat.control;
 
-import org.orekit.propagation.events.EventDetector;
-import org.orekit.propagation.sampling.OrekitStepHandler;
 
 
 /**
@@ -40,15 +38,5 @@ public interface SKElement {
      * @return maximal allowed value
      */
     double getMax();
-
-    /** Get the event detector associated with this element.
-     * @return event detector associated with this element (may be null)
-     */
-    EventDetector getEventDetector();
-
-    /** Get the step handler associated with this element.
-     * @return step handler associated with this element (may be null)
-     */
-    OrekitStepHandler getStepHandler();
 
 }

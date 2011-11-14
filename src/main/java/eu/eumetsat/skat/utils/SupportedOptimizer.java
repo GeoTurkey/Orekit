@@ -6,11 +6,11 @@ import org.apache.commons.math.analysis.MultivariateRealFunction;
 import org.apache.commons.math.optimization.BaseMultivariateRealOptimizer;
 import org.apache.commons.math.optimization.ConvergenceChecker;
 import org.apache.commons.math.optimization.RealPointValuePair;
-import org.apache.commons.math.optimization.direct.BOBYQAOptimizer;
 import org.apache.commons.math.optimization.direct.CMAESOptimizer;
 import org.apache.commons.math.util.FastMath;
 
 import eu.eumetsat.skat.Skat;
+import eu.eumetsat.skat.control.BoundedNelderMead;
 import eu.eumetsat.skat.control.SKParameter;
 import eu.eumetsat.skat.strategies.TunableManeuver;
 
@@ -18,38 +18,34 @@ import eu.eumetsat.skat.strategies.TunableManeuver;
  */
 public enum SupportedOptimizer {
 
+    /** Constant for Nelder-Mead. */
+    NELDER_MEAD() {
+        /** {@inheritDoc} */
+        public BaseMultivariateRealOptimizer<MultivariateRealFunction>
+            parse(final SkatFileParser parser, final Tree node,
+                  final TunableManeuver[] maneuvers, final double stopCriterion, final Skat skat) {
+            return new BoundedNelderMead(parser.getDouble(node, ParameterKey.NELDER_MEAD_INITIAL_SIMPLEX_SIZE_RATIO),
+                                         new Checker(maneuvers, stopCriterion));
+        }
+    },
+
     /** Constant for Covariance Matrix Adaptation Evolution Strategy (CMA-ES). */
     CMA_ES() {
         /** {@inheritDoc} */
         public BaseMultivariateRealOptimizer<MultivariateRealFunction>
             parse(final SkatFileParser parser, final Tree node,
-                  final TunableManeuver[] maneuvers, final Skat skat) {
+                  final TunableManeuver[] maneuvers, final double stopCriterion, final Skat skat) {
             double[][] boundaries = getBoundaries(maneuvers);
             final double[] inputSigma        = new double[boundaries[0].length];
-            final double[] relativeThreshold = new double[boundaries[0].length];
-            final double[] absoluteThreshold = new double[boundaries[0].length];
             for (int i = 0; i < inputSigma.length; ++i) {
-                inputSigma[i]        = (boundaries[1][i] - boundaries[0][i]) / 3.0;
-                relativeThreshold[i] = 0.0;
-                absoluteThreshold[i] = 0.0;
+                inputSigma[i] = (boundaries[1][i] - boundaries[0][i]) / 3.0;
             }
             return new CMAESOptimizer(parser.getInt(node, ParameterKey.CMAES_POPULATION_SIZE),
                                       inputSigma, boundaries,
                                       parser.getInt(node, ParameterKey.CMAES_MAX_ITERATIONS),
                                       parser.getDouble(node, ParameterKey.CMAES_STOP_FITNESS),
                                       true, 0, 0, skat.getGenerator(), true,
-                                      new Checker(maneuvers));
-        }
-    },
-
-    /** Constant for BOBYQA. */
-    BOBYQA() {
-        /** {@inheritDoc} */
-        public BaseMultivariateRealOptimizer<MultivariateRealFunction>
-            parse(final SkatFileParser parser, final Tree node,
-                  final TunableManeuver[] maneuvers, final Skat skat) {
-            // TODO add convergence checker
-            return new BOBYQAOptimizer(parser.getInt(node, ParameterKey.BOBYQA_INTERPOLATION_POINTS));
+                                      new Checker(maneuvers, stopCriterion));
         }
     };
 
@@ -57,11 +53,12 @@ public enum SupportedOptimizer {
      * @param parser input file parser
      * @param node data node containing component configuration parameters
      * @param maneuvers maneuvers to optimize
+     * @param stopCriterion stop criterion on global value
      * @param skat enclosing Skat tool
      * @return parsed component
      */
     public abstract BaseMultivariateRealOptimizer<MultivariateRealFunction>
-        parse(final SkatFileParser parser, final Tree node, final TunableManeuver[] maneuvers, final Skat skat);
+        parse(SkatFileParser parser, Tree node, TunableManeuver[] maneuvers, double stopCriterion, Skat skat);
 
     /** Get the parameters boundaries.
      * @param maneuvers maneuvers to optimize
@@ -101,16 +98,26 @@ public enum SupportedOptimizer {
         /** Maneuvers. */
         private final TunableManeuver[] maneuvers;
 
+        /** Stop criterion on global value. */
+        private final double stopCriterion;
+
         /** Simple constructor.
          * @param maneuvers maneuvers to optimize
+         * @param stopCriterion stop criterion on global value
          */
-        public Checker(final TunableManeuver[] maneuvers) {
-            this.maneuvers = maneuvers.clone();
+        public Checker(final TunableManeuver[] maneuvers, final double stopCriterion) {
+            this.maneuvers     = maneuvers.clone();
+            this.stopCriterion = stopCriterion;
         }
 
         /** {@inheritDoc} */
         public boolean converged(final int iteration, final RealPointValuePair previous,
                                  final RealPointValuePair current) {
+
+            // first check directly the criterion on the function value
+            if (current.getValue() <= stopCriterion) {
+                return true;
+            }
 
             // get the optimal parameters values on the last iterations
             final double[] p = previous.getPoint();

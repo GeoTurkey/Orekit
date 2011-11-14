@@ -2,17 +2,25 @@
 package eu.eumetsat.skat.control;
 
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
+import java.util.TimeZone;
 
 import org.apache.commons.math.analysis.MultivariateRealFunction;
 import org.apache.commons.math.optimization.BaseMultivariateRealOptimizer;
 import org.apache.commons.math.optimization.GoalType;
 import org.apache.commons.math.optimization.RealPointValuePair;
-import org.apache.commons.math.optimization.direct.CMAESOptimizer;
 import org.orekit.errors.OrekitException;
+import org.orekit.errors.PropagationException;
+import org.orekit.forces.maneuvers.ImpulseManeuver;
+import org.orekit.propagation.BoundedPropagator;
 import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
+import org.orekit.propagation.events.DateDetector;
 import org.orekit.time.AbsoluteDate;
+import org.orekit.time.TimeScale;
+import org.orekit.time.TimeScalesFactory;
 import org.orekit.utils.Constants;
 
 import eu.eumetsat.skat.scenario.ScenarioComponent;
@@ -189,11 +197,17 @@ public class ControlLoop implements ScenarioComponent {
                                                  original.getEstimatedStartState().getMass());
             }
 
-            // find the optimal parameters that minimize objective function
             AbsoluteDate startDate  = original.getEstimatedStartState().getDate();
-            AbsoluteDate targetDate = startDate.shiftedBy(cycleDuration * rollingCycles * Constants.JULIAN_DAY);
-            System.out.println("starting optimization for cycle " + original.getCyclesNumber() +
-                               "from " + startDate + " to " + targetDate);
+            final TimeScale utc = TimeScalesFactory.getUTC();
+            final Date now = Calendar.getInstance(TimeZone.getTimeZone("Etc/UTC")).getTime();
+            System.out.println(new AbsoluteDate(now, utc).toString(utc) +
+                               ": starting optimization for cycle " + original.getCyclesNumber() + " " + startDate);
+
+            // compute a reference ephemeris, on which tunable maneuvers will be added
+            final BoundedPropagator reference =
+                    computeReferenceEphemeris(original.getEstimatedStartState(), original.getManeuvers());
+
+            // find the optimal parameters that minimize objective function
             final List<SKControl> unmonitoredControls = new ArrayList<SKControl>(monoControls.size() + duoControls.size());
             for (final MonitorableMonoSKControl control : monoControls) {
                 unmonitoredControls.add(control.getControlLaw());
@@ -202,26 +216,11 @@ public class ControlLoop implements ScenarioComponent {
                 unmonitoredControls.add(control.getControlLaw());
             }
             final ObjectiveFunction objective =
-                    new ObjectiveFunction(propagator, tunables, unmonitoredControls, targetDate,
-                                          original.getEstimatedStartState(),
-                                          original.getTheoreticalManeuvers());
+                    new ObjectiveFunction(reference, tunables, cycleDuration, rollingCycles,
+                                          unmonitoredControls, original.getEstimatedStartState());
             final RealPointValuePair pointValue =
                     optimizer.optimize(maxEval, objective, GoalType.MINIMIZE, startPoint, boundaries[0], boundaries[1]);
             final double[] optimum = pointValue.getPoint();
-            for (int i = 0; i < optimum.length; ++i) {
-                System.out.print((i == 0 ? "    " : ", ") + optimum[i]);
-            }
-            System.out.println(" -> " + pointValue.getValue());
-            List<Double> fitness = ((CMAESOptimizer) optimizer).getStatisticsFitnessHistory();
-            for (int i = 0; i < fitness.size(); ++i) {
-                System.out.print((i == 0 ? "    fitness: " : ", ") + fitness.get(i));
-            }
-            System.out.println();
-            List<Double> sigma = ((CMAESOptimizer) optimizer).getStatisticsSigmaHistory();
-            for (int i = 0; i < fitness.size(); ++i) {
-                System.out.print((i == 0 ? "    sigma: " : ", ") + sigma.get(i));
-            }
-            System.out.println();
 
             // perform a last run with monitoring enabled, using the optimum values
             final List<SKControl> monitoredControls = new ArrayList<SKControl>(monoControls.size() + duoControls.size());
@@ -233,36 +232,76 @@ public class ControlLoop implements ScenarioComponent {
                 control.setDate(startDate);
                 monitoredControls.add(control);
             }
-            new ObjectiveFunction(propagator, tunables, monitoredControls, targetDate,
-                                  original.getEstimatedStartState(),
-                                  original.getTheoreticalManeuvers()).value(optimum);
+
+            // we limit ourselves to one cycle only, and explicitly ignore the return value,
+            // we just evaluate the function for its side effects (i.e. monitoring)
+            new ObjectiveFunction(reference, tunables, cycleDuration, 1,
+                                  monitoredControls, original.getEstimatedStartState()).value(optimum);
 
             // update the scheduled maneuvers, adding the newly optimized set
             final List<ScheduledManeuver> theoreticalManeuvers = new ArrayList<ScheduledManeuver>();
-            if (original.getTheoreticalManeuvers() != null) {
-                theoreticalManeuvers.addAll(original.getTheoreticalManeuvers());
+            if (original.getManeuvers() != null) {
+                theoreticalManeuvers.addAll(original.getManeuvers());
             }
-            for (final TunableManeuver tunable : tunables) {
-                // get the optimized maneuver, using the optimum value set above
-                final ScheduledManeuver optimized = tunable.getManeuver();
-                theoreticalManeuvers.add(optimized);
+            for (int i = 0; i < tunables.length / rollingCycles; ++i) {
+                // get the optimized maneuver for the next cycle, using the optimum value set above
+                final ScheduledManeuver maneuver = tunables[i].getManeuver();
+                System.out.println("  " + tunables[i].getName() +
+                                   " "  + maneuver.getDate() +
+                                   " "  + maneuver.getDeltaV().getNorm());
+                theoreticalManeuvers.add(maneuver);
             }
 
             // build the updated scenario state
-            updated[spacecraftIndex] = original.updateTheoreticalManeuvers(theoreticalManeuvers);
+            updated[spacecraftIndex] = original.updateManeuvers(theoreticalManeuvers);
 
             // prepare start point for next cycle by shifting already optimized maneuvers one cycle
-            final int parametersPerCycle = tunables.length / rollingCycles;
-            for (int i = 1; i < rollingCycles; ++i) {
-                for (int j = 0; j < parametersPerCycle; ++j) {
-                    startPoint[(i - 1) * rollingCycles + j] = startPoint[i * rollingCycles + j];
-                }
-            }
+            // and repeating last cycle
+            final int parametersPerCycle = startPoint.length / rollingCycles;
+            System.arraycopy(optimum,    parametersPerCycle,
+                             startPoint, 0,
+                             startPoint.length - parametersPerCycle);
+            System.arraycopy(startPoint, startPoint.length - 2 * parametersPerCycle,
+                             startPoint, startPoint.length - parametersPerCycle,
+                             parametersPerCycle);
 
         }
 
         // return the updated states
         return updated;
+
+    }
+
+    /** Set up reference ephemeris, without the tunable maneuvers.
+     * @param initialState initial state
+     * @param scheduledManeuvers maneuvers that are already scheduled
+     * and hence not optimized themselves, may be null
+     * @exception PropagationException if propagation cannot be performed
+     */
+    private BoundedPropagator computeReferenceEphemeris(final SpacecraftState initialState,
+                                                        final List<ScheduledManeuver> scheduledManeuvers)
+        throws PropagationException {
+        // set up the propagator with the station-keeping elements
+        // that are part of the optimization process in the control loop
+        propagator.clearEventsDetectors();
+        propagator.setEphemerisMode();
+
+        if (scheduledManeuvers != null) {
+            // set up the scheduled maneuvers that are not optimized
+            for (final ScheduledManeuver maneuver : scheduledManeuvers) {
+                propagator.addEventDetector(new ImpulseManeuver(new DateDetector(maneuver.getDate()),
+                                                                maneuver.getDeltaV(),
+                                                                maneuver.getIsp()));
+            }
+        }
+
+        // perform propagation
+        propagator.resetInitialState(initialState);
+        final double propagationDuration = rollingCycles * cycleDuration * Constants.JULIAN_DAY;
+        final AbsoluteDate endDate       = initialState.getDate().shiftedBy(propagationDuration);
+        propagator.propagate(endDate);
+
+        return propagator.getGeneratedEphemeris();
 
     }
 

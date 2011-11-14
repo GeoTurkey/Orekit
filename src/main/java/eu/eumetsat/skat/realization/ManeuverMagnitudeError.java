@@ -97,21 +97,17 @@ public class ManeuverMagnitudeError implements ScenarioComponent {
 
             // select the current spacecraft affected by this component
             final int index = spacecraftIndices[i];
-            final List<ScheduledManeuver> theoretical = originals[index].getTheoreticalManeuvers();
-            if (theoretical == null) {
-                throw new SkatException(SkatMessages.NO_THEORETICAL_MANEUVERS_STATE,
+            final List<ScheduledManeuver> rawManeuvers = originals[index].getManeuvers();
+            if (rawManeuvers == null) {
+                throw new SkatException(SkatMessages.NO_MANEUVERS_STATE,
                                         originals[index].getName(), originals[index].getCyclesNumber());
             }
 
             // prepare a list for holding the modified maneuvers
             List<ScheduledManeuver> modified = new ArrayList<ScheduledManeuver>();
-            if (originals[index].getPerformedManeuvers() != null) {
-                // add the maneuvers that have already been modified before
-                modified.addAll(originals[index].getPerformedManeuvers());
-            }
 
             // modify the maneuvers
-            for (final ScheduledManeuver maneuver : theoretical) {
+            for (final ScheduledManeuver maneuver : rawManeuvers) {
                 if ((inPlane && maneuver.isInPlane()) || (outOfPlane && !(maneuver.isInPlane()))) {
                     // the maneuver is affected by the error
                     final double errorFactor = 1.0 + standardDeviation * generator.nextGaussian();
@@ -126,7 +122,7 @@ public class ManeuverMagnitudeError implements ScenarioComponent {
             }
 
             // update the state
-            updated[index] = originals[index].updatePerformedManeuvers(modified);
+            updated[index] = originals[index].updateManeuvers(modified);
 
         }
 
