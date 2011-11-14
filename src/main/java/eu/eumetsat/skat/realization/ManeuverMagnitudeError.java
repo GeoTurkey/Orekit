@@ -38,7 +38,7 @@ import eu.eumetsat.skat.utils.SkatMessages;
  * a filtering direction equal to the X axis, the maneuver is considered
  * affected by the error (it is at 177.14 degrees from the X axis, i.e.
  * less than 10 degrees from its opposite). With a standard deviation
- * of 0.005 (i.e. 5%), we may get a random value of -0.009 for example
+ * of 0.05 (i.e. 5%), we may get a random value of -0.009 for example
  * and in this case the realized maneuver woud be (-0.01982m/s, 0.0m/s,
  * 0.000991m/s) which corresponds to the original vector multiplied by
  * 1 - 0.009. The same maneuver would not be affected by an error configured
