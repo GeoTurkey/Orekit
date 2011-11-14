@@ -221,6 +221,7 @@ public class Skat {
         earth         = new OneAxisEllipsoid(Constants.WGS84_EARTH_EQUATORIAL_RADIUS,
                                              Constants.WGS84_EARTH_FLATTENING,
                                              parser.getEarthFrame(simulationNode, ParameterKey.SIMULATION_EARTH_FRAME));
+        earth.setAngularThreshold(1.e-7);
         sun           = CelestialBodyFactory.getSun();
         moon          = CelestialBodyFactory.getMoon();
         gravityField  = GravityFieldFactory.getPotentialProvider();
