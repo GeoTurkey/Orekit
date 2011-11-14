@@ -77,7 +77,7 @@ public class MonitorableMonoSKControl implements MonitorableMono, SKControl {
 
     /** {@inheritDoc} */
     public String getName() {
-        return control.getName();
+        return "control law residual: " + control.getName();
     }
 
     /** {@inheritDoc} */
