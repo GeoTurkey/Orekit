@@ -15,9 +15,11 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 
@@ -50,8 +52,6 @@ import org.orekit.time.TimeScalesFactory;
 import org.orekit.utils.Constants;
 import org.orekit.utils.PVCoordinates;
 
-import eu.eumetsat.skat.control.MonitorableDuoSKControl;
-import eu.eumetsat.skat.control.MonitorableMonoSKControl;
 import eu.eumetsat.skat.control.SKControl;
 import eu.eumetsat.skat.realization.Propagation;
 import eu.eumetsat.skat.scenario.Scenario;
@@ -63,6 +63,7 @@ import eu.eumetsat.skat.utils.MonitorMono;
 import eu.eumetsat.skat.utils.MonitorableDuoSKData;
 import eu.eumetsat.skat.utils.MonitorableMonoSKData;
 import eu.eumetsat.skat.utils.ParameterKey;
+import eu.eumetsat.skat.utils.SimpleMonitorable;
 import eu.eumetsat.skat.utils.SkatException;
 import eu.eumetsat.skat.utils.SkatFileParser;
 import eu.eumetsat.skat.utils.SkatMessages;
@@ -137,8 +138,8 @@ public class Skat {
     /** Duo-spacecrafts monitorables. */
     private List<MonitorableDuoSKData> monitorablesDuo;
 
-    /** Station-keeping control laws. */
-    private final List<SKControl> controls;
+    /** Station-keeping control laws monitoring. */
+    private final Map<SKControl, SimpleMonitorable> controls;
 
     /** Program entry point.
      * @param args program arguments (unused here)
@@ -325,7 +326,7 @@ public class Skat {
             }
         }
 
-        controls  = new ArrayList<SKControl>();
+        controls  = new HashMap<SKControl, SimpleMonitorable>();
 
         // set up scenario components
         final Tree scenarioNode = parser.getValue(root, ParameterKey.SCENARIO);
@@ -479,26 +480,25 @@ public class Skat {
      */
     public void addControl(final SKControl controlLaw)
         throws SkatException {
+        final SimpleMonitorable monitorable =
+                new SimpleMonitorable(1, "control law residual: " + controlLaw.getName());
+        controls.put(controlLaw, monitorable);
         if (controlLaw.getReferenceSpacecraftName() == null) {
             // this is a control law for a single spacecraft
-            final MonitorableMonoSKControl monitorableControlLaw =new MonitorableMonoSKControl(controlLaw);
-            controls.add(monitorableControlLaw);
             final int index = getSpacecraftIndex(controlLaw.getControlledSpacecraftName());
-            monitorableControlLaw.register(configuredStates.length, monitorsMono[index]);
+            monitorable.register(configuredStates.length, monitorsMono[index]);
         } else {
             // this is a control law for a spacecrafts pair
-            final MonitorableDuoSKControl monitorableControlLaw = new MonitorableDuoSKControl(controlLaw);
-            controls.add(monitorableControlLaw);
             final int index1 = getSpacecraftIndex(controlLaw.getControlledSpacecraftName());
             final int index2 = getSpacecraftIndex(controlLaw.getReferenceSpacecraftName());
-            monitorableControlLaw.register(configuredStates.length, monitorsDuo[index1][index2]);
+            monitorable.register(configuredStates.length, monitorsDuo[index1][index2]);
         }
     }
 
-    /** Get the control laws.
-     * @return control laws
+    /** Get the control laws monitoring map.
+     * @return control laws monitoring map
      */
-    public List<SKControl> getControlLaws() {
+    public Map<SKControl, SimpleMonitorable> getControlLawsMap() {
         return controls;
     }
 

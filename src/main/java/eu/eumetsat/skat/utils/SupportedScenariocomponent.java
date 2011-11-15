@@ -37,7 +37,7 @@ public enum SupportedScenariocomponent {
                                                    skat.getOutputStep(), skat.getEarth(), skat.getSun(),
                                                    skat.getGroundLocation(),
                                                    skat.getMonitorablesMono(), skat.getMonitorablesDuo(),
-                                                   skat.getControlLaws());
+                                                   skat.getControlLawsMap());
             for (int j = 0; j < parser.getElementsNumber(node); ++j) {
                 final Tree componentNode = parser.getElement(node, j);
                 final  String type       = parser.getIdentifier(componentNode, ParameterKey.COMPONENT_TYPE);
@@ -204,7 +204,7 @@ public enum SupportedScenariocomponent {
                         SupportedPropagator.valueOf(propagationMethod).parse(parser, propagatorNode, skat, i);
 
                 // register the control law handlers to the propagator
-                for (final SKControl controlLaw : skat.getControlLaws()) {
+                for (final SKControl controlLaw : skat.getControlLawsMap().keySet()) {
                     if (indices[i] == skat.getSpacecraftIndex(controlLaw.getControlledSpacecraftName())) {
                         if (controlLaw.getEventDetector() != null) {
                             propagators[i].addEventDetector(controlLaw.getEventDetector());

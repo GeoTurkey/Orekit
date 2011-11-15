@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.TimeZone;
 
 import org.apache.commons.math.analysis.UnivariateRealFunction;
@@ -33,6 +34,7 @@ import eu.eumetsat.skat.control.SKControl;
 import eu.eumetsat.skat.strategies.ScheduledManeuver;
 import eu.eumetsat.skat.utils.MonitorableDuoSKData;
 import eu.eumetsat.skat.utils.MonitorableMonoSKData;
+import eu.eumetsat.skat.utils.SimpleMonitorable;
 import eu.eumetsat.skat.utils.SkatException;
 import eu.eumetsat.skat.utils.SkatMessages;
 
@@ -76,7 +78,7 @@ public class Scenario implements ScenarioComponent {
     private List<MonitorableDuoSKData> monitorablesDuo;
 
     /** Monitored control laws. */
-    private List<SKControl> controls;
+    private Map<SKControl, SimpleMonitorable> controls;
 
     /** Simple constructor.
      * <p>
@@ -97,7 +99,7 @@ public class Scenario implements ScenarioComponent {
                     final TopocentricFrame groundLocation,
                     final List<MonitorableMonoSKData> monitorablesMono,
                     final List<MonitorableDuoSKData> monitorablesDuo,
-                    final List<SKControl> controls) {
+                    final Map<SKControl, SimpleMonitorable> controls) {
         this.components       = new ArrayList<ScenarioComponent>();
         this.cycleDuration    = cycleDuration;
         this.outputstep       = outputStep;
@@ -154,9 +156,10 @@ public class Scenario implements ScenarioComponent {
                 states = component.updateStates(states);
             }
 
-            // trigger control laws monitoring
-            for (final SKControl control : controls) {
-                control.getAchievedValue(); // we ignore the result, it automatically updates monitors
+            // monitor control laws
+            for (final Map.Entry<SKControl, SimpleMonitorable> entry : controls.entrySet()) {
+                final double value = entry.getKey().getAchievedValue();
+                entry.getValue().setSampledValue(startDate, new double[] { value });
             }
 
             // monitor data
