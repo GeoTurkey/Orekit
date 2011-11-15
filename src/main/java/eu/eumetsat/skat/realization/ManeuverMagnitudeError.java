@@ -111,7 +111,7 @@ public class ManeuverMagnitudeError implements ScenarioComponent {
                 if ((inPlane && maneuver.isInPlane()) || (outOfPlane && !(maneuver.isInPlane()))) {
                     // the maneuver is affected by the error
                     final double errorFactor = 1.0 + standardDeviation * generator.nextGaussian();
-                    modified.add(new ScheduledManeuver(maneuver.isInPlane(),
+                    modified.add(new ScheduledManeuver(maneuver.getName(), maneuver.isInPlane(),
                                                        maneuver.getDate(),
                                                        new Vector3D(errorFactor, maneuver.getDeltaV()),
                                                        maneuver.getIsp()));

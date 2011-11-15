@@ -37,7 +37,7 @@ public enum SupportedScenariocomponent {
                                                    skat.getOutputStep(), skat.getEarth(), skat.getSun(),
                                                    skat.getGroundLocation(),
                                                    skat.getMonitorablesMono(), skat.getMonitorablesDuo(),
-                                                   skat.getControlLawsMap());
+                                                   skat.getControlLawsMap(), skat.getManeuversOutput());
             for (int j = 0; j < parser.getElementsNumber(node); ++j) {
                 final Tree componentNode = parser.getElement(node, j);
                 final  String type       = parser.getIdentifier(componentNode, ParameterKey.COMPONENT_TYPE);

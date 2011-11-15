@@ -13,6 +13,9 @@ import org.orekit.time.AbsoluteDate;
  */
 public class ScheduledManeuver {
 
+    /** Maneuver name. */
+    private String name;
+
     /** Indicator for in-plane maneuvers. */
     private final boolean inPlane;
 
@@ -31,12 +34,21 @@ public class ScheduledManeuver {
      * @param deltaV velocity increment in spacecraft frame
      * @param isp engine specific impulse (s)
      */
-    public ScheduledManeuver(final boolean inPlane, final AbsoluteDate date,
+    public ScheduledManeuver(final String name,
+                             final boolean inPlane, final AbsoluteDate date,
                              final Vector3D deltaV, final double isp) {
+        this.name    = name;
         this.inPlane = inPlane;
         this.date    = date;
         this.deltaV  = deltaV;
         this.isp     = isp;
+    }
+
+    /** Get the maneuver name.
+     * @return maneuver name
+     */
+    public String getName() {
+        return name;
     }
 
     /** Check if the maneuver is in-plane.

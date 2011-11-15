@@ -1,6 +1,7 @@
 /* Copyright 2011 Eumetsat */
 package eu.eumetsat.skat.scenario;
 
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -80,6 +81,9 @@ public class Scenario implements ScenarioComponent {
     /** Monitored control laws. */
     private Map<SKControl, SimpleMonitorable> controls;
 
+    /** Maneuvers output. */
+    private PrintStream maneuversOutput;
+
     /** Simple constructor.
      * <p>
      * Create an empty scenario without any components. Components
@@ -93,13 +97,15 @@ public class Scenario implements ScenarioComponent {
      * @param monitorablesMono list of monitorables for mono-spacecraft
      * @param monitorablesDuo list of monitorables for duo-spacecrafts
      * @param monitored control laws controls
+     * @param maneuversOutput maneuves output stream
      */
     public Scenario(final double cycleDuration, final double outputStep,
                     final BodyShape earth, final CelestialBody sun,
                     final TopocentricFrame groundLocation,
                     final List<MonitorableMonoSKData> monitorablesMono,
                     final List<MonitorableDuoSKData> monitorablesDuo,
-                    final Map<SKControl, SimpleMonitorable> controls) {
+                    final Map<SKControl, SimpleMonitorable> controls,
+                    final PrintStream maneuversOutput) {
         this.components       = new ArrayList<ScenarioComponent>();
         this.cycleDuration    = cycleDuration;
         this.outputstep       = outputStep;
@@ -110,6 +116,7 @@ public class Scenario implements ScenarioComponent {
         this.monitorablesMono = monitorablesMono;
         this.monitorablesDuo  = monitorablesDuo;
         this.controls         = controls;
+        this.maneuversOutput  = maneuversOutput;
     }
 
     /** Add a cycle component.
@@ -227,6 +234,7 @@ public class Scenario implements ScenarioComponent {
             for (final ScheduledManeuver maneuver : states[i].getManeuvers()) {
                 if ((maneuver.getDate().compareTo(previous) > 0) &&
                     (maneuver.getDate().compareTo(date) <= 0)) {
+
                     // the maneuver occurred during last step, take it into account
                     final double dv = maneuver.getDeltaV().getNorm();
                     if (maneuver.isInPlane()) {
@@ -238,6 +246,12 @@ public class Scenario implements ScenarioComponent {
                                                                         states[i].getOutOfPlaneCycleDV() + dv,
                                                                         states[i].getOutOfPlaneTotalDV() + dv);
                     }
+
+                    // print the maneuver
+                    maneuversOutput.println(maneuver.getDate()             + " " +
+                                            maneuver.getName()             + " " +
+                                            maneuver.getDeltaV().getNorm() + " " +
+                                            states[i].getName());
                 }
             }
         }
