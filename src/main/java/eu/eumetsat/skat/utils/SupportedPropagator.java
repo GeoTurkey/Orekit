@@ -118,7 +118,7 @@ public enum SupportedPropagator {
         public Propagator parse(final SkatFileParser parser, final Tree node,
                                 final Skat skat, final int spacecraftIndex)
             throws OrekitException, SkatException {
-            // TODO implement semi-analytical propagation
+
             final Orbit initialOrbit = skat.getInitialOrbit(spacecraftIndex);
             final double period  = initialOrbit.getKeplerianPeriod();
             final double minStep = period / 10.;
