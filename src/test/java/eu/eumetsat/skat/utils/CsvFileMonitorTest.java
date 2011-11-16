@@ -2,6 +2,7 @@
 package eu.eumetsat.skat.utils;
 
 import java.io.ByteArrayOutputStream;
+import java.net.URISyntaxException;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.Format;
@@ -13,9 +14,9 @@ import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.orekit.Utils;
 import org.orekit.bodies.BodyShape;
 import org.orekit.bodies.OneAxisEllipsoid;
+import org.orekit.data.DataProvidersManager;
 import org.orekit.errors.OrekitException;
 import org.orekit.frames.FramesFactory;
 import org.orekit.orbits.CartesianOrbit;
@@ -183,8 +184,9 @@ public class CsvFileMonitorTest {
     }
 
     @Before
-    public void setUp() throws OrekitException {
-        Utils.setDataRoot("orekit-data");
+    public void setUp() throws OrekitException, URISyntaxException {
+        String componentPath = getClass().getClassLoader().getResource("orekit-data").toURI().getPath();
+        System.setProperty(DataProvidersManager.OREKIT_DATA_PATH, componentPath);
         out      = new ByteArrayOutputStream();
         format   = new DecimalFormat("#0.00", new DecimalFormatSymbols(Locale.US));
         mass     = MonitorableMonoSKData.SPACECRAFT_MASS;
