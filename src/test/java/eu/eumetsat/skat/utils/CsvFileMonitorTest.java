@@ -48,18 +48,18 @@ public class CsvFileMonitorTest {
 
     @Test
     public void testSmallHeader() throws OrekitException {
-        CsvFileMonitor monitor = new CsvFileMonitor(0, out, "# ", ",", format, AbsoluteDate.J2000_EPOCH, 1.0);
+        CsvFileMonitor monitor = new CsvFileMonitor(0, out, "#", ",", format, AbsoluteDate.J2000_EPOCH, 1.0);
         monitor.stopMonitoring();
         String[] lines = out.toString().split(System.getProperty("line.separator"));
         Assert.assertEquals(3, lines.length);
         Assert.assertTrue(lines[0].startsWith("# file generated on "));
-        Assert.assertEquals("# ", lines[1]);
+        Assert.assertEquals("#", lines[1]);
         Assert.assertEquals("# column 1: date offset since 2000-01-01T11:58:55.816", lines[2]);
     }
 
     @Test
     public void testNormalHeader() throws OrekitException {
-        CsvFileMonitor monitor = new CsvFileMonitor(0, out, "# ", ",", format, AbsoluteDate.J2000_EPOCH, 1.0);
+        CsvFileMonitor monitor = new CsvFileMonitor(0, out, "#", ",", format, AbsoluteDate.J2000_EPOCH, 1.0);
         mass.register(1, monitor);
         position.register(1, monitor);
         velocity.register(1, monitor);
@@ -67,7 +67,7 @@ public class CsvFileMonitorTest {
         String[] lines = out.toString().split(System.getProperty("line.separator"));
         Assert.assertEquals(10, lines.length);
         Assert.assertTrue(lines[0].startsWith("# file generated on "));
-        Assert.assertEquals("# ", lines[1]);
+        Assert.assertEquals("#", lines[1]);
         Assert.assertEquals("# column 1: date offset since 2000-01-01T11:58:55.816", lines[2]);
         Assert.assertEquals("# column 2: spacecraft mass",        lines[3]);
         Assert.assertEquals("# column 3: position eme2000[0]", lines[4]);
@@ -101,7 +101,7 @@ public class CsvFileMonitorTest {
 
     @Test
     public void testShortStep() throws OrekitException {
-        CsvFileMonitor monitor = new CsvFileMonitor(0, out, "# ", ",", format, AbsoluteDate.J2000_EPOCH, 1.0);
+        CsvFileMonitor monitor = new CsvFileMonitor(0, out, "#", ",", format, AbsoluteDate.J2000_EPOCH, 1.0);
         mass.register(1, monitor);
         position.register(1, monitor);
         velocity.register(1, monitor);
@@ -123,7 +123,7 @@ public class CsvFileMonitorTest {
 
     @Test(expected=IllegalArgumentException.class)
     public void testDuplicatedMonitorable() throws OrekitException {
-        CsvFileMonitor monitor = new CsvFileMonitor(0, out, "# ", ",", format, AbsoluteDate.J2000_EPOCH, 1.0);
+        CsvFileMonitor monitor = new CsvFileMonitor(0, out, "#", ",", format, AbsoluteDate.J2000_EPOCH, 1.0);
         mass.register(1, monitor);
         position.register(1, monitor);
         velocity.register(1, monitor);
@@ -150,13 +150,13 @@ public class CsvFileMonitorTest {
 
     @Test(expected=IllegalArgumentException.class)
     public void testNotMonitored() throws OrekitException {
-        CsvFileMonitor monitor = new CsvFileMonitor(0, out, "# ", ",", format, AbsoluteDate.J2000_EPOCH, 1.0);
+        CsvFileMonitor monitor = new CsvFileMonitor(0, out, "#", ",", format, AbsoluteDate.J2000_EPOCH, 1.0);
         monitor.valueChanged(MonitorableMonoSKData.CYCLES_NUMBER);
     }
 
     @Test(expected=IllegalStateException.class)
     public void testMonitoringAlreadyStarted() throws OrekitException {
-        CsvFileMonitor monitor = new CsvFileMonitor(0, out, "# ", ",", format, AbsoluteDate.J2000_EPOCH, 1.0);
+        CsvFileMonitor monitor = new CsvFileMonitor(0, out, "#", ",", format, AbsoluteDate.J2000_EPOCH, 1.0);
         mass.register(1, monitor);
         position.register(1, monitor);
         velocity.register(1, monitor);
