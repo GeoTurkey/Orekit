@@ -1,8 +1,13 @@
 /* Copyright 2011 Eumetsat */
 package eu.eumetsat.skat.scenario;
 
+import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import java.util.TimeZone;
 
 import org.apache.commons.math.analysis.UnivariateRealFunction;
 import org.apache.commons.math.analysis.solvers.BracketingNthOrderBrentSolver;
@@ -23,10 +28,14 @@ import org.orekit.orbits.OrbitType;
 import org.orekit.propagation.BoundedPropagator;
 import org.orekit.propagation.SpacecraftState;
 import org.orekit.time.AbsoluteDate;
+import org.orekit.time.TimeScale;
+import org.orekit.time.TimeScalesFactory;
 
+import eu.eumetsat.skat.control.SKControl;
 import eu.eumetsat.skat.strategies.ScheduledManeuver;
 import eu.eumetsat.skat.utils.MonitorableDuoSKData;
 import eu.eumetsat.skat.utils.MonitorableMonoSKData;
+import eu.eumetsat.skat.utils.SimpleMonitorable;
 import eu.eumetsat.skat.utils.SkatException;
 import eu.eumetsat.skat.utils.SkatMessages;
 
@@ -69,6 +78,12 @@ public class Scenario implements ScenarioComponent {
     /** Duo-spacecrafts monitorables. */
     private List<MonitorableDuoSKData> monitorablesDuo;
 
+    /** Monitored control laws. */
+    private Map<SKControl, SimpleMonitorable> controls;
+
+    /** Maneuvers output. */
+    private PrintStream maneuversOutput;
+
     /** Simple constructor.
      * <p>
      * Create an empty scenario without any components. Components
@@ -81,12 +96,16 @@ public class Scenario implements ScenarioComponent {
      * @param groundLocation reference ground location
      * @param monitorablesMono list of monitorables for mono-spacecraft
      * @param monitorablesDuo list of monitorables for duo-spacecrafts
+     * @param monitored control laws controls
+     * @param maneuversOutput maneuves output stream
      */
     public Scenario(final double cycleDuration, final double outputStep,
                     final BodyShape earth, final CelestialBody sun,
                     final TopocentricFrame groundLocation,
                     final List<MonitorableMonoSKData> monitorablesMono,
-                    final List<MonitorableDuoSKData> monitorablesDuo) {
+                    final List<MonitorableDuoSKData> monitorablesDuo,
+                    final Map<SKControl, SimpleMonitorable> controls,
+                    final PrintStream maneuversOutput) {
         this.components       = new ArrayList<ScenarioComponent>();
         this.cycleDuration    = cycleDuration;
         this.outputstep       = outputStep;
@@ -96,6 +115,8 @@ public class Scenario implements ScenarioComponent {
         this.groundLocation   = groundLocation;
         this.monitorablesMono = monitorablesMono;
         this.monitorablesDuo  = monitorablesDuo;
+        this.controls         = controls;
+        this.maneuversOutput  = maneuversOutput;
     }
 
     /** Add a cycle component.
@@ -127,12 +148,25 @@ public class Scenario implements ScenarioComponent {
         do {
 
             // set target date for iteration using cycle duration
-            iterationTarget = states[0].getRealStartState().getDate().shiftedBy(cycleDuration);
+            final AbsoluteDate startDate = states[0].getRealStartState().getDate();
+            iterationTarget = startDate.shiftedBy(cycleDuration);
+
+            final TimeScale utc = TimeScalesFactory.getUTC();
+            final Date now = Calendar.getInstance(TimeZone.getTimeZone("Etc/UTC")).getTime();
+            System.out.println(new AbsoluteDate(now, utc).toString(utc) +
+                               ": starting cycle " + states[0].getCyclesNumber() + " " +
+                               startDate + " -> " + iterationTarget);
 
             // run all components of the scenario in order
             for (final ScenarioComponent component : components) {
                 component.setCycleEnd(iterationTarget);
                 states = component.updateStates(states);
+            }
+
+            // monitor control laws
+            for (final Map.Entry<SKControl, SimpleMonitorable> entry : controls.entrySet()) {
+                final double value = entry.getKey().getAchievedValue();
+                entry.getValue().setSampledValue(startDate, new double[] { value });
             }
 
             // monitor data
@@ -200,6 +234,7 @@ public class Scenario implements ScenarioComponent {
             for (final ScheduledManeuver maneuver : states[i].getManeuvers()) {
                 if ((maneuver.getDate().compareTo(previous) > 0) &&
                     (maneuver.getDate().compareTo(date) <= 0)) {
+
                     // the maneuver occurred during last step, take it into account
                     final double dv = maneuver.getDeltaV().getNorm();
                     if (maneuver.isInPlane()) {
@@ -211,6 +246,12 @@ public class Scenario implements ScenarioComponent {
                                                                         states[i].getOutOfPlaneCycleDV() + dv,
                                                                         states[i].getOutOfPlaneTotalDV() + dv);
                     }
+
+                    // print the maneuver
+                    maneuversOutput.println(maneuver.getDate()             + " " +
+                                            maneuver.getName()             + " " +
+                                            maneuver.getDeltaV().getNorm() + " " +
+                                            states[i].getName());
                 }
             }
         }

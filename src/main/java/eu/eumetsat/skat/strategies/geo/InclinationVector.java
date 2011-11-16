@@ -13,19 +13,19 @@ import org.orekit.time.AbsoluteDate;
 import eu.eumetsat.skat.control.AbstractSKControl;
 
 /**
- * Station-keeping control attempting to compensate inclination secular evolution.
+ * Station-keeping control for inclination vector.
  * @author Luc Maisonobe
  */
-public class InclinationVectorSecularCompensation extends AbstractSKControl {
+public class InclinationVector extends AbstractSKControl {
 
     /** Associated step handler. */
     private final OrekitStepHandler stephandler;
 
     /** Abscissa of target inclination vector. */
-    private final double hx0;
+    private final double targetHx;
 
     /** Ordinate of target inclination vector. */
-    private final double hy0;
+    private final double targetHy;
 
     /** Maximal offset from target. */
     private double maxDelta;
@@ -37,30 +37,28 @@ public class InclinationVectorSecularCompensation extends AbstractSKControl {
      * @param name name of the control law
      * @param scale of the control law
      * @param controlled name of the controlled spacecraft
-     * @param hx0 abscissa of target inclination vector
-     * @param hy0 ordinate of target inclination vector
+     * @param targetHx abscissa of target inclination vector
+     * @param targetHy ordinate of target inclination vector
      * @param samplingStep step to use for sampling throughout propagation
      */
-    public InclinationVectorSecularCompensation(final String name, final double scale,
-                                                final String controlled,
-                                                final double hx0, final double hy0,
-                                                final double samplingStep) {
-        super(name, scale, controlled, null, 0.0, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY);
+    public InclinationVector(final String name, final double scale,
+                             final String controlled,
+                             final double targetHx, final double targetHy,
+                             final double samplingStep) {
+        super(name, scale, controlled, null, 0.0, 0.0, Double.POSITIVE_INFINITY);
         this.stephandler  = new Handler();
-        this.hx0          = hx0;
-        this.hy0          = hy0;
+        this.targetHx     = targetHx;
+        this.targetHy     = targetHy;
         this.samplingStep = samplingStep;
     }
 
     /** {@inheritDoc} */
     public double getAchievedValue() {
-        // TODO
-        return Double.NaN;
+        return maxDelta;
     }
 
     /** {@inheritDoc} */
     public EventDetector getEventDetector() {
-        // TODO
         return null;
     }
 
@@ -95,18 +93,15 @@ public class InclinationVectorSecularCompensation extends AbstractSKControl {
                         interpolator.isForward() ? interpolator.getCurrentDate() : interpolator.getPreviousDate();
 
                 // loop throughout step
-                for (AbsoluteDate date = minDate;
-                        date.compareTo(maxDate) < 0;
-                        date = date.shiftedBy(samplingStep)) {
+                for (AbsoluteDate date = minDate; date.compareTo(maxDate) < 0; date = date.shiftedBy(samplingStep)) {
 
                     // compute position in Earth frame
                     interpolator.setInterpolatedDate(date);
                     final SpacecraftState state = interpolator.getInterpolatedState();
 
                     // update inclination excursion
-                    double dx = state.getHx() - hx0;
-                    double dy = state.getHy() - hy0;
-                    maxDelta = FastMath.max(maxDelta, FastMath.hypot(dx, dy));
+                    final double delta = FastMath.hypot(state.getHx() - targetHx, state.getHy() - targetHy);
+                    maxDelta = FastMath.max(maxDelta, delta);
 
                 }
 

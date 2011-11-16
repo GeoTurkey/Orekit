@@ -93,6 +93,8 @@ public enum ParameterKey {
     CONTROL_ECCENTRICITY_CIRCLE_CENTER_X("center_x"),
     CONTROL_ECCENTRICITY_CIRCLE_CENTER_Y("center_y"),
     CONTROL_ECCENTRICITY_CIRCLE_RADIUS("radius"),
+    CONTROL_INCLINATION_VECTOR_TARGET_X("target_x"),
+    CONTROL_INCLINATION_VECTOR_TARGET_Y("target_y"),
 
     MANEUVERS_IN_PLANE("in_plane"),
     MANEUVERS_RELATIVE_TO_PREVIOUS("relative_to_previous"),
@@ -127,6 +129,16 @@ public enum ParameterKey {
     NUMERICAL_PROPAGATOR_ABSORPTION_COEFFICIENT("absorption_coefficient"),
     NUMERICAL_PROPAGATOR_REFLECTION_COEFFICIENT("reflection_coefficient"),
     NUMERICAL_PROPAGATOR_THIRD_BODIES("third_bodies"),
+    DSST_PROPAGATOR_MIN_STEP("min_step"),
+    DSST_PROPAGATOR_MAX_STEP("max_step"),
+    DSST_PROPAGATOR_TOLERANCE("position_tolerance"),
+    DSST_PROPAGATOR_GRAVITY_FIELD_DEGREE("gravity_field_degree"),
+    DSST_PROPAGATOR_GRAVITY_FIELD_ORDER("gravity_field_order"),
+    DSST_PROPAGATOR_CROSS_SECTION("cross_section"),
+    DSST_PROPAGATOR_DRAG_COEFFICIENT("drag_coefficient"),
+    DSST_PROPAGATOR_ABSORPTION_COEFFICIENT("absorption_coefficient"),
+    DSST_PROPAGATOR_REFLECTION_COEFFICIENT("reflection_coefficient"),
+    DSST_PROPAGATOR_THIRD_BODIES("third_bodies"),
 
     MONITORING;
 

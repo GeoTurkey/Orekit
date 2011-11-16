@@ -65,6 +65,36 @@ class ObjectiveFunction implements MultivariateRealFunction {
 
     }
 
+    /** Set the station keeping maneuvers parameters to a set of values.
+     * @param point values to use for the station keeping maneuvers parameters
+     * @see #value(double[])
+     */
+    public void setParameters(final double[] point) {
+
+        int index = 0;
+        for (int i = 0; i < tunables.length; ++i) {
+            final TunableManeuver maneuver = tunables[i];
+            if (maneuver.isRelativeToPrevious()) {
+                // the date of this maneuver is relative to the date of the previous one which
+                // has just been set at the previous iteration of this parameters setting loop
+                maneuver.setReferenceDate(tunables[i - 1].getDate());
+            } else {
+                // the date of this maneuver is relative to the cycle start
+                final int maneuversPerCycle   = tunables.length / rollingCycles;
+                final int cycleIndex          = i / maneuversPerCycle;
+                final double offset           = cycleIndex * cycleDuration * Constants.JULIAN_DAY;
+                final AbsoluteDate cycleStart = initialState.getDate().shiftedBy(offset);
+                maneuver.setReferenceDate(cycleStart);
+            }
+            for (final SKParameter parameter : maneuver.getParameters()) {
+                if (parameter.isTunable()) {
+                    parameter.setValue(point[index++]);
+                }
+            }
+        }
+
+    }
+
     /** {@inheritDoc} */
     public double value(final double[] point) {
 
@@ -73,28 +103,8 @@ class ObjectiveFunction implements MultivariateRealFunction {
             // set up the fast propagator
             final ManeuverAdapterPropagator propagator = new ManeuverAdapterPropagator(reference);
 
-            // set the parameters to the current test values
-            int index = 0;
-            for (int i = 0; i < tunables.length; ++i) {
-                final TunableManeuver maneuver = tunables[i];
-                if (maneuver.isRelativeToPrevious()) {
-                    // the date of this maneuver is relative to the date of the previous one which
-                    // has just been set at the previous iteration of this parameters setting loop
-                    maneuver.setReferenceDate(tunables[i - 1].getDate());
-                } else {
-                    // the date of this maneuver is relative to the cycle start
-                    final int maneuversPerCycle   = tunables.length / rollingCycles;
-                    final int cycleIndex          = i / maneuversPerCycle;
-                    final double offset           = cycleIndex * cycleDuration * Constants.JULIAN_DAY;
-                    final AbsoluteDate cycleStart = initialState.getDate().shiftedBy(offset);
-                    maneuver.setReferenceDate(cycleStart);
-                }
-                for (final SKParameter parameter : maneuver.getParameters()) {
-                    if (parameter.isTunable()) {
-                        parameter.setValue(point[index++]);
-                    }
-                }
-            }
+            // set the parameters to the current optimizer-provided values
+            setParameters(point);
 
             // add the maneuvers
             for (final TunableManeuver tunable : tunables) {

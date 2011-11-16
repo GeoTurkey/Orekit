@@ -15,9 +15,11 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.regex.Matcher;
@@ -52,6 +54,7 @@ import org.orekit.time.TimeScalesFactory;
 import org.orekit.utils.Constants;
 import org.orekit.utils.PVCoordinates;
 
+import eu.eumetsat.skat.control.SKControl;
 import eu.eumetsat.skat.realization.Propagation;
 import eu.eumetsat.skat.scenario.Scenario;
 import eu.eumetsat.skat.scenario.ScenarioState;
@@ -59,11 +62,10 @@ import eu.eumetsat.skat.strategies.ScheduledManeuver;
 import eu.eumetsat.skat.utils.CsvFileMonitor;
 import eu.eumetsat.skat.utils.MonitorDuo;
 import eu.eumetsat.skat.utils.MonitorMono;
-import eu.eumetsat.skat.utils.MonitorableDuo;
 import eu.eumetsat.skat.utils.MonitorableDuoSKData;
-import eu.eumetsat.skat.utils.MonitorableMono;
 import eu.eumetsat.skat.utils.MonitorableMonoSKData;
 import eu.eumetsat.skat.utils.ParameterKey;
+import eu.eumetsat.skat.utils.SimpleMonitorable;
 import eu.eumetsat.skat.utils.SkatException;
 import eu.eumetsat.skat.utils.SkatFileParser;
 import eu.eumetsat.skat.utils.SkatMessages;
@@ -78,8 +80,11 @@ import eu.eumetsat.skat.utils.SupportedScenariocomponent;
  */
 public class Skat {
 
-    /** Main output file. */
-    private final PrintStream output;
+    /** Final state output file. */
+    private final PrintStream finalOutput;
+
+    /** Maneuvers output file. */
+    private final PrintStream maneuversOutput;
 
     /** Time scale for input/output. */
     private TimeScale utc;
@@ -138,6 +143,9 @@ public class Skat {
     /** Duo-spacecrafts monitorables. */
     private List<MonitorableDuoSKData> monitorablesDuo;
 
+    /** Station-keeping control laws monitoring. */
+    private final Map<SKControl, SimpleMonitorable> controls;
+
     /** Program entry point.
      * @param args program arguments (unused here)
      */
@@ -168,6 +176,7 @@ public class Skat {
             System.out.println("simulation computing time: " + ((endTime - startTime) / 1000) + " seconds");
 
         } catch (Exception e) {
+            e.printStackTrace(System.err); // TODO remove this statement after validation
             System.err.println(e.getLocalizedMessage());
         } finally {
 
@@ -227,6 +236,7 @@ public class Skat {
                    NoSuchFieldException, RecognitionException {
 
         // parse input file
+        final Date now = Calendar.getInstance(TimeZone.getTimeZone("Etc/UTC")).getTime();
         final SkatFileParser parser =
                 new SkatFileParser(input.getAbsolutePath(), new FileInputStream(input));
         Tree root = parser.getRoot();
@@ -235,10 +245,21 @@ public class Skat {
         // general simulation parameters
         final Tree simulationNode = parser.getValue(root, ParameterKey.SIMULATION);
         final String baseName = parser.getString(simulationNode, ParameterKey.SIMULATION_OUTPUT_BASE_NAME);
+
+        // open the output streams and print the headers
+        finalOutput     = new PrintStream(new File(input.getParentFile(), baseName + ".out"));
+        finalOutput.println("# file generated on " + new AbsoluteDate(now, utc).toString(utc));
+        finalOutput.println("#");
+        maneuversOutput = new PrintStream(new File(input.getParentFile(), baseName + ".man"));
+        maneuversOutput.println("# file generated on " + new AbsoluteDate(now, utc).toString(utc));
+        maneuversOutput.println("#");
+
+        // get general data
         inertialFrame = parser.getInertialFrame(simulationNode, ParameterKey.SIMULATION_INERTIAL_FRAME);
         earth         = new OneAxisEllipsoid(Constants.WGS84_EARTH_EQUATORIAL_RADIUS,
                                              Constants.WGS84_EARTH_FLATTENING,
                                              parser.getEarthFrame(simulationNode, ParameterKey.SIMULATION_EARTH_FRAME));
+        earth.setAngularThreshold(1.e-7);
         sun           = CelestialBodyFactory.getSun();
         moon          = CelestialBodyFactory.getMoon();
         gravityField  = GravityFieldFactory.getPotentialProvider();
@@ -338,6 +359,7 @@ public class Skat {
             }
         }
 
+        controls  = new HashMap<SKControl, SimpleMonitorable>();
 
         // set up scenario components
         final Tree scenarioNode = parser.getValue(root, ParameterKey.SCENARIO);
@@ -350,9 +372,6 @@ public class Skat {
                 throw new SkatException(SkatMessages.SPACECRAFT_NOT_MANAGED, getSpacecraftName(i));
             }
         }
-
-        // open the output stream
-        output = new PrintStream(new File(input.getParentFile(), baseName + ".out"));
 
     }
 
@@ -485,26 +504,35 @@ public class Skat {
 
     }
 
-    /** Set the monitor for a single spacecraft.
-     * @param index spacecraft index
-     * @param monitor monitor for the spacecraft
+    /** Add a control law to be monitored.
+     * @param controlLaw control law to add
+     * @exception SkatException if index of controlled spacecraft cannot be determined
      */
-    public void addMonitorable(final int index,
-                               final MonitorableMono monitorable) {
-        monitorable.register(configuredStates.length, monitorsMono[index]);
+    public void addControl(final SKControl controlLaw)
+        throws SkatException {
+        final SimpleMonitorable monitorable =
+                new SimpleMonitorable(1, "control law residual: " + controlLaw.getName());
+        controls.put(controlLaw, monitorable);
+        if (controlLaw.getReferenceSpacecraftName() == null) {
+            // this is a control law for a single spacecraft
+            final int index = getSpacecraftIndex(controlLaw.getControlledSpacecraftName());
+            monitorable.register(configuredStates.length, monitorsMono[index]);
+        } else {
+            // this is a control law for a spacecrafts pair
+            final int index1 = getSpacecraftIndex(controlLaw.getControlledSpacecraftName());
+            final int index2 = getSpacecraftIndex(controlLaw.getReferenceSpacecraftName());
+            monitorable.register(configuredStates.length, monitorsDuo[index1][index2]);
+        }
     }
 
-    /** Set the monitor for a spacecrafts pair.
-     * @param index1 first spacecraft index
-     * @param index2 second spacecraft index
-     * @param monitor monitor for the spacecrafts pair
+    /** Get the control laws monitoring map.
+     * @return control laws monitoring map
      */
-    public void addMonitorable(final int index1, final int index2,
-                               final MonitorableDuo monitorable) {
-        monitorable.register(configuredStates.length, monitorsDuo[index1][index2]);
+    public Map<SKControl, SimpleMonitorable> getControlLawsMap() {
+        return controls;
     }
 
-    /** Check if a spacecraft is managed by a propagator.
+    /**
      * @param index spacecraft index
      * @return true if spacecraft is managed by a propagator
      * @see #getSpacecraftIndex(String)
@@ -522,6 +550,13 @@ public class Skat {
     public void manage(final int index, final Propagation propagation)
         throws SkatException {
         managed[index] = propagation;
+    }
+
+    /** Get the maneuvers output stream.
+     * @return maneuvers output stream
+     */
+    public PrintStream getManeuversOutput() {
+        return maneuversOutput;
     }
 
     /** Run the simulation.
@@ -564,40 +599,36 @@ public class Skat {
     private void dumpOutput(final ScenarioState[] finalStates)
         throws OrekitException {
 
-        final Date now = Calendar.getInstance(TimeZone.getTimeZone("Etc/UTC")).getTime();
         final int baseIndent = 4;
         final int keysWidth = 28;
 
-        // print the header
-        output.println("# file generated on " + new AbsoluteDate(now, utc).toString(utc));
-        output.println("#");
-        output.println("initial_states   = [");
+        finalOutput.println("initial_states   = [");
         for (int i = 0; i < finalStates.length; ++i) {
             final ScenarioState state = finalStates[i];
-            output.println("    {");
-            output.println(formatIndent(baseIndent) +
+            finalOutput.println("    {");
+            finalOutput.println(formatIndent(baseIndent) +
                            formatKey(keysWidth, ParameterKey.INITIAL_STATE_NAME) +
                            "= \"" + state.getName() + "\";");
-            output.println(formatIndent(baseIndent) +
+            finalOutput.println(formatIndent(baseIndent) +
                            formatKey(keysWidth, ParameterKey.INITIAL_STATE_CYCLE_NUMBER) +
                            "= " + state.getCyclesNumber() + ";");
-            output.println(formatIndent(baseIndent) +
+            finalOutput.println(formatIndent(baseIndent) +
                            formatKey(keysWidth, ParameterKey.INITIAL_STATE_IN_PLANE_MANEUVERS) +
                            "= " + state.getInPlaneManeuvers() + ";");
-            output.println(formatIndent(baseIndent) +
+            finalOutput.println(formatIndent(baseIndent) +
                            formatKey(keysWidth, ParameterKey.INITIAL_STATE_IN_PLANE_TOTAL_DV) +
                            "= " + state.getInPlaneTotalDV() + ";");
-            output.println(formatIndent(baseIndent) +
+            finalOutput.println(formatIndent(baseIndent) +
                            formatKey(keysWidth, ParameterKey.INITIAL_STATE_OUT_OF_PLANE_MANEUVERS) +
                            "= " + state.getOutOfPlaneManeuvers() + ";");
-            output.println(formatIndent(baseIndent) +
+            finalOutput.println(formatIndent(baseIndent) +
                            formatKey(keysWidth, ParameterKey.INITIAL_STATE_OUT_OF_PLANE_TOTAL_DV) +
                            "= " + state.getOutOfPlaneTotalDV() + ";");
-            output.println(formatIndent(baseIndent) +
+            finalOutput.println(formatIndent(baseIndent) +
                            formatKey(keysWidth, ParameterKey.INITIAL_STATE_MASS) +
                            "= " + state.getRealStartState().getMass() + ";");
 
-            output.println(formatIndent(baseIndent) +
+            finalOutput.println(formatIndent(baseIndent) +
                            formatKey(keysWidth, ParameterKey.INITIAL_STATE_ORBIT) +
                            "= {");
             final Orbit orbit = state.getRealStartState().getOrbit(); 
@@ -606,94 +637,94 @@ public class Skat {
                 final PVCoordinates pv = orbit.getPVCoordinates(inertialFrame);
                 final Vector3D p = pv.getPosition();
                 final Vector3D v = pv.getVelocity();
-                output.println(formatIndent(2 * baseIndent) +
+                finalOutput.println(formatIndent(2 * baseIndent) +
                                formatKey(keysWidth - baseIndent, ParameterKey.ORBIT_CARTESIAN_DATE) +
                                "= " + orbit.getDate().toString(utc) + ";");
-                output.println(formatIndent(2 * baseIndent) +
+                finalOutput.println(formatIndent(2 * baseIndent) +
                                formatKey(keysWidth - baseIndent, ParameterKey.ORBIT_CARTESIAN_POSITION) +
                                "= [" + p.getX() + ", " + p.getY() + ", " + p.getZ() + "];");
-                output.println(formatIndent(2 * baseIndent) +
+                finalOutput.println(formatIndent(2 * baseIndent) +
                                formatKey(keysWidth - baseIndent, ParameterKey.ORBIT_CARTESIAN_VELOCITY) +
                                "= [" + v.getX() + ", " + v.getY() + ", " + v.getZ() + "];");
                 break;
             case KEPLERIAN :
                 final KeplerianOrbit kep = (KeplerianOrbit) orbit;
-                output.println(formatIndent(2 * baseIndent) +
+                finalOutput.println(formatIndent(2 * baseIndent) +
                                formatKey(keysWidth - baseIndent, ParameterKey.ORBIT_KEPLERIAN_DATE) +
                                "= " + orbit.getDate().toString(utc) + ";");
-                output.println(formatIndent(2 * baseIndent) +
+                finalOutput.println(formatIndent(2 * baseIndent) +
                                formatKey(keysWidth - baseIndent, ParameterKey.ORBIT_KEPLERIAN_A) +
                                "= " + kep.getA() + ";");
-                output.println(formatIndent(2 * baseIndent) +
+                finalOutput.println(formatIndent(2 * baseIndent) +
                                formatKey(keysWidth - baseIndent, ParameterKey.ORBIT_KEPLERIAN_E) +
                                "= " + kep.getE() + ";");
-                output.println(formatIndent(2 * baseIndent) +
+                finalOutput.println(formatIndent(2 * baseIndent) +
                                formatKey(keysWidth - baseIndent, ParameterKey.ORBIT_KEPLERIAN_I) +
                                "= " + FastMath.toDegrees(kep.getI()) + ";");
-                output.println(formatIndent(2 * baseIndent) +
+                finalOutput.println(formatIndent(2 * baseIndent) +
                                formatKey(keysWidth - baseIndent, ParameterKey.ORBIT_KEPLERIAN_PA) +
                                "= " + FastMath.toDegrees(kep.getPerigeeArgument()) + ";");
-                output.println(formatIndent(2 * baseIndent) +
+                finalOutput.println(formatIndent(2 * baseIndent) +
                                formatKey(keysWidth - baseIndent, ParameterKey.ORBIT_KEPLERIAN_RAAN) +
                                "= " + FastMath.toDegrees(kep.getRightAscensionOfAscendingNode()) + ";");
-                output.println(formatIndent(2 * baseIndent) +
+                finalOutput.println(formatIndent(2 * baseIndent) +
                                formatKey(keysWidth - baseIndent, ParameterKey.ORBIT_KEPLERIAN_ANOMALY) +
                                "= " + FastMath.toDegrees(kep.getMeanAnomaly()) + ";");
-                output.println(formatIndent(2 * baseIndent) +
+                finalOutput.println(formatIndent(2 * baseIndent) +
                                formatKey(keysWidth - baseIndent, ParameterKey.ANGLE_TYPE) +
                                "= " + PositionAngle.MEAN + ";");
                break;
             case CIRCULAR :
                 final CircularOrbit cir = (CircularOrbit) orbit;
-                output.println(formatIndent(2 * baseIndent) +
+                finalOutput.println(formatIndent(2 * baseIndent) +
                                formatKey(keysWidth - baseIndent, ParameterKey.ORBIT_CIRCULAR_DATE) +
                                "= " + orbit.getDate().toString(utc) + ";");
-                output.println(formatIndent(2 * baseIndent) +
+                finalOutput.println(formatIndent(2 * baseIndent) +
                                formatKey(keysWidth - baseIndent, ParameterKey.ORBIT_CIRCULAR_A) +
                                "= " + cir.getA() + ";");
-                output.println(formatIndent(2 * baseIndent) +
+                finalOutput.println(formatIndent(2 * baseIndent) +
                                formatKey(keysWidth - baseIndent, ParameterKey.ORBIT_CIRCULAR_EX) +
                                "= " + cir.getCircularEx() + ";");
-                output.println(formatIndent(2 * baseIndent) +
+                finalOutput.println(formatIndent(2 * baseIndent) +
                                formatKey(keysWidth - baseIndent, ParameterKey.ORBIT_CIRCULAR_EY) +
                                "= " + cir.getCircularEy() + ";");
-                output.println(formatIndent(2 * baseIndent) +
+                finalOutput.println(formatIndent(2 * baseIndent) +
                                formatKey(keysWidth - baseIndent, ParameterKey.ORBIT_CIRCULAR_I) +
                                "= " + FastMath.toDegrees(cir.getI()) + ";");
-                output.println(formatIndent(2 * baseIndent) +
+                finalOutput.println(formatIndent(2 * baseIndent) +
                                formatKey(keysWidth - baseIndent, ParameterKey.ORBIT_CIRCULAR_RAAN) +
                                "= " + FastMath.toDegrees(cir.getRightAscensionOfAscendingNode()) + ";");
-                output.println(formatIndent(2 * baseIndent) +
+                finalOutput.println(formatIndent(2 * baseIndent) +
                                formatKey(keysWidth - baseIndent, ParameterKey.ORBIT_CIRCULAR_LATITUDE_ARGUMENT) +
                                "= " + FastMath.toDegrees(cir.getAlphaM()) + ";");
-                output.println(formatIndent(2 * baseIndent) +
+                finalOutput.println(formatIndent(2 * baseIndent) +
                                formatKey(keysWidth - baseIndent, ParameterKey.ANGLE_TYPE) +
                                "= " + PositionAngle.MEAN + ";");
                 break;
             case EQUINOCTIAL :
                 final EquinoctialOrbit equ = (EquinoctialOrbit) orbit;
-                output.println(formatIndent(2 * baseIndent) +
+                finalOutput.println(formatIndent(2 * baseIndent) +
                                formatKey(keysWidth - baseIndent, ParameterKey.ORBIT_EQUINOCTIAL_DATE) +
                                "= " + orbit.getDate().toString(utc) + ";");
-                output.println(formatIndent(2 * baseIndent) +
+                finalOutput.println(formatIndent(2 * baseIndent) +
                                formatKey(keysWidth - baseIndent, ParameterKey.ORBIT_EQUINOCTIAL_A) +
                                "= " + equ.getA() + ";");
-                output.println(formatIndent(2 * baseIndent) +
+                finalOutput.println(formatIndent(2 * baseIndent) +
                                formatKey(keysWidth - baseIndent, ParameterKey.ORBIT_EQUINOCTIAL_EX) +
                                "= " + equ.getEquinoctialEx() + ";");
-                output.println(formatIndent(2 * baseIndent) +
+                finalOutput.println(formatIndent(2 * baseIndent) +
                                formatKey(keysWidth - baseIndent, ParameterKey.ORBIT_EQUINOCTIAL_EY) +
                                "= " + equ.getEquinoctialEy() + ";");
-                output.println(formatIndent(2 * baseIndent) +
+                finalOutput.println(formatIndent(2 * baseIndent) +
                                formatKey(keysWidth - baseIndent, ParameterKey.ORBIT_EQUINOCTIAL_HX) +
                                "= " + equ.getHx() + ";");
-                output.println(formatIndent(2 * baseIndent) +
+                finalOutput.println(formatIndent(2 * baseIndent) +
                                formatKey(keysWidth - baseIndent, ParameterKey.ORBIT_EQUINOCTIAL_HY) +
                                "= " + equ.getHy() + ";");
-                output.println(formatIndent(2 * baseIndent) +
+                finalOutput.println(formatIndent(2 * baseIndent) +
                                formatKey(keysWidth - baseIndent, ParameterKey.ORBIT_EQUINOCTIAL_LONGITUDE_ARGUMENT) +
                                "= " + FastMath.toDegrees(equ.getLM()) + ";");
-                output.println(formatIndent(2 * baseIndent) +
+                finalOutput.println(formatIndent(2 * baseIndent) +
                                formatKey(keysWidth - baseIndent, ParameterKey.ANGLE_TYPE) +
                                "= " + PositionAngle.MEAN + ";");
                 break;
@@ -701,9 +732,10 @@ public class Skat {
                 // this should never happen
                 throw SkatException.createInternalError(null);
             }
-            output.println(formatIndent(baseIndent) + ((i < finalStates.length - 1) ? "}," : "}"));
+            finalOutput.println(formatIndent(baseIndent) + ((i < finalStates.length - 1) ? "}," : "}"));
 
         }
+        finalOutput.println("]");
 
     }
 
@@ -746,7 +778,8 @@ public class Skat {
                 }
             }
         }
-        output.close();
+        finalOutput.close();
+        maneuversOutput.close();
     }
 
 }

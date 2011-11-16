@@ -158,7 +158,7 @@ public class TunableManeuver {
      * @return maneuver corresponding to the current value of the parameters
      */
     public ScheduledManeuver getManeuver() {
-        return new ScheduledManeuver(inPlane, getDate(),
+        return new ScheduledManeuver(name, inPlane, getDate(),
                                      new Vector3D(velocityIncrement.getValue(), direction),
                                      currentIsp);
     }
