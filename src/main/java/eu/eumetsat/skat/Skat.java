@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.antlr.runtime.RecognitionException;
 import org.antlr.runtime.tree.Tree;
@@ -185,11 +187,27 @@ public class Skat {
     private static File getResourceFile(final String name)
         throws SkatException {
         try {
-            URL resourceURL = Skat.class.getResource(name);
-            if (resourceURL == null) {
-                throw new SkatException(SkatMessages.UNABLE_TO_FIND_RESOURCE, name);
+
+            // try to find the resource alongside with the application jar (useful for production)
+            final String className = "/" + Skat.class.getName().replaceAll("\\.", "/") + ".class";
+            final Pattern pattern  = Pattern.compile("jar:file:([^!]+)!" + className + "$");
+            final Matcher matcher  = pattern.matcher(Skat.class.getResource(className).toURI().toString());
+            if (matcher.matches()) {
+                File resourceFile = new File(new File(matcher.group(1)).getParentFile(), name);
+                if (resourceFile.exists()) {
+                    return resourceFile;
+                }
             }
-            return new File(resourceURL.toURI().getPath());        
+
+            // try to find the resource in the classpath (useful for development in an IDE)
+            URL resourceURL = Skat.class.getResource(name);
+            if (resourceURL != null) {
+                return new File(resourceURL.toURI().getPath());
+            }
+
+            // not found
+            throw new SkatException(SkatMessages.UNABLE_TO_FIND_RESOURCE, name);
+
         } catch (URISyntaxException use) {
             throw new SkatException(use, null);
         }
