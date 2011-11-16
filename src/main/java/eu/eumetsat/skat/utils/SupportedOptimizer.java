@@ -1,16 +1,21 @@
 /* Copyright 2011 Eumetsat */
 package eu.eumetsat.skat.utils;
 
+import java.util.Arrays;
+
 import org.antlr.runtime.tree.Tree;
 import org.apache.commons.math.analysis.MultivariateRealFunction;
 import org.apache.commons.math.optimization.BaseMultivariateRealOptimizer;
 import org.apache.commons.math.optimization.ConvergenceChecker;
+import org.apache.commons.math.optimization.GoalType;
 import org.apache.commons.math.optimization.RealPointValuePair;
 import org.apache.commons.math.optimization.direct.CMAESOptimizer;
+import org.apache.commons.math.optimization.direct.MultivariateRealFunctionPenaltyAdapter;
+import org.apache.commons.math.optimization.direct.NelderMeadSimplex;
+import org.apache.commons.math.optimization.direct.SimplexOptimizer;
 import org.apache.commons.math.util.FastMath;
 
 import eu.eumetsat.skat.Skat;
-import eu.eumetsat.skat.control.BoundedNelderMead;
 import eu.eumetsat.skat.control.SKParameter;
 import eu.eumetsat.skat.strategies.TunableManeuver;
 
@@ -24,8 +29,39 @@ public enum SupportedOptimizer {
         public BaseMultivariateRealOptimizer<MultivariateRealFunction>
             parse(final SkatFileParser parser, final Tree node,
                   final TunableManeuver[] maneuvers, final double stopCriterion, final Skat skat) {
-            return new BoundedNelderMead(parser.getDouble(node, ParameterKey.NELDER_MEAD_INITIAL_SIMPLEX_SIZE_RATIO),
-                                         new Checker(maneuvers, stopCriterion));
+
+            final double[][] boundaries = getBoundaries(maneuvers);
+
+            final SimplexOptimizer optimizer = new SimplexOptimizer(new Checker(maneuvers, stopCriterion)) {
+
+                /** {@inheritDoc} */
+                @Override
+                public RealPointValuePair optimize(final int maxEval, final MultivariateRealFunction f,
+                                                   final GoalType goalType, final double[] startPoint) {
+
+                    // wrap the bounded function using a penalty adapter
+                    final double offset = 1.0e10;
+                    final double[] scale = new double[boundaries[0].length];
+                    Arrays.fill(scale, goalType == GoalType.MINIMIZE ? +1.0 : -1.0);
+                    final MultivariateRealFunctionPenaltyAdapter wrapped =
+                            new MultivariateRealFunctionPenaltyAdapter(f, boundaries[0], boundaries[1], offset, scale);
+
+                    // perform optimization
+                    return super.optimize(maxEval, wrapped, goalType, startPoint);
+
+                }
+            };
+
+            // set up Nelder-Mead simplex steps
+            final double   ratio = parser.getDouble(node, ParameterKey.NELDER_MEAD_INITIAL_SIMPLEX_SIZE_RATIO);
+            final double[] steps = new double[boundaries[0].length];
+            for (int i = 0; i < steps.length; ++i) {
+                steps[i] = ratio * (boundaries[0][i] - boundaries[1][i]);
+            }
+            optimizer.setSimplex(new NelderMeadSimplex(steps));
+
+            return optimizer;
+
         }
     },
 

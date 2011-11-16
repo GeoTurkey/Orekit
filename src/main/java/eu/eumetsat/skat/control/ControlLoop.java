@@ -219,7 +219,7 @@ public class ControlLoop implements ScenarioComponent {
                     new ObjectiveFunction(reference, tunables, cycleDuration, rollingCycles,
                                           unmonitoredControls, original.getEstimatedStartState());
             final RealPointValuePair pointValue =
-                    optimizer.optimize(maxEval, objective, GoalType.MINIMIZE, startPoint, boundaries[0], boundaries[1]);
+                    optimizer.optimize(maxEval, objective, GoalType.MINIMIZE, startPoint);
             final double[] optimum = pointValue.getPoint();
 
             // perform a last run with monitoring enabled, using the optimum values
