@@ -1,12 +1,18 @@
 /* Copyright 2011 Eumetsat */
 package eu.eumetsat.skat.realization;
 
-import org.apache.commons.math.random.RandomGenerator;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
+import org.apache.commons.math.util.FastMath;
 import org.orekit.errors.OrekitException;
+import org.orekit.propagation.SpacecraftState;
 import org.orekit.time.AbsoluteDate;
 
 import eu.eumetsat.skat.scenario.ScenarioComponent;
 import eu.eumetsat.skat.scenario.ScenarioState;
+import eu.eumetsat.skat.strategies.ScheduledManeuver;
 import eu.eumetsat.skat.utils.SkatException;
 import eu.eumetsat.skat.utils.SkatMessages;
 
@@ -41,7 +47,7 @@ public class ManeuverSplitter implements ScenarioComponent {
     public ManeuverSplitter(final int[] spacecraftIndices,
                             final boolean inPlane, final boolean outOfPlane,
                             final double maxDV, final double minDT)
-                                    throws IllegalArgumentException {
+        throws IllegalArgumentException {
         this.spacecraftIndices = spacecraftIndices.clone();
         this.inPlane           = inPlane;
         this.outOfPlane        = outOfPlane;
@@ -56,9 +62,57 @@ public class ManeuverSplitter implements ScenarioComponent {
 
     /** {@inheritDoc} */
     public ScenarioState[] updateStates(final ScenarioState[] originals)
-        throws OrekitException {
-        // TODO Auto-generated method stub
-        return null;
+        throws OrekitException, SkatException {
+
+        ScenarioState[] updated = originals.clone();
+
+        for (int i = 0; i < spacecraftIndices.length; ++i) {
+
+            // select the current spacecraft affected by this component
+            final int index = spacecraftIndices[i];
+            final List<ScheduledManeuver> rawManeuvers = originals[index].getManeuvers();
+            if (rawManeuvers == null) {
+                throw new SkatException(SkatMessages.NO_MANEUVERS_STATE,
+                                        originals[index].getName(), originals[index].getCyclesNumber());
+            }
+
+            // prepare a list for holding the modified maneuvers
+            List<ScheduledManeuver> modified = new ArrayList<ScheduledManeuver>();
+
+            // modify the maneuvers
+            for (final ScheduledManeuver maneuver : rawManeuvers) {
+                if (((inPlane && maneuver.isInPlane()) || (outOfPlane && !(maneuver.isInPlane()))) &&
+                    (maneuver.getDeltaV().getNorm() > maxDV)) {
+
+                    // the maneuver should be split
+                    final SpacecraftState state = maneuver.getTrajectory().propagate(maneuver.getDate());
+                    final double period         = state.getKeplerianMeanMotion();
+                    final int nbParts           = (int) FastMath.ceil(maneuver.getDeltaV().getNorm() / maxDV);
+                    final int nbOrbits          = (int) FastMath.ceil(period / minDT);
+
+                    // add the various parts of the split maneuver
+                    for (int j = 0; j < nbParts; ++j) {
+                        modified.add(new ScheduledManeuver(maneuver.getName(), maneuver.isInPlane(),
+                                                           maneuver.getDate().shiftedBy(j * nbOrbits * period),
+                                                           new Vector3D(1.0 / nbParts, maneuver.getDeltaV()),
+                                                           maneuver.getThrust(), maneuver.getIsp(),
+                                                           maneuver.getTrajectory()));
+                    }
+
+                } else {
+                    // the maneuver is immune to splitting
+                    modified.add(maneuver);
+                }
+            }
+
+            // update the state
+            updated[index] = originals[index].updateManeuvers(modified);
+
+        }
+
+        // return an updated states
+        return updated;
+
     }
 
 }

@@ -19,6 +19,7 @@ import eu.eumetsat.skat.control.SKControl;
 import eu.eumetsat.skat.realization.ManeuverCrossCoupling;
 import eu.eumetsat.skat.realization.ManeuverDateError;
 import eu.eumetsat.skat.realization.ManeuverMagnitudeError;
+import eu.eumetsat.skat.realization.ManeuverSplitter;
 import eu.eumetsat.skat.realization.MissedManeuver;
 import eu.eumetsat.skat.realization.OrbitDetermination;
 import eu.eumetsat.skat.realization.Propagation;
@@ -224,6 +225,24 @@ public enum SupportedScenariocomponent {
                     parser.getDouble(node, ParameterKey.COMPONENT_CROSS_COUPLING_RATIO);
             return new ManeuverCrossCoupling(getIndices(parser, node, skat), inPlane, outOfPlane,
                                              nominalDirection, couplingDirection, couplingRatio);
+        }
+    },
+
+    /** Constant for maneuver splitting scenario component. */
+    MANEUVER_SPLITTER() {
+        /** {@inheritDoc} */
+        public ScenarioComponent parse(final SkatFileParser parser, final Tree node, final Skat skat)
+            throws OrekitException, SkatException {
+            final boolean inPlane =
+                    parser.getBoolean(node, ParameterKey.COMPONENT_MANEUVER_SPLITTER_IN_PLANE);
+            final boolean outOfPlane =
+                    parser.getBoolean(node, ParameterKey.COMPONENT_MANEUVER_SPLITTER_OUT_OF_PLANE);
+            final double maxDV =
+                    parser.getDouble(node, ParameterKey.COMPONENT_MANEUVER_SPLITTER_MAX_DV);
+            final double minDT =
+                    parser.getDouble(node, ParameterKey.COMPONENT_MANEUVER_SPLITTER_MIN_DT);
+            return new ManeuverSplitter(getIndices(parser, node, skat), inPlane, outOfPlane,
+                                        maxDV, minDT);
         }
     },
 
