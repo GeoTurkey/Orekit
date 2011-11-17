@@ -16,6 +16,7 @@ import org.orekit.utils.Constants;
 import eu.eumetsat.skat.Skat;
 import eu.eumetsat.skat.control.ControlLoop;
 import eu.eumetsat.skat.control.SKControl;
+import eu.eumetsat.skat.realization.ManeuverCrossCoupling;
 import eu.eumetsat.skat.realization.ManeuverDateError;
 import eu.eumetsat.skat.realization.ManeuverMagnitudeError;
 import eu.eumetsat.skat.realization.MissedManeuver;
@@ -201,6 +202,26 @@ public enum SupportedScenariocomponent {
                     parser.getDouble(node, ParameterKey.COMPONENT_MISSED_MANEUVER_THRESHOLD);
             return new MissedManeuver(getIndices(parser, node, skat), inPlane, outOfPlane,
                                       missThreshold, skat.getGenerator());
+        }
+    },
+
+    /** Constant for maneuver coupling scenario component. */
+    MANEUVER_CROSS_COUPLING() {
+        /** {@inheritDoc} */
+        public ScenarioComponent parse(final SkatFileParser parser, final Tree node, final Skat skat)
+            throws OrekitException, SkatException {
+            final boolean inPlane =
+                    parser.getBoolean(node, ParameterKey.COMPONENT_CROSS_COUPLING_IN_PLANE);
+            final boolean outOfPlane =
+                    parser.getBoolean(node, ParameterKey.COMPONENT_CROSS_COUPLING_OUT_OF_PLANE);
+            final Vector3D nominalDirection =
+                    parser.getVector(node, ParameterKey.COMPONENT_CROSS_COUPLING_NOMINAL_DIRECTION);
+            final Vector3D couplingDirection =
+                    parser.getVector(node, ParameterKey.COMPONENT_CROSS_COUPLING_COUPLING_DIRECTION);
+            final double couplingRatio =
+                    parser.getDouble(node, ParameterKey.COMPONENT_CROSS_COUPLING_RATIO);
+            return new ManeuverCrossCoupling(getIndices(parser, node, skat), inPlane, outOfPlane,
+                                             nominalDirection, couplingDirection, couplingRatio);
         }
     },
 

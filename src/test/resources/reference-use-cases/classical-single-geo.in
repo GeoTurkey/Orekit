@@ -213,6 +213,15 @@ scenario         = [
         miss_threshold      = 0.1;
     },
     {
+        component           = MANEUVER_CROSS_COUPLING;
+        managed_spacecrafts = [ "Meteosat 7" ];
+        in_plane            = true;
+        out_of_plane        = true;
+        nominal_direction   = [ 0.0, 1.0, 0.0 ];
+        coupling_direction  = [ 1.0, 0.0, 0.0 ];
+        coupling_ratio      = 0.003;
+    },
+    {
         component           = PROPAGATION;
         managed_spacecrafts = [ "Meteosat 7" ];
         propagator          = {
