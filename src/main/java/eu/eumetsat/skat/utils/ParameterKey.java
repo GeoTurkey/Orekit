@@ -99,6 +99,7 @@ public enum ParameterKey {
     MANEUVERS_RELATIVE_TO_PREVIOUS("relative_to_previous"),
     MANEUVERS_NAME("name"),
     MANEUVERS_DIRECTION("direction"),
+    MANEUVERS_THRUST("thrust"),
     MANEUVERS_ISP_CURVE("isp_curve"),
     MANEUVERS_DV_MIN("dv_min"),
     MANEUVERS_DV_MAX("dv_max"),

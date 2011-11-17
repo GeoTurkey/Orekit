@@ -103,6 +103,7 @@ public enum SupportedScenariocomponent {
                 }
                 final String name          = parser.getString(maneuver,  ParameterKey.MANEUVERS_NAME);
                 final Vector3D direction   = parser.getVector(maneuver,  ParameterKey.MANEUVERS_DIRECTION).normalize();
+                final double thrust        = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_THRUST);
                 final double[][] isp       = parser.getDoubleArray2(maneuver,  ParameterKey.MANEUVERS_ISP_CURVE);
                 final double dvMin         = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DV_MIN);
                 final double dvMax         = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DV_MAX);
@@ -113,7 +114,8 @@ public enum SupportedScenariocomponent {
                 final double dtConvergence = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DT_CONVERGENCE);
                 for (int j = 0; j < rollingCycles; ++j) {
                     // set up the maneuver for several cycles that will be optimized together
-                    maneuvers[j * maneuversPerCycle + i] = new TunableManeuver(name, inPlane, relative, direction, isp,
+                    maneuvers[j * maneuversPerCycle + i] = new TunableManeuver(name, inPlane, relative, direction,
+                                                                               thrust, isp,
                                                                                dvMin, dvMax, dvConvergence, nominal,
                                                                                dtMin, dtMax, dtConvergence);
                 }

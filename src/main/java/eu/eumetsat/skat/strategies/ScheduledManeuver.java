@@ -25,6 +25,9 @@ public class ScheduledManeuver {
     /** Velocity increment in spacecraft frame. */
     private final Vector3D deltaV;
 
+    /** Engine thrust. */
+    private final double thrust;
+
     /** Specific impulse. */
     private final double isp;
 
@@ -32,15 +35,17 @@ public class ScheduledManeuver {
      * @param inPlane if true, the maneuver is considered to be in-plane
      * @param date maneuver date
      * @param deltaV velocity increment in spacecraft frame
+     * @param thrust engine thrust
      * @param isp engine specific impulse (s)
      */
     public ScheduledManeuver(final String name,
                              final boolean inPlane, final AbsoluteDate date,
-                             final Vector3D deltaV, final double isp) {
+                             final Vector3D deltaV, final double thrust, final double isp) {
         this.name    = name;
         this.inPlane = inPlane;
         this.date    = date;
         this.deltaV  = deltaV;
+        this.thrust  = thrust;
         this.isp     = isp;
     }
 
@@ -72,7 +77,14 @@ public class ScheduledManeuver {
         return deltaV;
     }
 
-    /** Get the vpecific impulse.
+    /** Get the engine thrust.
+    * @return engine thrust
+    */
+    public double getThrust() {
+        return thrust;
+    }
+
+    /** Get the specific impulse.
     * @return specific impulse
     */
     public double getIsp() {

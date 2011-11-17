@@ -91,7 +91,7 @@ public class ManeuverDateError implements ScenarioComponent {
                     modified.add(new ScheduledManeuver(maneuver.getName(), maneuver.isInPlane(),
                                                        maneuver.getDate().shiftedBy(offset),
                                                        maneuver.getDeltaV(),
-                                                       maneuver.getIsp()));
+                                                       maneuver.getThrust(), maneuver.getIsp()));
                 } else {
                     // the maneuver is immune to the error
                     modified.add(maneuver);

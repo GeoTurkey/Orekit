@@ -33,6 +33,9 @@ public class TunableManeuver {
     /** Thrust direction in spacecraft frame. */
     private final Vector3D direction;
 
+    /** Engine thrust */
+    private final double thrust;
+
     /** Specific impulse calibration curve. */
     private final double[][] isp;
 
@@ -56,6 +59,7 @@ public class TunableManeuver {
      * @param inPlane if true, the maneuver is considered to be in-plane
      * @param relative if true, the maneuver date is relative to the previous maneuver
      * @param direction thrust direction in spacecraft frame
+     * @param thrust engine thrust
      * @param isp engine specific impulse calibration curve (seconds in row 0, consumed mass in row 1)
      * @param minIncrement minimal allowed value for velocity increment
      * @param maxIncrement maximal allowed value for velocity increment
@@ -67,7 +71,7 @@ public class TunableManeuver {
      */
     public TunableManeuver(final String name, final boolean inPlane,
                            final boolean relative, final Vector3D direction,
-                           final double[][] isp,
+                           final double thrust, final double[][] isp,
                            final double minIncrement, final double maxIncrement,
                            final double convergenceIncrement,
                            final double nominal,
@@ -77,6 +81,7 @@ public class TunableManeuver {
         this.inPlane      = inPlane;
         this.relative     = relative;
         this.direction    = direction.normalize();
+        this.thrust       = thrust;
         this.isp          = isp.clone();
         this.nominal      = nominal;
         velocityIncrement = new SKParameter(name + " (dV)", minIncrement, maxIncrement,
@@ -160,7 +165,7 @@ public class TunableManeuver {
     public ScheduledManeuver getManeuver() {
         return new ScheduledManeuver(name, inPlane, getDate(),
                                      new Vector3D(velocityIncrement.getValue(), direction),
-                                     currentIsp);
+                                     thrust, currentIsp);
     }
 
     /** Get the maneuver date.
