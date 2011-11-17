@@ -5,7 +5,10 @@
   </formats>
   <dependencySets>  
     <dependencySet>  
-      <outputDirectory>/lib</outputDirectory>  
+      <outputDirectory>/lib</outputDirectory>
+      <excludes>
+        <exclude>int.eumetsat:skat</exclude>
+      </excludes>
       <unpack>false</unpack>  
     </dependencySet>  
   </dependencySets>  
