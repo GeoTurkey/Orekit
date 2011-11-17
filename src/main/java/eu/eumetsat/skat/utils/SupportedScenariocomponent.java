@@ -18,6 +18,7 @@ import eu.eumetsat.skat.control.ControlLoop;
 import eu.eumetsat.skat.control.SKControl;
 import eu.eumetsat.skat.realization.ManeuverDateError;
 import eu.eumetsat.skat.realization.ManeuverMagnitudeError;
+import eu.eumetsat.skat.realization.MissedManeuver;
 import eu.eumetsat.skat.realization.OrbitDetermination;
 import eu.eumetsat.skat.realization.Propagation;
 import eu.eumetsat.skat.scenario.Scenario;
@@ -184,6 +185,22 @@ public enum SupportedScenariocomponent {
             return new ManeuverMagnitudeError(getIndices(parser, node, skat),
                                               inPlane, outOfPlane, standardDeviation,
                                               skat.getGenerator());
+        }
+    },
+
+    /** Constant for missed maneuver scenario component. */
+    MISSED_MANEUVER() {
+        /** {@inheritDoc} */
+        public ScenarioComponent parse(final SkatFileParser parser, final Tree node, final Skat skat)
+            throws OrekitException, SkatException {
+            final boolean inPlane =
+                    parser.getBoolean(node, ParameterKey.COMPONENT_MISSED_MANEUVER_IN_PLANE);
+            final boolean outOfPlane =
+                    parser.getBoolean(node, ParameterKey.COMPONENT_MISSED_MANEUVER_OUT_OF_PLANE);
+            final double missThreshold =
+                    parser.getDouble(node, ParameterKey.COMPONENT_MISSED_MANEUVER_THRESHOLD);
+            return new MissedManeuver(getIndices(parser, node, skat), inPlane, outOfPlane,
+                                      missThreshold, skat.getGenerator());
         }
     },
 

@@ -49,7 +49,8 @@ public enum SkatMessages implements Localizable {
     NO_ESTIMATED_STATE("no estimated state available for {0} at cycle {1}, maybe an orbit determination component is missing"),
     NO_MANEUVERS_STATE("no maneuvers available for {0} at cycle {1}, maybe a control loop component is missing for this cycle"),
     NO_EPHEMERIS_STATE("no ephemeris available for {0} at cycle {1}, maybe a propagation component is missing"),
-    NO_END_STATE("no end state available for {0} at cycle {1}, maybe a propagation component is missing");
+    NO_END_STATE("no end state available for {0} at cycle {1}, maybe a propagation component is missing"),
+    WRONG_MISS_THRESHOLD("invalid maneuver miss threshold: {0}, must be between 0.0 and 1.0");
 
     // CHECKSTYLE: resume JavadocVariable check
 
