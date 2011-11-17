@@ -12,7 +12,7 @@
     </fileSet>
     <fileSet>
       <outputDirectory>/orekit-data</outputDirectory>  
-      <directory>src/test/resources/orekit-data</directory>  
+      <directory>data/orekit-data</directory>  
       <includes>
        <include>*</include>
        <include>*/*</include>
@@ -20,7 +20,7 @@
     </fileSet>
     <fileSet>
       <outputDirectory>/reference-use-cases</outputDirectory>  
-      <directory>src/test/resources/reference-use-cases</directory>  
+      <directory>data/reference-use-cases</directory>  
       <includes>
        <include>*.in</include>
       </includes>
