@@ -79,8 +79,7 @@ public enum SupportedOptimizer {
             return new CMAESOptimizer(parser.getInt(node, ParameterKey.CMAES_POPULATION_SIZE),
                                       inputSigma, boundaries,
                                       parser.getInt(node, ParameterKey.CMAES_MAX_ITERATIONS),
-                                      parser.getDouble(node, ParameterKey.CMAES_STOP_FITNESS),
-                                      true, 0, 0, skat.getGenerator(), true,
+                                      0, true, 0, 0, skat.getGenerator(), true,
                                       new Checker(maneuvers, stopCriterion));
         }
     };

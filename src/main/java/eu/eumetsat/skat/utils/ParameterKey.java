@@ -80,7 +80,6 @@ public enum ParameterKey {
     NELDER_MEAD_INITIAL_SIMPLEX_SIZE_RATIO("initial_simplex_size_ratio"),
     CMAES_POPULATION_SIZE("population_size"),
     CMAES_MAX_ITERATIONS("max_iterations"),
-    CMAES_STOP_FITNESS("stop_fitness"),
     COMPONENT_CONTROL_LOOP_PROPAGATOR("propagator"),
     COMPONENT_CONTROL_LOOP_CONTROLS("controls"),
     COMPONENT_CONTROL_LOOP_MANEUVERS("maneuvers"),
