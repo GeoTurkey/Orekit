@@ -9,6 +9,7 @@ import org.apache.commons.math.analysis.MultivariateRealFunction;
 import org.orekit.errors.OrekitException;
 import org.orekit.errors.PropagationException;
 import org.orekit.propagation.BoundedPropagator;
+import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
 import org.orekit.propagation.analytical.ManeuverAdapterPropagator;
 import org.orekit.propagation.events.EventDetector;
@@ -68,8 +69,14 @@ class ObjectiveFunction implements MultivariateRealFunction {
     /** Set the station keeping maneuvers parameters to a set of values.
      * @param point values to use for the station keeping maneuvers parameters
      * @see #value(double[])
+     * @exception OrekitException if spacecraft state cannot be determined at some
+     * maneuver date
      */
-    public void setParameters(final double[] point) {
+    public Propagator getPropagator(final double[] point)
+        throws OrekitException {
+
+        // set up the fast propagator
+        final ManeuverAdapterPropagator propagator = new ManeuverAdapterPropagator(reference);
 
         int index = 0;
         for (int i = 0; i < tunables.length; ++i) {
@@ -91,7 +98,13 @@ class ObjectiveFunction implements MultivariateRealFunction {
                     parameter.setValue(point[index++]);
                 }
             }
+
+            final ScheduledManeuver scheduled = maneuver.getManeuver(propagator);
+            propagator.addManeuver(scheduled.getDate(), scheduled.getDeltaV(), scheduled.getIsp());
+
         }
+
+        return propagator;
 
     }
 
@@ -100,17 +113,8 @@ class ObjectiveFunction implements MultivariateRealFunction {
 
         try {
 
-            // set up the fast propagator
-            final ManeuverAdapterPropagator propagator = new ManeuverAdapterPropagator(reference);
-
             // set the parameters to the current optimizer-provided values
-            setParameters(point);
-
-            // add the maneuvers
-            for (final TunableManeuver tunable : tunables) {
-                final ScheduledManeuver maneuver = tunable.getManeuver();
-                propagator.addManeuver(maneuver.getDate(), maneuver.getDeltaV(), maneuver.getIsp());
-            }
+            final Propagator propagator = getPropagator(point);
 
             // get the detectors associated with control laws
             final Set<EventDetector> detectors = new HashSet<EventDetector>();

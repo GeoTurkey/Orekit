@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math.util.FastMath;
+import org.orekit.propagation.Propagator;
 import org.orekit.time.AbsoluteDate;
 
 import eu.eumetsat.skat.control.SKParameter;
@@ -160,12 +161,13 @@ public class TunableManeuver {
     }
 
     /** Get the maneuver corresponding to the current value of the parameters.
+     * @param trajectory to which this maneuver belongs
      * @return maneuver corresponding to the current value of the parameters
      */
-    public ScheduledManeuver getManeuver() {
+    public ScheduledManeuver getManeuver(final Propagator trajectory) {
         return new ScheduledManeuver(name, inPlane, getDate(),
                                      new Vector3D(velocityIncrement.getValue(), direction),
-                                     thrust, currentIsp);
+                                     thrust, currentIsp, trajectory);
     }
 
     /** Get the maneuver date.

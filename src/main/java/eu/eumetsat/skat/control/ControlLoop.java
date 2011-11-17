@@ -192,7 +192,7 @@ public class ControlLoop implements ScenarioComponent {
             final RealPointValuePair pointValue =
                     optimizer.optimize(maxEval, objective, GoalType.MINIMIZE, startPoint);
             final double[] optimum = pointValue.getPoint();
-            objective.setParameters(optimum);
+            final Propagator propagator = objective.getPropagator(optimum);
 
             // update the scheduled maneuvers, adding the newly optimized set
             final List<ScheduledManeuver> theoreticalManeuvers = new ArrayList<ScheduledManeuver>();
@@ -201,7 +201,7 @@ public class ControlLoop implements ScenarioComponent {
             }
             for (int i = 0; i < tunables.length / rollingCycles; ++i) {
                 // get the optimized maneuver for the next cycle, using the optimum value set above
-                final ScheduledManeuver maneuver = tunables[i].getManeuver();
+                final ScheduledManeuver maneuver = tunables[i].getManeuver(propagator);
                 System.out.println("  " + tunables[i].getName() +
                                    " "  + maneuver.getDate() +
                                    " "  + maneuver.getDeltaV().getNorm());

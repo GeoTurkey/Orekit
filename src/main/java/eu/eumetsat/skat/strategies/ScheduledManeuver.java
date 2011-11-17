@@ -2,6 +2,7 @@
 package eu.eumetsat.skat.strategies;
 
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
+import org.orekit.propagation.Propagator;
 import org.orekit.time.AbsoluteDate;
 
 /**
@@ -31,22 +32,27 @@ public class ScheduledManeuver {
     /** Specific impulse. */
     private final double isp;
 
+    /** Trajectory to which this maneuver belongs. */
+    private final Propagator trajectory;
+
     /** Simple constructor.
      * @param inPlane if true, the maneuver is considered to be in-plane
      * @param date maneuver date
      * @param deltaV velocity increment in spacecraft frame
      * @param thrust engine thrust
      * @param isp engine specific impulse (s)
+     * @param trajectory trajectory to which this maneuver belongs
      */
-    public ScheduledManeuver(final String name,
-                             final boolean inPlane, final AbsoluteDate date,
-                             final Vector3D deltaV, final double thrust, final double isp) {
-        this.name    = name;
-        this.inPlane = inPlane;
-        this.date    = date;
-        this.deltaV  = deltaV;
-        this.thrust  = thrust;
-        this.isp     = isp;
+    public ScheduledManeuver(final String name, final boolean inPlane, final AbsoluteDate date,
+                             final Vector3D deltaV, final double thrust, final double isp,
+                             final Propagator trajectory) {
+        this.name       = name;
+        this.inPlane    = inPlane;
+        this.date       = date;
+        this.deltaV     = deltaV;
+        this.thrust     = thrust;
+        this.isp        = isp;
+        this.trajectory = trajectory;
     }
 
     /** Get the maneuver name.
@@ -89,6 +95,13 @@ public class ScheduledManeuver {
     */
     public double getIsp() {
         return isp;
+    }
+
+    /** Get the trajectory to which this maneuver belongs.
+     * @return trajectory
+     */
+    public Propagator getTrajectory() {
+        return trajectory;
     }
 
 }

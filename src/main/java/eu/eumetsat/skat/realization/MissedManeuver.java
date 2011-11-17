@@ -97,7 +97,8 @@ public class MissedManeuver implements ScenarioComponent {
                         // the maneuver is missed
                         modified.add(new ScheduledManeuver(maneuver.getName(), maneuver.isInPlane(),
                                                            maneuver.getDate(), Vector3D.ZERO,
-                                                           maneuver.getThrust(), maneuver.getIsp()));
+                                                           maneuver.getThrust(), maneuver.getIsp(),
+                                                           maneuver.getTrajectory()));
                     } else {
                         // the maneuver is realized as scheduled
                         modified.add(maneuver);
