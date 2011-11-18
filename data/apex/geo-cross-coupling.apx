@@ -43,8 +43,8 @@
 
     <synthesis>
 
-      <!-- output on the console, for user convenience -->
-      <user-output name="statistics" template-path="geo-cross-coupling-stats.tpl"/>
+      <!-- output in a file -->
+      <template-file template-path="geo-cross-coupling-stats.tpl" data-path="geo-cross-coupling.stats"/>
 
     </synthesis>
 
