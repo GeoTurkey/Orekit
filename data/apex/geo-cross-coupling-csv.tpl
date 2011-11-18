@@ -6,5 +6,5 @@
 # column 4: control law residual: inclination vector
 # column 5: control law residual: centered longitude
 # column 6: control law residual: eccentricity circle
-...{@current_date@,@current_in_plane_dv@,@current_out_of_plane_dv@,@current_i_residual@,@current_l_residual@,@current_e_residual@
-...}
+...{@current_date(i)@,@current_in_plane_dv(i)@,@current_out_of_plane_dv(i)@,@current_i_residual(i)@,@current_l_residual(i)@,@current_e_residual(i)@
+}...

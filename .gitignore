@@ -7,3 +7,6 @@
 /data/*/*.csv
 /data/*/*.out
 /data/*/*.man
+/data/apex/*.rpl
+/data/apex/*.in
+/data/apex/*.stats

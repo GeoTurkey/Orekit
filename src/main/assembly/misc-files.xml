@@ -29,6 +29,7 @@
       <outputDirectory>/apex</outputDirectory>  
       <directory>data/apex</directory>  
       <includes>
+       <include>README</include>
        <include>*.apx</include>
        <include>*.js</include>
        <include>*.tpl</include>

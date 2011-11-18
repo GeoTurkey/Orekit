@@ -1,0 +1,28 @@
+In order to use Apex to launch Skat simulations, you should follow the follwing steps:
+
+ - unzip the skat-xxx-bin.zip archive in whatever folder you want,
+   where xxx corresponds to skat version (if you can read this
+   README file, you have probably already done this)
+   this should create a skat-xxx folder containing a skat-xxx.jar
+   file, and several subfolders (apex, licenses, lib, orekit-data,
+   reference-use-cases)
+
+ - unzip the apex-core-yyy-bin.zip archive in whatever folder you want,
+   where yyy corresponds to apex version
+   this should create an apex-core-yyy folder containing an apex-core-yyy.jar
+   file, and several subfolders (licenses, lib)
+
+ - go to the skat-xxx/apex subfolder extracted from the first
+   archive (this is where this README file is)
+
+ - assuming you have unzipped the two archives in the same folder
+   and hence the two skat-xxx and apex-core-yyy folders are side by side,
+   you can launch apex using the following command line:
+
+   java -jar ../../apex-core-yyy/apex-core-yyy.jar -verbose -batch geo-cross-coupling.apx
+
+   the -verbose flag means apex will display the skat runs start time,
+   end time and duration
+
+ - at the end of the apex run, the results should both be displayed on
+   the console and in a geo-cross-coupling.stats file
