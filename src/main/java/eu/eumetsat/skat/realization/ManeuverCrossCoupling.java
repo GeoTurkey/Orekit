@@ -55,8 +55,8 @@ public class ManeuverCrossCoupling implements ScenarioComponent {
      * @param nominalDirection nominal direction of the thrust in spacecraft frame
      * @param couplingDirection coupling direction in spacecraft frame
      * @param couplingRatio ratio of the coupling along coupling axis
-     * (must be between 0 and 1)
-     * @exception IllegalArgumentException if coupling ratio is not between 0 and 1
+     * (must be between -1 and 1)
+     * @exception IllegalArgumentException if coupling ratio is not between -1 and 1
      * or if coupling direction is aligned with nominal thrust direction
      */
     public ManeuverCrossCoupling(final int[] spacecraftIndices,
@@ -67,7 +67,7 @@ public class ManeuverCrossCoupling implements ScenarioComponent {
         this.spacecraftIndices  = spacecraftIndices.clone();
         this.inPlane            = inPlane;
         this.outOfPlane         = outOfPlane;
-        if (couplingRatio < 0 || couplingRatio > 1) {
+        if (couplingRatio < -1 || couplingRatio > 1) {
             throw SkatException.createIllegalArgumentException(SkatMessages.WRONG_COUPLING,
                                                                couplingRatio);
         }
