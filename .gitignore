@@ -4,6 +4,6 @@
 /bin
 /target
 /src/main/antlr3
-/data/reference-use-cases/*.csv
-/data/reference-use-cases/*.out
-/data/reference-use-cases/*.man
+/data/*/*.csv
+/data/*/*.out
+/data/*/*.man
