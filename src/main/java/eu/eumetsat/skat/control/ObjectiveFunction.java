@@ -159,7 +159,12 @@ class ObjectiveFunction implements MultivariateRealFunction {
 
             });
 
-             // perform propagation
+            // prepare run
+            for (final SKControl control : controls) {
+                control.initializeRun();
+            }
+
+            // perform propagation
             propagator.propagate(reference.getMinDate().shiftedBy(rollingCycles * cycleDuration * Constants.JULIAN_DAY));
 
             // compute sum of squared scaled residuals

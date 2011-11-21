@@ -40,6 +40,15 @@ public interface SKControl extends SKElement {
      */
     double getTargetValue();
 
+    /** Initialize one run of the control law.
+     * <p>
+     * This method is called at the start of each run with a set
+     * of parameters. It can be used to reset some internal state
+     * in the control law if needed.
+     * </p>
+     */
+    void initializeRun();
+
     /** Get the achieved value of the control.
      * <p>
      * The achieved value will change at the end

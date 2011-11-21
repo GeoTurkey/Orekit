@@ -71,6 +71,11 @@ public abstract class AbstractSKControl implements SKControl {
     }
 
     /** {@inheritDoc} */
+    public void initializeRun() {
+        // do nothing by default
+    }
+
+    /** {@inheritDoc} */
     public double getTargetValue() {
         return target;
     }
