@@ -1,6 +1,10 @@
 /* Copyright 2011 Eumetsat */
 package eu.eumetsat.skat.strategies.geo;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.commons.math.stat.descriptive.rank.Median;
 import org.apache.commons.math.util.FastMath;
 import org.orekit.errors.OrekitException;
 import org.orekit.errors.PropagationException;
@@ -19,7 +23,7 @@ import eu.eumetsat.skat.control.AbstractSKControl;
  * <p>
  * This control value is:
  * <pre>
- *   (max(&delta;(t)) + min(&delta;(t))) / 2
+ *   median(&delta;(t))
  * </pre>
  * where &delta;(t) = &radic; [(e<sub>x</sub> - c<sub>x</sub>)<sup>2</sup> +
  * (e<sub>y</sub> - c<sub>y</sub>)<sup>2</sup>] is the distance between the
@@ -31,6 +35,10 @@ import eu.eumetsat.skat.control.AbstractSKControl;
  * to r attempts to have the eccentricity vector motion as close as
  * possible to the circle centered at (c<sub>x</sub>, c<sub>y</sub>) and with
  * radius r.
+ * </p>
+ * <p>
+ * Using a median instead of a mean improves robustness with respect to
+ * outliers, which occur when starting far from the desired window.
  * </p>
  * @author Luc Maisonobe
  */
@@ -45,11 +53,8 @@ public class EccentricityCircle extends AbstractSKControl {
     /** Ordinate of the circle center. */
     private final double centerY;
 
-    /** Minimal delta reached during station keeping cycle. */
-    private double minDelta;
-
-    /** Maximal delta reached during station keeping cycle. */
-    private double maxDelta;
+    /** Sample of eccentricity offset during station keeping cycle. */
+    private List<Double> sample;
 
     /** Step to use for sampling throughout propagation. */
     private final double samplingStep;
@@ -71,11 +76,22 @@ public class EccentricityCircle extends AbstractSKControl {
         this.centerX      = centerX;
         this.centerY      = centerY;
         this.samplingStep = samplingStep;
+        this.sample       = new ArrayList<Double>();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void initializeRun() {
+        sample.clear();
     }
 
     /** {@inheritDoc} */
     public double getAchievedValue() {
-        return 0.5 * (minDelta + maxDelta);
+        final double[] data = new double[sample.size()];
+        for (int i = 0; i < data.length; ++i) {
+            data[i] = sample.get(i);
+        }
+        return new Median().evaluate(data);
     }
 
     /** {@inheritDoc} */
@@ -96,10 +112,6 @@ public class EccentricityCircle extends AbstractSKControl {
 
         /** {@inheritDoc} */
         public void reset() {
-            // set the initial values at infinite, to make sure they will be updated
-            // properly as soon as simulation starts
-            minDelta = Double.POSITIVE_INFINITY;
-            maxDelta = Double.NEGATIVE_INFINITY;
         }
 
         /** {@inheritDoc} */
@@ -124,9 +136,8 @@ public class EccentricityCircle extends AbstractSKControl {
                     final double delta           = FastMath.hypot(orbit.getEquinoctialEx() - centerX,
                                                                   orbit.getEquinoctialEy() - centerY);
 
-                    // update eccentricity excursion
-                    minDelta = FastMath.min(minDelta, delta);
-                    maxDelta = FastMath.max(maxDelta, delta);
+                    // add eccentricity offset to sample
+                    sample.add(delta);
 
                 }
 

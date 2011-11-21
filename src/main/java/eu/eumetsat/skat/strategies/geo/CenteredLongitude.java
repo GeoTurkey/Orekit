@@ -1,7 +1,11 @@
 /* Copyright 2011 Eumetsat */
 package eu.eumetsat.skat.strategies.geo;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
+import org.apache.commons.math.stat.descriptive.rank.Percentile;
 import org.apache.commons.math.util.FastMath;
 import org.apache.commons.math.util.MathUtils;
 import org.orekit.bodies.BodyShape;
@@ -18,20 +22,24 @@ import eu.eumetsat.skat.control.AbstractSKControl;
 
 /**
  * Station-keeping control attempting to center East-West longitude
- * excursion around a specified center throughout a cycle.
+ * excursion around a specified center target throughout a cycle.
  * <p>
  * This control value is:
  * <pre>
- *   (max(l(t) + min(l(t)) / 2
+ *   max(|l<sub>75</sub> - l<sub>c</sub>|,|l<sub>c</sub> - l<sub>25</sub>|)
  * </pre>
- * where l(t) is the spacecraft longitude at time t and the min and max
- * functions are evaluated for the complete cycle duration.
+ * where l<sub>75</sub> and l<sub>25</sub> are the spacecraft longitude quantiles
+ * evaluated for the complete cycle duration and l<sub>c</sub> is the center longitude.
  * </p>
  * <p>
  * The previous definition implies that setting the target of this control
- * to l<sub>c</sub> attempts to have a longitude excursion covered by the
+ * to 0 attempts to have a longitude excursion covered by the
  * satellite centered around the l<sub>c</sub> longitude during the
- * station-keeping, the same margin being available on both sides.
+ * station-keeping.
+ * </p>
+ * <p>
+ * Using percentiles instead of min/max improves robustness with respect to
+ * outliers, which occur when starting far from the desired window.
  * </p>
  * @author Luc Maisonobe
  */
@@ -46,11 +54,11 @@ public class CenteredLongitude extends AbstractSKControl {
     /** Earth model to use to compute longitudes. */
     private final BodyShape earth;
 
-    /** Minimal longitude (more westward) reached during station keeping cycle. */
-    private double minL;
+    /** Target longitude. */
+    private final double center;
 
-    /** Maximal longitude (more eastward) reached during station keeping cycle. */
-    private double maxL;
+    /** Longitude sample during station keeping cycle. */
+    private List<Double> sample;
 
     /** Simple constructor.
      * @param name name of the control law
@@ -64,17 +72,30 @@ public class CenteredLongitude extends AbstractSKControl {
                                 final String controlled,
                                 final double center, final double samplingStep,
                                 final BodyShape earth) {
-        super(name, scale, controlled, null,
-              MathUtils.normalizeAngle(center, 0),
-              MathUtils.normalizeAngle(center, 0) - FastMath.PI,
-              MathUtils.normalizeAngle(center, 0) + FastMath.PI);
+        super(name, scale, controlled, null, 0, -FastMath.PI, FastMath.PI);
         this.stephandler  = new Handler();
         this.samplingStep = samplingStep;
         this.earth        = earth;
+        this.center       = center;
+        this.sample       = new ArrayList<Double>();
     }
 
+    /** {@inheritDoc} */
+    @Override
+    public void initializeRun() {
+        sample.clear();
+    }
+
+    /** {@inheritDoc} */
     public double getAchievedValue() {
-        return 0.5 * (minL + maxL);
+        final double[] data = new double[sample.size()];
+        for (int i = 0; i < data.length; ++i) {
+            data[i] = sample.get(i);
+        }
+        final Percentile p = new Percentile();
+        final double up  = p.evaluate(data, 75.0);
+        final double low = p.evaluate(data, 25.0);
+        return FastMath.max(FastMath.abs(up - center), FastMath.abs(center - low));
     }
 
     /** {@inheritDoc} */
@@ -95,10 +116,6 @@ public class CenteredLongitude extends AbstractSKControl {
 
         /** {@inheritDoc} */
         public void reset() {
-            // set the initial values at infinite, to make sure they will be updated
-            // properly as soon as simulation starts
-            minL = Double.POSITIVE_INFINITY;
-            maxL = Double.NEGATIVE_INFINITY;
         }
 
         /** {@inheritDoc} */
@@ -125,9 +142,8 @@ public class CenteredLongitude extends AbstractSKControl {
                     final GeodeticPoint gp = earth.transform(position, earth.getBodyFrame(), date);
                     final double l = MathUtils.normalizeAngle(gp.getLongitude(), getTargetValue());
 
-                    // update longitude excursion
-                    minL = FastMath.min(minL, l);
-                    maxL = FastMath.max(maxL, l);
+                    // add longitude to sample
+                    sample.add(MathUtils.normalizeAngle(l, getTargetValue()));
 
                 }
 

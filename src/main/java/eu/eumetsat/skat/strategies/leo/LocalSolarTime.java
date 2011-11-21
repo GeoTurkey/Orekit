@@ -1,8 +1,11 @@
 /* Copyright 2011 Eumetsat */
 package eu.eumetsat.skat.strategies.leo;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
-import org.apache.commons.math.stat.descriptive.moment.Mean;
+import org.apache.commons.math.stat.descriptive.rank.Median;
 import org.apache.commons.math.util.FastMath;
 import org.apache.commons.math.util.MathUtils;
 import org.orekit.bodies.BodyShape;
@@ -26,8 +29,8 @@ public class LocalSolarTime extends AbstractSKControl {
     /** Associated event handler. */
     private final EventDetector eventDetector;
 
-    /** Mean statistic. */
-    private final Mean mean;
+    /** Sampled offset to target solar time. */
+    private final List<Double> sample;
 
     /** Simple constructor.
      * @param name name of the control law
@@ -48,18 +51,22 @@ public class LocalSolarTime extends AbstractSKControl {
         super(name, scale, controlled, null, solarTime, 0.0, 24.0);
         this.eventDetector =
                 new Detector(600.0, 1.0e-3, earth, sun, latitude, ascending, solarTime);
-        this.mean = new Mean();
+        this.sample = new ArrayList<Double>();
     }
 
     /** {@inheritDoc} */
     @Override
     public void initializeRun() {
-        mean.clear();
+        sample.clear();
     }
 
     /** {@inheritDoc} */
     public double getAchievedValue() {
-        return mean.evaluate();
+        final double[] data = new double[sample.size()];
+        for (int i = 0; i < data.length; ++i) {
+            data[i] = sample.get(i);
+        }
+        return new Median().evaluate(data);
     }
 
     /** {@inheritDoc} */
@@ -137,7 +144,7 @@ public class LocalSolarTime extends AbstractSKControl {
                 // convert the angle to solar time
                 final double achievedSolarTime = 12.0 * (1.0 + dAlpha / FastMath.PI);
 
-                mean.increment(achievedSolarTime - targetSolarTime);
+                sample.add(achievedSolarTime - targetSolarTime);
 
             }
 

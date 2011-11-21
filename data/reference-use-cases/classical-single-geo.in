@@ -4,7 +4,7 @@ simulation       = {
     inertial_frame   = "EME2000";
     earth_frame      = "ITRF2008 with tides";
     start_date       = 2011-10-23T00:00:00.000;
-    end_date         = 2012-01-01T00:00:00.000;
+    end_date         = 2013-01-01T00:00:00.000;
     cycle_duration   = 14.0;
     rolling_cycles   = 2;
     ground_location  = {
@@ -54,12 +54,12 @@ scenario         = [
         angle_type          = MEAN;
         small               = 1.0e-12;  # this parameter is used to check covariance matrix semi-positiveness
         covariance          = [
-            [  1555.13,   -5.831e-5,   3.503e-5,   1.385e-8,  -9.510e-10,  6.554e-5  ],
-            [ -5.831e-5,   2.186e-12, -1.313e-12, -5.196e-16,  3.566e-17, -2.458e-12 ],
-            [  3.503e-5,  -1.313e-12,  7.893e-13,  3.122e-16, -2.142e-17,  1.476e-12 ],
-            [  1.385e-8,  -5.196e-16,  3.122e-16,  1.234e-19, -8.474e-21,  5.841e-16 ],
-            [ -9.510e-10,  3.566e-17, -2.142e-17, -8.474e-21,  5.816e-22, -4.008e-17 ],
-            [  6.554e-5,  -2.458e-12,  1.476e-12,  5.841e-16, -4.008e-17,  2.762e-12 ]
+            [  155.513,   -5.831e-6,   3.503e-6,   1.385e-9,  -9.510e-11,  6.554e-6  ],
+            [ -5.831e-6,   2.186e-13, -1.313e-13, -5.196e-17,  3.566e-18, -2.458e-13 ],
+            [  3.503e-6,  -1.313e-13,  7.893e-14,  3.122e-17, -2.142e-18,  1.476e-13 ],
+            [  1.385e-9,  -5.196e-17,  3.122e-17,  1.234e-20, -8.474e-22,  5.841e-17 ],
+            [ -9.510e-11,  3.566e-18, -2.142e-18, -8.474e-22,  5.816e-23, -4.008e-18 ],
+            [  6.554e-6,  -2.458e-13,  1.476e-13,  5.841e-17, -4.008e-18,  2.762e-13 ]
         ];
     },
     {
@@ -105,7 +105,7 @@ scenario         = [
                 isp_curve            = [ [ 315, 0.0 ], [ 300, 600.0 ] ];
                 dv_min               = -3.0;
                 dv_max               =  3.0;
-                dv_convergence       =  0.01;
+                dv_convergence       =  0.001;
                 nominal_date         = 172800;
                 dt_min               = -43200;
                 dt_max               =  43200;
@@ -164,7 +164,7 @@ scenario         = [
                 isp_curve            = [ [ 315, 0.0 ], [ 300, 600.0 ] ];
                 dv_min               = -0.3;
                 dv_max               =  0.3;
-                dv_convergence       =  0.01;
+                dv_convergence       =  0.001;
                 nominal_date         = 345600;
                 dt_min               = -43200;
                 dt_max               =  43200;
@@ -179,7 +179,7 @@ scenario         = [
                 isp_curve            = [ [ 315, 0.0 ], [ 300, 600.0 ] ];
                 dv_min               = -0.3;
                 dv_max               =  0.3;
-                dv_convergence       =  0.01;
+                dv_convergence       =  0.001;
                 nominal_date         = 43200;
                 dt_min               =    0.0;
                 dt_max               =    0.0;
@@ -199,38 +199,30 @@ scenario         = [
         managed_spacecrafts = [ "Meteosat 7" ];
         in_plane            = false;
         out_of_plane        = true;
-        standard_deviation  = 0.01;
+        standard_deviation  = 0.001;
     },
     {
         component           = MANEUVER_MAGNITUDE_ERROR;
         managed_spacecrafts = [ "Meteosat 7" ];
         in_plane            = true;
         out_of_plane        = false;
-        standard_deviation  = 0.02;
+        standard_deviation  = 0.002;
     },
     {
         component           = MISSED_MANEUVER;
         managed_spacecrafts = [ "Meteosat 7" ];
         in_plane            = true;
         out_of_plane        = true;
-        miss_threshold      = 0.1;
+        miss_threshold      = 0.01;
     },
     {
         component           = MANEUVER_CROSS_COUPLING;
         managed_spacecrafts = [ "Meteosat 7" ];
-        in_plane            = true;
+        in_plane            = false;
         out_of_plane        = true;
         nominal_direction   = [ 0.0, 1.0, 0.0 ];
         coupling_direction  = [ 1.0, 0.0, 0.0 ];
-        coupling_ratio      = 0.003;
-    },
-    {
-        component           = MANEUVER_SPLITTER;
-        managed_spacecrafts = [ "Meteosat 7" ];
-        in_plane            = false;
-        out_of_plane        = true;
-        max_dv              = 0.5;
-        min_dt              = 150000;
+        coupling_ratio      = 0.002;
     },
     {
         component           = PROPAGATION;
