@@ -9,6 +9,7 @@ import eu.eumetsat.skat.control.SKControl;
 import eu.eumetsat.skat.strategies.geo.EccentricityCircle;
 import eu.eumetsat.skat.strategies.geo.CenteredLongitude;
 import eu.eumetsat.skat.strategies.geo.InclinationVector;
+import eu.eumetsat.skat.strategies.leo.LocalSolarTime;
 
 /** Enumerate for parsing the supported scenario components.
  */
@@ -104,15 +105,20 @@ public enum SupportedControlLaw {
 
     },
 
-    /** Constant for mean solar time control law. */
-    MEAN_SOLAR_TIME() {
+    /** Constant for local solar time control law. */
+    LOCAL_SOLAR_TIME() {
 
         /** {@inheritDoc} */
         public SKControl parse(final SkatFileParser parser, final Tree node,
                                final String controlled, final Skat skat)
             throws OrekitException, SkatException {
-            // TODO
-            throw SkatException.createInternalError(null);
+            final String name         = parser.getString(node, ParameterKey.CONTROL_NAME);
+            final double scale        = parser.getDouble(node, ParameterKey.CONTROL_SCALE);
+            final double latitude     = parser.getDouble(node, ParameterKey.CONTROL_SOLAR_TIME_LATITUDE);
+            final boolean ascending   = parser.getBoolean(node, ParameterKey.CONTROL_SOLAR_TIME_ASCENDING);
+            final double solarTime    = parser.getDouble(node, ParameterKey.CONTROL_SOLAR_TIME_SOLAR_TIME);
+            return new LocalSolarTime(name, scale, controlled, skat.getEarth(), skat.getSun(),
+                                      latitude, ascending, solarTime);
         }
 
     };

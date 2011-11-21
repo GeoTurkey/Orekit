@@ -94,6 +94,9 @@ public enum ParameterKey {
     CONTROL_ECCENTRICITY_CIRCLE_RADIUS("radius"),
     CONTROL_INCLINATION_VECTOR_TARGET_X("target_x"),
     CONTROL_INCLINATION_VECTOR_TARGET_Y("target_y"),
+    CONTROL_SOLAR_TIME_LATITUDE("latitude"),
+    CONTROL_SOLAR_TIME_ASCENDING("ascending"),
+    CONTROL_SOLAR_TIME_SOLAR_TIME("solar_time"),
 
     MANEUVERS_IN_PLANE("in_plane"),
     MANEUVERS_RELATIVE_TO_PREVIOUS("relative_to_previous"),
