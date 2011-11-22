@@ -158,7 +158,7 @@ public class Skat {
 
             // check input file
             if (args.length != 1) {
-                System.err.println("usage: java eu.eumetsat.skat.Skat input-file");
+                System.err.println("usage: java -jar skat.jar input-file");
                 System.exit(1);
             }
 
