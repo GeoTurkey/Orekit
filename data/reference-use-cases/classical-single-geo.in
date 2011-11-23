@@ -89,7 +89,7 @@ scenario         = [
             {
                 scale               = 100.0;
                 type                = MINIMIZED_MANEUVERS;
-                name                = "minimized deltaV";
+                name                = "minimized N/S deltaV";
                 in_plane            = false;
                 out_of_plane        = true;
             },
@@ -148,7 +148,7 @@ scenario         = [
             {
                 scale               = 10.0;
                 type                = MINIMIZED_MANEUVERS;
-                name                = "minimized deltaV";
+                name                = "minimized E/W deltaV";
                 in_plane            = true;
                 out_of_plane        = false;
             },
