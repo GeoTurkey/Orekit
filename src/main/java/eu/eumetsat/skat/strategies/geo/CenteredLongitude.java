@@ -9,7 +9,6 @@ import org.apache.commons.math.stat.descriptive.rank.Percentile;
 import org.apache.commons.math.util.FastMath;
 import org.apache.commons.math.util.MathUtils;
 import org.orekit.bodies.BodyShape;
-import org.orekit.bodies.GeodeticPoint;
 import org.orekit.errors.OrekitException;
 import org.orekit.errors.PropagationException;
 import org.orekit.propagation.SpacecraftState;
@@ -136,16 +135,14 @@ public class CenteredLongitude extends AbstractSKControl {
                 // loop throughout step
                 for (AbsoluteDate date = minDate; date.compareTo(maxDate) < 0; date = date.shiftedBy(samplingStep)) {
 
-                    // compute position in Earth frame
+                    // compute longitude
                     interpolator.setInterpolatedDate(date);
                     final SpacecraftState state = interpolator.getInterpolatedState();
                     final Vector3D position = state.getPVCoordinates(earth.getBodyFrame()).getPosition();
-
-                    // convert to latitude/longitude/altitude
-                    final GeodeticPoint gp = earth.transform(position, earth.getBodyFrame(), date);
+                    final double longitude = FastMath.atan2(position.getY(), position.getX());
 
                     // add longitude to sample
-                    sample.add(MathUtils.normalizeAngle(gp.getLongitude(), getTargetValue()));
+                    sample.add(MathUtils.normalizeAngle(longitude, getTargetValue()));
 
                 }
 
