@@ -27,7 +27,7 @@ import eu.eumetsat.skat.strategies.ScheduledManeuver;
  */
 public class LocalSolarTime extends AbstractSKControl {
 
-    /** Associated event handler. */
+    /** Associated event detector. */
     private final EventDetector eventDetector;
 
     /** Sampled offset to target solar time. */
