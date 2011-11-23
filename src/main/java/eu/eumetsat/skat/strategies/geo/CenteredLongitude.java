@@ -29,17 +29,20 @@ import eu.eumetsat.skat.control.AbstractSKControl;
  *   max(|l<sub>75</sub> - l<sub>c</sub>|,|l<sub>c</sub> - l<sub>25</sub>|)
  * </pre>
  * where l<sub>75</sub> and l<sub>25</sub> are the spacecraft longitude quantiles
- * evaluated for the complete cycle duration and l<sub>c</sub> is the center longitude.
+ * at 75% and 25% evaluated for the complete cycle duration and l<sub>c</sub> is
+ * the center longitude.
  * </p>
  * <p>
  * The previous definition implies that setting the target of this control
- * to 0 attempts to have a longitude excursion covered by the
+ * to 0 attempts to have most of the points longitudes covered by the
  * satellite centered around the l<sub>c</sub> longitude during the
  * station-keeping.
  * </p>
  * <p>
- * Using percentiles instead of min/max improves robustness with respect to
- * outliers, which occur when starting far from the desired window.
+ * Using quantiles instead of min/max improves robustness with respect to
+ * outliers, which occur when starting far from the desired window for example
+ * at the end of LEOP or after a longitude slot change. Here, we ignore 25%
+ * outliers on both sides.
  * </p>
  * @author Luc Maisonobe
  */
@@ -93,9 +96,9 @@ public class CenteredLongitude extends AbstractSKControl {
             data[i] = sample.get(i);
         }
         final Percentile p = new Percentile();
-        final double up  = p.evaluate(data, 75.0);
-        final double low = p.evaluate(data, 25.0);
-        return FastMath.max(FastMath.abs(up - center), FastMath.abs(center - low));
+        final double l75 = p.evaluate(data, 75.0);
+        final double l25 = p.evaluate(data, 25.0);
+        return FastMath.max(FastMath.abs(l75 - center), FastMath.abs(center - l25));
     }
 
     /** {@inheritDoc} */
@@ -140,10 +143,9 @@ public class CenteredLongitude extends AbstractSKControl {
 
                     // convert to latitude/longitude/altitude
                     final GeodeticPoint gp = earth.transform(position, earth.getBodyFrame(), date);
-                    final double l = MathUtils.normalizeAngle(gp.getLongitude(), getTargetValue());
 
                     // add longitude to sample
-                    sample.add(MathUtils.normalizeAngle(l, getTargetValue()));
+                    sample.add(MathUtils.normalizeAngle(gp.getLongitude(), getTargetValue()));
 
                 }
 
