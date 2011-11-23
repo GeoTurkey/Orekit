@@ -14,6 +14,7 @@ import org.orekit.forces.maneuvers.ImpulseManeuver;
 import org.orekit.propagation.BoundedPropagator;
 import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
+import org.orekit.propagation.analytical.ManeuverAdapterPropagator;
 import org.orekit.propagation.events.DateDetector;
 import org.orekit.time.AbsoluteDate;
 import org.orekit.utils.Constants;
@@ -192,20 +193,16 @@ public class ControlLoop implements ScenarioComponent {
             final RealPointValuePair pointValue =
                     optimizer.optimize(maxEval, objective, GoalType.MINIMIZE, startPoint);
             final double[] optimum = pointValue.getPoint();
-            final Propagator propagator = objective.getPropagator(optimum);
 
             // update the scheduled maneuvers, adding the newly optimized set
             final List<ScheduledManeuver> theoreticalManeuvers = new ArrayList<ScheduledManeuver>();
             if (original.getManeuvers() != null) {
                 theoreticalManeuvers.addAll(original.getManeuvers());
             }
+            final ScheduledManeuver[] maneuvers = objective.setUpManeuvers(optimum, new ManeuverAdapterPropagator(reference));
             for (int i = 0; i < tunables.length / rollingCycles; ++i) {
-                // get the optimized maneuver for the next cycle, using the optimum value set above
-                final ScheduledManeuver maneuver = tunables[i].getManeuver(propagator);
-                System.out.println("  " + tunables[i].getName() +
-                                   " "  + maneuver.getDate() +
-                                   " "  + maneuver.getDeltaV().getNorm());
-                theoreticalManeuvers.add(maneuver);
+                // extract the optimized maneuver for the next cycle only
+                theoreticalManeuvers.add(maneuvers[i]);
             }
 
             // build the updated scenario state

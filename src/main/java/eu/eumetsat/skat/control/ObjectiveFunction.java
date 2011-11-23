@@ -9,7 +9,6 @@ import org.apache.commons.math.analysis.MultivariateRealFunction;
 import org.orekit.errors.OrekitException;
 import org.orekit.errors.PropagationException;
 import org.orekit.propagation.BoundedPropagator;
-import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
 import org.orekit.propagation.analytical.ManeuverAdapterPropagator;
 import org.orekit.propagation.events.EventDetector;
@@ -66,17 +65,19 @@ class ObjectiveFunction implements MultivariateRealFunction {
 
     }
 
-    /** Set the station keeping maneuvers parameters to a set of values.
+    /** Set up the station keeping maneuvers parameters corresponding to a set of values.
      * @param point values to use for the station keeping maneuvers parameters
+     * @param propagator maneuver adapter to use (the maneuvers will be added to it)
+     * @return maneuvers that were added to the propagator
      * @see #value(double[])
      * @exception OrekitException if spacecraft state cannot be determined at some
      * maneuver date
      */
-    public Propagator getPropagator(final double[] point)
+    public ScheduledManeuver[] setUpManeuvers(final double[] point,
+                                              final ManeuverAdapterPropagator propagator)
         throws OrekitException {
 
-        // set up the fast propagator
-        final ManeuverAdapterPropagator propagator = new ManeuverAdapterPropagator(reference);
+        final ScheduledManeuver[] scheduled = new ScheduledManeuver[tunables.length];
 
         int index = 0;
         for (int i = 0; i < tunables.length; ++i) {
@@ -99,12 +100,12 @@ class ObjectiveFunction implements MultivariateRealFunction {
                 }
             }
 
-            final ScheduledManeuver scheduled = maneuver.getManeuver(propagator);
-            propagator.addManeuver(scheduled.getDate(), scheduled.getDeltaV(), scheduled.getIsp());
+            scheduled[i] = maneuver.getManeuver(propagator);
+            propagator.addManeuver(scheduled[i].getDate(), scheduled[i].getDeltaV(), scheduled[i].getIsp());
 
         }
 
-        return propagator;
+        return scheduled;
 
     }
 
@@ -114,7 +115,8 @@ class ObjectiveFunction implements MultivariateRealFunction {
         try {
 
             // set the parameters to the current optimizer-provided values
-            final Propagator propagator = getPropagator(point);
+            final ManeuverAdapterPropagator propagator = new ManeuverAdapterPropagator(reference);
+            final ScheduledManeuver[] maneuvers = setUpManeuvers(point, propagator);
 
             // get the detectors associated with control laws
             final Set<EventDetector> detectors = new HashSet<EventDetector>();
@@ -161,7 +163,7 @@ class ObjectiveFunction implements MultivariateRealFunction {
 
             // prepare run
             for (final SKControl control : controls) {
-                control.initializeRun();
+                control.initializeRun(maneuvers);
             }
 
             // perform propagation

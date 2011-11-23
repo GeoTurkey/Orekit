@@ -87,12 +87,13 @@ scenario         = [
         };
         controls    = [
             {
-                scale            = 1.0e-4;
-                type             = INCLINATION_VECTOR;
-                name             = "inclination vector";
-                target_x         = 9.0e-4;
-                target_y         =  0.0;
-                sampling         = 7200.0;
+                scale               = 1.0e-4;
+                type                = INCLINATION_VECTOR;
+                name                = "inclination vector";
+                target_x            = 9.0e-4;
+                target_y            =  0.0;
+                limit_circle_radius = 8.45e-4;
+                sampling            = 7200.0;
             }
         ];
         maneuvers   = [
@@ -214,6 +215,7 @@ scenario         = [
         in_plane            = true;
         out_of_plane        = true;
         miss_threshold      = 0.01;
+        rescheduling_delay  = 86000;
     },
     {
         component           = MANEUVER_CROSS_COUPLING;

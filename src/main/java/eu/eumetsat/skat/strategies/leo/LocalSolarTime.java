@@ -20,6 +20,7 @@ import org.orekit.propagation.events.EventDetector;
 import org.orekit.propagation.sampling.OrekitStepHandler;
 
 import eu.eumetsat.skat.control.AbstractSKControl;
+import eu.eumetsat.skat.strategies.ScheduledManeuver;
 
 /**
  * Station-keeping control attempting to get local solar time in a deadband.
@@ -56,7 +57,7 @@ public class LocalSolarTime extends AbstractSKControl {
 
     /** {@inheritDoc} */
     @Override
-    public void initializeRun() {
+    public void initializeRun(final ScheduledManeuver[] maneuvers) {
         sample.clear();
     }
 

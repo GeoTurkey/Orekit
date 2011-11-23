@@ -17,6 +17,7 @@ import org.orekit.propagation.sampling.OrekitStepInterpolator;
 import org.orekit.time.AbsoluteDate;
 
 import eu.eumetsat.skat.control.AbstractSKControl;
+import eu.eumetsat.skat.strategies.ScheduledManeuver;
 
 /**
  * Station-keeping control attempting to follow a specified eccentricity circle.
@@ -81,7 +82,7 @@ public class EccentricityCircle extends AbstractSKControl {
 
     /** {@inheritDoc} */
     @Override
-    public void initializeRun() {
+    public void initializeRun(final ScheduledManeuver[] maneuvers) {
         sample.clear();
     }
 

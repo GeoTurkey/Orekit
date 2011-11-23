@@ -18,6 +18,7 @@ import org.orekit.propagation.sampling.OrekitStepInterpolator;
 import org.orekit.time.AbsoluteDate;
 
 import eu.eumetsat.skat.control.AbstractSKControl;
+import eu.eumetsat.skat.strategies.ScheduledManeuver;
 
 /**
  * Station-keeping control attempting to center East-West longitude
@@ -84,7 +85,7 @@ public class CenteredLongitude extends AbstractSKControl {
 
     /** {@inheritDoc} */
     @Override
-    public void initializeRun() {
+    public void initializeRun(final ScheduledManeuver[] maneuvers) {
         sample.clear();
     }
 

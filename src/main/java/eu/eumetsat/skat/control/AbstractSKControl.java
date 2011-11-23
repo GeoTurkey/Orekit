@@ -1,6 +1,8 @@
 /* Copyright 2011 Eumetsat */
 package eu.eumetsat.skat.control;
 
+import eu.eumetsat.skat.strategies.ScheduledManeuver;
+
 
 /**
  * Base implementation for station-keeping control laws.
@@ -71,7 +73,7 @@ public abstract class AbstractSKControl implements SKControl {
     }
 
     /** {@inheritDoc} */
-    public void initializeRun() {
+    public void initializeRun(final ScheduledManeuver[] maneuvers) {
         // do nothing by default
     }
 

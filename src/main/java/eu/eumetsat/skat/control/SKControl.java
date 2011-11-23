@@ -4,6 +4,8 @@ package eu.eumetsat.skat.control;
 import org.orekit.propagation.events.EventDetector;
 import org.orekit.propagation.sampling.OrekitStepHandler;
 
+import eu.eumetsat.skat.strategies.ScheduledManeuver;
+
 
 /**
  * Interface representing a station-keeping control that should be achieved.
@@ -46,8 +48,9 @@ public interface SKControl extends SKElement {
      * of parameters. It can be used to reset some internal state
      * in the control law if needed.
      * </p>
+     * @param maneuvers maeuvers scheduled for this control law
      */
-    void initializeRun();
+    void initializeRun(ScheduledManeuver[] maneuvers);
 
     /** Get the achieved value of the control.
      * <p>
