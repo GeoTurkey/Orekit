@@ -11,6 +11,7 @@ import org.orekit.errors.OrekitException;
 import org.orekit.errors.PropagationException;
 import org.orekit.orbits.EquinoctialOrbit;
 import org.orekit.orbits.OrbitType;
+import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
 import org.orekit.propagation.events.EventDetector;
 import org.orekit.propagation.sampling.OrekitStepHandler;
@@ -94,7 +95,8 @@ public class EccentricityCircle extends AbstractSKControl {
 
     /** {@inheritDoc} */
     @Override
-    public void initializeRun(final ScheduledManeuver[] maneuvers) {
+    public void initializeRun(final ScheduledManeuver[] maneuvers,
+                              final Propagator propagator) {
         sample.clear();
     }
 

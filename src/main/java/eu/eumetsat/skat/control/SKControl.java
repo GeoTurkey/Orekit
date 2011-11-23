@@ -1,6 +1,7 @@
 /* Copyright 2011 Eumetsat */
 package eu.eumetsat.skat.control;
 
+import org.orekit.propagation.Propagator;
 import org.orekit.propagation.events.EventDetector;
 import org.orekit.propagation.sampling.OrekitStepHandler;
 
@@ -48,9 +49,11 @@ public interface SKControl extends SKElement {
      * of parameters. It can be used to reset some internal state
      * in the control law if needed.
      * </p>
-     * @param maneuvers maeuvers scheduled for this control law
+     * @param maneuvers maneuvers scheduled for this control law
+     * @param propagator propagator for the cycle (it already takes
+     * the maneuvers into account)
      */
-    void initializeRun(ScheduledManeuver[] maneuvers);
+    void initializeRun(ScheduledManeuver[] maneuvers, Propagator propagator);
 
     /** Get the achieved value of the control.
      * <p>

@@ -11,6 +11,7 @@ import org.apache.commons.math.util.MathUtils;
 import org.orekit.bodies.BodyShape;
 import org.orekit.errors.OrekitException;
 import org.orekit.errors.PropagationException;
+import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
 import org.orekit.propagation.events.EventDetector;
 import org.orekit.propagation.sampling.OrekitStepHandler;
@@ -85,7 +86,8 @@ public class CenteredLongitude extends AbstractSKControl {
 
     /** {@inheritDoc} */
     @Override
-    public void initializeRun(final ScheduledManeuver[] maneuvers) {
+    public void initializeRun(final ScheduledManeuver[] maneuvers,
+                              final Propagator propagator) {
         sample.clear();
     }
 

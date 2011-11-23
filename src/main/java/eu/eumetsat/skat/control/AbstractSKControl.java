@@ -1,6 +1,8 @@
 /* Copyright 2011 Eumetsat */
 package eu.eumetsat.skat.control;
 
+import org.orekit.propagation.Propagator;
+
 import eu.eumetsat.skat.strategies.ScheduledManeuver;
 
 
@@ -73,7 +75,7 @@ public abstract class AbstractSKControl implements SKControl {
     }
 
     /** {@inheritDoc} */
-    public void initializeRun(final ScheduledManeuver[] maneuvers) {
+    public void initializeRun(final ScheduledManeuver[] maneuvers, Propagator propagator) {
         // do nothing by default
     }
 

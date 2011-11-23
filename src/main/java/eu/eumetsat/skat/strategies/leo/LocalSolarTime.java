@@ -14,6 +14,7 @@ import org.orekit.bodies.GeodeticPoint;
 import org.orekit.errors.OrekitException;
 import org.orekit.frames.Frame;
 import org.orekit.frames.FramesFactory;
+import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
 import org.orekit.propagation.events.AbstractDetector;
 import org.orekit.propagation.events.EventDetector;
@@ -57,7 +58,8 @@ public class LocalSolarTime extends AbstractSKControl {
 
     /** {@inheritDoc} */
     @Override
-    public void initializeRun(final ScheduledManeuver[] maneuvers) {
+    public void initializeRun(final ScheduledManeuver[] maneuvers,
+                              final Propagator propagator) {
         sample.clear();
     }
 

@@ -8,6 +8,7 @@ import org.apache.commons.math.stat.descriptive.rank.Median;
 import org.apache.commons.math.util.FastMath;
 import org.orekit.errors.OrekitException;
 import org.orekit.errors.PropagationException;
+import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
 import org.orekit.propagation.events.EventDetector;
 import org.orekit.propagation.sampling.OrekitStepHandler;
@@ -89,7 +90,8 @@ public class InclinationVector extends AbstractSKControl {
 
     /** {@inheritDoc} */
     @Override
-    public void initializeRun(final ScheduledManeuver[] maneuvers) {
+    public void initializeRun(final ScheduledManeuver[] maneuvers,
+                              final Propagator propagator) {
         sampleX.clear();
         sampleY.clear();
         limitCircleEscaped = false;
