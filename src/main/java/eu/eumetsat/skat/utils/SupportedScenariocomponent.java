@@ -203,8 +203,10 @@ public enum SupportedScenariocomponent {
                     parser.getBoolean(node, ParameterKey.COMPONENT_MISSED_MANEUVER_OUT_OF_PLANE);
             final double missThreshold =
                     parser.getDouble(node, ParameterKey.COMPONENT_MISSED_MANEUVER_THRESHOLD);
+            final double reschedulingDelay =
+                    parser.getDouble(node, ParameterKey.COMPONENT_MISSED_MANEUVER_RESCHEDULING_DELAY);
             return new MissedManeuver(getIndices(parser, node, skat), inPlane, outOfPlane,
-                                      missThreshold, skat.getGenerator());
+                                      missThreshold, reschedulingDelay, skat.getGenerator());
         }
     },
 
