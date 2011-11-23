@@ -87,14 +87,14 @@ scenario         = [
         };
         controls    = [
             {
-                scale               = 100.0;
+                scaling_divisor     = 500.0;
                 type                = MINIMIZED_MANEUVERS;
                 name                = "minimized N/S deltaV";
                 in_plane            = false;
                 out_of_plane        = true;
             },
             {
-                scale               = 1.0e-4;
+                scaling_divisor     = 1.0e-4;
                 type                = INCLINATION_VECTOR;
                 name                = "inclination vector";
                 target_x            = 9.0e-4;
@@ -146,21 +146,21 @@ scenario         = [
         };
         controls    = [
             {
-                scale               = 10.0;
+                scaling_divisor     = 50.0;
                 type                = MINIMIZED_MANEUVERS;
                 name                = "minimized E/W deltaV";
                 in_plane            = true;
                 out_of_plane        = false;
             },
             {
-                scale            = 0.1;
+                scaling_divisor  = 0.1;
                 type             = CENTERED_LONGITUDE;
                 name             = "centered longitude";
                 center_longitude =  -57.0;
                 sampling         = 7200.0;
             },
             {
-                scale            = 1.0e-4;
+                scaling_divisor  = 1.0e-4;
                 type             = ECCENTRICITY_CIRCLE;
                 name             = "eccentricity circle";
                 center_x         = -1.5e-4;

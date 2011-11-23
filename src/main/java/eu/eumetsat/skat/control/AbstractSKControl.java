@@ -12,8 +12,8 @@ public abstract class AbstractSKControl implements SKControl {
     /** Name of the control law. */
     private final String name;
 
-    /** Scale of the control law. */
-    private final double scale;
+    /** Divisor for scaling the control law. */
+    private final double scalingDivisor;
 
     /** Name of the controlled spacecraft. */
     private final String controlled;
@@ -32,24 +32,24 @@ public abstract class AbstractSKControl implements SKControl {
 
     /** Simple constructor.
      * @param name name of the control law
-     * @param scale of the control law
+     * @param scalingDivisor divisor to use for scaling the control law
      * @param controlled name of the controlled spacecraft
      * @param reference name of the reference spacecraft
      * @param target control target used to compute residuals
      * @param min minimal value for the residual
      * @param max maximal value for the residual
      */
-    protected AbstractSKControl(final String name, final double scale,
+    protected AbstractSKControl(final String name, final double scalingDivisor,
                                 final String controlled, final String reference,
                                 final double target,
                                 final double min, final double max) {
-        this.name       = name;
-        this.scale      = scale;
-        this.controlled = controlled;
-        this.reference  = reference;
-        this.target     = target;
-        this.min        = min;
-        this.max        = max;
+        this.name           = name;
+        this.scalingDivisor = scalingDivisor;
+        this.controlled     = controlled;
+        this.reference      = reference;
+        this.target         = target;
+        this.min            = min;
+        this.max            = max;
     }
 
     /** {@inheritDoc} */
@@ -58,8 +58,8 @@ public abstract class AbstractSKControl implements SKControl {
     }
 
     /** {@inheritDoc} */
-    public double getScale() {
-        return scale;
+    public double getScalingDivisor() {
+        return scalingDivisor;
     }
 
     /** {@inheritDoc} */

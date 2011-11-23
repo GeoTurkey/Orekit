@@ -27,7 +27,7 @@ public class RelativeInclinationControl extends AbstractSKControl {
 
     /** Simple constructor.
      * @param name name of the control law
-     * @param scale of the control law
+     * @param scalingDivisor divisor to use for scaling the control law
      * @param controlled name of the controlled spacecraft
      * @param reference name of the reference spacecraft
      * @param deltaHx desired difference in hx
@@ -35,11 +35,11 @@ public class RelativeInclinationControl extends AbstractSKControl {
      * @param radius radius of the circle
      * @param samplingStep step to use for sampling throughout propagation
      */
-    public RelativeInclinationControl(final String name, final double scale,
+    public RelativeInclinationControl(final String name, final double scalingDivisor,
                                       final String controlled, final String reference,
                                       final double deltaHx, final double deltaHy,
                                       final double samplingStep) {
-        super(name, scale, controlled, reference, 0.0, 0.0, Double.POSITIVE_INFINITY);
+        super(name, scalingDivisor, controlled, reference, 0.0, 0.0, Double.POSITIVE_INFINITY);
         this.stephandler  = new Handler();
         this.deltaHx      = deltaHx;
         this.deltaHy      = deltaHy;

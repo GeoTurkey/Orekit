@@ -62,17 +62,17 @@ public class EccentricityCircle extends AbstractSKControl {
 
     /** Simple constructor.
      * @param name name of the control law
-     * @param scale of the control law
+     * @param scalingDivisor divisor to use for scaling the control law
      * @param controlled name of the controlled spacecraft
      * @param centerX abscissa of the circle center
      * @param centerY ordinate of the circle center
      * @param radius radius of the circle
      * @param samplingStep step to use for sampling throughout propagation
      */
-    public EccentricityCircle(final String name, final double scale, final String controlled,
+    public EccentricityCircle(final String name, final double scalingDivisor, final String controlled,
                               final double centerX, final double centerY, final double radius,
                               final double samplingStep) {
-        super(name, scale, controlled, null, radius, -1.0, 1.0);
+        super(name, scalingDivisor, controlled, null, radius, -1.0, 1.0);
         this.stephandler  = new Handler();
         this.centerX      = centerX;
         this.centerY      = centerY;

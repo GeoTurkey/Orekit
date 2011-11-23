@@ -35,7 +35,7 @@ public class LocalSolarTime extends AbstractSKControl {
 
     /** Simple constructor.
      * @param name name of the control law
-     * @param scale of the control law
+     * @param scalingDivisor divisor to use for scaling the control law
      * @param controlled name of the controlled spacecraft
      * @param earth Earth model
      * @param sun Sun model
@@ -44,12 +44,12 @@ public class LocalSolarTime extends AbstractSKControl {
      * specified latitude from south to north
      * @param solarTime target solar time
      */
-    public LocalSolarTime(final String name, final double scale,
+    public LocalSolarTime(final String name, final double scalingDivisor,
                           final String controlled,
                           final BodyShape earth, final CelestialBody sun,
                           final double latitude, boolean ascending,
                           final double solarTime) {
-        super(name, scale, controlled, null, solarTime, 0.0, 24.0);
+        super(name, scalingDivisor, controlled, null, solarTime, 0.0, 24.0);
         this.eventDetector =
                 new Detector(600.0, 1.0e-3, earth, sun, latitude, ascending, solarTime);
         this.sample = new ArrayList<Double>();

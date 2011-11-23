@@ -173,7 +173,7 @@ class ObjectiveFunction implements MultivariateRealFunction {
             double sum = 0;
             for (final SKControl s : controls) {
                 final double residual = s.getAchievedValue() - s.getTargetValue();
-                final double scaledResidual = residual / s.getScale();
+                final double scaledResidual = residual / s.getScalingDivisor();
                 sum += scaledResidual * scaledResidual;
             }
 

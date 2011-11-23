@@ -23,19 +23,19 @@ public interface SKControl extends SKElement {
      */
     String getName();
 
-    /** Get the scale of the control.
+    /** Get the divisor for scaling of the control.
      * <p>
-     * The scale of the control is a scalar parameter with the same physical unit
+     * The divisor of the control law is a scalar parameter with the same physical unit
      * as the control itself (radians, meters, seconds ...). It's purpose is to
      * allow mixing controls in a global scalar objective function by computing<br>
      *   J = &sum;(((control<sub>i</sub>.{@link SKControl#getAchievedValue() getAchievedValue()}
      *             - control<sub>i</sub>.{@link SKControl#getTargetValue() getTargetValue()})
-     *             / scale<sub>i</sub>)<sup>2</sup>)<br>
+     *             / scalingDivisor<sub>i</sub>)<sup>2</sup>)<br>
      * the sum being computed across all scaled controls.
      * </p>
-     * @return scale of the control
+     * @return divisor for scaling the control law
      */
-    double getScale();
+    double getScalingDivisor();
 
     /** Get the target value of the control.
      * @return target value of the control

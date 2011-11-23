@@ -34,15 +34,15 @@ public class MinimizedManeuvers extends AbstractSKControl {
 
     /** Simple constructor.
      * @param name name of the control law
-     * @param scale of the control law
+     * @param scalingDivisor divisor to use for scaling the control law
      * @param controlled name of the controlled spacecraft
      * @param inPlane if true, in-plane maneuvers are taken into account
      * @param outOfPlane if true, out-of-plane maneuvers are taken into account
      */
-    public MinimizedManeuvers(final String name, final double scale,
-                             final String controlled,
-                             final boolean inPlane, final boolean outOfPlane) {
-        super(name, scale, controlled, null, 0.0, 0.0, Double.POSITIVE_INFINITY);
+    public MinimizedManeuvers(final String name, final double scalingDivisor,
+                              final String controlled,
+                              final boolean inPlane, final boolean outOfPlane) {
+        super(name, scalingDivisor, controlled, null, 0.0, 0.0, Double.POSITIVE_INFINITY);
         this.inPlane    = inPlane;
         this.outOfPlane = outOfPlane;
     }

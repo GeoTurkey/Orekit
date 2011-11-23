@@ -84,7 +84,7 @@ public enum ParameterKey {
     COMPONENT_CONTROL_LOOP_CONTROLS("controls"),
     COMPONENT_CONTROL_LOOP_MANEUVERS("maneuvers"),
 
-    CONTROL_SCALE("scale"),
+    CONTROL_SCALING_DIVISOR("scaling_divisor"),
     CONTROL_TYPE("type"),
     CONTROL_NAME("name"),
     CONTROL_SAMPLING("sampling"),

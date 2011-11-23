@@ -23,11 +23,11 @@ public enum SupportedControlLaw {
         public SKControl parse(final SkatFileParser parser, final Tree node,
                                final String controlled, final Skat skat)
             throws OrekitException, SkatException {
-            final String name         = parser.getString(node, ParameterKey.CONTROL_NAME);
-            final double scale        = parser.getAngle(node,  ParameterKey.CONTROL_SCALE);
-            final boolean inPlane     = parser.getBoolean(node, ParameterKey.CONTROL_MINIMIZED_MANEUVERS_IN_PLANE);
-            final boolean outOfPlane  = parser.getBoolean(node, ParameterKey.CONTROL_MINIMIZED_MANEUVERS_OUT_OF_PLANE);
-            return new MinimizedManeuvers(name, scale, controlled, inPlane, outOfPlane);
+            final String name           = parser.getString(node, ParameterKey.CONTROL_NAME);
+            final double scalingDivisor = parser.getAngle(node,  ParameterKey.CONTROL_SCALING_DIVISOR);
+            final boolean inPlane       = parser.getBoolean(node, ParameterKey.CONTROL_MINIMIZED_MANEUVERS_IN_PLANE);
+            final boolean outOfPlane    = parser.getBoolean(node, ParameterKey.CONTROL_MINIMIZED_MANEUVERS_OUT_OF_PLANE);
+            return new MinimizedManeuvers(name, scalingDivisor, controlled, inPlane, outOfPlane);
         }
 
     },
@@ -39,11 +39,11 @@ public enum SupportedControlLaw {
         public SKControl parse(final SkatFileParser parser, final Tree node,
                                final String controlled, final Skat skat)
             throws OrekitException, SkatException {
-            final String name         = parser.getString(node, ParameterKey.CONTROL_NAME);
-            final double scale        = parser.getAngle(node,  ParameterKey.CONTROL_SCALE);
-            final double sampling     = parser.getDouble(node, ParameterKey.CONTROL_SAMPLING);
-            final double center       = parser.getAngle(node,  ParameterKey.CONTROL_CENTERED_LONGITUDE_CENTER);
-            return new CenteredLongitude(name, scale, controlled, center, sampling, skat.getEarth());
+            final String name           = parser.getString(node, ParameterKey.CONTROL_NAME);
+            final double scalingDivisor = parser.getAngle(node,  ParameterKey.CONTROL_SCALING_DIVISOR);
+            final double sampling       = parser.getDouble(node, ParameterKey.CONTROL_SAMPLING);
+            final double center         = parser.getAngle(node,  ParameterKey.CONTROL_CENTERED_LONGITUDE_CENTER);
+            return new CenteredLongitude(name, scalingDivisor, controlled, center, sampling, skat.getEarth());
         }
 
     },
@@ -55,13 +55,13 @@ public enum SupportedControlLaw {
         public SKControl parse(final SkatFileParser parser, final Tree node,
                                final String controlled, final Skat skat)
             throws OrekitException, SkatException {
-            final String name         = parser.getString(node, ParameterKey.CONTROL_NAME);
-            final double sampling     = parser.getDouble(node, ParameterKey.CONTROL_SAMPLING);
-            final double scale        = parser.getDouble(node, ParameterKey.CONTROL_SCALE);
-            final double centerX      = parser.getDouble(node, ParameterKey.CONTROL_ECCENTRICITY_CIRCLE_CENTER_X);
-            final double centerY      = parser.getDouble(node, ParameterKey.CONTROL_ECCENTRICITY_CIRCLE_CENTER_Y);
-            final double radius       = parser.getDouble(node, ParameterKey.CONTROL_ECCENTRICITY_CIRCLE_RADIUS);
-            return new EccentricityCircle(name, scale, controlled, centerX, centerY, radius, sampling);
+            final String name           = parser.getString(node, ParameterKey.CONTROL_NAME);
+            final double sampling       = parser.getDouble(node, ParameterKey.CONTROL_SAMPLING);
+            final double scalingDivisor = parser.getDouble(node, ParameterKey.CONTROL_SCALING_DIVISOR);
+            final double centerX        = parser.getDouble(node, ParameterKey.CONTROL_ECCENTRICITY_CIRCLE_CENTER_X);
+            final double centerY        = parser.getDouble(node, ParameterKey.CONTROL_ECCENTRICITY_CIRCLE_CENTER_Y);
+            final double radius         = parser.getDouble(node, ParameterKey.CONTROL_ECCENTRICITY_CIRCLE_RADIUS);
+            return new EccentricityCircle(name, scalingDivisor, controlled, centerX, centerY, radius, sampling);
         }
 
     },
@@ -73,13 +73,13 @@ public enum SupportedControlLaw {
         public SKControl parse(final SkatFileParser parser, final Tree node,
                                final String controlled, final Skat skat)
             throws OrekitException, SkatException {
-            final String name         = parser.getString(node, ParameterKey.CONTROL_NAME);
-            final double sampling     = parser.getDouble(node, ParameterKey.CONTROL_SAMPLING);
-            final double scale        = parser.getDouble(node, ParameterKey.CONTROL_SCALE);
-            final double targetHx     = parser.getDouble(node, ParameterKey.CONTROL_INCLINATION_VECTOR_TARGET_X);
-            final double targetHy     = parser.getDouble(node, ParameterKey.CONTROL_INCLINATION_VECTOR_TARGET_Y);
-            final double circleRadius = parser.getDouble(node, ParameterKey.CONTROL_INCLINATION_LIMIT_CIRCLE_RADIUS);
-            return new InclinationVector(name, scale, controlled, targetHx, targetHy, circleRadius, sampling);
+            final String name           = parser.getString(node, ParameterKey.CONTROL_NAME);
+            final double sampling       = parser.getDouble(node, ParameterKey.CONTROL_SAMPLING);
+            final double scalingDivisor = parser.getDouble(node, ParameterKey.CONTROL_SCALING_DIVISOR);
+            final double targetHx       = parser.getDouble(node, ParameterKey.CONTROL_INCLINATION_VECTOR_TARGET_X);
+            final double targetHy       = parser.getDouble(node, ParameterKey.CONTROL_INCLINATION_VECTOR_TARGET_Y);
+            final double circleRadius   = parser.getDouble(node, ParameterKey.CONTROL_INCLINATION_LIMIT_CIRCLE_RADIUS);
+            return new InclinationVector(name, scalingDivisor, controlled, targetHx, targetHy, circleRadius, sampling);
         }
 
     },
@@ -130,12 +130,12 @@ public enum SupportedControlLaw {
         public SKControl parse(final SkatFileParser parser, final Tree node,
                                final String controlled, final Skat skat)
             throws OrekitException, SkatException {
-            final String name         = parser.getString(node, ParameterKey.CONTROL_NAME);
-            final double scale        = parser.getDouble(node, ParameterKey.CONTROL_SCALE);
-            final double latitude     = parser.getDouble(node, ParameterKey.CONTROL_SOLAR_TIME_LATITUDE);
-            final boolean ascending   = parser.getBoolean(node, ParameterKey.CONTROL_SOLAR_TIME_ASCENDING);
-            final double solarTime    = parser.getDouble(node, ParameterKey.CONTROL_SOLAR_TIME_SOLAR_TIME);
-            return new LocalSolarTime(name, scale, controlled, skat.getEarth(), skat.getSun(),
+            final String name           = parser.getString(node, ParameterKey.CONTROL_NAME);
+            final double scalingDivisor = parser.getDouble(node, ParameterKey.CONTROL_SCALING_DIVISOR);
+            final double latitude       = parser.getDouble(node, ParameterKey.CONTROL_SOLAR_TIME_LATITUDE);
+            final boolean ascending     = parser.getBoolean(node, ParameterKey.CONTROL_SOLAR_TIME_ASCENDING);
+            final double solarTime      = parser.getDouble(node, ParameterKey.CONTROL_SOLAR_TIME_SOLAR_TIME);
+            return new LocalSolarTime(name, scalingDivisor, controlled, skat.getEarth(), skat.getSun(),
                                       latitude, ascending, solarTime);
         }
 

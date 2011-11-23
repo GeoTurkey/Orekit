@@ -66,18 +66,18 @@ public class InclinationVector extends AbstractSKControl {
 
     /** Simple constructor.
      * @param name name of the control law
-     * @param scale of the control law
+     * @param scalingDivisor divisor to use for scaling the control law
      * @param controlled name of the controlled spacecraft
      * @param targetHx abscissa of target inclination vector
      * @param targetHy ordinate of target inclination vector
      * @param circleRadius limit circle radius
      * @param samplingStep step to use for sampling throughout propagation
      */
-    public InclinationVector(final String name, final double scale,
+    public InclinationVector(final String name, final double scalingDivisor,
                              final String controlled,
                              final double targetHx, final double targetHy,
                              final double circleRadius, final double samplingStep) {
-        super(name, scale, controlled, null, 0.0, 0.0, Double.POSITIVE_INFINITY);
+        super(name, scalingDivisor, controlled, null, 0.0, 0.0, Double.POSITIVE_INFINITY);
         this.stephandler  = new Handler();
         this.targetHx     = targetHx;
         this.targetHy     = targetHy;

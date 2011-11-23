@@ -65,17 +65,17 @@ public class CenteredLongitude extends AbstractSKControl {
 
     /** Simple constructor.
      * @param name name of the control law
-     * @param scale of the control law
+     * @param scalingDivisor divisor to use for scaling the control law
      * @param controlled name of the controlled spacecraft
      * @param center longitude slot center
      * @param samplingStep step to use for sampling throughout propagation
      * @param earth Earth model to use to compute longitudes
      */
-    public CenteredLongitude(final String name, final double scale,
-                                final String controlled,
-                                final double center, final double samplingStep,
-                                final BodyShape earth) {
-        super(name, scale, controlled, null, 0, -FastMath.PI, FastMath.PI);
+    public CenteredLongitude(final String name, final double scalingDivisor,
+                             final String controlled,
+                             final double center, final double samplingStep,
+                             final BodyShape earth) {
+        super(name, scalingDivisor, controlled, null, 0, -FastMath.PI, FastMath.PI);
         this.stephandler  = new Handler();
         this.samplingStep = samplingStep;
         this.earth        = earth;
