@@ -61,7 +61,8 @@ public enum SupportedControlLaw {
             final double scale        = parser.getDouble(node, ParameterKey.CONTROL_SCALE);
             final double targetHx     = parser.getDouble(node, ParameterKey.CONTROL_INCLINATION_VECTOR_TARGET_X);
             final double targetHy     = parser.getDouble(node, ParameterKey.CONTROL_INCLINATION_VECTOR_TARGET_Y);
-            return new InclinationVector(name, scale, controlled, targetHx, targetHy, sampling);
+            final double circleRadius = parser.getDouble(node, ParameterKey.CONTROL_INCLINATION_LIMIT_CIRCLE_RADIUS);
+            return new InclinationVector(name, scale, controlled, targetHx, targetHy, circleRadius, sampling);
         }
 
     },

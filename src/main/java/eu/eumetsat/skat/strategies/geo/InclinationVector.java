@@ -48,6 +48,12 @@ public class InclinationVector extends AbstractSKControl {
     /** Ordinate of target inclination vector. */
     private final double targetHy;
 
+    /** Limit circle radius. */
+    private final double circleRadius;
+
+    /** Limit circle violation indicator. */
+    private boolean limitCircleEscaped;
+
     /** Sample of inclination x component during station keeping cycle. */
     private List<Double> sampleX;
 
@@ -63,16 +69,18 @@ public class InclinationVector extends AbstractSKControl {
      * @param controlled name of the controlled spacecraft
      * @param targetHx abscissa of target inclination vector
      * @param targetHy ordinate of target inclination vector
+     * @param circleRadius limit circle radius
      * @param samplingStep step to use for sampling throughout propagation
      */
     public InclinationVector(final String name, final double scale,
                              final String controlled,
                              final double targetHx, final double targetHy,
-                             final double samplingStep) {
+                             final double circleRadius, final double samplingStep) {
         super(name, scale, controlled, null, 0.0, 0.0, Double.POSITIVE_INFINITY);
         this.stephandler  = new Handler();
         this.targetHx     = targetHx;
         this.targetHy     = targetHy;
+        this.circleRadius = circleRadius;
         this.samplingStep = samplingStep;
         this.sampleX      = new ArrayList<Double>();
         this.sampleY      = new ArrayList<Double>();
@@ -83,27 +91,36 @@ public class InclinationVector extends AbstractSKControl {
     public void initializeRun() {
         sampleX.clear();
         sampleY.clear();
+        limitCircleEscaped = false;
     }
 
     /** {@inheritDoc} */
     public double getAchievedValue() {
 
-        // compute center of the motion along the x axis
-        final double[] dataX = new double[sampleX.size()];
-        for (int i = 0; i < dataX.length; ++i) {
-            dataX[i] = sampleX.get(i);
-        }
-        final double medianX = new Median().evaluate(dataX);
+        if (limitCircleEscaped) {
+            // we escape the limite circle during the cycle, we need to adjust the maneuvers
 
-        // compute center of the motion along the y axis
-        final double[] dataY = new double[sampleY.size()];
-        for (int i = 0; i < dataY.length; ++i) {
-            dataY[i] = sampleY.get(i);
-        }
-        final double medianY = new Median().evaluate(dataY);
+            // compute center of the motion along the x axis
+            final double[] dataX = new double[sampleX.size()];
+            for (int i = 0; i < dataX.length; ++i) {
+                dataX[i] = sampleX.get(i);
+            }
+            final double medianX = new Median().evaluate(dataX);
 
-        // compute objective function value
-        return FastMath.hypot(medianX - targetHx, medianY - targetHy);
+            // compute center of the motion along the y axis
+            final double[] dataY = new double[sampleY.size()];
+            for (int i = 0; i < dataY.length; ++i) {
+                dataY[i] = sampleY.get(i);
+            }
+            final double medianY = new Median().evaluate(dataY);
+
+            // compute objective function value
+            return FastMath.hypot(medianX - targetHx, medianY - targetHy);
+
+        } else {
+            // we stay within the circle, don't bother changing the maneuvers
+            return 0;
+        }
 
     }
 
@@ -149,6 +166,11 @@ public class InclinationVector extends AbstractSKControl {
                     // add inclination vector to sample
                     sampleX.add(state.getHx());
                     sampleY.add(state.getHy());
+
+                    // check limit circle violations
+                    if (FastMath.hypot(state.getHx() - targetHx, state.getHy() - targetHy) > circleRadius) {
+                        limitCircleEscaped = true;
+                    }
 
                 }
 
