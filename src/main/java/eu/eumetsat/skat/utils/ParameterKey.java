@@ -88,6 +88,8 @@ public enum ParameterKey {
     CONTROL_TYPE("type"),
     CONTROL_NAME("name"),
     CONTROL_SAMPLING("sampling"),
+    CONTROL_MINIMIZED_MANEUVERS_IN_PLANE("in_plane"),
+    CONTROL_MINIMIZED_MANEUVERS_OUT_OF_PLANE("out_of_plane"),
     CONTROL_CENTERED_LONGITUDE_CENTER("center_longitude"),
     CONTROL_ECCENTRICITY_CIRCLE_CENTER_X("center_x"),
     CONTROL_ECCENTRICITY_CIRCLE_CENTER_Y("center_y"),

@@ -87,6 +87,13 @@ scenario         = [
         };
         controls    = [
             {
+                scale               = 100.0;
+                type                = MINIMIZED_MANEUVERS;
+                name                = "minimized deltaV";
+                in_plane            = false;
+                out_of_plane        = true;
+            },
+            {
                 scale               = 1.0e-4;
                 type                = INCLINATION_VECTOR;
                 name                = "inclination vector";
@@ -138,6 +145,13 @@ scenario         = [
             third_bodies           = [ SUN, MOON ];
         };
         controls    = [
+            {
+                scale               = 10.0;
+                type                = MINIMIZED_MANEUVERS;
+                name                = "minimized deltaV";
+                in_plane            = true;
+                out_of_plane        = false;
+            },
             {
                 scale            = 0.1;
                 type             = CENTERED_LONGITUDE;
