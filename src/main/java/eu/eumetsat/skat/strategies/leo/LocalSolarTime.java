@@ -132,7 +132,7 @@ public class LocalSolarTime extends AbstractSKControl {
         public Action eventOccurred(final SpacecraftState s, final boolean increasing)
             throws OrekitException {
 
-            if (!(increasing ^ ascending)) {
+            if (increasing == ascending) {
                 // we crossed the specified latitude in the expected direction
 
                 // compute angle between Sun and spacecraft in the equatorial plane
