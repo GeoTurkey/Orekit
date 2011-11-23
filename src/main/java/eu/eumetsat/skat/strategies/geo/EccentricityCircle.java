@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.apache.commons.math.stat.descriptive.rank.Median;
 import org.apache.commons.math.util.FastMath;
+import org.orekit.bodies.CelestialBody;
 import org.orekit.errors.OrekitException;
 import org.orekit.errors.PropagationException;
 import org.orekit.orbits.EquinoctialOrbit;
@@ -20,22 +21,24 @@ import eu.eumetsat.skat.control.AbstractSKControl;
 import eu.eumetsat.skat.strategies.ScheduledManeuver;
 
 /**
- * Station-keeping control attempting to follow a specified eccentricity circle.
+ * Station-keeping control attempting to follow perigee solar pointing
+ * with respect to a specified eccentricity circle.
  * <p>
  * This control value is:
  * <pre>
  *   median(&delta;(t))
  * </pre>
- * where &delta;(t) = &radic; [(e<sub>x</sub> - c<sub>x</sub>)<sup>2</sup> +
- * (e<sub>y</sub> - c<sub>y</sub>)<sup>2</sup>] is the distance between the
- * current eccentricity vector (e<sub>x</sub>, e<sub>y</sub>) and a reference
- * point at (c<sub>x</sub>, c<sub>y</sub>).
+ * where &delta;(t) = &radic; [(e<sub>x</sub> - p<sub>x</sub>)<sup>2</sup> +
+ * (e<sub>y</sub> - p<sub>y</sub>)<sup>2</sup>] is the distance between the
+ * current eccentricity vector (e<sub>x</sub>, e<sub>y</sub>) and a solar
+ * pointing eccentricity vector for eccentricity circle centered at
+ * (c<sub>x</sub>, c<sub>y</sub>) and radius r.
  * </p>
  * <p>
  * The previous definition implies that setting the target of this control
- * to r attempts to have the eccentricity vector motion as close as
- * possible to the circle centered at (c<sub>x</sub>, c<sub>y</sub>) and with
- * radius r.
+ * to 0 attempts to have the eccentricity vector motion as close as
+ * possible to the perfect solar pointing (p<sub>x</sub>, p<sub>y</sub>)
+ * for the spacified circle.
  * </p>
  * <p>
  * Using a median instead of a mean improves robustness with respect to
@@ -54,6 +57,12 @@ public class EccentricityCircle extends AbstractSKControl {
     /** Ordinate of the circle center. */
     private final double centerY;
 
+    /** Circle radius. */
+    private final double radius;
+
+    /** Sun model. */
+    private CelestialBody sun;
+
     /** Sample of eccentricity offset during station keeping cycle. */
     private List<Double> sample;
 
@@ -67,15 +76,18 @@ public class EccentricityCircle extends AbstractSKControl {
      * @param centerX abscissa of the circle center
      * @param centerY ordinate of the circle center
      * @param radius radius of the circle
+     * @param sun Sun model
      * @param samplingStep step to use for sampling throughout propagation
      */
     public EccentricityCircle(final String name, final double scalingDivisor, final String controlled,
                               final double centerX, final double centerY, final double radius,
-                              final double samplingStep) {
-        super(name, scalingDivisor, controlled, null, radius, -1.0, 1.0);
+                              final CelestialBody sun, final double samplingStep) {
+        super(name, scalingDivisor, controlled, null, 0.0, -1.0, 1.0);
         this.stephandler  = new Handler();
         this.centerX      = centerX;
         this.centerY      = centerY;
+        this.radius       = radius;
+        this.sun          = sun;
         this.samplingStep = samplingStep;
         this.sample       = new ArrayList<Double>();
     }
@@ -130,15 +142,19 @@ public class EccentricityCircle extends AbstractSKControl {
                 // loop throughout step
                 for (AbsoluteDate date = minDate; date.compareTo(maxDate) < 0; date = date.shiftedBy(samplingStep)) {
 
-                    // compute distance to circle center
+                    // compute current eccentricity
                     interpolator.setInterpolatedDate(date);
                     final SpacecraftState state  = interpolator.getInterpolatedState();
                     final EquinoctialOrbit orbit = (EquinoctialOrbit) OrbitType.EQUINOCTIAL.convertType(state.getOrbit());
-                    final double delta           = FastMath.hypot(orbit.getEquinoctialEx() - centerX,
-                                                                  orbit.getEquinoctialEy() - centerY);
+
+                    // compute perfect solar pointing
+                    final double alphaSun = sun.getPVCoordinates(date, state.getFrame()).getPosition().getAlpha();
+                    final double pX       = centerX + radius * FastMath.cos(alphaSun);
+                    final double pY       = centerY + radius * FastMath.sin(alphaSun);
 
                     // add eccentricity offset to sample
-                    sample.add(delta);
+                    sample.add(FastMath.hypot(orbit.getEquinoctialEx() - pX,
+                                              orbit.getEquinoctialEy() - pY));
 
                 }
 
