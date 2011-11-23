@@ -1,8 +1,10 @@
 /* Copyright 2011 Eumetsat */
 package eu.eumetsat.skat.strategies;
 
+import org.orekit.propagation.Propagator;
 import org.orekit.propagation.events.EventDetector;
 import org.orekit.propagation.sampling.OrekitStepHandler;
+import org.orekit.time.AbsoluteDate;
 
 import eu.eumetsat.skat.control.AbstractSKControl;
 
@@ -49,7 +51,9 @@ public class MinimizedManeuvers extends AbstractSKControl {
 
     /** {@inheritDoc} */
     @Override
-    public void initializeRun(final ScheduledManeuver[] maneuvers) {
+    public void initializeRun(final ScheduledManeuver[] maneuvers,
+                              final Propagator propagator,
+                              final AbsoluteDate start, final AbsoluteDate end) {
         sumDeltaV = 0;
         for (final ScheduledManeuver maneuver : maneuvers) {
             if ((inPlane && maneuver.isInPlane()) || (outOfPlane && !(maneuver.isInPlane()))) {

@@ -100,6 +100,11 @@ public enum ParameterKey {
     CONTROL_SOLAR_TIME_LATITUDE("latitude"),
     CONTROL_SOLAR_TIME_ASCENDING("ascending"),
     CONTROL_SOLAR_TIME_SOLAR_TIME("solar_time"),
+    CONTROL_GROUND_TRACK_LATITUDE("latitude"),
+    CONTROL_GROUND_TRACK_LONGITUDE("longitude"),
+    CONTROL_GROUND_TRACK_ASCENDING("ascending"),
+    CONTROL_GROUND_TRACK_ORBITS_PER_CYCLE("orbits_per_cycle"),
+    CONTROL_GROUND_TRACK_DAYS_PER_CYCLE("days_per_cycle"),
 
     MANEUVERS_IN_PLANE("in_plane"),
     MANEUVERS_RELATIVE_TO_PREVIOUS("relative_to_previous"),

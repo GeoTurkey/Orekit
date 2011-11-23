@@ -1,9 +1,11 @@
 /* Copyright 2011 Eumetsat */
 package eu.eumetsat.skat.control;
 
+import org.orekit.errors.OrekitException;
 import org.orekit.propagation.Propagator;
 import org.orekit.propagation.events.EventDetector;
 import org.orekit.propagation.sampling.OrekitStepHandler;
+import org.orekit.time.AbsoluteDate;
 
 import eu.eumetsat.skat.strategies.ScheduledManeuver;
 
@@ -51,9 +53,15 @@ public interface SKControl extends SKElement {
      * </p>
      * @param maneuvers maneuvers scheduled for this control law
      * @param propagator propagator for the cycle (it already takes
-     * the maneuvers into account)
+     * the maneuvers into account, as well as the {@link #getEventDetector()
+     * event detector} and {@link #getStepHandler() step handler} if any)
+     * @param start start date of the propagation
+     * @param end end date of the propagation
+     * @exception OrekitException if something weird occurs with the propagator
      */
-    void initializeRun(ScheduledManeuver[] maneuvers, Propagator propagator);
+    void initializeRun(ScheduledManeuver[] maneuvers, Propagator propagator,
+                       AbsoluteDate start, AbsoluteDate end)
+        throws OrekitException;
 
     /** Get the achieved value of the control.
      * <p>

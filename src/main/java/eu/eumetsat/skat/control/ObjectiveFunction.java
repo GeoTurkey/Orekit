@@ -163,7 +163,7 @@ class ObjectiveFunction implements MultivariateRealFunction {
 
             // prepare run
             for (final SKControl control : controls) {
-                control.initializeRun(maneuvers, propagator);
+                control.initializeRun(maneuvers, propagator, null, null);
             }
 
             // perform propagation

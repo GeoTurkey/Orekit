@@ -52,7 +52,8 @@ public enum SkatMessages implements Localizable {
     NO_END_STATE("no end state available for {0} at cycle {1}, maybe a propagation component is missing"),
     WRONG_MISS_THRESHOLD("invalid maneuver miss threshold: {0}, must be between 0.0 and 1.0"),
     WRONG_COUPLING("invalid coupling ratio: {0}, must be between -1.0 and 1.0"),
-    ALIGNED_COUPLING_AXES("coupling axis ({0}, {1}, {2}) is aligned with the nominal thrust direction");
+    ALIGNED_COUPLING_AXES("coupling axis ({0}, {1}, {2}) is aligned with the nominal thrust direction"),
+    PHASING_NUMBERS_NOT_MUTUALLY_PRIMES("number of orbits per cycle ({0}) and days per cycle ({1}) are not mutually primes");
 
     // CHECKSTYLE: resume JavadocVariable check
 

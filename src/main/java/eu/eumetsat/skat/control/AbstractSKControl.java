@@ -1,7 +1,9 @@
 /* Copyright 2011 Eumetsat */
 package eu.eumetsat.skat.control;
 
+import org.orekit.errors.OrekitException;
 import org.orekit.propagation.Propagator;
+import org.orekit.time.AbsoluteDate;
 
 import eu.eumetsat.skat.strategies.ScheduledManeuver;
 
@@ -75,7 +77,10 @@ public abstract class AbstractSKControl implements SKControl {
     }
 
     /** {@inheritDoc} */
-    public void initializeRun(final ScheduledManeuver[] maneuvers, Propagator propagator) {
+    public void initializeRun(final ScheduledManeuver[] maneuvers,
+                              final Propagator propagator,
+                              final AbsoluteDate start, final AbsoluteDate end)
+        throws OrekitException {
         // do nothing by default
     }
 

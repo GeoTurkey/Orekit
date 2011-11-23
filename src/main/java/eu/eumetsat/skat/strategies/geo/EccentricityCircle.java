@@ -96,7 +96,7 @@ public class EccentricityCircle extends AbstractSKControl {
     /** {@inheritDoc} */
     @Override
     public void initializeRun(final ScheduledManeuver[] maneuvers,
-                              final Propagator propagator) {
+                              final Propagator propagator, AbsoluteDate start, AbsoluteDate end2) {
         sample.clear();
     }
 

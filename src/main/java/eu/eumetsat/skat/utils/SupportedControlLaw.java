@@ -10,6 +10,7 @@ import eu.eumetsat.skat.strategies.MinimizedManeuvers;
 import eu.eumetsat.skat.strategies.geo.EccentricityCircle;
 import eu.eumetsat.skat.strategies.geo.CenteredLongitude;
 import eu.eumetsat.skat.strategies.geo.InclinationVector;
+import eu.eumetsat.skat.strategies.leo.GroundTrackGrid;
 import eu.eumetsat.skat.strategies.leo.LocalSolarTime;
 
 /** Enumerate for parsing the supported scenario components.
@@ -118,8 +119,15 @@ public enum SupportedControlLaw {
         public SKControl parse(final SkatFileParser parser, final Tree node,
                                final String controlled, final Skat skat)
             throws OrekitException, SkatException {
-            // TODO
-            throw SkatException.createInternalError(null);
+            final String name               = parser.getString(node, ParameterKey.CONTROL_NAME);
+            final double scalingDivisor     = parser.getDouble(node, ParameterKey.CONTROL_SCALING_DIVISOR);
+            final double latitude           = parser.getAngle(node, ParameterKey.CONTROL_GROUND_TRACK_LATITUDE);
+            final double longitude          = parser.getAngle(node, ParameterKey.CONTROL_GROUND_TRACK_LONGITUDE);
+            final boolean ascending         = parser.getBoolean(node, ParameterKey.CONTROL_GROUND_TRACK_ASCENDING);
+            final int orbitsPerPhasingCycle = parser.getInt(node, ParameterKey.CONTROL_GROUND_TRACK_ORBITS_PER_CYCLE);
+            final int daysPerPhasingCycle   = parser.getInt(node, ParameterKey.CONTROL_GROUND_TRACK_DAYS_PER_CYCLE);
+            return new GroundTrackGrid(name, scalingDivisor, controlled, skat.getEarth(),
+                                       latitude, longitude, ascending, orbitsPerPhasingCycle, daysPerPhasingCycle);
         }
 
     },

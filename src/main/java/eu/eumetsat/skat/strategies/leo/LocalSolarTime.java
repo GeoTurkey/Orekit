@@ -19,6 +19,7 @@ import org.orekit.propagation.SpacecraftState;
 import org.orekit.propagation.events.AbstractDetector;
 import org.orekit.propagation.events.EventDetector;
 import org.orekit.propagation.sampling.OrekitStepHandler;
+import org.orekit.time.AbsoluteDate;
 
 import eu.eumetsat.skat.control.AbstractSKControl;
 import eu.eumetsat.skat.strategies.ScheduledManeuver;
@@ -59,7 +60,7 @@ public class LocalSolarTime extends AbstractSKControl {
     /** {@inheritDoc} */
     @Override
     public void initializeRun(final ScheduledManeuver[] maneuvers,
-                              final Propagator propagator) {
+                              final Propagator propagator, AbsoluteDate start, AbsoluteDate end2) {
         sample.clear();
     }
 
