@@ -346,11 +346,9 @@ public class Skat {
             } catch (IllegalArgumentException iae) {
                 // this was not a MonitorableMonoSKData, it must be a MonitorableDuoSKData
                 MonitorableDuoSKData monitorable = MonitorableDuoSKData.valueOf(identifier);
-                for (int j = 0; j < configuredStates.length; ++j) {
-                    for (int k = 0; k < configuredStates.length; ++k) {
-                        if (j != k) {
-                            monitorable.register(configuredStates.length, monitorsDuo[j][k]);
-                        }
+                for (int j = 0; j < configuredStates.length - 1; ++j) {
+                    for (int k = j + 1; k < configuredStates.length; ++k) {
+                        monitorable.register(configuredStates.length, monitorsDuo[j][k]);
                     }
                 }
                 monitorablesDuo.add(monitorable);
