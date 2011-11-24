@@ -323,15 +323,13 @@ public class Skat {
         // create monitors for spacecrafts pair
         monitorsDuo  = new MonitorDuo[configuredStates.length][configuredStates.length];
         monitorablesDuo = new ArrayList<MonitorableDuoSKData>();
-        for (int i = 0; i < configuredStates.length; ++i) {
-            for (int j = 0; j < configuredStates.length; ++j) {
-                if (i != j) {
-                    final File duoFile = new File(input.getParentFile(),
-                                                   baseName + "-" + configuredStates[i].getName() +
-                                                   "-" + configuredStates[j].getName() + ".csv");
-                    monitorsDuo[i][j] = new CsvFileMonitor(i, j, new FileOutputStream(duoFile),
-                                                           headerMarker, separator, format, startDate, dateTolerance);
-                }
+        for (int i = 0; i < configuredStates.length - 1; ++i) {
+            for (int j = i + 1; j < configuredStates.length; ++j) {
+                final File duoFile = new File(input.getParentFile(),
+                                              baseName + "-" + configuredStates[i].getName() +
+                                              "-" + configuredStates[j].getName() + ".csv");
+                monitorsDuo[i][j] = new CsvFileMonitor(i, j, new FileOutputStream(duoFile),
+                                                       headerMarker, separator, format, startDate, dateTolerance);
             }
         }
 
