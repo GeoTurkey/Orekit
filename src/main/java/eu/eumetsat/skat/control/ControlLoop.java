@@ -63,6 +63,12 @@ public class ControlLoop implements ScenarioComponent {
     /** Number of cycles to use for rolling optimization. */
     private final int rollingCycles;
 
+    /** Threshold for eliminating to small in-plane maneuvers. */
+    private final double inPlaneEliminationThreshold;
+
+    /** Threshold for eliminating to small out_of-plane maneuvers. */
+    private final double outOfPlaneEliminationThreshold;
+
     /** First cycle this loop should control. */
     private final int firstCycle;
 
@@ -96,21 +102,26 @@ public class ControlLoop implements ScenarioComponent {
      * @param propagator orbit propagator
      * @param cycleDuration Cycle duration
      * @param rollingCycles number of cycles to use for rolling optimization
+     * @param inPlaneEliminationThreshold threshold for eliminating to small in-plane maneuvers
+     * @param outOfPlaneEliminationThreshold threshold for eliminating to small out_of-plane maneuvers
      */
     public ControlLoop(final int spacecraftIndex, final int firstCycle, final int lastCycle,
                        final TunableManeuver[] tunables, final int maxEval,
                        final BaseMultivariateRealOptimizer<MultivariateRealFunction> optimizer,
-                       final Propagator propagator, final double cycleDuration, final int rollingCycles) {
-        this.spacecraftIndex = spacecraftIndex;
-        this.firstCycle      = firstCycle;
-        this.lastCycle       = lastCycle;
-        this.maxEval         = maxEval;
-        this.optimizer       = optimizer;
-        this.propagator      = propagator;
-        this.tunables        = tunables.clone();
-        this.controls        = new ArrayList<SKControl>();
-        this.cycleDuration   = cycleDuration;
-        this.rollingCycles   = rollingCycles;
+                       final Propagator propagator, final double cycleDuration, final int rollingCycles,
+                       final double inPlaneEliminationThreshold, final double outOfPlaneEliminationThreshold) {
+        this.spacecraftIndex                = spacecraftIndex;
+        this.firstCycle                     = firstCycle;
+        this.lastCycle                      = lastCycle;
+        this.maxEval                        = maxEval;
+        this.optimizer                      = optimizer;
+        this.propagator                     = propagator;
+        this.tunables                       = tunables.clone();
+        this.controls                       = new ArrayList<SKControl>();
+        this.cycleDuration                  = cycleDuration;
+        this.rollingCycles                  = rollingCycles;
+        this.inPlaneEliminationThreshold    = inPlaneEliminationThreshold;
+        this.outOfPlaneEliminationThreshold = outOfPlaneEliminationThreshold;
 
         // set the parameters boundaries and start point
         int nbParameters = 0;
@@ -202,7 +213,15 @@ public class ControlLoop implements ScenarioComponent {
             final ScheduledManeuver[] maneuvers = objective.setUpManeuvers(optimum, new ManeuverAdapterPropagator(reference));
             for (int i = 0; i < tunables.length / rollingCycles; ++i) {
                 // extract the optimized maneuver for the next cycle only
-                theoreticalManeuvers.add(maneuvers[i]);
+                if (maneuvers[i].isInPlane()) {
+                    if (maneuvers[i].getDeltaV().getNorm() >= inPlaneEliminationThreshold) {
+                        theoreticalManeuvers.add(maneuvers[i]);
+                    }
+                } else {
+                    if (maneuvers[i].getDeltaV().getNorm() >= outOfPlaneEliminationThreshold) {
+                        theoreticalManeuvers.add(maneuvers[i]);
+                    }
+                }
             }
 
             // build the updated scenario state

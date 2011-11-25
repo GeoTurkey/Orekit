@@ -74,6 +74,8 @@ public enum ParameterKey {
     COMPONENT_CONTROL_LOOP_FIRST_CYCLE("first_cycle"),
     COMPONENT_CONTROL_LOOP_LAST_CYCLE("last_cycle"),
     COMPONENT_CONTROL_LOOP_MAX_EVAL("max_eval"),
+    COMPONENT_CONTROL_LOOP_IN_PLANE_ELIMINATION("in_plane_elimination"),
+    COMPONENT_CONTROL_LOOP_OUT_OF_PLANE_ELIMINATION("out_of_plane_elimination"),
     COMPONENT_CONTROL_LOOP_GLOBAL_STOP_CRITERION("global_stop_criterion"),
     COMPONENT_CONTROL_LOOP_OPTIMIZER("optimizer"),
     OPTIMIZER_METHOD("method"),

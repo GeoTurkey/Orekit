@@ -142,11 +142,16 @@ public enum SupportedScenariocomponent {
                     sp.parse(parser, propagatorNode, skat, spacecraftIndex);
 
 
-            // set up boundaries for tunable parameters
+            // set up control loop
             final int maxEval = parser.getInt(node, ParameterKey.COMPONENT_CONTROL_LOOP_MAX_EVAL);
+            final double inPlaneEliminationThreshold =
+                    parser.getDouble(node, ParameterKey.COMPONENT_CONTROL_LOOP_IN_PLANE_ELIMINATION);
+            final double outOfPlaneEliminationThreshold =
+                    parser.getDouble(node, ParameterKey.COMPONENT_CONTROL_LOOP_OUT_OF_PLANE_ELIMINATION);
             final ControlLoop loop = new ControlLoop(spacecraftIndex, firstCycle, lastCycle,
                                                      maneuvers, maxEval, optimizer, propagator,
-                                                     skat.getCycleDuration(), rollingCycles);
+                                                     skat.getCycleDuration(), rollingCycles,
+                                                     inPlaneEliminationThreshold, outOfPlaneEliminationThreshold);
 
             // control laws
             final Tree controlsNode = parser.getValue(node, ParameterKey.COMPONENT_CONTROL_LOOP_CONTROLS);

@@ -63,13 +63,15 @@ scenario         = [
         ];
     },
     {
-        component             = CONTROL_LOOP;
-        controlled_spacecraft = "Meteosat 7";  # note: control loop components control only ONE spacecraft each
-        first_cycle           = 1;
-        last_cycle            = 999;
-        max_eval              = 1000;
-        global_stop_criterion = 0.001;
-        optimizer             = {
+        component                = CONTROL_LOOP;
+        controlled_spacecraft    = "Meteosat 7";  # note: control loop components control only ONE spacecraft each
+        first_cycle              = 1;
+        last_cycle               = 999;
+        max_eval                 = 1000;
+        global_stop_criterion    = 0.001;
+        in_plane_elimination     = 0.001;
+        out_of_plane_elimination = 0.01;
+        optimizer                = {
             method                     = NELDER_MEAD;
             initial_simplex_size_ratio = 0.01
         };
@@ -122,13 +124,15 @@ scenario         = [
         ];
     },
     {
-        component             = CONTROL_LOOP;
-        controlled_spacecraft = "Meteosat 7";  # note: control loop components control only ONE spacecraft each
-        first_cycle           = 1;
-        last_cycle            = 999;
-        max_eval              = 1000;
-        global_stop_criterion = 0.001;
-        optimizer             = {
+        component                = CONTROL_LOOP;
+        controlled_spacecraft    = "Meteosat 7";  # note: control loop components control only ONE spacecraft each
+        first_cycle              = 1;
+        last_cycle               = 999;
+        max_eval                 = 1000;
+        global_stop_criterion    = 0.001;
+        in_plane_elimination     = 0.001;
+        out_of_plane_elimination = 0.01;
+        optimizer                = {
             method                     = NELDER_MEAD;
             initial_simplex_size_ratio = 0.01
         };
