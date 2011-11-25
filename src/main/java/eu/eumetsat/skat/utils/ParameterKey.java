@@ -146,6 +146,7 @@ public enum ParameterKey {
 
     COMPONENT_PROPAGATION_PROPAGATOR("propagator"),
     COMPONENT_PROPAGATION_METHOD("method"),
+    COMPONENT_PROPAGATION_LONG_BURN_COMPENSATION("long_burn_compensation"),
     NUMERICAL_PROPAGATOR_MIN_STEP("min_step"),
     NUMERICAL_PROPAGATOR_MAX_STEP("max_step"),
     NUMERICAL_PROPAGATOR_TOLERANCE("position_tolerance"),
