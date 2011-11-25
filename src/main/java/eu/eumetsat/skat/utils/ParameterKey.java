@@ -167,7 +167,8 @@ public enum ParameterKey {
     DSST_PROPAGATOR_REFLECTION_COEFFICIENT("reflection_coefficient"),
     DSST_PROPAGATOR_THIRD_BODIES("third_bodies"),
 
-    MONITORING;
+    MONITORING_MONO,
+    MONITORING_DUO;
 
     /** Key to be recognized in input files. */
     private final String key;

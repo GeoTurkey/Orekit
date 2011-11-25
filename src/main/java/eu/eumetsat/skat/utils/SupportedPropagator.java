@@ -95,14 +95,16 @@ public enum SupportedPropagator {
             // third bodies
             final Tree thirdBodiesNode = parser.getValue(node, ParameterKey.NUMERICAL_PROPAGATOR_THIRD_BODIES);
             for (int i = 0; i < parser.getElementsNumber(thirdBodiesNode); ++i) {
-                final String body = parser.getIdentifier(thirdBodiesNode, i);
-                if (body.equals("SUN")) {
+                switch ((ThirdBody) parser.getEnumerate(thirdBodiesNode, i, ThirdBody.class)) {
+                case SUN :
                     numPropagator.addForceModel(new ThirdBodyAttraction(skat.getSun()));
-                } else if (body.equals("MOON")) {
+                    break;
+                case MOON :
                     numPropagator.addForceModel(new ThirdBodyAttraction(skat.getMoon()));
-                } else {
-                    throw new SkatException(SkatMessages.UNSUPPORTED_KEY, body, thirdBodiesNode.getLine(),
-                                            parser.getInputName(), "SUN, MOON");
+                    break;
+                default :
+                    // this should never happen
+                    throw SkatException.createInternalError(null);
                 }
             }
 
@@ -174,14 +176,16 @@ public enum SupportedPropagator {
             // third bodies
             final Tree thirdBodiesNode = parser.getValue(node, ParameterKey.DSST_PROPAGATOR_THIRD_BODIES);
             for (int i = 0; i < parser.getElementsNumber(thirdBodiesNode); ++i) {
-                final String body = parser.getIdentifier(thirdBodiesNode, i);
-                if (body.equals("SUN")) {
+                switch ((ThirdBody) parser.getEnumerate(thirdBodiesNode, i, ThirdBody.class)) {
+                case SUN :
                     dsstPropagator.addForceModel(new DSSTThirdBody(skat.getSun()));
-                } else if (body.equals("MOON")) {
+                    break;
+                case MOON :
                     dsstPropagator.addForceModel(new DSSTThirdBody(skat.getMoon()));
-                } else {
-                    throw new SkatException(SkatMessages.UNSUPPORTED_KEY, body, thirdBodiesNode.getLine(),
-                                            parser.getInputName(), "SUN, MOON");
+                    break;
+                default :
+                    // this should never happen
+                    throw SkatException.createInternalError(null);
                 }
             }
 
@@ -202,5 +206,11 @@ public enum SupportedPropagator {
     public abstract Propagator parse(final SkatFileParser parser, final Tree node,
                                      final Skat skat, final int spacecraftIndex)
         throws OrekitException, SkatException;
+
+    /** Inner enumerate for third bodies. */
+    private static enum ThirdBody {
+        SUN,
+        MOON;
+    }
 
 }

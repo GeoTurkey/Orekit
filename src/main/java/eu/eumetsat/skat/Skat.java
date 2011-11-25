@@ -334,18 +334,23 @@ public class Skat {
         }
 
         // add regular data monitoring
-        final Tree monitoringNode = parser.getValue(root, ParameterKey.MONITORING);
-        for (int i = 0; i < parser.getElementsNumber(monitoringNode); ++i) {
-            final String identifier = parser.getIdentifier(monitoringNode, i);
-            try {
-                MonitorableMonoSKData monitorable = MonitorableMonoSKData.valueOf(identifier);
+        if (parser.containsKey(root, ParameterKey.MONITORING_MONO)) {
+            final Tree monitoringNode = parser.getValue(root, ParameterKey.MONITORING_MONO);
+            for (int i = 0; i < parser.getElementsNumber(monitoringNode); ++i) {
+                MonitorableMonoSKData monitorable =
+                        (MonitorableMonoSKData) parser.getEnumerate(monitoringNode, i, MonitorableMonoSKData.class);
                 for (int j = 0; j < configuredStates.length; ++j) {
                     monitorable.register(configuredStates.length, monitorsMono[j]);
                 }
                 monitorablesMono.add(monitorable);
-            } catch (IllegalArgumentException iae) {
-                // this was not a MonitorableMonoSKData, it must be a MonitorableDuoSKData
-                MonitorableDuoSKData monitorable = MonitorableDuoSKData.valueOf(identifier);
+            }
+        }
+
+        if (parser.containsKey(root, ParameterKey.MONITORING_DUO)) {
+            final Tree monitoringNode = parser.getValue(root, ParameterKey.MONITORING_DUO);
+            for (int i = 0; i < parser.getElementsNumber(monitoringNode); ++i) {
+                MonitorableDuoSKData monitorable =
+                        (MonitorableDuoSKData) parser.getEnumerate(monitoringNode, i, MonitorableDuoSKData.class);
                 for (int j = 0; j < configuredStates.length - 1; ++j) {
                     for (int k = j + 1; k < configuredStates.length; ++k) {
                         monitorable.register(configuredStates.length, monitorsDuo[j][k]);

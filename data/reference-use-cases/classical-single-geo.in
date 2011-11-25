@@ -258,7 +258,7 @@ scenario         = [
     }
 ];
 
-monitoring = [
+monitoring_mono = [
     CYCLES_NUMBER,
     IN_PLANE_MANEUVER_NUMBER,
     IN_PLANE_MANEUVER_CYCLE_DV,

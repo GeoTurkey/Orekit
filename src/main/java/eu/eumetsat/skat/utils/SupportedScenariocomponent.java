@@ -10,6 +10,7 @@ import org.apache.commons.math.linear.RealMatrix;
 import org.apache.commons.math.optimization.BaseMultivariateRealOptimizer;
 import org.orekit.errors.OrekitException;
 import org.orekit.orbits.OrbitType;
+import org.orekit.orbits.PositionAngle;
 import org.orekit.propagation.Propagator;
 import org.orekit.utils.Constants;
 
@@ -43,8 +44,9 @@ public enum SupportedScenariocomponent {
                                                    skat.getControlLawsMap(), skat.getManeuversOutput());
             for (int j = 0; j < parser.getElementsNumber(node); ++j) {
                 final Tree componentNode = parser.getElement(node, j);
-                final  String type       = parser.getIdentifier(componentNode, ParameterKey.COMPONENT_TYPE);
-                final SupportedScenariocomponent component = SupportedScenariocomponent.valueOf(type);
+                final SupportedScenariocomponent component =
+                        (SupportedScenariocomponent) parser.getEnumerate(componentNode, ParameterKey.COMPONENT_TYPE,
+                                                                         SupportedScenariocomponent.class);
                 scenario.addComponent(component.parse(parser, componentNode, skat));
             }
             return scenario;
@@ -67,8 +69,8 @@ public enum SupportedScenariocomponent {
             }
             return new OrbitDetermination(getIndices(parser, node, skat),
                                           matrix,
-                                          OrbitType.valueOf(parser.getIdentifier(node, ParameterKey.ORBIT_TYPE)),
-                                          parser.getPositionAngle(node, ParameterKey.ANGLE_TYPE),
+                                          (OrbitType) parser.getEnumerate(node, ParameterKey.ORBIT_TYPE, OrbitType.class),
+                                          (PositionAngle) parser.getEnumerate(node, ParameterKey.ANGLE_TYPE, PositionAngle.class),
                                           parser.getDouble(node, ParameterKey.ORBIT_DETERMINATION_SMALL),
                                           skat.getGenerator());
         }
@@ -125,15 +127,19 @@ public enum SupportedScenariocomponent {
             // optimizer
             final double stopCriterion = parser.getDouble(node, ParameterKey.COMPONENT_CONTROL_LOOP_GLOBAL_STOP_CRITERION);
             final Tree optimizerNode = parser.getValue(node, ParameterKey.COMPONENT_CONTROL_LOOP_OPTIMIZER);
-            final String optimizationMethod = parser.getIdentifier(optimizerNode, ParameterKey.OPTIMIZER_METHOD);
+            final SupportedOptimizer so =
+                    (SupportedOptimizer) parser.getEnumerate(optimizerNode, ParameterKey.OPTIMIZER_METHOD,
+                                                             SupportedOptimizer.class);
             final BaseMultivariateRealOptimizer<MultivariateRealFunction> optimizer =
-                    SupportedOptimizer.valueOf(optimizationMethod).parse(parser, optimizerNode, maneuvers, stopCriterion, skat);
+                    so.parse(parser, optimizerNode, maneuvers, stopCriterion, skat);
 
             // propagator
             final Tree propagatorNode = parser.getValue(node, ParameterKey.COMPONENT_CONTROL_LOOP_PROPAGATOR);
-            final  String propagationMethod = parser.getIdentifier(propagatorNode, ParameterKey.COMPONENT_PROPAGATION_METHOD);
+            final  SupportedPropagator sp =
+                    (SupportedPropagator) parser.getEnumerate(propagatorNode, ParameterKey.COMPONENT_PROPAGATION_METHOD,
+                                                              SupportedPropagator.class);
             final  Propagator propagator =
-                    SupportedPropagator.valueOf(propagationMethod).parse(parser, propagatorNode, skat, spacecraftIndex);
+                    sp.parse(parser, propagatorNode, skat, spacecraftIndex);
 
 
             // set up boundaries for tunable parameters
@@ -146,9 +152,10 @@ public enum SupportedScenariocomponent {
             final Tree controlsNode = parser.getValue(node, ParameterKey.COMPONENT_CONTROL_LOOP_CONTROLS);
             for (int i = 0; i < parser.getElementsNumber(controlsNode); ++i) {
                 final Tree control = parser.getElement(controlsNode, i);
-                final String type = parser.getIdentifier(control, ParameterKey.CONTROL_TYPE);
-                final SKControl controlLaw =
-                        SupportedControlLaw.valueOf(type).parse(parser, control, controlled, skat);
+                final SupportedControlLaw sc =
+                        (SupportedControlLaw) parser.getEnumerate(control, ParameterKey.CONTROL_TYPE,
+                                                                  SupportedControlLaw.class);
+                final SKControl controlLaw = sc.parse(parser, control, controlled, skat);
                 skat.addControl(controlLaw);
                 loop.addControl(controlLaw);
             }
@@ -260,9 +267,10 @@ public enum SupportedScenariocomponent {
 
                 // build the propagator for the selected spacecraft
                 final Tree propagatorNode = parser.getValue(node, ParameterKey.COMPONENT_PROPAGATION_PROPAGATOR);
-                final  String propagationMethod = parser.getIdentifier(propagatorNode, ParameterKey.COMPONENT_PROPAGATION_METHOD);
-                propagators[i] =
-                        SupportedPropagator.valueOf(propagationMethod).parse(parser, propagatorNode, skat, i);
+                final SupportedPropagator sp =
+                        (SupportedPropagator) parser.getEnumerate(propagatorNode, ParameterKey.COMPONENT_PROPAGATION_METHOD,
+                                                                  SupportedPropagator.class);
+                propagators[i] = sp.parse(parser, propagatorNode, skat, i);
 
                 // register the control law handlers to the propagator
                 for (final SKControl controlLaw : skat.getControlLawsMap().keySet()) {

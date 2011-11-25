@@ -217,14 +217,17 @@ public class SkatFileParser {
 
     }
 
-    /** Get an identifier value.
+    /** Get an enumerate value.
      * @param node structure containing the parameter
      * @param key parameter key
-     * @return identifier value corresponding to the key
+     * @param enumClass enumerate class
+     * @return enumerate value corresponding to the key
      * @exception IllegalArgumentException if node does not contains the key
      * or it is not a string
      */
-    public String getIdentifier(final Tree node, final ParameterKey key) throws IllegalArgumentException {
+    public Enum<?> getEnumerate(final Tree node, final ParameterKey key,
+                                final Class<? extends Enum<?>> enumClass)
+      throws IllegalArgumentException {
 
         // get the node
         final Tree value = getValue(node, key);
@@ -233,18 +236,21 @@ public class SkatFileParser {
         checkType(SkatParser.IDENTIFIER, value);
 
         // parse the value
-        return value.getText();
+        return parseEnum(value, enumClass);
 
     }
 
-    /** Get an identifier value.
+    /** Get an enumerate value.
      * @param node array containing the parameter
      * @param index index of the identifier in the array
-     * @return identifier value corresponding to the index
+     * @param enumClass enumerate class
+     * @return enumerate value corresponding to the index
      * @exception IllegalArgumentException if node does not contains the key
      * or it is not a string
      */
-    public String getIdentifier(final Tree node, final int index) throws IllegalArgumentException {
+    public Enum<?> getEnumerate(final Tree node, final int index,
+                                final Class<? extends Enum<?>> enumClass)
+        throws IllegalArgumentException {
 
         // get the node
         final Tree value = getElement(node, index);
@@ -253,7 +259,7 @@ public class SkatFileParser {
         checkType(SkatParser.IDENTIFIER, value);
 
         // parse the value
-        return value.getText();
+        return parseEnum(value, enumClass);
 
     }
 
@@ -310,27 +316,6 @@ public class SkatFileParser {
 
         // parse the value
         return new AbsoluteDate(value.getText(), timeScale);
-
-    }
-
-    /** Get a position angle type.
-     * @param node structure containing the parameter
-     * @param key parameter key
-     * @return position angle type corresponding to the key
-     * @exception IllegalArgumentException if node does not contains the key
-     * or it is not a position angle
-     */
-    public PositionAngle getPositionAngle(final Tree node, final ParameterKey key)
-        throws IllegalArgumentException {
-
-        // get the node
-        final Tree value = getValue(node, key);
-
-        // check its type
-        checkType(SkatParser.IDENTIFIER, value);
-
-        // parse the value
-        return PositionAngle.valueOf(value.getText());
 
     }
 
@@ -497,22 +482,21 @@ public class SkatFileParser {
      * @param mu gravity coefficient to use
      * @return orbit corresponding to the key
      * @exception IllegalArgumentException if node does not contains the key
-     * or it is not an orbit
+     * @exception SkatException if node it is not an orbit
      * @exception OrekitException if orbit cannot be built
      */
     public Orbit getOrbit(final Tree node, final Frame inertialFrame,
                           final TimeScale timeScale, final double mu)
-        throws IllegalArgumentException, OrekitException {
+                                  throws SkatException, OrekitException {
 
-        final String type = getIdentifier(node, ParameterKey.ORBIT_TYPE);
-        switch (OrbitType.valueOf(type)) {
+        switch ((OrbitType) getEnumerate(node, ParameterKey.ORBIT_TYPE, OrbitType.class)) {
 
         case CARTESIAN :
             return new CartesianOrbit(new PVCoordinates(getVector(node, ParameterKey.ORBIT_CARTESIAN_POSITION),
                                                         getVector(node, ParameterKey.ORBIT_CARTESIAN_VELOCITY)),
-                                      inertialFrame,
-                                      getDate(node, ParameterKey.ORBIT_CARTESIAN_DATE, timeScale),
-                                      mu);
+                                                        inertialFrame,
+                                                        getDate(node, ParameterKey.ORBIT_CARTESIAN_DATE, timeScale),
+                                                        mu);
         case KEPLERIAN :
             return new KeplerianOrbit(getDouble(node, ParameterKey.ORBIT_KEPLERIAN_A),
                                       getDouble(node, ParameterKey.ORBIT_KEPLERIAN_E),
@@ -520,7 +504,7 @@ public class SkatFileParser {
                                       getAngle(node,  ParameterKey.ORBIT_KEPLERIAN_PA),
                                       getAngle(node,  ParameterKey.ORBIT_KEPLERIAN_RAAN),
                                       getAngle(node,  ParameterKey.ORBIT_KEPLERIAN_ANOMALY),
-                                      getPositionAngle(node, ParameterKey.ANGLE_TYPE),
+                                      (PositionAngle) getEnumerate(node, ParameterKey.ANGLE_TYPE, PositionAngle.class),
                                       inertialFrame,
                                       getDate(node, ParameterKey.ORBIT_KEPLERIAN_DATE, timeScale),
                                       mu);
@@ -531,7 +515,7 @@ public class SkatFileParser {
                                      getAngle(node,  ParameterKey.ORBIT_CIRCULAR_I),
                                      getAngle(node,  ParameterKey.ORBIT_CIRCULAR_RAAN),
                                      getAngle(node,  ParameterKey.ORBIT_CIRCULAR_LATITUDE_ARGUMENT),
-                                     getPositionAngle(node, ParameterKey.ANGLE_TYPE),
+                                     (PositionAngle) getEnumerate(node, ParameterKey.ANGLE_TYPE, PositionAngle.class),
                                      inertialFrame,
                                      getDate(node, ParameterKey.ORBIT_CIRCULAR_DATE, timeScale),
                                      mu);
@@ -542,7 +526,7 @@ public class SkatFileParser {
                                         getDouble(node, ParameterKey.ORBIT_EQUINOCTIAL_HX),
                                         getDouble(node, ParameterKey.ORBIT_EQUINOCTIAL_HY),
                                         getAngle(node, ParameterKey.ORBIT_EQUINOCTIAL_LONGITUDE_ARGUMENT),
-                                        getPositionAngle(node, ParameterKey.ANGLE_TYPE),
+                                        (PositionAngle) getEnumerate(node, ParameterKey.ANGLE_TYPE, PositionAngle.class),
                                         inertialFrame,
                                         getDate(node, ParameterKey.ORBIT_EQUINOCTIAL_DATE, timeScale),
                                         mu);
@@ -566,6 +550,35 @@ public class SkatFileParser {
                                                                SkatParser.tokenNames[expected],
                                                                SkatParser.tokenNames[node.getType()]);
         }
+    }
+
+    /** Parse an enumerate.
+     * @param node tree node containing the enumerate identifier
+     * @param enumClass enumerate class to which the value should belong
+     * @return enumerate constant corresponding to the identifier
+     * @exception IllegalArgumentException if the identifier does not correspond to an enumerate
+     */
+    private Enum<?> parseEnum(final Tree node, final Class<? extends Enum<?>> enumClass) {
+
+        // compare identifier with all allowed values
+        for (Enum<?> value : (Enum<?>[]) enumClass.getEnumConstants()) {
+            if (value.toString().equals(node.getText())) {
+                return value;
+            }
+        }
+
+        // we did not find a match, build an extensive message reporting the problem
+        final StringBuilder supported = new StringBuilder();
+        for (final Enum<?> value : (Enum<?>[]) enumClass.getEnumConstants()) {
+            if (supported.length() > 0) {
+                supported.append(", ");
+            }
+            supported.append(value.toString());
+        }
+
+        throw SkatException.createIllegalArgumentException(SkatMessages.UNSUPPORTED_KEY, node.getText(),
+                                                           node.getLine(), inputName, supported.toString());
+
     }
 
 }
