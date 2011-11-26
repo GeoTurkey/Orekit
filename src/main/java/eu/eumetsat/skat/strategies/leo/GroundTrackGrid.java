@@ -136,6 +136,8 @@ public class GroundTrackGrid extends AbstractSKControl {
                               final AbsoluteDate start, final AbsoluteDate end)
         throws OrekitException {
 
+        super.initializeRun(maneuvers, propagator, start, end);
+
         // synchronize station-keeping cycle with phasing cycle
         synchronizeCycle(start, propagator);
 

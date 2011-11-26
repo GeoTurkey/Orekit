@@ -160,7 +160,8 @@ scenario         = [
                 scaling_divisor  = 0.1;
                 type             = CENTERED_LONGITUDE;
                 name             = "centered longitude";
-                center_longitude =  -57.0;
+                east_longitude   =  -57.1;
+                west_longitude   =  -56.9;
                 sampling         = 7200.0;
             },
             {

@@ -78,8 +78,11 @@ public class Scenario implements ScenarioComponent {
     /** Duo-spacecrafts monitorables. */
     private List<MonitorableDuoSKData> monitorablesDuo;
 
-    /** Monitored control laws. */
-    private Map<SKControl, SimpleMonitorable> controls;
+    /** Map for control laws residuals monitoring. */
+    private Map<SKControl, SimpleMonitorable> controlsResiduals;
+
+    /** Map for control laws violations monitoring. */
+    private Map<SKControl, SimpleMonitorable> controlsViolations;
 
     /** Maneuvers output. */
     private PrintStream maneuversOutput;
@@ -96,7 +99,8 @@ public class Scenario implements ScenarioComponent {
      * @param groundLocation reference ground location
      * @param monitorablesMono list of monitorables for mono-spacecraft
      * @param monitorablesDuo list of monitorables for duo-spacecrafts
-     * @param monitored control laws controls
+     * @param controlsResiduals map for control laws residuals monitoring
+     * @param controlsViolations map for control laws violations monitoring
      * @param maneuversOutput maneuves output stream
      */
     public Scenario(final double cycleDuration, final double outputStep,
@@ -104,19 +108,21 @@ public class Scenario implements ScenarioComponent {
                     final TopocentricFrame groundLocation,
                     final List<MonitorableMonoSKData> monitorablesMono,
                     final List<MonitorableDuoSKData> monitorablesDuo,
-                    final Map<SKControl, SimpleMonitorable> controls,
+                    final Map<SKControl, SimpleMonitorable> controlsResiduals,
+                    final Map<SKControl, SimpleMonitorable> controlsViolations,
                     final PrintStream maneuversOutput) {
-        this.components       = new ArrayList<ScenarioComponent>();
-        this.cycleDuration    = cycleDuration;
-        this.outputstep       = outputStep;
-        this.eme2000          = FramesFactory.getEME2000();
-        this.earth            = earth;
-        this.sun              = sun;
-        this.groundLocation   = groundLocation;
-        this.monitorablesMono = monitorablesMono;
-        this.monitorablesDuo  = monitorablesDuo;
-        this.controls         = controls;
-        this.maneuversOutput  = maneuversOutput;
+        this.components         = new ArrayList<ScenarioComponent>();
+        this.cycleDuration      = cycleDuration;
+        this.outputstep         = outputStep;
+        this.eme2000            = FramesFactory.getEME2000();
+        this.earth              = earth;
+        this.sun                = sun;
+        this.groundLocation     = groundLocation;
+        this.monitorablesMono   = monitorablesMono;
+        this.monitorablesDuo    = monitorablesDuo;
+        this.controlsResiduals  = controlsResiduals;
+        this.controlsViolations = controlsViolations;
+        this.maneuversOutput    = maneuversOutput;
     }
 
     /** Add a cycle component.
@@ -163,10 +169,20 @@ public class Scenario implements ScenarioComponent {
                 states = component.updateStates(states);
             }
 
-            // monitor control laws
-            for (final Map.Entry<SKControl, SimpleMonitorable> entry : controls.entrySet()) {
+            // monitor control laws residuals
+            for (final Map.Entry<SKControl, SimpleMonitorable> entry : controlsResiduals.entrySet()) {
                 final double value = entry.getKey().getAchievedValue();
                 entry.getValue().setSampledValue(startDate, new double[] { value });
+            }
+
+            // monitor control laws violations
+            for (final Map.Entry<SKControl, SimpleMonitorable> entry : controlsViolations.entrySet()) {
+                if (entry.getKey().limitsExceeded()) {
+                    // this cycle has lead to constraints violations, increment counter
+                    double[] v = entry.getValue().getValue(-1).clone();
+                    v[0] += 1;
+                    entry.getValue().setSampledValue(startDate, v);
+                }
             }
 
             // monitor data

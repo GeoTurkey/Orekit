@@ -83,7 +83,8 @@ public class EccentricityCircle extends AbstractSKControl {
     public EccentricityCircle(final String name, final double scalingDivisor, final String controlled,
                               final double centerX, final double centerY, final double radius,
                               final CelestialBody sun, final double samplingStep) {
-        super(name, scalingDivisor, controlled, null, 0.0, -1.0, 1.0);
+        super(name, scalingDivisor, controlled, null, 0.0,
+              Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY);
         this.stephandler  = new Handler();
         this.centerX      = centerX;
         this.centerY      = centerY;
@@ -96,7 +97,9 @@ public class EccentricityCircle extends AbstractSKControl {
     /** {@inheritDoc} */
     @Override
     public void initializeRun(final ScheduledManeuver[] maneuvers,
-                              final Propagator propagator, AbsoluteDate start, AbsoluteDate end2) {
+                              final Propagator propagator, AbsoluteDate start, AbsoluteDate end)
+        throws OrekitException {
+        super.initializeRun(maneuvers, propagator, start, end);
         sample.clear();
     }
 

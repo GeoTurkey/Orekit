@@ -68,26 +68,30 @@ public class CenteredLongitude extends AbstractSKControl {
      * @param name name of the control law
      * @param scalingDivisor divisor to use for scaling the control law
      * @param controlled name of the controlled spacecraft
-     * @param center longitude slot center
+     * @param lEast longitude slot Eastward boundary
+     * @param lWest longitude slot Westward boundary
      * @param samplingStep step to use for sampling throughout propagation
      * @param earth Earth model to use to compute longitudes
      */
     public CenteredLongitude(final String name, final double scalingDivisor,
                              final String controlled,
-                             final double center, final double samplingStep,
-                             final BodyShape earth) {
-        super(name, scalingDivisor, controlled, null, 0, -FastMath.PI, FastMath.PI);
+                             final double lEast, final double lWest,
+                             final double samplingStep, final BodyShape earth) {
+        super(name, scalingDivisor, controlled, null, 0,
+              lEast, MathUtils.normalizeAngle(lWest, lEast + FastMath.PI));
         this.stephandler  = new Handler();
         this.samplingStep = samplingStep;
         this.earth        = earth;
-        this.center       = center;
+        this.center       = 0.5 * (getMin() + getMax());
         this.sample       = new ArrayList<Double>();
     }
 
     /** {@inheritDoc} */
     @Override
     public void initializeRun(final ScheduledManeuver[] maneuvers,
-                              final Propagator propagator, AbsoluteDate start, AbsoluteDate end2) {
+                              final Propagator propagator, AbsoluteDate start, AbsoluteDate end)
+        throws OrekitException {
+        super.initializeRun(maneuvers, propagator, start, end);
         sample.clear();
     }
 
@@ -143,6 +147,9 @@ public class CenteredLongitude extends AbstractSKControl {
                     final SpacecraftState state = interpolator.getInterpolatedState();
                     final Vector3D position = state.getPVCoordinates(earth.getBodyFrame()).getPosition();
                     final double longitude = FastMath.atan2(position.getY(), position.getX());
+
+                    // check the limits
+                    checkLimits(longitude);
 
                     // add longitude to sample
                     sample.add(MathUtils.normalizeAngle(longitude, getTargetValue()));
