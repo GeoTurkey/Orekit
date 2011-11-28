@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math.stat.descriptive.rank.Median;
+import org.apache.commons.math.stat.descriptive.rank.Percentile;
 import org.apache.commons.math.util.FastMath;
 import org.apache.commons.math.util.MathUtils;
 import org.orekit.bodies.BodyShape;
@@ -26,6 +27,26 @@ import eu.eumetsat.skat.strategies.ScheduledManeuver;
 
 /**
  * Station-keeping control attempting to get local solar time in a deadband.
+ *  <p>
+ * This control value is:
+ * <pre>
+ *   max(|&Omega;<sub>75</sub> - &Omega;<sub>c</sub>|,|&Omega;<sub>c</sub> - &Omega;<sub>25</sub>|)
+ * </pre>
+ * where &Omega;<sub>75</sub> and &Omega;<sub>25</sub> are the spacecraft right ascension of the ascending node
+ * quantities at 75% and 25% evaluated for the complete cycle duration and &Omega;<sub>c</sub> is
+ * the center right ascension.
+ * </p>
+ * <p>
+ * The previous definition implies that setting the target of this control
+ * to 0 attempts to have most of the points right ascension covered by the
+ * satellite centered around the &Omega;<sub>c</sub> right ascension during the
+ * station-keeping.
+ * </p>
+ * <p>
+ * Using quantiles instead of min/max improves robustness with respect to
+ * outliers, which occur when starting far from the desired window. Here, we ignore 25%
+ * outliers on both sides.
+ * </p>
  */
 public class LocalSolarTime extends AbstractSKControl {
 
@@ -34,6 +55,9 @@ public class LocalSolarTime extends AbstractSKControl {
 
     /** Sampled offset to target solar time. */
     private final List<Double> sample;
+    
+    /** Solar time target */
+    private final double center;
 
     /** Simple constructor.
      * @param name name of the control law
@@ -53,8 +77,9 @@ public class LocalSolarTime extends AbstractSKControl {
                           final double solarTime) {
         super(name, scalingDivisor, controlled, null, solarTime, 0.0, 24.0);
         this.eventDetector =
-                new Detector(600.0, 1.0e-3, earth, sun, latitude, ascending, solarTime);
+                new Detector(600.0, 1.0e-3, earth, sun, latitude, ascending);
         this.sample = new ArrayList<Double>();
+        this.center = solarTime;
     }
 
     /** {@inheritDoc} */
@@ -72,7 +97,10 @@ public class LocalSolarTime extends AbstractSKControl {
         for (int i = 0; i < data.length; ++i) {
             data[i] = sample.get(i);
         }
-        return new Median().evaluate(data);
+        final Percentile p = new Percentile();
+        final double l75 = p.evaluate(data, 75.0);
+        final double l25 = p.evaluate(data, 25.0);
+        return FastMath.max(FastMath.abs(l75 - center), FastMath.abs(center - l25));
     }
 
     /** {@inheritDoc} */
@@ -103,8 +131,6 @@ public class LocalSolarTime extends AbstractSKControl {
         /** Indicator for solar time computation direction. */
         private final boolean ascending;
 
-        /** Target solar time. */
-        private final double targetSolarTime;
 
         /** Simple constructor
          * @param maxCheck maximum checking interval (s)
@@ -117,13 +143,12 @@ public class LocalSolarTime extends AbstractSKControl {
          */
         public Detector(final double maxCheck, final double threshold,
                         final BodyShape earth, final CelestialBody sun,
-                        final double latitude, final boolean ascending, final double targetSolarTime) {
+                        final double latitude, final boolean ascending) {
             super(maxCheck, threshold);
             this.earth           = earth;
             this.sun             = sun;
             this.latitude        = latitude;
             this.ascending       = ascending;
-            this.targetSolarTime = targetSolarTime;
         }
 
         /** {@inheritDoc} */
@@ -154,7 +179,7 @@ public class LocalSolarTime extends AbstractSKControl {
                 // convert the angle to solar time
                 final double achievedSolarTime = 12.0 * (1.0 + dAlpha / FastMath.PI);
 
-                sample.add(achievedSolarTime - targetSolarTime);
+                sample.add(achievedSolarTime);
 
             }
 

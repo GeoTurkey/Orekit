@@ -29,7 +29,7 @@ import eu.eumetsat.skat.strategies.ScheduledManeuver;
  * <pre>
  *   max(|l<sub>75</sub> - l<sub>c</sub>|,|l<sub>c</sub> - l<sub>25</sub>|)
  * </pre>
- * where l<sub>75</sub> and l<sub>25</sub> are the spacecraft longitude quantiles
+ * where l<sub>75</sub> and l<sub>25</sub> are the spacecraft longitude quantities
  * at 75% and 25% evaluated for the complete cycle duration and l<sub>c</sub> is
  * the center longitude.
  * </p>
