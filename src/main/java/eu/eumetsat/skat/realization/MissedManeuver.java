@@ -19,8 +19,8 @@ import eu.eumetsat.skat.utils.SkatMessages;
 /**
  * Class for introducing randomly missed maneuvers.
  * <p>
- * Missed maneuvers are simply maneuvers with velocity increment reduced to zero.
- * They still appear in the output but don't change th orbit.
+ * Missed maneuvers are rescheduled a few orbits after their nominal
+ * dates, without being reoptimized.
  * </p>
  * @author Luc Maisonobe
  */
