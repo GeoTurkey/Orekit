@@ -90,25 +90,32 @@ public enum ParameterKey {
     CONTROL_TYPE("type"),
     CONTROL_NAME("name"),
     CONTROL_SAMPLING("sampling"),
+    // Minimized maneuvers
     CONTROL_MINIMIZED_MANEUVERS_IN_PLANE("in_plane"),
     CONTROL_MINIMIZED_MANEUVERS_OUT_OF_PLANE("out_of_plane"),
+    // Centered longitude
     CONTROL_CENTERED_LONGITUDE_EAST("east_longitude"),
     CONTROL_CENTERED_LONGITUDE_WEST("west_longitude"),
+    // Eccentricity circle
     CONTROL_ECCENTRICITY_CIRCLE_CENTER_X("center_x"),
     CONTROL_ECCENTRICITY_CIRCLE_CENTER_Y("center_y"),
     CONTROL_ECCENTRICITY_CIRCLE_RADIUS("radius"),
+    // Inclination vector
     CONTROL_INCLINATION_VECTOR_TARGET_X("target_x"),
     CONTROL_INCLINATION_VECTOR_TARGET_Y("target_y"),
     CONTROL_INCLINATION_LIMIT_CIRCLE_RADIUS("limit_circle_radius"),
+    // Local solar time
     CONTROL_SOLAR_TIME_LATITUDE("latitude"),
     CONTROL_SOLAR_TIME_ASCENDING("ascending"),
     CONTROL_SOLAR_TIME_SOLAR_TIME("solar_time"),
+    // Ground track grid
     CONTROL_GROUND_TRACK_LATITUDE("latitude"),
     CONTROL_GROUND_TRACK_LONGITUDE("longitude"),
     CONTROL_GROUND_TRACK_ASCENDING("ascending"),
     CONTROL_GROUND_TRACK_ORBITS_PER_CYCLE("orbits_per_cycle"),
     CONTROL_GROUND_TRACK_DAYS_PER_CYCLE("days_per_cycle"),
 
+    // Maneuvers 
     MANEUVERS_IN_PLANE("in_plane"),
     MANEUVERS_RELATIVE_TO_PREVIOUS("relative_to_previous"),
     MANEUVERS_NAME("name"),
@@ -147,9 +154,11 @@ public enum ParameterKey {
     COMPONENT_MANEUVER_SPLITTER_MAX_DV("max_dv"),
     COMPONENT_MANEUVER_SPLITTER_MIN_DT("min_dt"),
 
+    // Propagator
     COMPONENT_PROPAGATION_PROPAGATOR("propagator"),
     COMPONENT_PROPAGATION_METHOD("method"),
     COMPONENT_PROPAGATION_LONG_BURN_COMPENSATION("long_burn_compensation"),
+    // Numerical
     NUMERICAL_PROPAGATOR_MIN_STEP("min_step"),
     NUMERICAL_PROPAGATOR_MAX_STEP("max_step"),
     NUMERICAL_PROPAGATOR_TOLERANCE("position_tolerance"),
@@ -160,6 +169,7 @@ public enum ParameterKey {
     NUMERICAL_PROPAGATOR_ABSORPTION_COEFFICIENT("absorption_coefficient"),
     NUMERICAL_PROPAGATOR_REFLECTION_COEFFICIENT("reflection_coefficient"),
     NUMERICAL_PROPAGATOR_THIRD_BODIES("third_bodies"),
+    // DSST
     DSST_PROPAGATOR_MIN_STEP("min_step"),
     DSST_PROPAGATOR_MAX_STEP("max_step"),
     DSST_PROPAGATOR_TOLERANCE("position_tolerance"),

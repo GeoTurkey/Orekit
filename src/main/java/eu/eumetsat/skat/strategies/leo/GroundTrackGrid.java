@@ -14,12 +14,16 @@ import org.apache.commons.math.util.FastMath;
 import org.apache.commons.math.util.MathUtils;
 import org.orekit.bodies.BodyShape;
 import org.orekit.bodies.GeodeticPoint;
+import org.orekit.bodies.OneAxisEllipsoid;
 import org.orekit.errors.OrekitException;
 import org.orekit.propagation.Propagator;
+import org.orekit.propagation.SpacecraftState;
 import org.orekit.propagation.events.EventDetector;
 import org.orekit.propagation.sampling.OrekitStepHandler;
 import org.orekit.time.AbsoluteDate;
 import org.orekit.utils.PVCoordinates;
+
+import sun.security.action.GetLongAction;
 
 import eu.eumetsat.skat.control.AbstractSKControl;
 import eu.eumetsat.skat.strategies.ScheduledManeuver;
@@ -118,15 +122,8 @@ public class GroundTrackGrid extends AbstractSKControl {
         for (int i = 0; i < orbitsPerPhasingCycle; ++i) {
             longitudes[i] = MathUtils.normalizeAngle(longitude + i * deltaLOneOrbit, FastMath.PI);
             earthPoints[i] = earth.transform(new GeodeticPoint(latitude, longitudes[i], 0));
+            System.out.println(longitudes[i]);
         }
-
-        // TODO suppress the sorted array and this debug trace
-        final double[] sorted = longitudes.clone();
-        Arrays.sort(sorted);
-        for (int i = 1; i < sorted.length; ++i) {
-            System.out.println(sorted[i] - sorted[i - 1]);
-        }
-        System.out.println(sorted[0] + 2 * FastMath.PI - sorted[longitudes.length - 1]);
 
         sample = new ArrayList<Double>();
 
@@ -214,20 +211,31 @@ public class GroundTrackGrid extends AbstractSKControl {
         // about three points per longitude slot
         // using a few steps margin from beginning to avoid reference
         // points near propagator start boundary
-        final double period    = propagator.propagate(start).getKeplerianPeriod();
-        final double step      = period / (3 * longitudes.length);
-        final int safetyMargin = 2;
+        SpacecraftState initialState = propagator.getInitialState();
+        final AbsoluteDate date = (start == null) ? initialState.getDate() : start;
+        final double period     = initialState.getKeplerianPeriod();
+        final double step       = 100.;/*period / (3 * longitudes.length);*/
+        final int safetyMargin  = 2;
         for (int i = safetyMargin; i < 3 * longitudes.length + safetyMargin; ++i) {
-            final AbsoluteDate date = start.shiftedBy(i * step);
-            final Vector3D position = propagator.getPVCoordinates(date, earth.getBodyFrame()).getPosition();
+            final AbsoluteDate currentDate = date.shiftedBy(i * step);
+            PVCoordinates pv = propagator.propagate(currentDate).getPVCoordinates();
+            final Vector3D position = pv.getPosition();
+            final Vector3D velocity = pv.getVelocity();
+            GeodeticPoint p = earth.transform(position, earth.getBodyFrame(), currentDate);
+            double deltaL = p.getLatitude() - earth.transform(earthPoints[0], earth.getBodyFrame(), currentDate).getLatitude();
+            System.out.println(p + "  " + deltaL);
             // Check if crossing is done in the same sense than the ascending boolean
-            final boolean up = position.getZ() >= 0. ? true : false;
-            if (up == ascending){            
-                for (int j = 0; j < earthPoints.length; ++i) {
+            final boolean up = velocity.getZ() >= 0. ? true : false;
+            if (up == ascending){ 
+                System.out.println(Math.toDegrees(p.getLongitude()) + " " + Math.toDegrees(p.getLatitude()));
+                System.out.println();
+                for (int j = 0; j < earthPoints.length; ++j) {
                     final double distance = position.distance(earthPoints[j]);
+                    System.out.println(distance);
                     if (distance < minDistance) {
+                        System.out.println("min = " + distance);
                         minDistance        = distance;
-                        firstCrossingDate  = date;
+                        firstCrossingDate  = currentDate;
                         firstCrossingIndex = j;
                     }            
                 }            
@@ -240,7 +248,7 @@ public class GroundTrackGrid extends AbstractSKControl {
                                                new RadialVelocity(firstCrossingDate,
                                                                   earthPoints[firstCrossingIndex],
                                                                   propagator, earth),
-                                               -step, step, 0.0);
+                                               -10*step, 10*step, 0.0);
         firstCrossingDate = firstCrossingDate.shiftedBy(adjustment);
 
         // find time between first and second reference point encounter
@@ -289,7 +297,7 @@ public class GroundTrackGrid extends AbstractSKControl {
                 final PVCoordinates pv =
                         propagator.getPVCoordinates(adjustedDate, earth.getBodyFrame());
                 final Vector3D deltaP = pv.getPosition().subtract(referencePoint);
-                return deltaP.normalize().dotProduct(pv.getVelocity());
+                return deltaP.normalize().dotProduct(pv.getVelocity().normalize());
             } catch (OrekitException oe) {
                 throw new OrekitWrapperException(oe);
             }
