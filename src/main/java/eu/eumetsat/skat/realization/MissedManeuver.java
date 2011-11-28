@@ -4,8 +4,8 @@ package eu.eumetsat.skat.realization;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math.random.RandomGenerator;
-import org.apache.commons.math.util.FastMath;
 import org.orekit.errors.OrekitException;
 import org.orekit.propagation.SpacecraftState;
 import org.orekit.time.AbsoluteDate;
@@ -38,7 +38,7 @@ public class MissedManeuver implements ScenarioComponent {
     /** Miss threshold. */
     private final double missThreshold;
 
-    /** Minimum delay for missed maneuver rescheduling. */
+    /** Minimum delay for missed maneuver rescheduling in number of orbits. */
     private final double reschedulingDelay;
 
     /** Random generator to use for evaluating the error factor. */
@@ -50,7 +50,7 @@ public class MissedManeuver implements ScenarioComponent {
      * @param outOfPlane if true, the error applies to out-of-plane maneuvers
      * @param missThreshold miss threshold under which the maneuver is missed
      * (must be a value between 0.0 and 1.0)
-     * @param reschedulingDelay minimum delay for missed maneuver rescheduling
+     * @param reschedulingDelay minimum delay for missed maneuver rescheduling in number of orbits
      * @param generator random generator to use for evaluating the error factor
      * @exception IllegalArgumentException if miss threshold is not between 0 and 1
      */
@@ -98,19 +98,27 @@ public class MissedManeuver implements ScenarioComponent {
             // modify the maneuvers
             for (final ScheduledManeuver maneuver : rawManeuvers) {
                 if ((inPlane && maneuver.isInPlane()) || (outOfPlane && !(maneuver.isInPlane()))) {
-                    // the maneuver is affected by the error
+                    // the maneuver can be affected by the error
                     if (generator.nextDouble() < missThreshold) {
                         // the maneuver is missed
-                        final SpacecraftState state = maneuver.getTrajectory().propagate(maneuver.getDate());
-                        final double period         = state.getKeplerianMeanMotion();
-                        final int nbOrbits          = (int) FastMath.ceil(period / reschedulingDelay);
-
-                        // reschedule the missed maneuver
-                        modified.add(new ScheduledManeuver(maneuver.getName(), maneuver.isInPlane(),
-                                                           maneuver.getDate().shiftedBy(nbOrbits * period),
-                                                           maneuver.getDeltaV(),
-                                                           maneuver.getThrust(), maneuver.getIsp(),
-                                                           maneuver.getTrajectory()));
+                        // does it need to be replanned ?
+                        if (reschedulingDelay > 0.) {
+                            // reschedule the missed maneuver
+                            final SpacecraftState state = maneuver.getTrajectory().propagate(maneuver.getDate());
+                            final double period         = state.getKeplerianPeriod();
+                            modified.add(new ScheduledManeuver(maneuver.getName(), maneuver.isInPlane(),
+                                                               maneuver.getDate().shiftedBy(reschedulingDelay * period),
+                                                               maneuver.getDeltaV(),
+                                                               maneuver.getThrust(), maneuver.getIsp(),
+                                                               maneuver.getTrajectory()));
+                        } else {
+                            // the maneuver is really missed
+                            modified.add(new ScheduledManeuver(maneuver.getName(), maneuver.isInPlane(),
+                                                               maneuver.getDate(),
+                                                               Vector3D.ZERO,
+                                                               maneuver.getThrust(), maneuver.getIsp(),
+                                                               maneuver.getTrajectory()));
+                        }
 
                     } else {
                         // the maneuver is realized as scheduled
