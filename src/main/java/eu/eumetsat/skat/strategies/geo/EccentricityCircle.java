@@ -39,7 +39,7 @@ import eu.eumetsat.skat.strategies.ScheduledManeuver;
  * The previous definition implies that setting the target of this control
  * to 0 attempts to have the eccentricity vector motion as close as
  * possible to the perfect solar pointing (p<sub>x</sub>, p<sub>y</sub>)
- * for the spacified circle.
+ * for the specified circle.
  * </p>
  * <p>
  * Using a median instead of a mean improves robustness with respect to

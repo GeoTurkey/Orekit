@@ -35,7 +35,7 @@ import eu.eumetsat.skat.utils.SkatMessages;
  * <pre>
  *   d<sub>75</sub>
  * </pre>
- * where d<sub>75</sub> is the 75% quantile of ground track distances for
+ * where d<sub>75</sub> is the 75% quantities of ground track distances for
  * all encounters with the reference ground track points for the complete
  * station-keeping cycle duration (which may be completely different from
  * the phasing cycle).
@@ -46,7 +46,7 @@ import eu.eumetsat.skat.utils.SkatMessages;
  * track points.
  * </p>
  * <p>
- * Using quantiles instead of min/max improves robustness with respect to
+ * Using quantities instead of min/max improves robustness with respect to
  * outliers, which occur when starting far from the desired window for example
  * at the end of LEOP. Here, we ignore 25% outliers.
  * </p>
@@ -73,6 +73,9 @@ public class GroundTrackGrid extends AbstractSKControl {
 
     /** Elapsed time between two successive reference points encounters. */
     private double encountersGap;
+
+    /** if true, solar time is computed when crossing the specified latitude from south to north. */
+    private boolean ascending;
 
     /** Simple constructor.
      * <p>
@@ -107,7 +110,7 @@ public class GroundTrackGrid extends AbstractSKControl {
         }
 
         this.earth = earth;
-
+        this.ascending = ascending;
         // compute the reference longitudes
         longitudes = new double[orbitsPerPhasingCycle];
         earthPoints = new Vector3D[orbitsPerPhasingCycle];
@@ -215,13 +218,17 @@ public class GroundTrackGrid extends AbstractSKControl {
         for (int i = safetyMargin; i < 3 * longitudes.length + safetyMargin; ++i) {
             final AbsoluteDate date = start.shiftedBy(i * step);
             final Vector3D position = propagator.getPVCoordinates(date, earth.getBodyFrame()).getPosition();
-            for (int j = 0; j < earthPoints.length; ++i) {
-                final double distance = position.distance(earthPoints[j]);
-                if (distance < minDistance) {
-                    minDistance        = distance;
-                    firstCrossingDate  = date;
-                    firstCrossingIndex = j;
-                }
+            // Check if crossing is done in the same sense than the ascending boolean
+            final boolean up = position.getZ() >= 0. ? true : false;
+            if (up == ascending){            
+                for (int j = 0; j < earthPoints.length; ++i) {
+                    final double distance = position.distance(earthPoints[j]);
+                    if (distance < minDistance) {
+                        minDistance        = distance;
+                        firstCrossingDate  = date;
+                        firstCrossingIndex = j;
+                    }            
+                }            
             }
         }
 
