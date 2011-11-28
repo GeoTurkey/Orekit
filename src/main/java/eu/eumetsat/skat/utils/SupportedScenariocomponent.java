@@ -61,7 +61,7 @@ public enum SupportedScenariocomponent {
         public ScenarioComponent parse(final SkatFileParser parser, final Tree node, final Skat skat)
             throws OrekitException, SkatException {
             RealMatrix matrix =
-                    new Array2DRowRealMatrix(parser.getDoubleArray2(node, ParameterKey.ORBIT_DETERMINATION_COVARIANCE),
+                    new Array2DRowRealMatrix(parser.getDoubleArray2(node, ParameterKey.ORBIT_DETERMINATION_CORRELATION),
                                              false);
             if (matrix.getRowDimension() != 6) {
                 throw new DimensionMismatchException(matrix.getRowDimension(), 6);
@@ -69,8 +69,12 @@ public enum SupportedScenariocomponent {
             if (matrix.getColumnDimension() != 6) {
                 throw new DimensionMismatchException(matrix.getColumnDimension(), 6);
             }
+            double[] standardDeviation = parser.getDoubleArray1(node, ParameterKey.ORBIT_DETERMINATION_STANDARD_DEVIATION);
+            if (standardDeviation.length != 6) {
+                throw new DimensionMismatchException(matrix.getColumnDimension(), 6);
+            }
             return new OrbitDetermination(getIndices(parser, node, skat),
-                                          matrix,
+                                          matrix, standardDeviation,
                                           (OrbitType) parser.getEnumerate(node, ParameterKey.ORBIT_TYPE, OrbitType.class),
                                           (PositionAngle) parser.getEnumerate(node, ParameterKey.ANGLE_TYPE, PositionAngle.class),
                                           parser.getDouble(node, ParameterKey.ORBIT_DETERMINATION_SMALL),

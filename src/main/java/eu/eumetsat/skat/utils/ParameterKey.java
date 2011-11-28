@@ -67,7 +67,8 @@ public enum ParameterKey {
     COMPONENT_TYPE("component"),
     COMPONENT_MANAGED_SPACECRAFTS("managed_spacecrafts"),
 
-    ORBIT_DETERMINATION_COVARIANCE("covariance"),
+    ORBIT_DETERMINATION_CORRELATION("correlation"),
+    ORBIT_DETERMINATION_STANDARD_DEVIATION("standard_deviation"),
     ORBIT_DETERMINATION_SMALL("small"),
 
     COMPONENT_CONTROL_LOOP_CONTROLLED_SPACECRAFT("controlled_spacecraft"),

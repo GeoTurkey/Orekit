@@ -124,7 +124,7 @@ public class CenteredLongitude extends AbstractSKControl {
         private static final long serialVersionUID = 7101089708717693731L;
 
         /** {@inheritDoc} */
-        public void reset() {
+        public void init(final SpacecraftState s0, final AbsoluteDate t) {
         }
 
         /** {@inheritDoc} */
