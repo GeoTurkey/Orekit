@@ -145,9 +145,9 @@ class ObjectiveFunction implements MultivariateFunction {
                 private static final long serialVersionUID = -4124598479100617688L;
 
                 /** {@inheritDoc} */
-                public void reset() {
+                public void init(final SpacecraftState s0, final AbsoluteDate t) {
                     for (final OrekitStepHandler handler : handlers) {
-                        handler.reset();
+                        handler.init(s0, t);
                     }
                 }
                 

@@ -138,7 +138,7 @@ public class InclinationVector extends AbstractSKControl {
         private static final long serialVersionUID = 8803174499877772678L;
 
         /** {@inheritDoc} */
-        public void reset() {
+        public void init(final SpacecraftState s0, final AbsoluteDate t) {
         }
 
         /** {@inheritDoc} */

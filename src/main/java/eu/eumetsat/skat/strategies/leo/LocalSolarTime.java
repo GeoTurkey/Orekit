@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
-import org.apache.commons.math.stat.descriptive.rank.Median;
 import org.apache.commons.math.stat.descriptive.rank.Percentile;
 import org.apache.commons.math.util.FastMath;
 import org.apache.commons.math.util.MathUtils;
@@ -149,6 +148,10 @@ public class LocalSolarTime extends AbstractSKControl {
             this.sun             = sun;
             this.latitude        = latitude;
             this.ascending       = ascending;
+        }
+
+        /** {@inheritDoc} */
+        public void init(final SpacecraftState s0, final AbsoluteDate t) {
         }
 
         /** {@inheritDoc} */

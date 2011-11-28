@@ -33,6 +33,9 @@ public class OrbitDetermination implements ScenarioComponent {
     /** Vector generator. */
     private final CorrelatedRandomVectorGenerator generator;
 
+    /** Standard deviation. */
+    private final double[] standardDeviation;
+
     /** Orbit type used in the covariance  matrix. */
     private final OrbitType orbitType;
 
@@ -41,8 +44,9 @@ public class OrbitDetermination implements ScenarioComponent {
 
     /** Simple constructor.
      * @param spacecraftIndices indices of the spacecrafts managed by this component
-     * @param covariance covariance matrix to use for generating
+     * @param correlation correlation matrix to use for generating
      * orbit determination errors
+     * @param standardDeviation standard deviation of the error
      * @param orbitType orbit type used in the covariance  matrix
      * @param positionAngle position angle used in the covariance matrix
      * @param small Diagonal elements threshold under which  column are
@@ -50,17 +54,19 @@ public class OrbitDetermination implements ScenarioComponent {
      * @param random raw random generator
      */
     public OrbitDetermination(final int[] spacecraftIndices,
-                              final RealMatrix covariance,
+                              final RealMatrix correlation,
+                              final double[] standardDeviation,
                               final OrbitType orbitType,
                               final PositionAngle positionAngle,
                               final double small,
                               final RandomGenerator random) {
         this.spacecraftIndices = spacecraftIndices.clone();
-        final double[] zeroMean = new double[covariance.getRowDimension()];
-        generator = new CorrelatedRandomVectorGenerator(zeroMean, covariance, small,
+        final double[] zeroMean = new double[correlation.getRowDimension()];
+        generator = new CorrelatedRandomVectorGenerator(zeroMean, correlation, small,
                                                         new GaussianRandomGenerator(random));
-        this.orbitType     = orbitType;
-        this.positionAngle = positionAngle;
+        this.standardDeviation = standardDeviation.clone();
+        this.orbitType         = orbitType;
+        this.positionAngle     = positionAngle;
     }
 
     /** {@inheritDoc} */
@@ -88,7 +94,7 @@ public class OrbitDetermination implements ScenarioComponent {
             // add correlated random error vector
             final double[] errorVector = generator.nextVector();
             for (int j = 0; j < orbitArray.length; ++j) {
-                orbitArray[j] += errorVector[j];
+                orbitArray[j] += standardDeviation[j] * errorVector[j];
             }
 
             // create the estimated state vector

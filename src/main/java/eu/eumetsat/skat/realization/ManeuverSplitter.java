@@ -34,7 +34,7 @@ public class ManeuverSplitter implements ScenarioComponent {
     /** Maximum allowed velocity increment. */
     private final double maxDV;
 
-    /** Minimum time between split parts. */
+    /** Minimum time between split parts in number of orbits. */
     private final double minDT;
 
     /** Simple constructor.
@@ -42,7 +42,7 @@ public class ManeuverSplitter implements ScenarioComponent {
      * @param inPlane if true, the error applies to in-plane maneuvers
      * @param outOfPlane if true, the error applies to out-of-plane maneuvers
      * @param maxDV maximum allowed velocity increment
-     * @param minDT minimum time between split parts
+     * @param minDT minimum time between split parts in number of orbits
      */
     public ManeuverSplitter(final int[] spacecraftIndices,
                             final boolean inPlane, final boolean outOfPlane,
@@ -53,6 +53,10 @@ public class ManeuverSplitter implements ScenarioComponent {
         this.outOfPlane        = outOfPlane;
         this.maxDV             = maxDV;
         this.minDT             = minDT;
+        if (minDT <= 0.0) {
+            throw SkatException.createIllegalArgumentException(SkatMessages.WRONG_SPLIT_DT,
+                                                               minDT);
+        }
     }
 
     /** {@inheritDoc} */
@@ -86,14 +90,13 @@ public class ManeuverSplitter implements ScenarioComponent {
 
                     // the maneuver should be split
                     final SpacecraftState state = maneuver.getTrajectory().propagate(maneuver.getDate());
-                    final double period         = state.getKeplerianMeanMotion();
+                    final double period         = state.getKeplerianPeriod();
                     final int nbParts           = (int) FastMath.ceil(maneuver.getDeltaV().getNorm() / maxDV);
-                    final int nbOrbits          = (int) FastMath.ceil(period / minDT);
 
                     // add the various parts of the split maneuver
                     for (int j = 0; j < nbParts; ++j) {
                         modified.add(new ScheduledManeuver(maneuver.getName(), maneuver.isInPlane(),
-                                                           maneuver.getDate().shiftedBy(j * nbOrbits * period),
+                                                           maneuver.getDate().shiftedBy(j * minDT * period),
                                                            new Vector3D(1.0 / nbParts, maneuver.getDeltaV()),
                                                            maneuver.getThrust(), maneuver.getIsp(),
                                                            maneuver.getTrajectory()));
