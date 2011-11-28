@@ -2,9 +2,11 @@
 package eu.eumetsat.skat.strategies.geo;
 
 import org.orekit.errors.PropagationException;
+import org.orekit.propagation.SpacecraftState;
 import org.orekit.propagation.events.EventDetector;
 import org.orekit.propagation.sampling.OrekitStepHandler;
 import org.orekit.propagation.sampling.OrekitStepInterpolator;
+import org.orekit.time.AbsoluteDate;
 
 import eu.eumetsat.skat.control.AbstractSKControl;
 
@@ -69,8 +71,7 @@ public class RelativeEccentricityControl extends AbstractSKControl {
         private static final long serialVersionUID = 7044667663692366684L;
 
         /** {@inheritDoc} */
-        public void reset() {
-            // TODO
+        public void init(final SpacecraftState s0, final AbsoluteDate t) {
         }
 
         /** {@inheritDoc} */

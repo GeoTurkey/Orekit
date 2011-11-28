@@ -127,6 +127,10 @@ public class LocalSolarTime extends AbstractSKControl {
         }
 
         /** {@inheritDoc} */
+        public void init(final SpacecraftState s0, final AbsoluteDate t) {
+        }
+
+        /** {@inheritDoc} */
         public double g(final SpacecraftState s)
             throws OrekitException {
             final Vector3D position = s.getPVCoordinates(earth.getBodyFrame()).getPosition();

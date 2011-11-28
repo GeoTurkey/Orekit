@@ -129,7 +129,7 @@ public class EccentricityCircle extends AbstractSKControl {
         private static final long serialVersionUID = 220407581859026265L;
 
         /** {@inheritDoc} */
-        public void reset() {
+        public void init(final SpacecraftState s0, final AbsoluteDate t) {
         }
 
         /** {@inheritDoc} */
