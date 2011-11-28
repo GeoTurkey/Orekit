@@ -19,6 +19,7 @@ import eu.eumetsat.skat.control.ControlLoop;
 import eu.eumetsat.skat.control.SKControl;
 import eu.eumetsat.skat.realization.ManeuverCrossCoupling;
 import eu.eumetsat.skat.realization.ManeuverDateError;
+import eu.eumetsat.skat.realization.ManeuverEclipseConstraint;
 import eu.eumetsat.skat.realization.ManeuverMagnitudeError;
 import eu.eumetsat.skat.realization.ManeuverSplitter;
 import eu.eumetsat.skat.realization.MissedManeuver;
@@ -263,6 +264,27 @@ public enum SupportedScenariocomponent {
                     parser.getDouble(node, ParameterKey.COMPONENT_MANEUVER_SPLITTER_MIN_DT);
             return new ManeuverSplitter(getIndices(parser, node, skat), inPlane, outOfPlane,
                                         maxDV, minDT);
+        }
+    },
+
+    /** Constant for maneuver splitting scenario component. */
+    MANEUVER_ECLIPSE_CONSTRAINT() {
+        /** {@inheritDoc} */
+        public ScenarioComponent parse(final SkatFileParser parser, final Tree node, final Skat skat)
+            throws OrekitException, SkatException {
+            final boolean inPlane =
+                    parser.getBoolean(node, ParameterKey.COMPONENT_MANEUVER_ECLIPSE_CONSTRAINT_IN_PLANE);
+            final boolean outOfPlane =
+                    parser.getBoolean(node, ParameterKey.COMPONENT_MANEUVER_ECLIPSE_CONSTRAINT_OUT_OF_PLANE);
+            final double entryDelay =
+                    parser.getDouble(node, ParameterKey.COMPONENT_MANEUVER_ECLIPSE_CONSTRAINT_ENTRY_DELAY);
+            final double exitDelay =
+                    parser.getDouble(node, ParameterKey.COMPONENT_MANEUVER_ECLIPSE_CONSTRAINT_EXIT_DELAY);
+            final int orbitsSeparation =
+                    parser.getInt(node, ParameterKey.COMPONENT_MANEUVER_ECLIPSE_CONSTRAINT_ORBITS_SEPARATION);
+            return new ManeuverEclipseConstraint(getIndices(parser, node, skat), inPlane, outOfPlane,
+                                                 entryDelay, exitDelay, orbitsSeparation,
+                                                 skat.getSun(), skat.getEarth());
         }
     },
 
