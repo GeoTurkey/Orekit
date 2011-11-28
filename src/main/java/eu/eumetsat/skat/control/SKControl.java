@@ -76,6 +76,11 @@ public interface SKControl extends SKElement {
      */
     double getAchievedValue();
 
+    /** Check if the control limits have been exceeded.
+     * @return true if the control limits have been exceeded
+     */
+    boolean limitsExceeded();
+
     /** Get the name of the controlled spacecraft.
      * @return name of the controlled spacecraft.
      */

@@ -34,6 +34,9 @@ public abstract class AbstractSKControl implements SKControl {
     /** Maximal value for the residual. */
     private final double max;
 
+    /** Indicator of constraint violation during the cycle. */
+    private boolean limitsExceeded;
+
     /** Simple constructor.
      * @param name name of the control law
      * @param scalingDivisor divisor to use for scaling the control law
@@ -81,7 +84,7 @@ public abstract class AbstractSKControl implements SKControl {
                               final Propagator propagator,
                               final AbsoluteDate start, final AbsoluteDate end)
         throws OrekitException {
-        // do nothing by default
+        limitsExceeded = false;
     }
 
     /** {@inheritDoc} */
@@ -102,6 +105,20 @@ public abstract class AbstractSKControl implements SKControl {
     /** {@inheritDoc} */
     public double getMax() {
         return max;
+    }
+
+    /** {@inheritDoc} */
+    public boolean limitsExceeded() {
+        return limitsExceeded;
+    }
+
+    /** Check if control limits are exceeded.
+     * @param value current value of the control law
+     */
+    protected void checkLimits(final double value) {
+        if ((value < min) || (value > max)) {
+            limitsExceeded = true;
+        }
     }
 
 }

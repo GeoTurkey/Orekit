@@ -3,9 +3,13 @@ package eu.eumetsat.skat.realization;
 
 import java.util.List;
 
+import org.apache.commons.math.util.FastMath;
 import org.orekit.errors.OrekitException;
 import org.orekit.forces.maneuvers.ImpulseManeuver;
+import org.orekit.orbits.CircularOrbit;
+import org.orekit.orbits.OrbitType;
 import org.orekit.propagation.Propagator;
+import org.orekit.propagation.SpacecraftState;
 import org.orekit.propagation.events.DateDetector;
 import org.orekit.time.AbsoluteDate;
 
@@ -32,16 +36,22 @@ public class Propagation implements ScenarioComponent {
     /** Orbit propagators. */
     private final Propagator[] propagators;
 
+    /** Indicator for compensating long burns inefficiency. */
+    private boolean compensateLongBurn;
+
     /** Cycle end date. */
     private AbsoluteDate cycleEnd;
 
     /** Simple constructor.
      * @param spacecraftIndices indices of the spacecrafts managed by this component
      * @param propagators propagators to use for each spacecraft
+     * @param compensateLongBurn if true, long burn inefficiency should be compensated
      */
-    public Propagation(final int[] spacecraftIndices, final Propagator[] propagators) {
-        this.spacecraftIndices = spacecraftIndices.clone();
-        this.propagators       = propagators.clone();
+    public Propagation(final int[] spacecraftIndices, final Propagator[] propagators,
+                       final boolean compensateLongBurn) {
+        this.spacecraftIndices  = spacecraftIndices.clone();
+        this.propagators        = propagators.clone();
+        this.compensateLongBurn = compensateLongBurn;
     }
 
     /** {@inheritDoc} */
@@ -69,9 +79,29 @@ public class Propagation implements ScenarioComponent {
             // set up the propagator with the maneuvers to perform
             propagators[i].clearEventsDetectors();
             for (final ScheduledManeuver maneuver : performed) {
+                final double inefficiency;
+                if (compensateLongBurn && (!maneuver.isInPlane())) {
+                    // this is a long out of plane maneuver, we adapt Isp to reflect
+                    // the fact more mass will be consumed to achieve the same velocity increment
+                    final Propagator p = maneuver.getTrajectory();
+                    final double nominalDuration = maneuver.getDuration(p.propagate(maneuver.getDate()).getMass());
+
+                    final SpacecraftState startState = p.propagate(maneuver.getDate().shiftedBy(-0.5 * nominalDuration));
+                    final CircularOrbit startOrbit   = (CircularOrbit) (OrbitType.CIRCULAR.convertType(startState.getOrbit()));
+                    final double alphaS              = startOrbit.getAlphaV();
+
+                    final SpacecraftState endState   = p.propagate(maneuver.getDate().shiftedBy(0.5 * nominalDuration));
+                    final CircularOrbit endOrbit     = (CircularOrbit) (OrbitType.CIRCULAR.convertType(endState.getOrbit()));
+                    final double alphaE              = endOrbit.getAlphaV();
+
+                    inefficiency = (FastMath.sin(alphaE) - FastMath.sin(alphaS)) / (alphaE - alphaS);
+
+                } else {
+                    inefficiency = 1.0;
+                }
                 propagators[i].addEventDetector(new ImpulseManeuver(new DateDetector(maneuver.getDate()),
                                                                     maneuver.getDeltaV(),
-                                                                    maneuver.getIsp()));
+                                                                    inefficiency * maneuver.getIsp()));
             }
             propagators[i].setEphemerisMode();
 

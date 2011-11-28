@@ -2,7 +2,7 @@
 package eu.eumetsat.skat.utils;
 
 import org.antlr.runtime.tree.Tree;
-import org.apache.commons.math.analysis.MultivariateRealFunction;
+import org.apache.commons.math.analysis.MultivariateFunction;
 import org.apache.commons.math.exception.DimensionMismatchException;
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math.linear.Array2DRowRealMatrix;
@@ -41,7 +41,9 @@ public enum SupportedScenariocomponent {
                                                    skat.getOutputStep(), skat.getEarth(), skat.getSun(),
                                                    skat.getGroundLocation(),
                                                    skat.getMonitorablesMono(), skat.getMonitorablesDuo(),
-                                                   skat.getControlLawsMap(), skat.getManeuversOutput());
+                                                   skat.getControlLawsResidualsMap(),
+                                                   skat.getControlLawsViolationsMap(),
+                                                   skat.getManeuversOutput());
             for (int j = 0; j < parser.getElementsNumber(node); ++j) {
                 final Tree componentNode = parser.getElement(node, j);
                 final SupportedScenariocomponent component =
@@ -130,7 +132,7 @@ public enum SupportedScenariocomponent {
             final SupportedOptimizer so =
                     (SupportedOptimizer) parser.getEnumerate(optimizerNode, ParameterKey.OPTIMIZER_METHOD,
                                                              SupportedOptimizer.class);
-            final BaseMultivariateRealOptimizer<MultivariateRealFunction> optimizer =
+            final BaseMultivariateRealOptimizer<MultivariateFunction> optimizer =
                     so.parse(parser, optimizerNode, maneuvers, stopCriterion, skat);
 
             // propagator
@@ -142,11 +144,16 @@ public enum SupportedScenariocomponent {
                     sp.parse(parser, propagatorNode, skat, spacecraftIndex);
 
 
-            // set up boundaries for tunable parameters
+            // set up control loop
             final int maxEval = parser.getInt(node, ParameterKey.COMPONENT_CONTROL_LOOP_MAX_EVAL);
+            final double inPlaneEliminationThreshold =
+                    parser.getDouble(node, ParameterKey.COMPONENT_CONTROL_LOOP_IN_PLANE_ELIMINATION);
+            final double outOfPlaneEliminationThreshold =
+                    parser.getDouble(node, ParameterKey.COMPONENT_CONTROL_LOOP_OUT_OF_PLANE_ELIMINATION);
             final ControlLoop loop = new ControlLoop(spacecraftIndex, firstCycle, lastCycle,
                                                      maneuvers, maxEval, optimizer, propagator,
-                                                     skat.getCycleDuration(), rollingCycles);
+                                                     skat.getCycleDuration(), rollingCycles,
+                                                     inPlaneEliminationThreshold, outOfPlaneEliminationThreshold);
 
             // control laws
             final Tree controlsNode = parser.getValue(node, ParameterKey.COMPONENT_CONTROL_LOOP_CONTROLS);
@@ -273,7 +280,7 @@ public enum SupportedScenariocomponent {
                 propagators[i] = sp.parse(parser, propagatorNode, skat, i);
 
                 // register the control law handlers to the propagator
-                for (final SKControl controlLaw : skat.getControlLawsMap().keySet()) {
+                for (final SKControl controlLaw : skat.getControlLawsResidualsMap().keySet()) {
                     if (indices[i] == skat.getSpacecraftIndex(controlLaw.getControlledSpacecraftName())) {
                         if (controlLaw.getEventDetector() != null) {
                             propagators[i].addEventDetector(controlLaw.getEventDetector());
@@ -286,8 +293,11 @@ public enum SupportedScenariocomponent {
 
             }
 
+            // check if long burn inefficiency should be compensated
+            final boolean compensateLongBurn = parser.getBoolean(node, ParameterKey.COMPONENT_PROPAGATION_LONG_BURN_COMPENSATION);
+
             // build the component
-            Propagation propagation = new Propagation(indices, propagators);
+            Propagation propagation = new Propagation(indices, propagators, compensateLongBurn);
 
             // notify the Skat application this component manages the specified spacecrafts
             for (final int index : indices) {

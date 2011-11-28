@@ -143,8 +143,11 @@ public class Skat {
     /** Duo-spacecrafts monitorables. */
     private List<MonitorableDuoSKData> monitorablesDuo;
 
-    /** Station-keeping control laws monitoring. */
-    private final Map<SKControl, SimpleMonitorable> controls;
+    /** Station-keeping control laws monitoring (residuals part). */
+    private final Map<SKControl, SimpleMonitorable> controlsResiduals;
+
+    /** Station-keeping control laws monitoring (violations part). */
+    private final Map<SKControl, SimpleMonitorable> controlsViolations;
 
     /** Program entry point.
      * @param args program arguments (unused here)
@@ -360,7 +363,8 @@ public class Skat {
             }
         }
 
-        controls  = new HashMap<SKControl, SimpleMonitorable>();
+        controlsResiduals  = new HashMap<SKControl, SimpleMonitorable>();
+        controlsViolations = new HashMap<SKControl, SimpleMonitorable>();
 
         // set up scenario components
         final Tree scenarioNode = parser.getValue(root, ParameterKey.SCENARIO);
@@ -511,26 +515,50 @@ public class Skat {
      */
     public void addControl(final SKControl controlLaw)
         throws SkatException {
-        final SimpleMonitorable monitorable =
+
+        final SimpleMonitorable monitorableResidual =
                 new SimpleMonitorable(1, "control law residual: " + controlLaw.getName());
-        controls.put(controlLaw, monitorable);
+        controlsResiduals.put(controlLaw, monitorableResidual);
+
+        final SimpleMonitorable monitorableViolation;
+        if (controlLaw.isConstrained()) {
+          monitorableViolation = new SimpleMonitorable(1, "control law violation: " + controlLaw.getName());
+          controlsViolations.put(controlLaw, monitorableViolation);
+        } else {
+            monitorableViolation = null;
+        }
+
         if (controlLaw.getReferenceSpacecraftName() == null) {
             // this is a control law for a single spacecraft
             final int index = getSpacecraftIndex(controlLaw.getControlledSpacecraftName());
-            monitorable.register(configuredStates.length, monitorsMono[index]);
+            monitorableResidual.register(configuredStates.length, monitorsMono[index]);
+            if (monitorableViolation != null) {
+                monitorableViolation.register(configuredStates.length, monitorsMono[index]);
+            }
         } else {
             // this is a control law for a spacecrafts pair
             final int index1 = getSpacecraftIndex(controlLaw.getControlledSpacecraftName());
             final int index2 = getSpacecraftIndex(controlLaw.getReferenceSpacecraftName());
-            monitorable.register(configuredStates.length, monitorsDuo[index1][index2]);
+            monitorableResidual.register(configuredStates.length, monitorsDuo[index1][index2]);
+            if (monitorableViolation != null) {
+                monitorableViolation.register(configuredStates.length, monitorsDuo[index1][index2]);
+            }
         }
+
     }
 
-    /** Get the control laws monitoring map.
-     * @return control laws monitoring map
+    /** Get the control laws residuals monitoring map.
+     * @return control laws residuals monitoring map
      */
-    public Map<SKControl, SimpleMonitorable> getControlLawsMap() {
-        return controls;
+    public Map<SKControl, SimpleMonitorable> getControlLawsResidualsMap() {
+        return controlsResiduals;
+    }
+
+    /** Get the control laws violations monitoring map.
+     * @return control laws violations monitoring map
+     */
+    public Map<SKControl, SimpleMonitorable> getControlLawsViolationsMap() {
+        return controlsViolations;
     }
 
     /**

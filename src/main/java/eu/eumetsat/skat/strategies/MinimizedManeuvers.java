@@ -1,6 +1,7 @@
 /* Copyright 2011 Eumetsat */
 package eu.eumetsat.skat.strategies;
 
+import org.orekit.errors.OrekitException;
 import org.orekit.propagation.Propagator;
 import org.orekit.propagation.events.EventDetector;
 import org.orekit.propagation.sampling.OrekitStepHandler;
@@ -44,7 +45,8 @@ public class MinimizedManeuvers extends AbstractSKControl {
     public MinimizedManeuvers(final String name, final double scalingDivisor,
                               final String controlled,
                               final boolean inPlane, final boolean outOfPlane) {
-        super(name, scalingDivisor, controlled, null, 0.0, 0.0, Double.POSITIVE_INFINITY);
+        super(name, scalingDivisor, controlled, null, 0.0,
+              Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY);
         this.inPlane    = inPlane;
         this.outOfPlane = outOfPlane;
     }
@@ -53,7 +55,9 @@ public class MinimizedManeuvers extends AbstractSKControl {
     @Override
     public void initializeRun(final ScheduledManeuver[] maneuvers,
                               final Propagator propagator,
-                              final AbsoluteDate start, final AbsoluteDate end) {
+                              final AbsoluteDate start, final AbsoluteDate end)
+        throws OrekitException {
+        super.initializeRun(maneuvers, propagator, start, end);
         sumDeltaV = 0;
         for (final ScheduledManeuver maneuver : maneuvers) {
             if ((inPlane && maneuver.isInPlane()) || (outOfPlane && !(maneuver.isInPlane()))) {

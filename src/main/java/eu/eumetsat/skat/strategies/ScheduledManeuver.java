@@ -2,8 +2,10 @@
 package eu.eumetsat.skat.strategies;
 
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
+import org.apache.commons.math.util.FastMath;
 import org.orekit.propagation.Propagator;
 import org.orekit.time.AbsoluteDate;
+import org.orekit.utils.Constants;
 
 /**
  * This class is a simple container for impulse maneuver that are completely defined.
@@ -95,6 +97,17 @@ public class ScheduledManeuver {
     */
     public double getIsp() {
         return isp;
+    }
+
+    /** Get the maneuver duration.
+     * @param mass spacecraft mass at burn start
+     * @return maneuver duration in seconds
+     */
+    public double getDuration(final double mass) {
+        final double exhaustVelocity = Constants.G0_STANDARD_GRAVITY * isp;
+        final double flowRate        = thrust / exhaustVelocity;
+        final double consumption     = -mass * FastMath.expm1(-deltaV.getNorm() / exhaustVelocity);
+        return consumption / flowRate;
     }
 
     /** Get the trajectory to which this maneuver belongs.

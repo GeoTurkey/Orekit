@@ -4,13 +4,13 @@ package eu.eumetsat.skat.utils;
 import java.util.Arrays;
 
 import org.antlr.runtime.tree.Tree;
-import org.apache.commons.math.analysis.MultivariateRealFunction;
+import org.apache.commons.math.analysis.MultivariateFunction;
 import org.apache.commons.math.optimization.BaseMultivariateRealOptimizer;
 import org.apache.commons.math.optimization.ConvergenceChecker;
 import org.apache.commons.math.optimization.GoalType;
 import org.apache.commons.math.optimization.RealPointValuePair;
 import org.apache.commons.math.optimization.direct.CMAESOptimizer;
-import org.apache.commons.math.optimization.direct.MultivariateRealFunctionPenaltyAdapter;
+import org.apache.commons.math.optimization.direct.MultivariateFunctionPenaltyAdapter;
 import org.apache.commons.math.optimization.direct.NelderMeadSimplex;
 import org.apache.commons.math.optimization.direct.SimplexOptimizer;
 import org.apache.commons.math.util.FastMath;
@@ -26,7 +26,7 @@ public enum SupportedOptimizer {
     /** Constant for Nelder-Mead. */
     NELDER_MEAD() {
         /** {@inheritDoc} */
-        public BaseMultivariateRealOptimizer<MultivariateRealFunction>
+        public BaseMultivariateRealOptimizer<MultivariateFunction>
             parse(final SkatFileParser parser, final Tree node,
                   final TunableManeuver[] maneuvers, final double stopCriterion, final Skat skat) {
 
@@ -36,15 +36,15 @@ public enum SupportedOptimizer {
 
                 /** {@inheritDoc} */
                 @Override
-                public RealPointValuePair optimize(final int maxEval, final MultivariateRealFunction f,
+                public RealPointValuePair optimize(final int maxEval, final MultivariateFunction f,
                                                    final GoalType goalType, final double[] startPoint) {
 
                     // wrap the bounded function using a penalty adapter
                     final double offset = 1.0e10;
                     final double[] scale = new double[boundaries[0].length];
                     Arrays.fill(scale, goalType == GoalType.MINIMIZE ? +1.0 : -1.0);
-                    final MultivariateRealFunctionPenaltyAdapter wrapped =
-                            new MultivariateRealFunctionPenaltyAdapter(f, boundaries[0], boundaries[1], offset, scale);
+                    final MultivariateFunctionPenaltyAdapter wrapped =
+                            new MultivariateFunctionPenaltyAdapter(f, boundaries[0], boundaries[1], offset, scale);
 
                     // perform optimization
                     return super.optimize(maxEval, wrapped, goalType, startPoint);
@@ -68,7 +68,7 @@ public enum SupportedOptimizer {
     /** Constant for Covariance Matrix Adaptation Evolution Strategy (CMA-ES). */
     CMA_ES() {
         /** {@inheritDoc} */
-        public BaseMultivariateRealOptimizer<MultivariateRealFunction>
+        public BaseMultivariateRealOptimizer<MultivariateFunction>
             parse(final SkatFileParser parser, final Tree node,
                   final TunableManeuver[] maneuvers, final double stopCriterion, final Skat skat) {
             double[][] boundaries = getBoundaries(maneuvers);
@@ -92,7 +92,7 @@ public enum SupportedOptimizer {
      * @param skat enclosing Skat tool
      * @return parsed component
      */
-    public abstract BaseMultivariateRealOptimizer<MultivariateRealFunction>
+    public abstract BaseMultivariateRealOptimizer<MultivariateFunction>
         parse(SkatFileParser parser, Tree node, TunableManeuver[] maneuvers, double stopCriterion, Skat skat);
 
     /** Get the parameters boundaries.

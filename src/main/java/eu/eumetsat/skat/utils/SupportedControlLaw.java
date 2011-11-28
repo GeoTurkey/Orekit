@@ -43,8 +43,9 @@ public enum SupportedControlLaw {
             final String name           = parser.getString(node, ParameterKey.CONTROL_NAME);
             final double scalingDivisor = parser.getAngle(node,  ParameterKey.CONTROL_SCALING_DIVISOR);
             final double sampling       = parser.getDouble(node, ParameterKey.CONTROL_SAMPLING);
-            final double center         = parser.getAngle(node,  ParameterKey.CONTROL_CENTERED_LONGITUDE_CENTER);
-            return new CenteredLongitude(name, scalingDivisor, controlled, center, sampling, skat.getEarth());
+            final double lEast          = parser.getAngle(node,  ParameterKey.CONTROL_CENTERED_LONGITUDE_EAST);
+            final double lWest          = parser.getAngle(node,  ParameterKey.CONTROL_CENTERED_LONGITUDE_WEST);
+            return new CenteredLongitude(name, scalingDivisor, controlled, lEast, lWest, sampling, skat.getEarth());
         }
 
     },

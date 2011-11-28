@@ -50,12 +50,6 @@ public class InclinationVector extends AbstractSKControl {
     /** Ordinate of target inclination vector. */
     private final double targetHy;
 
-    /** Limit circle radius. */
-    private final double circleRadius;
-
-    /** Limit circle violation indicator. */
-    private boolean limitCircleEscaped;
-
     /** Sample of inclination x component during station keeping cycle. */
     private List<Double> sampleX;
 
@@ -78,11 +72,10 @@ public class InclinationVector extends AbstractSKControl {
                              final String controlled,
                              final double targetHx, final double targetHy,
                              final double circleRadius, final double samplingStep) {
-        super(name, scalingDivisor, controlled, null, 0.0, 0.0, Double.POSITIVE_INFINITY);
+        super(name, scalingDivisor, controlled, null, 0.0, 0.0, circleRadius);
         this.stephandler  = new Handler();
         this.targetHx     = targetHx;
         this.targetHy     = targetHy;
-        this.circleRadius = circleRadius;
         this.samplingStep = samplingStep;
         this.sampleX      = new ArrayList<Double>();
         this.sampleY      = new ArrayList<Double>();
@@ -91,17 +84,18 @@ public class InclinationVector extends AbstractSKControl {
     /** {@inheritDoc} */
     @Override
     public void initializeRun(final ScheduledManeuver[] maneuvers,
-                              final Propagator propagator, AbsoluteDate start, AbsoluteDate end2) {
+                              final Propagator propagator, AbsoluteDate start, AbsoluteDate end)
+        throws OrekitException {
+        super.initializeRun(maneuvers, propagator, start, end);
         sampleX.clear();
         sampleY.clear();
-        limitCircleEscaped = false;
     }
 
     /** {@inheritDoc} */
     public double getAchievedValue() {
 
-        if (limitCircleEscaped) {
-            // we escape the limite circle during the cycle, we need to adjust the maneuvers
+        if (limitsExceeded()) {
+            // we escaped the limite circle during the cycle, we need to adjust the maneuvers
 
             // compute center of the motion along the x axis
             final double[] dataX = new double[sampleX.size()];
@@ -171,9 +165,7 @@ public class InclinationVector extends AbstractSKControl {
                     sampleY.add(state.getHy());
 
                     // check limit circle violations
-                    if (FastMath.hypot(state.getHx() - targetHx, state.getHy() - targetHy) > circleRadius) {
-                        limitCircleEscaped = true;
-                    }
+                    checkLimits(FastMath.hypot(state.getHx() - targetHx, state.getHy() - targetHy));
 
                 }
 
