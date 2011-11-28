@@ -4,7 +4,7 @@ package eu.eumetsat.skat.control;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.math.analysis.MultivariateRealFunction;
+import org.apache.commons.math.analysis.MultivariateFunction;
 import org.apache.commons.math.optimization.BaseMultivariateRealOptimizer;
 import org.apache.commons.math.optimization.GoalType;
 import org.apache.commons.math.optimization.RealPointValuePair;
@@ -52,7 +52,7 @@ public class ControlLoop implements ScenarioComponent {
     private final int maxEval;
 
     /** Optimizing engine. */
-    private final BaseMultivariateRealOptimizer<MultivariateRealFunction> optimizer;
+    private final BaseMultivariateRealOptimizer<MultivariateFunction> optimizer;
 
     /** Orbit propagator. */
     private final Propagator propagator;
@@ -107,7 +107,7 @@ public class ControlLoop implements ScenarioComponent {
      */
     public ControlLoop(final int spacecraftIndex, final int firstCycle, final int lastCycle,
                        final TunableManeuver[] tunables, final int maxEval,
-                       final BaseMultivariateRealOptimizer<MultivariateRealFunction> optimizer,
+                       final BaseMultivariateRealOptimizer<MultivariateFunction> optimizer,
                        final Propagator propagator, final double cycleDuration, final int rollingCycles,
                        final double inPlaneEliminationThreshold, final double outOfPlaneEliminationThreshold) {
         this.spacecraftIndex                = spacecraftIndex;

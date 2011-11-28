@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.apache.commons.math.analysis.UnivariateRealFunction;
+import org.apache.commons.math.analysis.UnivariateFunction;
 import org.apache.commons.math.analysis.solvers.BracketingNthOrderBrentSolver;
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math.stat.descriptive.rank.Percentile;
@@ -246,7 +246,7 @@ public class GroundTrackGrid extends AbstractSKControl {
     }
 
     /** Inner function for finding closest approach. */
-    private static class RadialVelocity implements UnivariateRealFunction {
+    private static class RadialVelocity implements UnivariateFunction {
 
         /** Reference date. */
         private final AbsoluteDate referenceDate;

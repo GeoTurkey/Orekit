@@ -2,7 +2,7 @@
 package eu.eumetsat.skat.utils;
 
 import org.antlr.runtime.tree.Tree;
-import org.apache.commons.math.analysis.MultivariateRealFunction;
+import org.apache.commons.math.analysis.MultivariateFunction;
 import org.apache.commons.math.exception.DimensionMismatchException;
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math.linear.Array2DRowRealMatrix;
@@ -132,7 +132,7 @@ public enum SupportedScenariocomponent {
             final SupportedOptimizer so =
                     (SupportedOptimizer) parser.getEnumerate(optimizerNode, ParameterKey.OPTIMIZER_METHOD,
                                                              SupportedOptimizer.class);
-            final BaseMultivariateRealOptimizer<MultivariateRealFunction> optimizer =
+            final BaseMultivariateRealOptimizer<MultivariateFunction> optimizer =
                     so.parse(parser, optimizerNode, maneuvers, stopCriterion, skat);
 
             // propagator

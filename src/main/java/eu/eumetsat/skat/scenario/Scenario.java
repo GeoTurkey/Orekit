@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 
-import org.apache.commons.math.analysis.UnivariateRealFunction;
+import org.apache.commons.math.analysis.UnivariateFunction;
 import org.apache.commons.math.analysis.solvers.BracketingNthOrderBrentSolver;
 import org.apache.commons.math.analysis.solvers.UnivariateRealSolver;
 import org.apache.commons.math.exception.NoBracketingException;
@@ -390,7 +390,7 @@ public class Scenario implements ScenarioComponent {
 
             // search the node, defined by spacecraft crossing equator in EME2000
             final UnivariateRealSolver solver = new BracketingNthOrderBrentSolver(1.0e-3, 5);
-            double dtNode = solver.solve(1000, new UnivariateRealFunction() {
+            double dtNode = solver.solve(1000, new UnivariateFunction() {
                 /** {@inheritDoc} */
                 public double value(double x) {
                     try {

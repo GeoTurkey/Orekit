@@ -5,7 +5,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.commons.math.analysis.MultivariateRealFunction;
+import org.apache.commons.math.analysis.MultivariateFunction;
 import org.orekit.errors.OrekitException;
 import org.orekit.errors.PropagationException;
 import org.orekit.propagation.BoundedPropagator;
@@ -24,7 +24,7 @@ import eu.eumetsat.skat.strategies.TunableManeuver;
  * @see ControlLoop
  * @author Luc Maisonobe
  */
-class ObjectiveFunction implements MultivariateRealFunction {
+class ObjectiveFunction implements MultivariateFunction {
 
     /** Reference ephemeris. */
     private final BoundedPropagator reference;
