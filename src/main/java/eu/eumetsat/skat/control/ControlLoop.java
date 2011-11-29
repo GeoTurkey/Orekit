@@ -10,12 +10,14 @@ import org.apache.commons.math.optimization.GoalType;
 import org.apache.commons.math.optimization.RealPointValuePair;
 import org.orekit.errors.OrekitException;
 import org.orekit.errors.PropagationException;
+import org.orekit.forces.maneuvers.ConstantThrustManeuver;
 import org.orekit.forces.maneuvers.ImpulseManeuver;
 import org.orekit.propagation.BoundedPropagator;
 import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
 import org.orekit.propagation.analytical.ManeuverAdapterPropagator;
 import org.orekit.propagation.events.DateDetector;
+import org.orekit.propagation.numerical.NumericalPropagator;
 import org.orekit.time.AbsoluteDate;
 import org.orekit.utils.Constants;
 
@@ -263,9 +265,20 @@ public class ControlLoop implements ScenarioComponent {
         if (scheduledManeuvers != null) {
             // set up the scheduled maneuvers that are not optimized
             for (final ScheduledManeuver maneuver : scheduledManeuvers) {
-                propagator.addEventDetector(new ImpulseManeuver(new DateDetector(maneuver.getDate()),
-                                                                maneuver.getDeltaV(),
-                                                                maneuver.getIsp()));
+                if (propagator instanceof NumericalPropagator) {
+                    final Propagator p = maneuver.getTrajectory();
+                    final double duration = maneuver.getDuration(p.propagate(maneuver.getDate()).getMass());
+                    final AbsoluteDate startMan = maneuver.getDate().shiftedBy(-0.5 * duration);
+                    final ConstantThrustManeuver ctm =
+                            new ConstantThrustManeuver(startMan, duration,
+                                                       maneuver.getThrust(), maneuver.getIsp(),
+                                                       maneuver.getDeltaV().normalize());
+                    ((NumericalPropagator) propagator).addForceModel(ctm);
+                } else {
+                    propagator.addEventDetector(new ImpulseManeuver(new DateDetector(maneuver.getDate()),
+                                                                    maneuver.getDeltaV(),
+                                                                    maneuver.getIsp()));
+                }
             }
         }
 
