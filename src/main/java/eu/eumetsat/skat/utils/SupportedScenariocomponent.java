@@ -222,10 +222,10 @@ public enum SupportedScenariocomponent {
                     parser.getBoolean(node, ParameterKey.COMPONENT_MISSED_MANEUVER_OUT_OF_PLANE);
             final double missThreshold =
                     parser.getDouble(node, ParameterKey.COMPONENT_MISSED_MANEUVER_THRESHOLD);
-            final double reschedulingDelay =
-                    parser.getDouble(node, ParameterKey.COMPONENT_MISSED_MANEUVER_RESCHEDULING_DELAY);
+            final int orbitsSeparation =
+                    parser.getInt(node, ParameterKey.COMPONENT_MISSED_MANEUVER_ORBITS_SEPARATION);
             return new MissedManeuver(getIndices(parser, node, skat), inPlane, outOfPlane,
-                                      missThreshold, reschedulingDelay, skat.getGenerator());
+                                      missThreshold, orbitsSeparation, skat.getGenerator());
         }
     },
 
@@ -260,10 +260,10 @@ public enum SupportedScenariocomponent {
                     parser.getBoolean(node, ParameterKey.COMPONENT_MANEUVER_SPLITTER_OUT_OF_PLANE);
             final double maxDV =
                     parser.getDouble(node, ParameterKey.COMPONENT_MANEUVER_SPLITTER_MAX_DV);
-            final double minDT =
-                    parser.getDouble(node, ParameterKey.COMPONENT_MANEUVER_SPLITTER_MIN_DT);
+            final int orbitsSeparation =
+                    parser.getInt(node, ParameterKey.COMPONENT_MANEUVER_SPLITTER_ORBITS_SEPARATION);
             return new ManeuverSplitter(getIndices(parser, node, skat), inPlane, outOfPlane,
-                                        maxDV, minDT);
+                                        maxDV, orbitsSeparation);
         }
     },
 

@@ -273,26 +273,6 @@ public enum MonitorableMonoSKData implements MonitorableMono {
 
     },
 
-    SOLAR_TIME_AT_ASCENDING_NODE(1) {
-
-        /** {@inheritDoc} */
-        @Override
-        protected void extractData(final ScenarioState state, BodyShape earth, double[] data) {
-            data[0] = state.getAscendingNodesSolarTime();
-        }
-
-    },
-
-    SOLAR_TIME_AT_DESCENDING_NODE(1) {
-
-        /** {@inheritDoc} */
-        @Override
-        protected void extractData(final ScenarioState state, BodyShape earth, double[] data) {
-            data[0] = state.getDescendingNodesSolarTime();
-        }
-
-    },
-
     CYCLES_NUMBER(1) {
 
         /** {@inheritDoc} */

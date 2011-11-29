@@ -39,7 +39,7 @@ public class MissedManeuver implements ScenarioComponent {
     private final double missThreshold;
 
     /** Minimum delay for missed maneuver rescheduling in number of orbits. */
-    private final double reschedulingDelay;
+    private final int orbitsSeparation;
 
     /** Random generator to use for evaluating the error factor. */
     private final RandomGenerator generator;
@@ -50,13 +50,13 @@ public class MissedManeuver implements ScenarioComponent {
      * @param outOfPlane if true, the error applies to out-of-plane maneuvers
      * @param missThreshold miss threshold under which the maneuver is missed
      * (must be a value between 0.0 and 1.0)
-     * @param reschedulingDelay minimum delay for missed maneuver rescheduling in number of orbits
+     * @param orbitsSeparation minimum delay for missed maneuver rescheduling in number of orbits
      * @param generator random generator to use for evaluating the error factor
      * @exception IllegalArgumentException if miss threshold is not between 0 and 1
      */
     public MissedManeuver(final int[] spacecraftIndices,
                           final boolean inPlane, final boolean outOfPlane,
-                          final double missThreshold, final double reschedulingDelay,
+                          final double missThreshold, final int orbitsSeparation,
                           final RandomGenerator generator)
         throws IllegalArgumentException {
         this.spacecraftIndices  = spacecraftIndices.clone();
@@ -66,9 +66,9 @@ public class MissedManeuver implements ScenarioComponent {
             throw SkatException.createIllegalArgumentException(SkatMessages.WRONG_MISS_THRESHOLD,
                                                                missThreshold);
         }
-        this.missThreshold     = missThreshold;
-        this.reschedulingDelay = reschedulingDelay;
-        this.generator         = generator;
+        this.missThreshold    = missThreshold;
+        this.orbitsSeparation = orbitsSeparation;
+        this.generator        = generator;
     }
 
     /** {@inheritDoc} */
@@ -102,12 +102,12 @@ public class MissedManeuver implements ScenarioComponent {
                     if (generator.nextDouble() < missThreshold) {
                         // the maneuver is missed
                         // does it need to be replanned ?
-                        if (reschedulingDelay > 0.) {
+                        if (orbitsSeparation > 0.) {
                             // reschedule the missed maneuver
                             final SpacecraftState state = maneuver.getTrajectory().propagate(maneuver.getDate());
                             final double period         = state.getKeplerianPeriod();
                             modified.add(new ScheduledManeuver(maneuver.getName(), maneuver.isInPlane(),
-                                                               maneuver.getDate().shiftedBy(reschedulingDelay * period),
+                                                               maneuver.getDate().shiftedBy(orbitsSeparation * period),
                                                                maneuver.getDeltaV(),
                                                                maneuver.getThrust(), maneuver.getIsp(),
                                                                maneuver.getTrajectory()));

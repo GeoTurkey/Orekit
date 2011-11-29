@@ -9,24 +9,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 
-import org.apache.commons.math.analysis.UnivariateFunction;
-import org.apache.commons.math.analysis.solvers.BracketingNthOrderBrentSolver;
-import org.apache.commons.math.analysis.solvers.UnivariateRealSolver;
-import org.apache.commons.math.exception.NoBracketingException;
-import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
-import org.apache.commons.math.util.FastMath;
-import org.apache.commons.math.util.MathUtils;
 import org.orekit.bodies.BodyShape;
 import org.orekit.bodies.CelestialBody;
 import org.orekit.errors.OrekitException;
-import org.orekit.errors.OrekitExceptionWrapper;
-import org.orekit.frames.Frame;
-import org.orekit.frames.FramesFactory;
 import org.orekit.frames.TopocentricFrame;
-import org.orekit.orbits.CircularOrbit;
-import org.orekit.orbits.OrbitType;
-import org.orekit.propagation.BoundedPropagator;
-import org.orekit.propagation.SpacecraftState;
 import org.orekit.time.AbsoluteDate;
 import org.orekit.time.TimeScale;
 import org.orekit.time.TimeScalesFactory;
@@ -57,14 +43,8 @@ public class Scenario implements ScenarioComponent {
     /** Output step for monitoring. */
     private final double outputstep;
 
-    /** EME 2000 Frame. */
-    private final Frame eme2000;
-
     /** Earth model. */
     private final BodyShape earth;
-
-    /** Sun model. */
-    private final CelestialBody sun;
 
     /** Cycle end date. */
     private AbsoluteDate cycleEnd;
@@ -114,9 +94,7 @@ public class Scenario implements ScenarioComponent {
         this.components         = new ArrayList<ScenarioComponent>();
         this.cycleDuration      = cycleDuration;
         this.outputstep         = outputStep;
-        this.eme2000            = FramesFactory.getEME2000();
         this.earth              = earth;
-        this.sun                = sun;
         this.groundLocation     = groundLocation;
         this.monitorablesMono   = monitorablesMono;
         this.monitorablesDuo    = monitorablesDuo;
@@ -192,9 +170,6 @@ public class Scenario implements ScenarioComponent {
 
                 // check for maneuvers that have occurred
                 updatePendingManeuvers(date, states);
-
-                // check for nodes
-                updateNodes(date, states);
 
                 // perform monitoring
                 for (final MonitorableMonoSKData monitorable : monitorablesMono) {
@@ -272,157 +247,6 @@ public class Scenario implements ScenarioComponent {
             }
         }
 
-    }
-
-    /** Update the nodes up to current date.
-     * @param date current date
-     * @param states states array to update
-     * @exception OrekitException if a node cannot be computed
-     * @exception SkatException if there are no ephemerides
-     */
-    private void updateNodes(final AbsoluteDate date, final ScenarioState[] states)
-        throws OrekitException, SkatException {
-        for (int i = 0; i < states.length; ++i) {
-            final BoundedPropagator ephemeris = states[i].getPerformedEphemeris();
-            if (ephemeris == null) {
-                throw new SkatException(SkatMessages.NO_EPHEMERIS_STATE,
-                                        states[i].getName(), states[i].getCyclesNumber());
-            }
-            final double dtA = date.durationFrom(states[i].getAscendingNodeDate());
-            final double dtD = date.durationFrom(states[i].getDescendingNodeDate());
-            final double margin = 0.001; // margin set up to avoid searching out of ephemeris range
-            if (dtA * dtD > 0 &&
-                date.durationFrom(ephemeris.getMinDate()) >  margin &&
-                date.durationFrom(ephemeris.getMaxDate()) < -margin) {
-
-                // the stored nodes do not bracket current date anymore, recompute them
-                final SpacecraftState firstState = findClosestNode(ephemeris, date);
-                final AbsoluteDate firstDate = firstState.getDate();
-                final double halfPeriod = 0.5 * firstState.getKeplerianPeriod();
-                final double dt;
-                if (firstDate.compareTo(date) <= 0) {
-                    // first node is before the date, the bracketing other node is therefore after it
-                    // are we allowed to select this one and ensure bracketing ?
-                    if (ephemeris.getMaxDate().durationFrom(firstDate) > halfPeriod) {
-                        // OK, we can bracket the date
-                        dt =  halfPeriod;
-                    } else {
-                        // no, the ephemeris is not long enough, we must select an earlier node
-                        dt = -halfPeriod;
-                    }
-                } else {
-                    // first node is after the date, the bracketing other node is therefore before it
-                    // are we allowed to select this one and ensure bracketing ?
-                    if (firstDate.durationFrom(ephemeris.getMinDate()) > halfPeriod) {
-                        // OK, we can bracket the date
-                        dt = -halfPeriod;
-                    } else {
-                        // no, the ephemeris is not long enough, we must select a later node
-                        dt =  halfPeriod;
-                    }
-                }
-                final SpacecraftState secondState = findClosestNode(ephemeris, firstDate.shiftedBy(dt));
-                final AbsoluteDate secondDate = secondState.getDate();
-
-                final double firstSolarTime  = solarTime(firstState);
-                final double secondSolarTime = solarTime(secondState);
-
-                // update the state
-                if (firstState.getPVCoordinates(eme2000).getVelocity().getZ() >= 0) {
-                    // first state is an ascending node
-                    states[i] = states[i].updateAscendingNodeCrossing(firstDate,   firstSolarTime);
-                    states[i] = states[i].updateDescendingNodeCrossing(secondDate, secondSolarTime);
-                } else {
-                    // first state is a descending node
-                    states[i] = states[i].updateDescendingNodeCrossing(firstDate,  firstSolarTime);
-                    states[i] = states[i].updateAscendingNodeCrossing(secondDate,  secondSolarTime);
-                }
-
-            }
-        }
-    }
-
-    /** Find the closest node.
-     * @param ephemeris spacecraft ephemeris
-     * @param date current date
-     * @return spacecraft state at node
-     * @exception OrekitException if ephemeride cannot be propagated at some date
-     */
-    private SpacecraftState findClosestNode(final BoundedPropagator ephemeris,
-                                            final AbsoluteDate date)
-        throws OrekitException {
-
-        try {
-            // get the orbit at curent date
-            final CircularOrbit orbit =
-                    (CircularOrbit) OrbitType.CIRCULAR.convertType(ephemeris.propagate(date).getOrbit());
-
-            // rough estimate of time to closest node using Keplerian motion
-            final double halfPi        = 0.5 * FastMath.PI;
-            final double alphaM        = MathUtils.normalizeAngle(orbit.getAlphaM(), 0);
-            final double n             = orbit.getKeplerianMeanMotion();
-            final double targetAlphaM  =
-                (alphaM < -halfPi) ? -FastMath.PI : ((alphaM < halfPi) ? 0 : FastMath.PI);
-            double dt                  = (targetAlphaM - alphaM) / n;
-            final double quarterPeriod = halfPi / n;
-
-            // set up search range to the half orbit around node, within ephemeris
-            final double margin        = 1.0e-3;
-            final double ephemerisMin  = ephemeris.getMinDate().durationFrom(date);
-            final double ephemerisMax  = ephemeris.getMaxDate().durationFrom(date);
-            double dtMin;
-            double dtMax;
-            if (dt <= ephemerisMin + quarterPeriod) {
-                // the closest node lies near ephemeris start
-                dtMin = ephemerisMin + margin;
-                dt    = dtMin + quarterPeriod;
-                dtMax = dt + quarterPeriod;
-            } else if (dt >= ephemerisMax - quarterPeriod) {
-                // the closest node lies after ephemeris, just use one half-period at ephemeris end
-                dtMax = ephemerisMax - margin;
-                dt    = dtMax - quarterPeriod;
-                dtMin = dt - quarterPeriod;
-            } else {
-                // the closest node is well within ephemeris range
-                dtMin = dt - quarterPeriod;
-                dtMax = dt + quarterPeriod;
-            }
-
-            // search the node, defined by spacecraft crossing equator in EME2000
-            final UnivariateRealSolver solver = new BracketingNthOrderBrentSolver(1.0e-3, 5);
-            double dtNode = solver.solve(1000, new UnivariateFunction() {
-                /** {@inheritDoc} */
-                public double value(double x) {
-                    try {
-                        // estimate spacecraft position with respect to equator
-                        final SpacecraftState state = ephemeris.propagate(date.shiftedBy(x));
-                        return state.getPVCoordinates(eme2000).getPosition().getZ();
-                    } catch (OrekitException oe) {
-                        throw new OrekitExceptionWrapper(oe);
-                    }
-                }
-            }, dtMin, dtMax, dt);
-
-            return ephemeris.propagate(date.shiftedBy(dtNode));
-        } catch (OrekitExceptionWrapper oew) {
-            throw oew.getException();
-        } catch (NoBracketingException nbe) {
-            throw new OrekitException(nbe);
-        }
-        
-    }
-
-    /** Compute solar time.
-     * @param state spacecraft state
-     * @return spacecraft local solar time (between 0 and 24 hours)
-     * @throws OrekitException if sun or spacecraft positions cannot be determined
-     */
-    private double solarTime(final SpacecraftState state)
-        throws OrekitException {
-        final Vector3D spacecraftPosition = state.getPVCoordinates(eme2000).getPosition();
-        final Vector3D sunPosition = sun.getPVCoordinates(state.getDate(), eme2000).getPosition();
-        final double dAlpha = FastMath.PI + spacecraftPosition.getAlpha() - sunPosition.getAlpha();
-        return 12.0 * MathUtils.normalizeAngle(dAlpha, FastMath.PI) / FastMath.PI;
     }
 
 }
