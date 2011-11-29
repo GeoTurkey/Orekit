@@ -5,12 +5,14 @@ import java.util.List;
 
 import org.apache.commons.math.util.FastMath;
 import org.orekit.errors.OrekitException;
+import org.orekit.forces.maneuvers.ConstantThrustManeuver;
 import org.orekit.forces.maneuvers.ImpulseManeuver;
 import org.orekit.orbits.CircularOrbit;
 import org.orekit.orbits.OrbitType;
 import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
 import org.orekit.propagation.events.DateDetector;
+import org.orekit.propagation.numerical.NumericalPropagator;
 import org.orekit.time.AbsoluteDate;
 
 import eu.eumetsat.skat.scenario.ScenarioComponent;
@@ -79,12 +81,12 @@ public class Propagation implements ScenarioComponent {
             // set up the propagator with the maneuvers to perform
             propagators[i].clearEventsDetectors();
             for (final ScheduledManeuver maneuver : performed) {
+                final Propagator p = maneuver.getTrajectory();
+                final double nominalDuration = maneuver.getDuration(p.propagate(maneuver.getDate()).getMass());
                 final double inefficiency;
                 if (compensateLongBurn && (!maneuver.isInPlane())) {
                     // this is a long out of plane maneuver, we adapt Isp to reflect
                     // the fact more mass will be consumed to achieve the same velocity increment
-                    final Propagator p = maneuver.getTrajectory();
-                    final double nominalDuration = maneuver.getDuration(p.propagate(maneuver.getDate()).getMass());
 
                     final SpacecraftState startState = p.propagate(maneuver.getDate().shiftedBy(-0.5 * nominalDuration));
                     final CircularOrbit startOrbit   = (CircularOrbit) (OrbitType.CIRCULAR.convertType(startState.getOrbit()));
@@ -99,9 +101,17 @@ public class Propagation implements ScenarioComponent {
                 } else {
                     inefficiency = 1.0;
                 }
-                propagators[i].addEventDetector(new ImpulseManeuver(new DateDetector(maneuver.getDate()),
-                                                                    maneuver.getDeltaV(),
-                                                                    inefficiency * maneuver.getIsp()));
+                if (propagators[i] instanceof NumericalPropagator) {
+                    ((NumericalPropagator) propagators[i]).addForceModel(new ConstantThrustManeuver(maneuver.getDate().shiftedBy(-0.5 * nominalDuration),
+                                                                                                    nominalDuration,
+                                                                                                    maneuver.getThrust(),
+                                                                                                    maneuver.getIsp(),
+                                                                                                    maneuver.getDeltaV().normalize()));
+                } else {
+                    propagators[i].addEventDetector(new ImpulseManeuver(new DateDetector(maneuver.getDate()),
+                                                                        maneuver.getDeltaV(),
+                                                                        inefficiency * maneuver.getIsp()));
+                }
             }
             propagators[i].setEphemerisMode();
 
