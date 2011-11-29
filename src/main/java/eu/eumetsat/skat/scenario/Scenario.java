@@ -155,12 +155,12 @@ public class Scenario implements ScenarioComponent {
 
             // monitor control laws violations
             for (final Map.Entry<SKControl, SimpleMonitorable> entry : controlsViolations.entrySet()) {
+                double[] v = entry.getValue().getValue(-1).clone();
                 if (entry.getKey().limitsExceeded()) {
                     // this cycle has lead to constraints violations, increment counter
-                    double[] v = entry.getValue().getValue(-1).clone();
                     v[0] += 1;
-                    entry.getValue().setSampledValue(startDate, v);
                 }
+                entry.getValue().setSampledValue(startDate, v);
             }
 
             // monitor data
