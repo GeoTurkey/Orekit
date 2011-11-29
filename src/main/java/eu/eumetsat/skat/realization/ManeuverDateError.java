@@ -34,7 +34,7 @@ public class ManeuverDateError implements ScenarioComponent {
     /** Indicator for applying this error to out-of-plane maneuvers. */
     private final boolean outOfPlane;
 
-    /** Standard deviation of the multiplying error factor. */
+    /** Standard deviation of the date offset. */
     private final double standardDeviation;
 
     /** Random generator to use for evaluating the error factor. */
@@ -44,8 +44,7 @@ public class ManeuverDateError implements ScenarioComponent {
      * @param spacecraftIndices indices of the spacecrafts managed by this component
      * @param inPlane if true, the error applies to in-plane maneuvers
      * @param outOfPlane if true, the error applies to out-of-plane maneuvers
-     * @param standardDeviation standard deviation of the multiplying error factor
-     * (for example 0.05 for a 5% error)
+     * @param standardDeviation standard deviation of date offset (s)
      * @param generator random generator to use for evaluating the error factor
      */
     public ManeuverDateError(final int[] spacecraftIndices,
