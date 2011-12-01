@@ -127,8 +127,10 @@ public enum SupportedControlLaw {
             final boolean ascending         = parser.getBoolean(node, ParameterKey.CONTROL_GROUND_TRACK_ASCENDING);
             final int orbitsPerPhasingCycle = parser.getInt(node, ParameterKey.CONTROL_GROUND_TRACK_ORBITS_PER_CYCLE);
             final int daysPerPhasingCycle   = parser.getInt(node, ParameterKey.CONTROL_GROUND_TRACK_DAYS_PER_CYCLE);
+            final double minLongitude       = parser.getInt(node, ParameterKey.CONTROL_GROUND_TRACK_MIN_LONGITUDE);
+            final double maxLongitude       = parser.getInt(node, ParameterKey.CONTROL_GROUND_TRACK_MAX_LONGITUDE);
             return new GroundTrackGrid(name, scalingDivisor, controlled, skat.getEarth(),
-                                       latitude, longitude, ascending, orbitsPerPhasingCycle, daysPerPhasingCycle);
+                                       latitude, longitude, ascending, orbitsPerPhasingCycle, daysPerPhasingCycle, minLongitude, maxLongitude);
         }
 
     },
@@ -145,8 +147,10 @@ public enum SupportedControlLaw {
             final double latitude       = parser.getDouble(node, ParameterKey.CONTROL_SOLAR_TIME_LATITUDE);
             final boolean ascending     = parser.getBoolean(node, ParameterKey.CONTROL_SOLAR_TIME_ASCENDING);
             final double solarTime      = parser.getDouble(node, ParameterKey.CONTROL_SOLAR_TIME_SOLAR_TIME);
+            final double minSolarTime   = parser.getDouble(node, ParameterKey.CONTROL_SOLAR_TIME_MIN_SOLAR_TIME);
+            final double maxSolarTime   = parser.getDouble(node, ParameterKey.CONTROL_SOLAR_TIME_MAX_SOLAR_TIME);
             return new LocalSolarTime(name, scalingDivisor, controlled, skat.getEarth(), skat.getSun(),
-                                      latitude, ascending, solarTime);
+                                      latitude, ascending, solarTime, minSolarTime, maxSolarTime);
         }
 
     };

@@ -93,20 +93,23 @@ public enum SupportedPropagator {
             }
 
             // third bodies
-            final Tree thirdBodiesNode = parser.getValue(node, ParameterKey.NUMERICAL_PROPAGATOR_THIRD_BODIES);
-            for (int i = 0; i < parser.getElementsNumber(thirdBodiesNode); ++i) {
-                switch ((ThirdBody) parser.getEnumerate(thirdBodiesNode, i, ThirdBody.class)) {
-                case SUN :
-                    numPropagator.addForceModel(new ThirdBodyAttraction(skat.getSun()));
-                    break;
-                case MOON :
-                    numPropagator.addForceModel(new ThirdBodyAttraction(skat.getMoon()));
-                    break;
-                default :
-                    // this should never happen
-                    throw SkatException.createInternalError(null);
+            if (parser.containsKey(node, ParameterKey.NUMERICAL_PROPAGATOR_THIRD_BODIES)){
+                final Tree thirdBodiesNode = parser.getValue(node, ParameterKey.NUMERICAL_PROPAGATOR_THIRD_BODIES);
+                for (int i = 0; i < parser.getElementsNumber(thirdBodiesNode); ++i) {
+                    switch ((ThirdBody) parser.getEnumerate(thirdBodiesNode, i, ThirdBody.class)) {
+                    case SUN :
+                        numPropagator.addForceModel(new ThirdBodyAttraction(skat.getSun()));
+                        break;
+                    case MOON :
+                        numPropagator.addForceModel(new ThirdBodyAttraction(skat.getMoon()));
+                        break;
+                    default :
+                        // this should never happen
+                        throw SkatException.createInternalError(null);
+                    }
                 }
             }
+            
 
             numPropagator.setOrbitType(initialOrbit.getType());
             return numPropagator;
