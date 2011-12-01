@@ -98,8 +98,8 @@ public class GroundTrackGrid extends AbstractSKControl {
      * specified latitude from south to north
      * @param orbitsPerPhasingCycle number of orbits per phasing cycle
      * @param daysPerPhasingCycle approximate number of days per phasing cycle
-     * @param maxLongitude 
-     * @param minLongitude 
+     * @param maxLongitude maximum accepted longitude
+     * @param minLongitude minimum accepted longitude
      * @exception SkatException if orbits and days per phasing cycle are not
      * mutually prime numbers
      */

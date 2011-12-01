@@ -31,18 +31,16 @@ import eu.eumetsat.skat.strategies.ScheduledManeuver;
  * interval, a notifier will be triggered and this information will be monitored.
  *  <p>
  * This control value is:
- * <pre>
- *   max(|&Omega;<sub>75</sub> - &Omega;<sub>c</sub>|,|&Omega;<sub>c</sub> - &Omega;<sub>25</sub>|)
- * </pre>
- * where &Omega;<sub>75</sub> and &Omega;<sub>25</sub> are the spacecraft right ascension of the ascending node
- * quantities at 75% and 25% evaluated for the complete cycle duration and &Omega;<sub>c</sub> is
- * the center right ascension.
+ * <pre> max(|LST<sub>75</sub> - LST<sub>c</sub>|,|LST<sub>c</sub> - LST<sub>25</sub>|)</pre>
+ * where LST<sub>75</sub> and LST<sub>25</sub> are the spacecraft local solar time 1st and 3rd
+ * quartiles evaluated for the complete cycle duration and LST<sub>c</sub> is the target local
+ * solar time.
  * </p>
  * <p>
  * The previous definition implies that setting the target of this control
- * to 0 attempts to have most of the points right ascension covered by the
- * satellite centered around the &Omega;<sub>c</sub> right ascension during the
- * station-keeping.
+ * to LST<sub>c</sub> attempts to have most of the points local solar time
+ * for the satellite centered around the target local solar time during the
+ * station-keeping. 
  * </p>
  * <p>
  * Using quantiles instead of min/max improves robustness with respect to

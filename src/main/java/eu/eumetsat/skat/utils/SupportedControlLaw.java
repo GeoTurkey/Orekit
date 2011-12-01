@@ -25,7 +25,7 @@ public enum SupportedControlLaw {
                                final String controlled, final Skat skat)
             throws OrekitException, SkatException {
             final String name           = parser.getString(node, ParameterKey.CONTROL_NAME);
-            final double scalingDivisor = parser.getAngle(node,  ParameterKey.CONTROL_SCALING_DIVISOR);
+            final double scalingDivisor = parser.getDouble(node,  ParameterKey.CONTROL_SCALING_DIVISOR);
             final boolean inPlane       = parser.getBoolean(node, ParameterKey.CONTROL_MINIMIZED_MANEUVERS_IN_PLANE);
             final boolean outOfPlane    = parser.getBoolean(node, ParameterKey.CONTROL_MINIMIZED_MANEUVERS_OUT_OF_PLANE);
             return new MinimizedManeuvers(name, scalingDivisor, controlled, inPlane, outOfPlane);
@@ -127,8 +127,8 @@ public enum SupportedControlLaw {
             final boolean ascending         = parser.getBoolean(node, ParameterKey.CONTROL_GROUND_TRACK_ASCENDING);
             final int orbitsPerPhasingCycle = parser.getInt(node, ParameterKey.CONTROL_GROUND_TRACK_ORBITS_PER_CYCLE);
             final int daysPerPhasingCycle   = parser.getInt(node, ParameterKey.CONTROL_GROUND_TRACK_DAYS_PER_CYCLE);
-            final double minLongitude       = parser.getInt(node, ParameterKey.CONTROL_GROUND_TRACK_MIN_LONGITUDE);
-            final double maxLongitude       = parser.getInt(node, ParameterKey.CONTROL_GROUND_TRACK_MAX_LONGITUDE);
+            final double minLongitude       = parser.getAngle(node, ParameterKey.CONTROL_GROUND_TRACK_MIN_LONGITUDE);
+            final double maxLongitude       = parser.getAngle(node, ParameterKey.CONTROL_GROUND_TRACK_MAX_LONGITUDE);
             return new GroundTrackGrid(name, scalingDivisor, controlled, skat.getEarth(),
                                        latitude, longitude, ascending, orbitsPerPhasingCycle, daysPerPhasingCycle, minLongitude, maxLongitude);
         }
@@ -144,7 +144,7 @@ public enum SupportedControlLaw {
             throws OrekitException, SkatException {
             final String name           = parser.getString(node, ParameterKey.CONTROL_NAME);
             final double scalingDivisor = parser.getDouble(node, ParameterKey.CONTROL_SCALING_DIVISOR);
-            final double latitude       = parser.getDouble(node, ParameterKey.CONTROL_SOLAR_TIME_LATITUDE);
+            final double latitude       = parser.getAngle(node, ParameterKey.CONTROL_SOLAR_TIME_LATITUDE);
             final boolean ascending     = parser.getBoolean(node, ParameterKey.CONTROL_SOLAR_TIME_ASCENDING);
             final double solarTime      = parser.getDouble(node, ParameterKey.CONTROL_SOLAR_TIME_SOLAR_TIME);
             final double minSolarTime   = parser.getDouble(node, ParameterKey.CONTROL_SOLAR_TIME_MIN_SOLAR_TIME);
