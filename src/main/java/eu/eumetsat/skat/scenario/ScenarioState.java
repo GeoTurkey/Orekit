@@ -5,7 +5,6 @@ import java.util.List;
 
 import org.orekit.propagation.BoundedPropagator;
 import org.orekit.propagation.SpacecraftState;
-import org.orekit.time.AbsoluteDate;
 
 import eu.eumetsat.skat.strategies.ScheduledManeuver;
 
@@ -62,9 +61,6 @@ public class ScenarioState {
     /** Real state at cycle end. */
     private final SpacecraftState realEndState;
 
-    /** Theoretical ephemeris throughout cycle. */
-    private final BoundedPropagator theoreticalEphemeris;
-
     /** Performed ephemeris throughout cycle. */
     private final BoundedPropagator performedEphemeris;
 
@@ -81,7 +77,6 @@ public class ScenarioState {
      * @param realStartState real state at cycle start
      * @param estimatedStartState estimated state at cycle start
      * @param realEndState real state at cycle end
-     * @param theoreticalEphemeris theoretical ephemeris throughout cycle
      * @param performedEphemeris performed ephemeris throughout cycle
      * @param maneuvers list of maneuvers
      * @param inplane number of performed in-plane maneuvers
@@ -92,7 +87,6 @@ public class ScenarioState {
                           final SpacecraftState realStartState,
                           final SpacecraftState estimatedStartState,
                           final SpacecraftState realEndState,
-                          final BoundedPropagator theoreticalEphemeris,
                           final BoundedPropagator performedEphemeris,
                           final List<ScheduledManeuver> maneuvers) {
         this.name                     = name;
@@ -107,7 +101,6 @@ public class ScenarioState {
         this.realStartState           = realStartState;
         this.estimatedStartState      = estimatedStartState;
         this.realEndState             = realEndState;
-        this.theoreticalEphemeris     = theoreticalEphemeris;
         this.performedEphemeris       = performedEphemeris;
         this.maneuvers                = maneuvers;
     }
@@ -122,9 +115,7 @@ public class ScenarioState {
                          final int cyclesNumber, final SpacecraftState realState) {
         this(name, bolMass, cyclesNumber,
              0, 0.0, 0.0, 0, 0.0, 0.0,
-             realState, null,
-             null, null,
-             null, null);
+             realState, null, null, null, null);
     }
 
     /** Get the spacecraft name.
@@ -159,8 +150,7 @@ public class ScenarioState {
         return new ScenarioState(name, bolMass, cyclesNumber,
                                  inPlaneManeuvers, inPlaneCycleDV, inPlaneTotalDV,
                                  outOfPlaneManeuvers, outOfPlaneCycleDV, outOfPlaneTotalDV,
-                                 realStartState, estimatedStartState,
-                                 realEndState, theoreticalEphemeris,
+                                 realStartState, estimatedStartState, realEndState,
                                  performedEphemeris, maneuvers);
     }
 
@@ -198,8 +188,7 @@ public class ScenarioState {
         return new ScenarioState(name, bolMass, cyclesNumber,
                                  number, cycleDV, totalDV,
                                  outOfPlaneManeuvers, outOfPlaneCycleDV, outOfPlaneTotalDV,
-                                 realStartState, estimatedStartState,
-                                 realEndState, theoreticalEphemeris,
+                                 realStartState, estimatedStartState, realEndState,
                                  performedEphemeris, maneuvers);
     }
 
@@ -237,44 +226,7 @@ public class ScenarioState {
         return new ScenarioState(name, bolMass, cyclesNumber,
                                  inPlaneManeuvers, inPlaneCycleDV, inPlaneTotalDV,
                                  number, cycleDV, totalDV,
-                                 realStartState, estimatedStartState,
-                                 realEndState, theoreticalEphemeris,
-                                 performedEphemeris, maneuvers);
-    }
-
-    /** Update the ascending node crossing.
-     * <p>
-     * The instance is not changed, a new instance is created
-     * </p>
-     * @param date date of ascending node crossing
-     * @param solarTime solar time at ascending node crossing
-     * @return updated state
-     */
-    public ScenarioState updateAscendingNodeCrossing(final AbsoluteDate date,
-                                                     final double solarTime) {
-        return new ScenarioState(name, bolMass, cyclesNumber,
-                                 inPlaneManeuvers, inPlaneCycleDV, inPlaneTotalDV,
-                                 outOfPlaneManeuvers, outOfPlaneCycleDV, outOfPlaneTotalDV,
-                                 realStartState, estimatedStartState,
-                                 realEndState, theoreticalEphemeris,
-                                 performedEphemeris, maneuvers);
-    }
-
-    /** Update the descending node crossing.
-     * <p>
-     * The instance is not changed, a new instance is created
-     * </p>
-     * @param date date of descending node crossing
-     * @param solarTime solar time at descending node crossing
-     * @return updated state
-     */
-    public ScenarioState updateDescendingNodeCrossing(final AbsoluteDate date,
-                                                      final double solarTime) {
-        return new ScenarioState(name, bolMass, cyclesNumber,
-                                 inPlaneManeuvers, inPlaneCycleDV, inPlaneTotalDV,
-                                 outOfPlaneManeuvers, outOfPlaneCycleDV, outOfPlaneTotalDV,
-                                 realStartState, estimatedStartState,
-                                 realEndState, theoreticalEphemeris,
+                                 realStartState, estimatedStartState, realEndState,
                                  performedEphemeris, maneuvers);
     }
 
@@ -296,8 +248,7 @@ public class ScenarioState {
         return new ScenarioState(name, bolMass, cyclesNumber,
                                  inPlaneManeuvers, inPlaneCycleDV, inPlaneTotalDV,
                                  outOfPlaneManeuvers, outOfPlaneCycleDV, outOfPlaneTotalDV,
-                                 state, estimatedStartState,
-                                 realEndState, theoreticalEphemeris,
+                                 state, estimatedStartState, realEndState,
                                  performedEphemeris, maneuvers);
     }
 
@@ -319,8 +270,7 @@ public class ScenarioState {
         return new ScenarioState(name, bolMass, cyclesNumber,
                                  inPlaneManeuvers, inPlaneCycleDV, inPlaneTotalDV,
                                  outOfPlaneManeuvers, outOfPlaneCycleDV, outOfPlaneTotalDV,
-                                 realStartState, state,
-                                 realEndState, theoreticalEphemeris,
+                                 realStartState, state, realEndState,
                                  performedEphemeris, maneuvers);
     }
 
@@ -342,31 +292,7 @@ public class ScenarioState {
         return new ScenarioState(name, bolMass, cyclesNumber,
                                  inPlaneManeuvers, inPlaneCycleDV, inPlaneTotalDV,
                                  outOfPlaneManeuvers, outOfPlaneCycleDV, outOfPlaneTotalDV,
-                                 realStartState, estimatedStartState,
-                                 state, theoreticalEphemeris,
-                                 performedEphemeris, maneuvers);
-    }
-
-    /** Get the theoretical ephemeris throughout cycle.
-     * @return theoretical ephemeris throughout cycle
-     */
-    public BoundedPropagator getTheoreticalEphemeris() {
-        return theoreticalEphemeris;
-    }
-
-    /** Update the theoretical ephemeris throughout cycle.
-     * <p>
-     * The instance is not changed, a new instance is created
-     * </p>
-     * @param theoreticalEphemeris theoretical ephemeris throughout cycle
-     * @return updated state
-     */
-    public ScenarioState updateTheoreticalEphemeris(final BoundedPropagator theoreticalEphemeris) {
-        return new ScenarioState(name, bolMass, cyclesNumber,
-                                 inPlaneManeuvers, inPlaneCycleDV, inPlaneTotalDV,
-                                 outOfPlaneManeuvers, outOfPlaneCycleDV, outOfPlaneTotalDV,
-                                 realStartState, estimatedStartState,
-                                 realEndState, theoreticalEphemeris,
+                                 realStartState, estimatedStartState, state,
                                  performedEphemeris, maneuvers);
     }
 
@@ -388,8 +314,7 @@ public class ScenarioState {
         return new ScenarioState(name, bolMass, cyclesNumber,
                                  inPlaneManeuvers, inPlaneCycleDV, inPlaneTotalDV,
                                  outOfPlaneManeuvers, outOfPlaneCycleDV, outOfPlaneTotalDV,
-                                 realStartState, estimatedStartState,
-                                 realEndState, theoreticalEphemeris,
+                                 realStartState, estimatedStartState, realEndState,
                                  ephemeris, maneuvers);
     }
 
@@ -411,8 +336,7 @@ public class ScenarioState {
         return new ScenarioState(name, bolMass, cyclesNumber,
                                  inPlaneManeuvers, inPlaneCycleDV, inPlaneTotalDV,
                                  outOfPlaneManeuvers, outOfPlaneCycleDV, outOfPlaneTotalDV,
-                                 realStartState, estimatedStartState,
-                                 realEndState, theoreticalEphemeris,
+                                 realStartState, estimatedStartState, realEndState,
                                  performedEphemeris, maneuvers);
     }
 
