@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
+import org.apache.commons.math.util.FastMath;
 import org.orekit.bodies.BodyShape;
 import org.orekit.errors.OrekitException;
 import org.orekit.frames.Frame;
@@ -56,7 +57,7 @@ public enum MonitorableDuoSKData implements MonitorableDuo {
             throws OrekitException {
             final Vector3D otherP     = getPVCoordinates(otherState, FramesFactory.getEME2000()).getPosition();
             final Vector3D referenceP = getPVCoordinates(referenceState, FramesFactory.getEME2000()).getPosition();
-            data[0] = Vector3D.angle(referenceP, otherP);
+            data[0] = FastMath.toDegrees(Vector3D.angle(referenceP, otherP));
         }
 
     },
@@ -70,7 +71,7 @@ public enum MonitorableDuoSKData implements MonitorableDuo {
             throws OrekitException {
             final Vector3D otherP     = getPVCoordinates(otherState, groundLocation).getPosition();
             final Vector3D referenceP = getPVCoordinates(referenceState, groundLocation).getPosition();
-            data[0] = Vector3D.angle(referenceP, otherP);
+            data[0] = FastMath.toDegrees(Vector3D.angle(referenceP, otherP));
         }
 
     },
@@ -176,7 +177,7 @@ public enum MonitorableDuoSKData implements MonitorableDuo {
             throws OrekitException {
             final KeplerianOrbit otherOrbit     = getKeplerianOrbit(otherState);
             final KeplerianOrbit referenceOrbit = getKeplerianOrbit(referenceState);
-            data[0] = otherOrbit.getI() - referenceOrbit.getI();
+            data[0] = FastMath.toDegrees(otherOrbit.getI() - referenceOrbit.getI());
         }
 
     },

@@ -78,6 +78,7 @@ public enum ParameterKey {
     COMPONENT_CONTROL_LOOP_IN_PLANE_ELIMINATION("in_plane_elimination"),
     COMPONENT_CONTROL_LOOP_OUT_OF_PLANE_ELIMINATION("out_of_plane_elimination"),
     COMPONENT_CONTROL_LOOP_GLOBAL_STOP_CRITERION("global_stop_criterion"),
+    COMPONENT_CONTROL_LOOP_CONVERGENCE_SPAN_CRITERION("convergence_span"),
     COMPONENT_CONTROL_LOOP_OPTIMIZER("optimizer"),
     OPTIMIZER_METHOD("method"),
     NELDER_MEAD_INITIAL_SIMPLEX_SIZE_RATIO("initial_simplex_size_ratio"),
@@ -109,12 +110,16 @@ public enum ParameterKey {
     CONTROL_SOLAR_TIME_LATITUDE("latitude"),
     CONTROL_SOLAR_TIME_ASCENDING("ascending"),
     CONTROL_SOLAR_TIME_SOLAR_TIME("solar_time"),
+    CONTROL_SOLAR_TIME_MIN_SOLAR_TIME("min_solar_time"),
+    CONTROL_SOLAR_TIME_MAX_SOLAR_TIME("max_solar_time"),
     // Ground track grid
     CONTROL_GROUND_TRACK_LATITUDE("latitude"),
     CONTROL_GROUND_TRACK_LONGITUDE("longitude"),
     CONTROL_GROUND_TRACK_ASCENDING("ascending"),
     CONTROL_GROUND_TRACK_ORBITS_PER_CYCLE("orbits_per_cycle"),
     CONTROL_GROUND_TRACK_DAYS_PER_CYCLE("days_per_cycle"),
+    CONTROL_GROUND_TRACK_MIN_LONGITUDE("min_longitude"),
+    CONTROL_GROUND_TRACK_MAX_LONGITUDE("max_longitude"),
 
     // Maneuvers 
     MANEUVERS_IN_PLANE("in_plane"),

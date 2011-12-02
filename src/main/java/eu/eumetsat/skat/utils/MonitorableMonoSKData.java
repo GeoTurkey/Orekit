@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
+import org.apache.commons.math.util.FastMath;
 import org.orekit.bodies.BodyShape;
 import org.orekit.bodies.GeodeticPoint;
 import org.orekit.errors.OrekitException;
@@ -168,7 +169,7 @@ public enum MonitorableMonoSKData implements MonitorableMono {
             final Vector3D position  = getPVCoordinates(state, FramesFactory.getITRF2008()).getPosition();
             final AbsoluteDate  date = state.getRealStartState().getDate();
             final GeodeticPoint gp   = earth.transform(position, FramesFactory.getITRF2008(), date);
-            data[0] = gp.getLatitude();
+            data[0] = FastMath.toDegrees(gp.getLatitude());
         }
 
     },
@@ -182,7 +183,7 @@ public enum MonitorableMonoSKData implements MonitorableMono {
             final Vector3D position  = getPVCoordinates(state, FramesFactory.getITRF2008()).getPosition();
             final AbsoluteDate  date = state.getRealStartState().getDate();
             final GeodeticPoint gp   = earth.transform(position, FramesFactory.getITRF2008(), date);
-            data[0] = gp.getLongitude();
+            data[0] = FastMath.toDegrees(gp.getLongitude());
         }
 
     },
@@ -229,7 +230,7 @@ public enum MonitorableMonoSKData implements MonitorableMono {
         @Override
         protected void extractData(final ScenarioState state, BodyShape earth, double[] data)
             throws OrekitException {
-                data[0] = getKeplerianOrbit(state).getI();
+                data[0] = FastMath.toDegrees(getKeplerianOrbit(state).getI());
         }
 
     },

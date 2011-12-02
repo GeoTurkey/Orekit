@@ -25,21 +25,22 @@ import eu.eumetsat.skat.control.AbstractSKControl;
 import eu.eumetsat.skat.strategies.ScheduledManeuver;
 
 /**
- * Station-keeping control attempting to get local solar time in a deadband.
+ * Station-keeping control attempting to get local solar time in a deadband. The deadband is located around a main
+ * value {@link #center}. A tolerance margin can be define through the minSolarTime and maxSolarTime parameters,
+ * defined by construction. If a violation occurs by getting out of the [minSolarTime, maxSolarTime] 
+ * interval, a notifier will be triggered and this information will be monitored.
  *  <p>
  * This control value is:
- * <pre>
- *   max(|&Omega;<sub>75</sub> - &Omega;<sub>c</sub>|,|&Omega;<sub>c</sub> - &Omega;<sub>25</sub>|)
- * </pre>
- * where &Omega;<sub>75</sub> and &Omega;<sub>25</sub> are the spacecraft right ascension of the ascending node
- * quantities at 75% and 25% evaluated for the complete cycle duration and &Omega;<sub>c</sub> is
- * the center right ascension.
+ * <pre> max(|LST<sub>75</sub> - LST<sub>c</sub>|,|LST<sub>c</sub> - LST<sub>25</sub>|)</pre>
+ * where LST<sub>75</sub> and LST<sub>25</sub> are the spacecraft local solar time 1st and 3rd
+ * quartiles evaluated for the complete cycle duration and LST<sub>c</sub> is the target local
+ * solar time.
  * </p>
  * <p>
  * The previous definition implies that setting the target of this control
- * to 0 attempts to have most of the points right ascension covered by the
- * satellite centered around the &Omega;<sub>c</sub> right ascension during the
- * station-keeping.
+ * to LST<sub>c</sub> attempts to have most of the points local solar time
+ * for the satellite centered around the target local solar time during the
+ * station-keeping. 
  * </p>
  * <p>
  * Using quantiles instead of min/max improves robustness with respect to
@@ -67,16 +68,21 @@ public class LocalSolarTime extends AbstractSKControl {
      * @param latitude latitude at which solar time should be computed
      * @param ascending if true, solar time is computed when crossing the
      * specified latitude from south to north
-     * @param solarTime target solar time
+     * @param solarTime target solar time ((in fractional hour, i.e 9h30 = 9.5)
+     * @param maxSolarTime maximum accepted solar time (in fractional hour)
+     * @param minSolarTime minimum accepted solar time (in fractional hour)
      */
     public LocalSolarTime(final String name, final double scalingDivisor,
                           final String controlled,
-                          final BodyShape earth, final CelestialBody sun,
-                          final double latitude, boolean ascending,
-                          final double solarTime) {
-        super(name, scalingDivisor, controlled, null, solarTime, 0.0, 24.0);
-        this.eventDetector =
-                new Detector(600.0, 1.0e-3, earth, sun, latitude, ascending);
+                          final BodyShape earth,
+                          final CelestialBody sun,
+                          final double latitude,
+                          final boolean ascending,
+                          final double solarTime,
+                          final double minSolarTime,
+                          final double maxSolarTime) {
+        super(name, scalingDivisor, controlled, null, 0., minSolarTime, maxSolarTime);
+        this.eventDetector = new Detector(600.0, 1.0e-3, earth, sun, latitude, ascending);
         this.sample = new ArrayList<Double>();
         this.center = solarTime;
     }
@@ -178,15 +184,11 @@ public class LocalSolarTime extends AbstractSKControl {
                 // convert the angle to solar time
                 final double achievedSolarTime = 12.0 * (1.0 + dAlpha / FastMath.PI);
 
+                checkLimits(achievedSolarTime);
                 sample.add(achievedSolarTime);
-
             }
-
             // just continue propagation
             return Action.CONTINUE;
-
         }
-
     }
-
 }

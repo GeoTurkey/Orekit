@@ -2,7 +2,6 @@
 package eu.eumetsat.skat.strategies.leo;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.math.analysis.UnivariateFunction;
@@ -14,7 +13,6 @@ import org.apache.commons.math.util.FastMath;
 import org.apache.commons.math.util.MathUtils;
 import org.orekit.bodies.BodyShape;
 import org.orekit.bodies.GeodeticPoint;
-import org.orekit.bodies.OneAxisEllipsoid;
 import org.orekit.errors.OrekitException;
 import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
@@ -22,8 +20,6 @@ import org.orekit.propagation.events.EventDetector;
 import org.orekit.propagation.sampling.OrekitStepHandler;
 import org.orekit.time.AbsoluteDate;
 import org.orekit.utils.PVCoordinates;
-
-import sun.security.action.GetLongAction;
 
 import eu.eumetsat.skat.control.AbstractSKControl;
 import eu.eumetsat.skat.strategies.ScheduledManeuver;
@@ -33,7 +29,11 @@ import eu.eumetsat.skat.utils.SkatMessages;
 
 /**
  * Station-keeping control attempting to follow a specified ground-track
- * at a specified latitude.
+ * at a specified latitude. The ground-track is defined by a latitude and 
+ * a longitude. The tolerance deadband is extended from the center value
+ * from the minLongitude and maxLongitude parameters defined by construction.
+ * If a violation occurs by getting out of the [minLongitude, maxLongitude] 
+ * interval, a notifier will be triggered and this information will be monitored.
  * <p>
  * This control value is:
  * <pre>
@@ -98,16 +98,18 @@ public class GroundTrackGrid extends AbstractSKControl {
      * specified latitude from south to north
      * @param orbitsPerPhasingCycle number of orbits per phasing cycle
      * @param daysPerPhasingCycle approximate number of days per phasing cycle
+     * @param maxLongitude maximum accepted longitude
+     * @param minLongitude minimum accepted longitude
      * @exception SkatException if orbits and days per phasing cycle are not
      * mutually prime numbers
      */
     public GroundTrackGrid(final String name, final double scalingDivisor,
                            final String controlled, final BodyShape earth,
                            final double latitude, final double longitude, final boolean ascending,
-                           final int orbitsPerPhasingCycle, final int daysPerPhasingCycle)
-        throws SkatException {
-        super(name, scalingDivisor, controlled, null, 0.0,
-              Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY);
+                           final int orbitsPerPhasingCycle, final int daysPerPhasingCycle, 
+                           final double minLongitude,
+                           final double maxLongitude) throws SkatException {
+        super(name, scalingDivisor, controlled, null, 0.0, minLongitude, maxLongitude);
         if (ArithmeticUtils.gcd(orbitsPerPhasingCycle, daysPerPhasingCycle) != 1) {
             throw new SkatException(SkatMessages.PHASING_NUMBERS_NOT_MUTUALLY_PRIMES,
                                     orbitsPerPhasingCycle, daysPerPhasingCycle);
@@ -122,9 +124,7 @@ public class GroundTrackGrid extends AbstractSKControl {
         for (int i = 0; i < orbitsPerPhasingCycle; ++i) {
             longitudes[i] = MathUtils.normalizeAngle(longitude + i * deltaLOneOrbit, FastMath.PI);
             earthPoints[i] = earth.transform(new GeodeticPoint(latitude, longitudes[i], 0));
-            System.out.println(longitudes[i]);
         }
-
         sample = new ArrayList<Double>();
 
     }
@@ -162,7 +162,7 @@ public class GroundTrackGrid extends AbstractSKControl {
             final Vector3D subSatellite =
                     earth.transform(new GeodeticPoint(gp.getLatitude(), gp.getLongitude(), 0.0));
             final double distance = subSatellite.distance(point);
-
+            checkLimits(distance);
             // add distance to sample
             sample.add(distance);
 
