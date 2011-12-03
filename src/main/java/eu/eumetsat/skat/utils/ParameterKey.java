@@ -98,6 +98,10 @@ public enum ParameterKey {
     // Centered longitude
     CONTROL_CENTERED_LONGITUDE_EAST("east_longitude"),
     CONTROL_CENTERED_LONGITUDE_WEST("west_longitude"),
+    // Parabolic longitude
+    CONTROL_PARABOLIC_IGNORED_START_DURATION("ignored_start_duration"),
+    CONTROL_PARABOLIC_LONGITUDE_EAST("east_longitude"),
+    CONTROL_PARABOLIC_LONGITUDE_WEST("west_longitude"),
     // Eccentricity circle
     CONTROL_ECCENTRICITY_CIRCLE_CENTER_X("center_x"),
     CONTROL_ECCENTRICITY_CIRCLE_CENTER_Y("center_y"),
