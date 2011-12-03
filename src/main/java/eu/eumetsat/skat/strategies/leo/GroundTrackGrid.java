@@ -133,10 +133,10 @@ public class GroundTrackGrid extends AbstractSKControl {
     @Override
     public void initializeRun(final ScheduledManeuver[] maneuvers,
                               final Propagator propagator,
-                              final AbsoluteDate start, final AbsoluteDate end)
+                              final AbsoluteDate start, final AbsoluteDate end, int rollingCycles)
         throws OrekitException {
 
-        super.initializeRun(maneuvers, propagator, start, end);
+        super.initializeRun(maneuvers, propagator, start, end, rollingCycles);
 
         // synchronize station-keeping cycle with phasing cycle
         synchronizeCycle(start, propagator);

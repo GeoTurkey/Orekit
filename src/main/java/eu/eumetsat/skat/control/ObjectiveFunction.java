@@ -163,7 +163,9 @@ class ObjectiveFunction implements MultivariateFunction {
 
             // prepare run
             for (final SKControl control : controls) {
-                control.initializeRun(maneuvers, propagator, null, null);
+                control.initializeRun(maneuvers, propagator,
+                                      reference.getMinDate(), reference.getMaxDate(),
+                                      rollingCycles);
             }
 
             // perform propagation
