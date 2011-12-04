@@ -12,7 +12,7 @@ simulation       = {
         longitude    =  8.65;
         altitude     =  0.0
     };
-    output_step      = 21600.0;
+    output_step      = 43200.0;
     random_seed      = 156325253;
 };
 
@@ -114,7 +114,7 @@ scenario         = [
                 direction            = [ 0.0, 1.0, 0.0 ];
                 thrust               = 40;
                 isp_curve            = [ [ 315, 0.0 ], [ 300, 600.0 ] ];
-                dv_min               = -3.0;
+                dv_min               = 0.0;
                 dv_max               =  3.0;
                 dv_convergence       =  0.005;
                 nominal_date         = 172800;
@@ -167,22 +167,22 @@ scenario         = [
                 out_of_plane        = false;
             },
             {
-                scaling_divisor  = 0.5;
+                scaling_divisor  = 0.1;
                 type             = PARABOLIC_LONGITUDE;
                 name             = "parabolic longitude";
                 ignored_start_duration = 345600.0;
                 east_longitude   =  -57.1;
                 west_longitude   =  -56.9;
-                sampling         = 7200.0;
+                sampling         = 10800.0;
             },
             {
-                scaling_divisor  = 1.0e-4;
+                scaling_divisor  = 1.0e-3;
                 type             = ECCENTRICITY_CIRCLE;
                 name             = "eccentricity circle";
                 center_x         = -1.5e-4;
                 center_y         =  0.0;
                 radius           = 2.0e-4;
-                sampling         = 7200.0;
+                sampling         = 10800.0;
             }
         ];
         maneuvers   = [
@@ -193,9 +193,9 @@ scenario         = [
                 direction            = [ 1.0, 0.0, 0.0 ];
                 thrust               = 40;
                 isp_curve            = [ [ 315, 0.0 ], [ 300, 600.0 ] ];
-                dv_min               = -0.3;
-                dv_max               =  0.3;
-                dv_convergence       =  0.001;
+                dv_min               = -0.2;
+                dv_max               =  0.2;
+                dv_convergence       =  0.003;
                 nominal_date         = 345600;
                 dt_min               = -43200;
                 dt_max               =  43200;
@@ -208,9 +208,9 @@ scenario         = [
                 direction            = [ 1.0, 0.0, 0.0 ];
                 thrust               = 40;
                 isp_curve            = [ [ 315, 0.0 ], [ 300, 600.0 ] ];
-                dv_min               = -0.3;
-                dv_max               =  0.3;
-                dv_convergence       =  0.001;
+                dv_min               = -0.2;
+                dv_max               =  0.2;
+                dv_convergence       =  0.003;
                 nominal_date         = 43200;
                 dt_min               =    0.0;
                 dt_max               =    0.0;
