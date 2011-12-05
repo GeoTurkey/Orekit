@@ -25,6 +25,8 @@ import org.orekit.time.AbsoluteDate;
 import org.orekit.time.TimeScale;
 import org.orekit.utils.PVCoordinates;
 
+import eu.eumetsat.skat.strategies.leo.GMODFrame;
+
 /** Simple parser for key/value files with embedded structures and arrays.
  */
 public class SkatFileParser {
@@ -440,8 +442,8 @@ public class SkatFileParser {
 
     /** Get an Earth frame.
      * <p>
-     * We consider Earth frames are the frames with name starting
-     * or ending with either "ITRF" or "GTOD".
+     * We consider Earth frames are the Skat specific GMODFrame and the
+     * Orekit frames with name starting or ending with either "ITRF" or "GTOD".
      * </p>
      * @param node structure containing the parameter
      * @param key parameter key
@@ -455,6 +457,11 @@ public class SkatFileParser {
 
         // get the name of the desired frame
         final String frameName = getString(node, key);
+
+        final Frame gMod = new GMODFrame();
+        if (frameName.equals(gMod.getName())) {
+            return gMod;
+        }
 
         // check the name against predefined frames
         for (Predefined predefined : Predefined.values()) {
