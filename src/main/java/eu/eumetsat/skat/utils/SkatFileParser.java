@@ -441,7 +441,7 @@ public class SkatFileParser {
     /** Get an Earth frame.
      * <p>
      * We consider Earth frames are the frames with name starting
-     * with either "ITRF" or "GTOD".
+     * or ending with either "ITRF" or "GTOD".
      * </p>
      * @param node structure containing the parameter
      * @param key parameter key
@@ -459,7 +459,8 @@ public class SkatFileParser {
         // check the name against predefined frames
         for (Predefined predefined : Predefined.values()) {
             if (frameName.equals(predefined.getName())) {
-                if (frameName.startsWith("ITRF") || frameName.startsWith("GTOD")) {
+                if (frameName.startsWith("ITRF") || frameName.endsWith("ITRF") ||
+                    frameName.startsWith("GTOD") || frameName.endsWith("GTOD")) {
                     return FramesFactory.getFrame(predefined);
                 } else {
                     throw new OrekitException(SkatMessages.NOT_EARTH_FRAME, frameName);
