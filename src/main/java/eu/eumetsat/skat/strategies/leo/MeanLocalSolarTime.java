@@ -9,7 +9,6 @@ import org.apache.commons.math.stat.descriptive.rank.Percentile;
 import org.apache.commons.math.util.FastMath;
 import org.apache.commons.math.util.MathUtils;
 import org.orekit.bodies.BodyShape;
-import org.orekit.bodies.CelestialBody;
 import org.orekit.bodies.GeodeticPoint;
 import org.orekit.errors.OrekitException;
 import org.orekit.frames.Frame;
@@ -20,26 +19,30 @@ import org.orekit.propagation.events.AbstractDetector;
 import org.orekit.propagation.events.EventDetector;
 import org.orekit.propagation.sampling.OrekitStepHandler;
 import org.orekit.time.AbsoluteDate;
+import org.orekit.time.TimeScale;
+import org.orekit.time.TimeScalesFactory;
+import org.orekit.utils.Constants;
 
 import eu.eumetsat.skat.control.AbstractSKControl;
 import eu.eumetsat.skat.strategies.ScheduledManeuver;
 
 /**
- * Station-keeping control attempting to get local solar time in a deadband. The deadband is located around a main
- * value {@link #center}. A tolerance margin can be define through the minSolarTime and maxSolarTime parameters,
- * defined by construction. If a violation occurs by getting out of the [minSolarTime, maxSolarTime] 
+ * Station-keeping control attempting to get mean local solar time in a deadband.
+ * The deadband is located around a main value {@link #center}. A tolerance margin
+ * can be define through the minSolarTime and maxSolarTime parameters, defined by
+ * construction. If a violation occurs by getting out of the [minSolarTime, maxSolarTime] 
  * interval, a notifier will be triggered and this information will be monitored.
  *  <p>
  * This control value is:
- * <pre> max(|LST<sub>75</sub> - LST<sub>c</sub>|,|LST<sub>c</sub> - LST<sub>25</sub>|)</pre>
- * where LST<sub>75</sub> and LST<sub>25</sub> are the spacecraft local solar time 1st and 3rd
- * quartiles evaluated for the complete cycle duration and LST<sub>c</sub> is the target local
+ * <pre> max(|MLST<sub>75</sub> - MLST<sub>c</sub>|,|MLST<sub>c</sub> - MLST<sub>25</sub>|)</pre>
+ * where MLST<sub>75</sub> and MLST<sub>25</sub> are the spacecraft mean local solar time 1st and 3rd
+ * quartiles evaluated for the complete cycle duration and MLST<sub>c</sub> is the target mean local
  * solar time.
  * </p>
  * <p>
  * The previous definition implies that setting the target of this control
- * to LST<sub>c</sub> attempts to have most of the points local solar time
- * for the satellite centered around the target local solar time during the
+ * to MLST<sub>c</sub> attempts to have most of the points mean local solar time
+ * for the satellite centered around the target mean local solar time during the
  * station-keeping. 
  * </p>
  * <p>
@@ -48,7 +51,7 @@ import eu.eumetsat.skat.strategies.ScheduledManeuver;
  * outliers on both sides.
  * </p>
  */
-public class LocalSolarTime extends AbstractSKControl {
+public class MeanLocalSolarTime extends AbstractSKControl {
 
     /** Associated event detector. */
     private final EventDetector eventDetector;
@@ -64,25 +67,25 @@ public class LocalSolarTime extends AbstractSKControl {
      * @param scalingDivisor divisor to use for scaling the control law
      * @param controlled name of the controlled spacecraft
      * @param earth Earth model
-     * @param sun Sun model
      * @param latitude latitude at which solar time should be computed
      * @param ascending if true, solar time is computed when crossing the
      * specified latitude from south to north
      * @param solarTime target solar time ((in fractional hour, i.e 9h30 = 9.5)
-     * @param maxSolarTime maximum accepted solar time (in fractional hour)
      * @param minSolarTime minimum accepted solar time (in fractional hour)
+     * @param maxSolarTime maximum accepted solar time (in fractional hour)
+     * @exception OrekitException if the UTC-TAI correction cannot be loaded
      */
-    public LocalSolarTime(final String name, final double scalingDivisor,
-                          final String controlled,
-                          final BodyShape earth,
-                          final CelestialBody sun,
-                          final double latitude,
-                          final boolean ascending,
-                          final double solarTime,
-                          final double minSolarTime,
-                          final double maxSolarTime) {
+    public MeanLocalSolarTime(final String name, final double scalingDivisor,
+                              final String controlled,
+                              final BodyShape earth,
+                              final double latitude,
+                              final boolean ascending,
+                              final double solarTime,
+                              final double minSolarTime,
+                              final double maxSolarTime)
+        throws OrekitException {
         super(name, scalingDivisor, controlled, null, 0., minSolarTime, maxSolarTime);
-        this.eventDetector = new Detector(600.0, 1.0e-3, earth, sun, latitude, ascending);
+        this.eventDetector = new Detector(600.0, 1.0e-3, earth, latitude, ascending);
         this.sample = new ArrayList<Double>();
         this.center = solarTime;
     }
@@ -127,33 +130,38 @@ public class LocalSolarTime extends AbstractSKControl {
         /** Earth model. */
         private final BodyShape earth;
 
-        /** Sun model. */
-        private final CelestialBody sun;
-
         /** Latitude at which solar time should be computed. */
         private final double latitude;
 
         /** Indicator for solar time computation direction. */
         private final boolean ascending;
 
+        /** GMOD Frame. */
+        private final GMODFrame gmod;
+
+        /** UTC time scale. */
+        private final TimeScale utc;
+
 
         /** Simple constructor
          * @param maxCheck maximum checking interval (s)
          * @param threshold convergence threshold (s)
          * @param earth Earth model
-         * @param sun Sun model
          * @param latitude latitude at which solar time should be computed
          * @param ascending if true, solar time is computed when crossing the
          * @param targetSolarTime target solar time
+         * @exception OrekitException if the UTC-TAI correction cannot be loaded
          */
         public Detector(final double maxCheck, final double threshold,
-                        final BodyShape earth, final CelestialBody sun,
-                        final double latitude, final boolean ascending) {
+                        final BodyShape earth, final double latitude,
+                        final boolean ascending)
+            throws OrekitException {
             super(maxCheck, threshold);
             this.earth           = earth;
-            this.sun             = sun;
             this.latitude        = latitude;
             this.ascending       = ascending;
+            this.gmod            = new GMODFrame();
+            this.utc             = TimeScalesFactory.getUTC();
         }
 
         /** {@inheritDoc} */
@@ -178,8 +186,10 @@ public class LocalSolarTime extends AbstractSKControl {
                 // compute angle between Sun and spacecraft in the equatorial plane
                 final Frame gcrf =  FramesFactory.getGCRF();
                 final Vector3D spacecraftPos = s.getPVCoordinates(gcrf).getPosition();
-                final Vector3D sunPos = sun.getPVCoordinates(s.getDate(), gcrf).getPosition();
-                final double dAlpha = MathUtils.normalizeAngle(spacecraftPos.getAlpha() - sunPos.getAlpha(), 0);
+                final double time = s.getDate().getComponents(utc).getTime().getSecondsInDay();
+                final double sunAlpha = gmod.getMeanSiderealTime(s.getDate()) +
+                                        (time / Constants.JULIAN_DAY - 0.5) * 2.0 * FastMath.PI;
+                final double dAlpha = MathUtils.normalizeAngle(spacecraftPos.getAlpha() - sunAlpha, 0);
 
                 // convert the angle to solar time
                 final double achievedSolarTime = 12.0 * (1.0 + dAlpha / FastMath.PI);
