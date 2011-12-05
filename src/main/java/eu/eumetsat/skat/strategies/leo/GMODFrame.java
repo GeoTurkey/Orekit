@@ -80,30 +80,39 @@ public class GMODFrame extends Frame {
 
     }
 
+    /** Compute mean sidereal time.
+     * @param date date
+     * @exception OrekitException if UTC-TAI correction cannot be loaded
+     */
+    public double getMeanSiderealTime(final AbsoluteDate date) throws OrekitException {
+
+        // offset in julian centuries from J2000 epoch (UT1 scale)
+        final double dtai = date.durationFrom(GMST_REFERENCE);
+        final double dutc = TimeScalesFactory.getUTC().offsetFromTAI(date);
+
+        final double tut1 = dtai + dutc;
+        final double tt   = tut1 / Constants.JULIAN_CENTURY;
+
+        // Seconds in the day, adjusted by 12 hours because the
+        // UT1 is supplied as a Julian date beginning at noon.
+        final double sd = (tut1 + Constants.JULIAN_DAY / 2.) % Constants.JULIAN_DAY;
+
+        // compute Greenwich mean sidereal time, in radians
+        return (((GMST_3 * tt + GMST_2) * tt + GMST_1) * tt + GMST_0 + sd) * RADIANS_PER_SECOND;
+
+    }
+
     /** Update the frame to the given date.
      * <p>The update considers the earth rotation from IERS data.</p>
      * @param date new value of the date
-     * @exception OrekitException if the nutation model data embedded in the
-     * library cannot be read
+     * @exception OrekitException if UTC-TAI correction cannot be loaded
      */
     protected void updateFrame(final AbsoluteDate date) throws OrekitException {
 
         if ((cachedDate == null) || !cachedDate.equals(date)) {
 
-            // offset in julian centuries from J2000 epoch (UT1 scale)
-            final double dtai = date.durationFrom(GMST_REFERENCE);
-            final double dutc = TimeScalesFactory.getUTC().offsetFromTAI(date);
-
-            final double tut1 = dtai + dutc;
-            final double tt   = tut1 / Constants.JULIAN_CENTURY;
-
-            // Seconds in the day, adjusted by 12 hours because the
-            // UT1 is supplied as a Julian date beginning at noon.
-            final double sd = (tut1 + Constants.JULIAN_DAY / 2.) % Constants.JULIAN_DAY;
-
             // compute Greenwich mean sidereal time, in radians
-            final double gmst = (((GMST_3 * tt + GMST_2) * tt + GMST_1) * tt + GMST_0 + sd) *
-                                RADIANS_PER_SECOND;
+            final double gmst = getMeanSiderealTime(date);
 
             // compute true angular rotation of Earth, in rad/s
             final Vector3D rotationRate = new Vector3D(AVE, Vector3D.PLUS_K);
