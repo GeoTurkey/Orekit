@@ -189,6 +189,7 @@ public class ParabolicLongitude extends AbstractSKControl {
                         interpolator.setInterpolatedDate(date);
                         final SpacecraftState state = interpolator.getInterpolatedState();
                         final EquinoctialOrbit orbit = (EquinoctialOrbit) OrbitType.EQUINOCTIAL.convertType(state.getOrbit());
+                        final double lambdaV = orbit.getLv();
                         final double lambdaM = orbit.getLM();
 
                         // compute sidereal time
@@ -196,10 +197,11 @@ public class ParabolicLongitude extends AbstractSKControl {
                         final double theta = transform.transformVector(Vector3D.PLUS_I).getAlpha();
 
                         // compute mean longitude
+                        final double trueLongitude = MathUtils.normalizeAngle(lambdaV - theta, center);
                         final double meanLongitude = MathUtils.normalizeAngle(lambdaM - theta, center);
 
                         // check the limits
-                        checkLimits(meanLongitude);
+                        checkLimits(trueLongitude);
 
                         // add point to sample
                         dateSample.add(date.durationFrom(firstManeuver));
