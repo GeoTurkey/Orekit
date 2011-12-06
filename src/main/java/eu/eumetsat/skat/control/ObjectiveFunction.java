@@ -177,6 +177,7 @@ class ObjectiveFunction implements MultivariateFunction {
                 final double residual = s.getAchievedValue() - s.getTargetValue();
                 final double scaledResidual = residual / s.getScalingDivisor();
                 sum += scaledResidual * scaledResidual;
+                System.out.println(point[0] + "  "  + point[1] + "  " + sum);
             }
 
             // return the sum of squared scaled residuals

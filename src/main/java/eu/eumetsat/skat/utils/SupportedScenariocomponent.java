@@ -133,12 +133,14 @@ public enum SupportedScenariocomponent {
 
             // optimizer
             final double stopCriterion = parser.getDouble(node, ParameterKey.COMPONENT_CONTROL_LOOP_GLOBAL_STOP_CRITERION);
+            final int convergenceSpan = parser.getInt(node, ParameterKey.COMPONENT_CONTROL_LOOP_CONVERGENCE_SPAN_CRITERION);
+
             final Tree optimizerNode = parser.getValue(node, ParameterKey.COMPONENT_CONTROL_LOOP_OPTIMIZER);
             final SupportedOptimizer so =
                     (SupportedOptimizer) parser.getEnumerate(optimizerNode, ParameterKey.OPTIMIZER_METHOD,
                                                              SupportedOptimizer.class);
             final BaseMultivariateRealOptimizer<MultivariateFunction> optimizer =
-                    so.parse(parser, optimizerNode, maneuvers, stopCriterion, skat);
+                    so.parse(parser, optimizerNode, maneuvers, stopCriterion, convergenceSpan, skat);
 
             // propagator
             final Tree propagatorNode = parser.getValue(node, ParameterKey.COMPONENT_CONTROL_LOOP_PROPAGATOR);
