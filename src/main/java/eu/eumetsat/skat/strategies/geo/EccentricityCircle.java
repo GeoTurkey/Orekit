@@ -73,17 +73,19 @@ public class EccentricityCircle extends AbstractSKControl {
     /** Simple constructor.
      * @param name name of the control law
      * @param scalingDivisor divisor to use for scaling the control law
-     * @param controlled name of the controlled spacecraft
+     * @param controlledName name of the controlled spacecraft
+     * @param controlledIndex index of the controlled spacecraft
      * @param centerX abscissa of the circle center
      * @param centerY ordinate of the circle center
      * @param radius radius of the circle
      * @param sun Sun model
      * @param samplingStep step to use for sampling throughout propagation
      */
-    public EccentricityCircle(final String name, final double scalingDivisor, final String controlled,
+    public EccentricityCircle(final String name, final double scalingDivisor,
+                              final String controlledName, final int controlledIndex,
                               final double centerX, final double centerY, final double radius,
                               final CelestialBody sun, final double samplingStep) {
-        super(name, scalingDivisor, controlled, null, 0.0,
+        super(name, scalingDivisor, controlledName, controlledIndex, null, -1, 0.0,
               Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY);
         this.stephandler  = new Handler();
         this.centerX      = centerX;
@@ -99,8 +101,6 @@ public class EccentricityCircle extends AbstractSKControl {
     public void initializeRun(final ScheduledManeuver[] maneuvers,
                               final Propagator propagator, AbsoluteDate start, AbsoluteDate end, int rollingCycles)
         throws OrekitException {
-        super.initializeRun(maneuvers, propagator, start, end, rollingCycles);
-        sample.clear();
     }
 
     /** {@inheritDoc} */
@@ -130,6 +130,8 @@ public class EccentricityCircle extends AbstractSKControl {
 
         /** {@inheritDoc} */
         public void init(final SpacecraftState s0, final AbsoluteDate t) {
+            resetLimitsChecks();
+            sample.clear();
         }
 
         /** {@inheritDoc} */

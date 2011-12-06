@@ -90,7 +90,8 @@ public class GroundTrackGrid extends AbstractSKControl {
      * </p>
      * @param name name of the control law
      * @param scalingDivisor divisor to use for scaling the control law
-     * @param controlled name of the controlled spacecraft
+     * @param controlledName name of the controlled spacecraft
+     * @param controlledIndex index of the controlled spacecraft
      * @param earth Earth model
      * @param latitude reference point latitude
      * @param longitude reference point longitude
@@ -104,12 +105,14 @@ public class GroundTrackGrid extends AbstractSKControl {
      * mutually prime numbers
      */
     public GroundTrackGrid(final String name, final double scalingDivisor,
-                           final String controlled, final BodyShape earth,
+                           final String controlledName, final int controlledIndex,
+                           final BodyShape earth,
                            final double latitude, final double longitude, final boolean ascending,
                            final int orbitsPerPhasingCycle, final int daysPerPhasingCycle, 
                            final double minLongitude,
                            final double maxLongitude) throws SkatException {
-        super(name, scalingDivisor, controlled, null, 0.0, minLongitude, maxLongitude);
+        super(name, scalingDivisor, controlledName, controlledIndex, null, -1,
+              0.0, minLongitude, maxLongitude);
         if (ArithmeticUtils.gcd(orbitsPerPhasingCycle, daysPerPhasingCycle) != 1) {
             throw new SkatException(SkatMessages.PHASING_NUMBERS_NOT_MUTUALLY_PRIMES,
                                     orbitsPerPhasingCycle, daysPerPhasingCycle);
@@ -136,7 +139,8 @@ public class GroundTrackGrid extends AbstractSKControl {
                               final AbsoluteDate start, final AbsoluteDate end, int rollingCycles)
         throws OrekitException {
 
-        super.initializeRun(maneuvers, propagator, start, end, rollingCycles);
+        resetLimitsChecks();
+        sample.clear();
 
         // synchronize station-keeping cycle with phasing cycle
         synchronizeCycle(start, propagator);

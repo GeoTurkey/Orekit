@@ -67,17 +67,18 @@ public class CenteredLongitude extends AbstractSKControl {
     /** Simple constructor.
      * @param name name of the control law
      * @param scalingDivisor divisor to use for scaling the control law
-     * @param controlled name of the controlled spacecraft
+     * @param controlledName name of the controlled spacecraft
+     * @param controlledIndex index of the controlled spacecraft
      * @param lEast longitude slot Eastward boundary
      * @param lWest longitude slot Westward boundary
      * @param samplingStep step to use for sampling throughout propagation
      * @param earth Earth model to use to compute longitudes
      */
     public CenteredLongitude(final String name, final double scalingDivisor,
-                             final String controlled,
+                             final String controlledName, final int controlledIndex,
                              final double lEast, final double lWest,
                              final double samplingStep, final BodyShape earth) {
-        super(name, scalingDivisor, controlled, null, 0,
+        super(name, scalingDivisor, controlledName, controlledIndex, null, -1, 0,
               lWest, MathUtils.normalizeAngle(lEast, lWest));
         this.stephandler  = new Handler();
         this.samplingStep = samplingStep;
@@ -91,8 +92,6 @@ public class CenteredLongitude extends AbstractSKControl {
     public void initializeRun(final ScheduledManeuver[] maneuvers,
                               final Propagator propagator, AbsoluteDate start, AbsoluteDate end, int rollingCycles)
         throws OrekitException {
-        super.initializeRun(maneuvers, propagator, start, end, rollingCycles);
-        sample.clear();
     }
 
     /** {@inheritDoc} */
@@ -125,6 +124,8 @@ public class CenteredLongitude extends AbstractSKControl {
 
         /** {@inheritDoc} */
         public void init(final SpacecraftState s0, final AbsoluteDate t) {
+            resetLimitsChecks();
+            sample.clear();
         }
 
         /** {@inheritDoc} */

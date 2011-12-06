@@ -80,7 +80,10 @@ public class ParabolicLongitude extends AbstractSKControl {
     /** Simple constructor.
      * @param name name of the control law
      * @param scalingDivisor divisor to use for scaling the control law
-     * @param controlled name of the controlled spacecraft
+     * @param controlledName name of the controlled spacecraft
+     * @param controlledIndex index of the controlled spacecraft
+     * @param referenceName name of the reference spacecraft
+     * @param referenceIndex index of the reference spacecraft
      * @param ignoredStartDuration duration of the ignored start part of the cycle
      * @param lEast longitude slot Eastward boundary
      * @param lWest longitude slot Westward boundary
@@ -88,10 +91,11 @@ public class ParabolicLongitude extends AbstractSKControl {
      * @param earth Earth model to use to compute longitudes
      */
     public ParabolicLongitude(final String name, final double scalingDivisor,
-                              final String controlled, final double ignoredStartDuration,
+                              final String controlledName, final int controlledIndex,
+                              final double ignoredStartDuration,
                               final double lEast, final double lWest,
                               final double samplingStep, final BodyShape earth) {
-        super(name, scalingDivisor, controlled, null, 0,
+        super(name, scalingDivisor, controlledName, controlledIndex, null, -1, 0,
               lWest, MathUtils.normalizeAngle(lEast, lWest));
         this.stephandler          = new Handler();
         this.samplingStep         = samplingStep;
@@ -109,12 +113,9 @@ public class ParabolicLongitude extends AbstractSKControl {
                               final AbsoluteDate start, final AbsoluteDate end,
                               final int rollingCycles)
         throws OrekitException {
-        super.initializeRun(maneuvers, propagator, start, end, rollingCycles);
         this.start         = start;
         this.firstManeuver = maneuvers[0].getDate();
         this.cycleDuration = end.durationFrom(start) / rollingCycles;
-        dateSample.clear();
-        longitudeSample.clear();
     }
 
     /** {@inheritDoc} */
@@ -167,6 +168,9 @@ public class ParabolicLongitude extends AbstractSKControl {
 
         /** {@inheritDoc} */
         public void init(final SpacecraftState s0, final AbsoluteDate t) {
+            resetLimitsChecks();
+            dateSample.clear();
+            longitudeSample.clear();
         }
 
         /** {@inheritDoc} */

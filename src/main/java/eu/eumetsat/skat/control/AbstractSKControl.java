@@ -20,10 +20,16 @@ public abstract class AbstractSKControl implements SKControl {
     private final double scalingDivisor;
 
     /** Name of the controlled spacecraft. */
-    private final String controlled;
+    private final String controlledName;
+
+    /** Index of the controlled spacecraft. */
+    private final int controlledIndex;
 
     /** Name of the reference spacecraft (may be null). */
-    private final String reference;
+    private final String referenceName;
+
+    /** Index of the reference spacecraft (may be null). */
+    private final int referenceIndex;
 
     /** Control target used to compute residuals. */
     private final double target;
@@ -40,23 +46,28 @@ public abstract class AbstractSKControl implements SKControl {
     /** Simple constructor.
      * @param name name of the control law
      * @param scalingDivisor divisor to use for scaling the control law
-     * @param controlled name of the controlled spacecraft
-     * @param reference name of the reference spacecraft
+     * @param controlledName name of the controlled spacecraft
+     * @param controlledIndex index of the controlled spacecraft
+     * @param referenceName name of the reference spacecraft
+     * @param referenceIndex index of the reference spacecraft
      * @param target control target used to compute residuals
      * @param min minimal value for the residual
      * @param max maximal value for the residual
      */
     protected AbstractSKControl(final String name, final double scalingDivisor,
-                                final String controlled, final String reference,
+                                final String controlledName, final int controlledIndex,
+                                final String referenceName, final int referenceIndex,
                                 final double target,
                                 final double min, final double max) {
-        this.name           = name;
-        this.scalingDivisor = scalingDivisor;
-        this.controlled     = controlled;
-        this.reference      = reference;
-        this.target         = target;
-        this.min            = min;
-        this.max            = max;
+        this.name            = name;
+        this.scalingDivisor  = scalingDivisor;
+        this.controlledName  = controlledName;
+        this.controlledIndex = controlledIndex;
+        this.referenceName   = referenceName;
+        this.referenceIndex  = referenceIndex;
+        this.target          = target;
+        this.min             = min;
+        this.max             = max;
     }
 
     /** {@inheritDoc} */
@@ -71,21 +82,36 @@ public abstract class AbstractSKControl implements SKControl {
 
     /** {@inheritDoc} */
     public String getControlledSpacecraftName() {
-        return controlled;
+        return controlledName;
+    }
+
+    /** {@inheritDoc} */
+    public int getControlledSpacecraftIndex() {
+        return controlledIndex;
     }
 
     /** {@inheritDoc} */
     public String getReferenceSpacecraftName() {
-        return reference;
+        return referenceName;
     }
 
     /** {@inheritDoc} */
-    public void initializeRun(final ScheduledManeuver[] maneuvers,
-                              final Propagator propagator,
-                              final AbsoluteDate start, final AbsoluteDate end, int rollingCycles)
-        throws OrekitException {
+    public int getReferenceSpacecraftIndex() {
+        return referenceIndex;
+    }
+
+    /** Reset the limits checks.
+     */
+    public void resetLimitsChecks() {
         limitsExceeded = false;
     }
+
+    /** {@inheritDoc} */
+    public abstract void initializeRun(final ScheduledManeuver[] maneuvers,
+                                       final Propagator propagator,
+                                       final AbsoluteDate start, final AbsoluteDate end,
+                                       int rollingCycles)
+        throws OrekitException;
 
     /** {@inheritDoc} */
     public double getTargetValue() {

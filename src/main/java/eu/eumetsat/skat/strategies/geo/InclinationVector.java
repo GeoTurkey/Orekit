@@ -62,17 +62,18 @@ public class InclinationVector extends AbstractSKControl {
     /** Simple constructor.
      * @param name name of the control law
      * @param scalingDivisor divisor to use for scaling the control law
-     * @param controlled name of the controlled spacecraft
+     * @param controlledName name of the controlled spacecraft
+     * @param controlledIndex index of the controlled spacecraft
      * @param targetHx abscissa of target inclination vector
      * @param targetHy ordinate of target inclination vector
      * @param circleRadius limit circle radius
      * @param samplingStep step to use for sampling throughout propagation
      */
     public InclinationVector(final String name, final double scalingDivisor,
-                             final String controlled,
+                             final String controlledName, final int controlledIndex,
                              final double targetHx, final double targetHy,
                              final double circleRadius, final double samplingStep) {
-        super(name, scalingDivisor, controlled, null, 0.0, 0.0, circleRadius);
+        super(name, scalingDivisor, controlledName, controlledIndex, null, -1, 0.0, 0.0, circleRadius);
         this.stephandler  = new Handler();
         this.targetHx     = targetHx;
         this.targetHy     = targetHy;
@@ -84,18 +85,14 @@ public class InclinationVector extends AbstractSKControl {
     /** {@inheritDoc} */
     @Override
     public void initializeRun(final ScheduledManeuver[] maneuvers,
-                              final Propagator propagator, AbsoluteDate start, AbsoluteDate end, int rollingCycles)
-        throws OrekitException {
-        super.initializeRun(maneuvers, propagator, start, end, rollingCycles);
-        sampleX.clear();
-        sampleY.clear();
+                              final Propagator propagator, AbsoluteDate start, AbsoluteDate end, int rollingCycles) {
     }
 
     /** {@inheritDoc} */
     public double getAchievedValue() {
 
         if (limitsExceeded()) {
-            // we escaped the limite circle during the cycle, we need to adjust the maneuvers
+            // we escaped the limit circle during the cycle, we need to adjust the maneuvers
 
             // compute center of the motion along the x axis
             final double[] dataX = new double[sampleX.size()];
@@ -139,6 +136,9 @@ public class InclinationVector extends AbstractSKControl {
 
         /** {@inheritDoc} */
         public void init(final SpacecraftState s0, final AbsoluteDate t) {
+            resetLimitsChecks();
+            sampleX.clear();
+            sampleY.clear();
         }
 
         /** {@inheritDoc} */

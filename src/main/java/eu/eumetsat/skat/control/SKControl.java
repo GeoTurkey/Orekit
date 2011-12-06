@@ -87,11 +87,22 @@ public interface SKControl extends SKElement {
      */
     String getControlledSpacecraftName();
 
+    /** Get the index of the controlled spacecraft.
+     * @return index of the controlled spacecraft.
+     */
+    int getControlledSpacecraftIndex();
+
     /** Get the name of the reference spacecraft.
      * @return name of the reference spacecraft
      * (null if control law does not depend on a reference spacecraft).
      */
     String getReferenceSpacecraftName();
+
+    /** Get the index of the reference spacecraft.
+     * @return index of the reference spacecraft
+     * (-1 if control law does not depend on a reference spacecraft).
+     */
+    int getReferenceSpacecraftIndex();
 
     /** Get the event detector associated with this element.
      * @return event detector associated with this element (may be null)
