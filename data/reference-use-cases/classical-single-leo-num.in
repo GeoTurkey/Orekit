@@ -67,14 +67,14 @@ scenario         = [
         controlled_spacecraft    = "Metop";  # note: control loop components control only ONE spacecraft each
         first_cycle              = 1;
         last_cycle               = 999;
-        max_eval                 = 1000;
-        global_stop_criterion    = 0.0005;
+        max_eval                 = 100;
+        global_stop_criterion    = 0.05;
         convergence_span		 = 5;
         in_plane_elimination     = 0.005;
         out_of_plane_elimination = 0.005;
         optimizer                = {
             method                     = NELDER_MEAD;
-            initial_simplex_size_ratio = 0.05;
+            initial_simplex_size_ratio = 0.01;
         };
         propagator  = {
             method                 = NUMERICAL;
@@ -91,12 +91,12 @@ scenario         = [
             {
                 scaling_divisor     = 0.7; 
                 type                = MEAN_LOCAL_SOLAR_TIME;
-                name                = "local solar time (MST)";
+                name                = "mean local solar time (MST)";
                 latitude            = 0.;
                 ascending           = false;
-                solar_time			= 9.5;
-                min_solar_time		= 9.4;  #9.46;
-                max_solar_time		= 9.6;  #9.54;
+                solar_time			= 12;
+                min_solar_time		= 11.5;  #9.46;
+                max_solar_time		= 12.5;  #9.54;
             }
         ];
         maneuvers   = [
@@ -113,7 +113,7 @@ scenario         = [
                 nominal_date         = 216000; 
                 dt_min               = -216000;
                 dt_max               = 216000;
-                dt_convergence       = 300.0;
+                dt_convergence       = 600.0;
             },
             {
                 in_plane             = true;
@@ -128,7 +128,7 @@ scenario         = [
                 nominal_date         = 648000; 
                 dt_min               = -216000;
                 dt_max               = 216000;
-                dt_convergence       = 300.0;
+                dt_convergence       = 600.0;
             },
 		    {
                 in_plane             = true;
@@ -143,7 +143,7 @@ scenario         = [
                 nominal_date         = 1080000; 
                 dt_min               = -216000;
                 dt_max               = 216000;
-                dt_convergence       = 300.0;
+                dt_convergence       = 600.0;
             }
         ];
     },

@@ -3,13 +3,10 @@ package eu.eumetsat.skat.utils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import org.antlr.runtime.tree.Tree;
 import org.apache.commons.math.analysis.MultivariateFunction;
@@ -155,14 +152,14 @@ public enum SupportedOptimizer {
         /** Index in the Nelder Mead comparison*/
         private int counter;
         
-        /** Determine if the current evaluation of the Nelder Mead simplex converged */
-        private boolean totalConverged;
-        
         /** Maximum value taken by one of the simplex contained in the */
         private double maxSimplex;
         
         /** Minimum value taken by the */
         private double minSimplex;
+        
+        /** Did the simplex satisfy the convergence criteria */
+        private boolean totalConverged;
         
 
         /** Convergence span to stop the function evaluation. Convergence span is used to evaluate the function 
@@ -179,9 +176,9 @@ public enum SupportedOptimizer {
             this.maneuvers     = maneuvers.clone();
             this.stopCriterion = stopCriterion;
             this.convergenceSpan = convergenceSpan;
+            this.totalConverged = true;
             this.dimension = -1;
             this.counter = -1;
-            this.totalConverged = true;
             this.minSimplex = Double.POSITIVE_INFINITY;
             this.maxSimplex = Double.NEGATIVE_INFINITY;
             this.list = new LinkedHashMap<Integer, List<Double>>();
@@ -197,7 +194,7 @@ public enum SupportedOptimizer {
             // Convergence watcher
             boolean convergence = false;
             // Evolution of each parameter watcher
-            boolean parameterCheck = true;
+            boolean parameterCheck = false;
             // Current simplex list of value
             List<Double> currentList;
 
@@ -220,7 +217,7 @@ public enum SupportedOptimizer {
        
             if (list.size() >= convergenceSpan){
                 // The map is filed enough to evaluate the last simplex evolution over the convergence span:
-                for (int i = list.size() - convergenceSpan; i < list.size(); i++){
+                for (int i = iteration - convergenceSpan; i < list.size(); i++){
                     List<Double> value = list.get(i);
                     maxSimplex = FastMath.max(maxSimplex, Collections.max(value));
                     minSimplex = FastMath.min(minSimplex, Collections.min(value));
@@ -236,31 +233,35 @@ public enum SupportedOptimizer {
                     for (final TunableManeuver maneuver : maneuvers) {
                         for (final SKParameter parameter : maneuver.getParameters()) {
                             if (parameter.isTunable()) {
-                                if (FastMath.abs(c[index] - p[index]) > parameter.getConvergence()) {
+                                if (FastMath.abs(c[index] - p[index]) < parameter.getConvergence()) {
+                                    parameterCheck = true;
+                                }else {
                                     parameterCheck = false;
                                 }
                                 ++index;
                             }
                         }
-                    }
-                    
-                totalConverged &= (convergence && parameterCheck);
+                    }                    
                 counter++;
             }
+            totalConverged &= (convergence || parameterCheck);
 
-            // Check if the solution has been found
+            // End of simplex evaluation : reset state
             if (counter == dimension){
                 // Reset state :
                 minSimplex = Double.POSITIVE_INFINITY;
                 maxSimplex = Double.NEGATIVE_INFINITY;
-                totalConverged = true;
                 parameterCheck = true;
-                list.clear();
+                // If a solution has been found, reset the list 
+                if (totalConverged){
+                    list.clear();
+                }
+                totalConverged = true;
                 counter = -1;
                 dimension = 0;
             }            
             // Get control on function evaluation convergence (parameterCheck) or on function x-axis converging (parameterCheck) 
-            return parameterCheck || convergence;
+            return (parameterCheck || convergence);
         }
     }
     
