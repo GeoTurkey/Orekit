@@ -7,13 +7,11 @@ import java.util.Set;
 
 import org.apache.commons.math.analysis.MultivariateFunction;
 import org.orekit.errors.OrekitException;
-import org.orekit.errors.PropagationException;
 import org.orekit.propagation.BoundedPropagator;
 import org.orekit.propagation.SpacecraftState;
 import org.orekit.propagation.analytical.ManeuverAdapterPropagator;
 import org.orekit.propagation.events.EventDetector;
-import org.orekit.propagation.sampling.OrekitStepHandler;
-import org.orekit.propagation.sampling.OrekitStepInterpolator;
+import org.orekit.propagation.sampling.OrekitStepHandlerMultiplexer;
 import org.orekit.time.AbsoluteDate;
 import org.orekit.utils.Constants;
 
@@ -127,39 +125,19 @@ class ObjectiveFunction implements MultivariateFunction {
             }
 
             // get the step handlers associated with control laws
-            final Set<OrekitStepHandler> handlers = new HashSet<OrekitStepHandler>();
+            final OrekitStepHandlerMultiplexer multiplexer = new OrekitStepHandlerMultiplexer();
             for (final SKControl control : controls) {
                 if (control.getStepHandler() != null) {
-                    handlers.add(control.getStepHandler());
+                    multiplexer.add(control.getStepHandler());
                 }
             }
+            propagator.setMasterMode(multiplexer);
 
             // set up the propagator with the station-keeping elements
             // that are part of the optimization process in the control loop
             for (final EventDetector detector : detectors) {
                 propagator.addEventDetector(detector);
             }
-            propagator.setMasterMode(new OrekitStepHandler() {
-                
-                /** Serializable UID. */
-                private static final long serialVersionUID = -4124598479100617688L;
-
-                /** {@inheritDoc} */
-                public void init(final SpacecraftState s0, final AbsoluteDate t) {
-                    for (final OrekitStepHandler handler : handlers) {
-                        handler.init(s0, t);
-                    }
-                }
-                
-                /** {@inheritDoc} */
-                public void handleStep(OrekitStepInterpolator interpolator, boolean isLast)
-                    throws PropagationException {
-                    for (final OrekitStepHandler handler : handlers) {
-                        handler.handleStep(interpolator, isLast);
-                    }
-                }
-
-            });
 
             // prepare run
             for (final SKControl control : controls) {
