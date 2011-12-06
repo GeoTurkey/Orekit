@@ -198,18 +198,18 @@ public enum SupportedOptimizer {
 
             // Simplex dimension
             dimension = current.getPoint().length;
-            // Convergence watcher
+            // Simplex evaluation convergence watcher
             boolean convergence = false;
             // Evolution of each parameter watcher
             boolean currentParameterCheck = true;
-            // Total evolution of maneuvers parameter
 
             // Current simplex list of value
             List<Double> currentList;
 
             int index = iteration - 1;
+
+            // Get the already existing list :
             if (list.containsKey(index)){
-                // Get the already existing list :
                 currentList = list.get(index);
                 // Add the current value
                 currentList.add(current.getValue());
@@ -224,8 +224,7 @@ public enum SupportedOptimizer {
                 totalParameterCheck = true;
             }
 
-
-       
+            // Check if a sufficient number of simplex have been evaluated
             if (list.size() >= convergenceSpan){
                 // The map is filed enough to evaluate the last simplex evolution over the convergence span:
                 for (int i = iteration - convergenceSpan; i < list.size(); i++){
@@ -254,6 +253,7 @@ public enum SupportedOptimizer {
                     }                    
                 counter++;
             }else {
+                // Not enough simplex to determine if convergence occured
                 return false;
             }
             
