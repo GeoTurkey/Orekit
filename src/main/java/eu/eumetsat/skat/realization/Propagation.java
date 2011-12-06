@@ -38,6 +38,12 @@ public class Propagation implements ScenarioComponent {
     /** Orbit propagators. */
     private final Propagator[] propagators;
 
+    /** Name of the maneuver triggering cycle truncation (may be null). */
+    private final String truncationManeuverName;
+
+    /**  Truncation delay after maneuver. */
+    private final double truncationManeuverDelay;
+
     /** Indicator for compensating long burns inefficiency. */
     private boolean compensateLongBurn;
 
@@ -47,13 +53,18 @@ public class Propagation implements ScenarioComponent {
     /** Simple constructor.
      * @param spacecraftIndices indices of the spacecrafts managed by this component
      * @param propagators propagators to use for each spacecraft
+     * @param truncationManeuverName name of the maneuver triggering cycle truncation (may be null)
+     * @param truncationManeuverDelay truncation delay after maneuver
      * @param compensateLongBurn if true, long burn inefficiency should be compensated
      */
     public Propagation(final int[] spacecraftIndices, final Propagator[] propagators,
+                       final String truncationManeuverName, final double truncationManeuverDelay,
                        final boolean compensateLongBurn) {
-        this.spacecraftIndices  = spacecraftIndices.clone();
-        this.propagators        = propagators.clone();
-        this.compensateLongBurn = compensateLongBurn;
+        this.spacecraftIndices       = spacecraftIndices.clone();
+        this.propagators             = propagators.clone();
+        this.truncationManeuverName  = truncationManeuverName;
+        this.truncationManeuverDelay = truncationManeuverDelay;
+        this.compensateLongBurn      = compensateLongBurn;
     }
 
     /** {@inheritDoc} */
@@ -64,6 +75,21 @@ public class Propagation implements ScenarioComponent {
     /** {@inheritDoc} */
     public ScenarioState[] updateStates(final ScenarioState[] originals)
         throws OrekitException, SkatException {
+
+        // truncate cycle if needed
+        if (truncationManeuverName != null) {
+            for (int i = 0; i < spacecraftIndices.length; ++i) {
+                final int index = spacecraftIndices[i];
+                for (final ScheduledManeuver maneuver : originals[index].getManeuvers()) {
+                    if (maneuver.getName().equals(truncationManeuverName)) {
+                        final AbsoluteDate truncationDate = maneuver.getDate().shiftedBy(truncationManeuverDelay);
+                        if (cycleEnd.compareTo(truncationDate) > 0) {
+                            cycleEnd = truncationDate;
+                        }
+                    }
+                }
+            }
+        }
 
         final ScenarioState[] updated = new ScenarioState[originals.length];
 

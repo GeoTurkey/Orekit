@@ -309,11 +309,23 @@ public enum SupportedScenariocomponent {
 
             }
 
+            // check if cycle should be truncated after some maneuver
+            String truncationManeuverName = null;
+            double truncationManeuverDelay = Double.NaN;
+            if (parser.containsKey(node, ParameterKey.COMPONENT_PROPAGATION_TRUNCATION_MANEUVER_NAME)) {
+                truncationManeuverName =
+                        parser.getString(node, ParameterKey.COMPONENT_PROPAGATION_TRUNCATION_MANEUVER_NAME);
+                truncationManeuverDelay =
+                        parser.getDouble(node, ParameterKey.COMPONENT_PROPAGATION_TRUNCATION_MANEUVER_DELAY);
+            }
+
             // check if long burn inefficiency should be compensated
             final boolean compensateLongBurn = parser.getBoolean(node, ParameterKey.COMPONENT_PROPAGATION_LONG_BURN_COMPENSATION);
 
             // build the component
-            Propagation propagation = new Propagation(indices, propagators, compensateLongBurn);
+            Propagation propagation = new Propagation(indices, propagators,
+                                                      truncationManeuverName, truncationManeuverDelay,
+                                                      compensateLongBurn);
 
             // notify the Skat application this component manages the specified spacecrafts
             for (final int index : indices) {
