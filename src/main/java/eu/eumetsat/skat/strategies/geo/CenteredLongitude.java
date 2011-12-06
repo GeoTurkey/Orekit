@@ -78,7 +78,7 @@ public class CenteredLongitude extends AbstractSKControl {
                              final double lEast, final double lWest,
                              final double samplingStep, final BodyShape earth) {
         super(name, scalingDivisor, controlled, null, 0,
-              lEast, MathUtils.normalizeAngle(lWest, lEast + FastMath.PI));
+              lWest, MathUtils.normalizeAngle(lEast, lWest));
         this.stephandler  = new Handler();
         this.samplingStep = samplingStep;
         this.earth        = earth;
@@ -89,9 +89,9 @@ public class CenteredLongitude extends AbstractSKControl {
     /** {@inheritDoc} */
     @Override
     public void initializeRun(final ScheduledManeuver[] maneuvers,
-                              final Propagator propagator, AbsoluteDate start, AbsoluteDate end)
+                              final Propagator propagator, AbsoluteDate start, AbsoluteDate end, int rollingCycles)
         throws OrekitException {
-        super.initializeRun(maneuvers, propagator, start, end);
+        super.initializeRun(maneuvers, propagator, start, end, rollingCycles);
         sample.clear();
     }
 

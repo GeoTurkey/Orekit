@@ -6,11 +6,11 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
+import org.apache.commons.math.util.FastMath;
 import org.orekit.bodies.BodyShape;
 import org.orekit.bodies.GeodeticPoint;
 import org.orekit.errors.OrekitException;
 import org.orekit.frames.Frame;
-import org.orekit.frames.FramesFactory;
 import org.orekit.orbits.CircularOrbit;
 import org.orekit.orbits.EquinoctialOrbit;
 import org.orekit.orbits.KeplerianOrbit;
@@ -37,7 +37,7 @@ public enum MonitorableMonoSKData implements MonitorableMono {
 
         /** {@inheritDoc} */
         @Override
-        protected void extractData(final ScenarioState state, BodyShape earth, double[] data) {
+        protected void extractData(final ScenarioState state, double[] data) {
             data[0] = state.getInPlaneManeuvers();
         }
 
@@ -47,7 +47,7 @@ public enum MonitorableMonoSKData implements MonitorableMono {
 
         /** {@inheritDoc} */
         @Override
-        protected void extractData(final ScenarioState state, BodyShape earth, double[] data) {
+        protected void extractData(final ScenarioState state, double[] data) {
             data[0] = state.getInPlaneCycleDV();
         }
 
@@ -57,7 +57,7 @@ public enum MonitorableMonoSKData implements MonitorableMono {
 
         /** {@inheritDoc} */
         @Override
-        protected void extractData(final ScenarioState state, BodyShape earth, double[] data) {
+        protected void extractData(final ScenarioState state, double[] data) {
             data[0] = state.getInPlaneTotalDV();
         }
 
@@ -67,7 +67,7 @@ public enum MonitorableMonoSKData implements MonitorableMono {
 
         /** {@inheritDoc} */
         @Override
-        protected void extractData(final ScenarioState state, BodyShape earth, double[] data) {
+        protected void extractData(final ScenarioState state, double[] data) {
             data[0] = state.getOutOfPlaneManeuvers();
         }
 
@@ -77,7 +77,7 @@ public enum MonitorableMonoSKData implements MonitorableMono {
 
         /** {@inheritDoc} */
         @Override
-        protected void extractData(final ScenarioState state, BodyShape earth, double[] data) {
+        protected void extractData(final ScenarioState state, double[] data) {
             data[0] = state.getOutOfPlaneCycleDV();
         }
 
@@ -87,7 +87,7 @@ public enum MonitorableMonoSKData implements MonitorableMono {
 
         /** {@inheritDoc} */
         @Override
-        protected void extractData(final ScenarioState state, BodyShape earth, double[] data) {
+        protected void extractData(final ScenarioState state, double[] data) {
             data[0] = state.getOutOfPlaneTotalDV();
         }
 
@@ -97,19 +97,19 @@ public enum MonitorableMonoSKData implements MonitorableMono {
 
         /** {@inheritDoc} */
         @Override
-        protected void extractData(final ScenarioState state, BodyShape earth, double[] data) {
+        protected void extractData(final ScenarioState state, double[] data) {
             data[0] = state.getRealStartState().getMass();
         }
 
     },
 
-    POSITION_EME2000(3) {
+    POSITION_INERTIAL(3) {
 
         /** {@inheritDoc} */
         @Override
-        protected void extractData(final ScenarioState state, BodyShape earth, double[] data)
+        protected void extractData(final ScenarioState state, double[] data)
             throws OrekitException {
-            final Vector3D position = getPVCoordinates(state, FramesFactory.getEME2000()).getPosition();
+            final Vector3D position = getPVCoordinates(state, state.getInertialFrame()).getPosition();
             data[0] = position.getX();
             data[1] = position.getY();
             data[2] = position.getZ();
@@ -117,13 +117,13 @@ public enum MonitorableMonoSKData implements MonitorableMono {
 
     },
 
-    VELOCITY_EME2000(3) {
+    VELOCITY_INERTIAL(3) {
 
         /** {@inheritDoc} */
         @Override
-        protected void extractData(final ScenarioState state, BodyShape earth, double[] data)
+        protected void extractData(final ScenarioState state, double[] data)
             throws OrekitException {
-            final Vector3D velocity = getPVCoordinates(state, FramesFactory.getEME2000()).getVelocity();
+            final Vector3D velocity = getPVCoordinates(state, state.getInertialFrame()).getVelocity();
             data[0] = velocity.getX();
             data[1] = velocity.getY();
             data[2] = velocity.getZ();
@@ -131,13 +131,13 @@ public enum MonitorableMonoSKData implements MonitorableMono {
 
     },
 
-    POSITION_ITRF(3) {
+    POSITION_EARTH(3) {
 
         /** {@inheritDoc} */
         @Override
-        protected void extractData(final ScenarioState state, BodyShape earth, double[] data)
+        protected void extractData(final ScenarioState state, double[] data)
            throws OrekitException {
-            final Vector3D position = getPVCoordinates(state, FramesFactory.getITRF2008()).getPosition();
+            final Vector3D position = getPVCoordinates(state, state.getEarth().getBodyFrame()).getPosition();
             data[0] = position.getX();
             data[1] = position.getY();
             data[2] = position.getZ();
@@ -145,13 +145,13 @@ public enum MonitorableMonoSKData implements MonitorableMono {
 
     },
 
-    VELOCITY_ITRF(3) {
+    VELOCITY_EARTH(3) {
 
         /** {@inheritDoc} */
         @Override
-        protected void extractData(final ScenarioState state, BodyShape earth, double[] data)
+        protected void extractData(final ScenarioState state, double[] data)
             throws OrekitException {
-            final Vector3D velocity = getPVCoordinates(state, FramesFactory.getITRF2008()).getVelocity();
+            final Vector3D velocity = getPVCoordinates(state, state.getEarth().getBodyFrame()).getVelocity();
             data[0] = velocity.getX();
             data[1] = velocity.getY();
             data[2] = velocity.getZ();
@@ -163,12 +163,14 @@ public enum MonitorableMonoSKData implements MonitorableMono {
 
         /** {@inheritDoc} */
         @Override
-        protected void extractData(final ScenarioState state, BodyShape earth, double[] data)
+        protected void extractData(final ScenarioState state, double[] data)
             throws OrekitException {
-            final Vector3D position  = getPVCoordinates(state, FramesFactory.getITRF2008()).getPosition();
+            final BodyShape earth    = state.getEarth();
+            final Frame earthFrame   = earth.getBodyFrame();
+            final Vector3D position  = getPVCoordinates(state, earthFrame).getPosition();
             final AbsoluteDate  date = state.getRealStartState().getDate();
-            final GeodeticPoint gp   = earth.transform(position, FramesFactory.getITRF2008(), date);
-            data[0] = gp.getLatitude();
+            final GeodeticPoint gp   = earth.transform(position, earthFrame, date);
+            data[0] = FastMath.toDegrees(gp.getLatitude());
         }
 
     },
@@ -177,12 +179,14 @@ public enum MonitorableMonoSKData implements MonitorableMono {
 
         /** {@inheritDoc} */
         @Override
-        protected void extractData(final ScenarioState state, BodyShape earth, double[] data)
+        protected void extractData(final ScenarioState state, double[] data)
             throws OrekitException {
-            final Vector3D position  = getPVCoordinates(state, FramesFactory.getITRF2008()).getPosition();
+            final BodyShape earth    = state.getEarth();
+            final Frame earthFrame   = earth.getBodyFrame();
+            final Vector3D position  = getPVCoordinates(state, earthFrame).getPosition();
             final AbsoluteDate  date = state.getRealStartState().getDate();
-            final GeodeticPoint gp   = earth.transform(position, FramesFactory.getITRF2008(), date);
-            data[0] = gp.getLongitude();
+            final GeodeticPoint gp   = earth.transform(position, earthFrame, date);
+            data[0] = FastMath.toDegrees(gp.getLongitude());
         }
 
     },
@@ -191,11 +195,13 @@ public enum MonitorableMonoSKData implements MonitorableMono {
 
         /** {@inheritDoc} */
         @Override
-        protected void extractData(final ScenarioState state, BodyShape earth, double[] data)
+        protected void extractData(final ScenarioState state, double[] data)
             throws OrekitException {
-            final Vector3D position  = getPVCoordinates(state, FramesFactory.getITRF2008()).getPosition();
+            final BodyShape earth    = state.getEarth();
+            final Frame earthFrame   = earth.getBodyFrame();
+            final Vector3D position  = getPVCoordinates(state, earthFrame).getPosition();
             final AbsoluteDate  date = state.getRealStartState().getDate();
-            final GeodeticPoint gp   = earth.transform(position, FramesFactory.getITRF2008(), date);
+            final GeodeticPoint gp   = earth.transform(position, earthFrame, date);
             data[0] = gp.getAltitude();
         }
 
@@ -205,7 +211,7 @@ public enum MonitorableMonoSKData implements MonitorableMono {
 
         /** {@inheritDoc} */
         @Override
-        protected void extractData(final ScenarioState state, BodyShape earth, double[] data)
+        protected void extractData(final ScenarioState state, double[] data)
             throws OrekitException {
             data[0] = getKeplerianOrbit(state).getA();
         }
@@ -216,7 +222,7 @@ public enum MonitorableMonoSKData implements MonitorableMono {
 
         /** {@inheritDoc} */
         @Override
-        protected void extractData(final ScenarioState state, BodyShape earth, double[] data)
+        protected void extractData(final ScenarioState state, double[] data)
             throws OrekitException {
             data[0] = getKeplerianOrbit(state).getE();
         }
@@ -227,9 +233,9 @@ public enum MonitorableMonoSKData implements MonitorableMono {
 
         /** {@inheritDoc} */
         @Override
-        protected void extractData(final ScenarioState state, BodyShape earth, double[] data)
+        protected void extractData(final ScenarioState state, double[] data)
             throws OrekitException {
-                data[0] = getKeplerianOrbit(state).getI();
+                data[0] = FastMath.toDegrees(getKeplerianOrbit(state).getI());
         }
 
     },
@@ -238,7 +244,7 @@ public enum MonitorableMonoSKData implements MonitorableMono {
 
         /** {@inheritDoc} */
         @Override
-        protected void extractData(final ScenarioState state, BodyShape earth, double[] data)
+        protected void extractData(final ScenarioState state, double[] data)
             throws OrekitException {
             final CircularOrbit orbit = getCircularOrbit(state);
             data[0] = orbit.getCircularEx();
@@ -251,7 +257,7 @@ public enum MonitorableMonoSKData implements MonitorableMono {
 
         /** {@inheritDoc} */
         @Override
-        protected void extractData(final ScenarioState state, BodyShape earth, double[] data)
+        protected void extractData(final ScenarioState state, double[] data)
             throws OrekitException {
             final EquinoctialOrbit orbit = getEquinoctialOrbit(state);
             data[0] = orbit.getEquinoctialEx();
@@ -264,7 +270,7 @@ public enum MonitorableMonoSKData implements MonitorableMono {
 
         /** {@inheritDoc} */
         @Override
-        protected void extractData(final ScenarioState state, BodyShape earth, double[] data)
+        protected void extractData(final ScenarioState state, double[] data)
             throws OrekitException {
             final EquinoctialOrbit orbit = getEquinoctialOrbit(state);
             data[0] = orbit.getHx();
@@ -277,7 +283,7 @@ public enum MonitorableMonoSKData implements MonitorableMono {
 
         /** {@inheritDoc} */
         @Override
-        protected void extractData(final ScenarioState state, BodyShape earth, double[] data) {
+        protected void extractData(final ScenarioState state, double[] data) {
             data[0] = state.getCyclesNumber();
         }
 
@@ -398,7 +404,7 @@ public enum MonitorableMonoSKData implements MonitorableMono {
 
         this.date = date;
         for (int i = 0; i < states.length; ++i) {
-            extractData(states[i], earth, value[i]);
+            extractData(states[i], value[i]);
         }
 
         // notifies monitors
@@ -410,11 +416,10 @@ public enum MonitorableMonoSKData implements MonitorableMono {
 
     /** Extract the monitored data from the states.
      * @param state state of one spacecraft
-     * @param earth Earth model
      * @param data placeholder where to put the extracted data
      * @exception OrekitException if data cannot be computed
      */
-    protected abstract void extractData(ScenarioState state, BodyShape earth, double[] data)
+    protected abstract void extractData(ScenarioState state, double[] data)
         throws OrekitException;
 
 }

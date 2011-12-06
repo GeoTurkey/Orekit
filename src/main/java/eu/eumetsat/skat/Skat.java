@@ -291,12 +291,19 @@ public class Skat {
             // set up configured state
             final Tree stateNode = parser.getElement(initialStatesArrayNode, i);
             final Tree orbitNode = parser.getValue(stateNode, ParameterKey.INITIAL_STATE_ORBIT);
+
+            final double initialMass = parser.getDouble(stateNode, ParameterKey.INITIAL_STATE_MASS);
+            final double bolMass = parser.getDouble(stateNode, ParameterKey.INITIAL_STATE_BOL_MASS);
+            if (initialMass > bolMass) {
+                throw new SkatException(SkatMessages.INITIAL_MASS_LARGER_THAN_BOL_MASS,
+                                        initialMass, bolMass);
+            }
+
             final SpacecraftState spacecraftState =
-                    new SpacecraftState(parser.getOrbit(orbitNode, inertialFrame, utc, mu),
-                                        parser.getDouble(stateNode, ParameterKey.INITIAL_STATE_MASS));
+                    new SpacecraftState(parser.getOrbit(orbitNode, inertialFrame, utc, mu), initialMass);
             ScenarioState scenarioState =
                     new ScenarioState(parser.getString(stateNode, ParameterKey.INITIAL_STATE_NAME),
-                                      parser.getDouble(stateNode, ParameterKey.INITIAL_STATE_BOL_MASS),
+                                      inertialFrame, earth, bolMass,
                                       parser.getInt(stateNode,    ParameterKey.INITIAL_STATE_CYCLE_NUMBER),
                                       spacecraftState);
             scenarioState = scenarioState.updateInPlaneManeuvers(parser.getInt(stateNode, ParameterKey.INITIAL_STATE_IN_PLANE_MANEUVERS),

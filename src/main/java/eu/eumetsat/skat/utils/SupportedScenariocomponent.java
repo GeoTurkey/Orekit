@@ -113,7 +113,7 @@ public enum SupportedScenariocomponent {
                 }
                 final String name          = parser.getString(maneuver,  ParameterKey.MANEUVERS_NAME);
                 final Vector3D direction   = parser.getVector(maneuver,  ParameterKey.MANEUVERS_DIRECTION).normalize();
-                final double thrust        = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_THRUST);
+                final double[][] thrust    = parser.getDoubleArray2(maneuver,  ParameterKey.MANEUVERS_THRUST);
                 final double[][] isp       = parser.getDoubleArray2(maneuver,  ParameterKey.MANEUVERS_ISP_CURVE);
                 final double dvMin         = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DV_MIN);
                 final double dvMax         = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DV_MAX);
@@ -133,13 +133,12 @@ public enum SupportedScenariocomponent {
 
             // optimizer
             final double stopCriterion = parser.getDouble(node, ParameterKey.COMPONENT_CONTROL_LOOP_GLOBAL_STOP_CRITERION);
-            final int convergenceSpan = parser.getInt(node, ParameterKey.COMPONENT_CONTROL_LOOP_CONVERGENCE_SPAN_CRITERION);
             final Tree optimizerNode = parser.getValue(node, ParameterKey.COMPONENT_CONTROL_LOOP_OPTIMIZER);
             final SupportedOptimizer so =
                     (SupportedOptimizer) parser.getEnumerate(optimizerNode, ParameterKey.OPTIMIZER_METHOD,
                                                              SupportedOptimizer.class);
             final BaseMultivariateRealOptimizer<MultivariateFunction> optimizer =
-                    so.parse(parser, optimizerNode, maneuvers, stopCriterion, convergenceSpan, skat);
+                    so.parse(parser, optimizerNode, maneuvers, stopCriterion, skat);
 
             // propagator
             final Tree propagatorNode = parser.getValue(node, ParameterKey.COMPONENT_CONTROL_LOOP_PROPAGATOR);

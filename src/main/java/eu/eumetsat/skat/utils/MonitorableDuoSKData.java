@@ -6,10 +6,10 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
+import org.apache.commons.math.util.FastMath;
 import org.orekit.bodies.BodyShape;
 import org.orekit.errors.OrekitException;
 import org.orekit.frames.Frame;
-import org.orekit.frames.FramesFactory;
 import org.orekit.frames.TopocentricFrame;
 import org.orekit.orbits.CircularOrbit;
 import org.orekit.orbits.EquinoctialOrbit;
@@ -38,10 +38,10 @@ public enum MonitorableDuoSKData implements MonitorableDuo {
         /** {@inheritDoc} */
         @Override
         protected void extractData(final ScenarioState referenceState, final ScenarioState otherState,
-                                   final BodyShape earth, TopocentricFrame groundLocation, double[] data)
+                                   TopocentricFrame groundLocation, double[] data)
             throws OrekitException {
-            final Vector3D otherP     = getPVCoordinates(otherState, FramesFactory.getEME2000()).getPosition();
-            final Vector3D referenceP = getPVCoordinates(referenceState, FramesFactory.getEME2000()).getPosition();
+            final Vector3D otherP     = getPVCoordinates(otherState, referenceState.getInertialFrame()).getPosition();
+            final Vector3D referenceP = getPVCoordinates(referenceState, referenceState.getInertialFrame()).getPosition();
             data[0] = otherP.distance(referenceP);
         }
 
@@ -52,11 +52,11 @@ public enum MonitorableDuoSKData implements MonitorableDuo {
         /** {@inheritDoc} */
         @Override
         protected void extractData(final ScenarioState referenceState, final ScenarioState otherState,
-                                   final BodyShape earth, TopocentricFrame groundLocation, double[] data)
+                                   TopocentricFrame groundLocation, double[] data)
             throws OrekitException {
-            final Vector3D otherP     = getPVCoordinates(otherState, FramesFactory.getEME2000()).getPosition();
-            final Vector3D referenceP = getPVCoordinates(referenceState, FramesFactory.getEME2000()).getPosition();
-            data[0] = Vector3D.angle(referenceP, otherP);
+            final Vector3D otherP     = getPVCoordinates(otherState, referenceState.getInertialFrame()).getPosition();
+            final Vector3D referenceP = getPVCoordinates(referenceState, referenceState.getInertialFrame()).getPosition();
+            data[0] = FastMath.toDegrees(Vector3D.angle(referenceP, otherP));
         }
 
     },
@@ -66,24 +66,24 @@ public enum MonitorableDuoSKData implements MonitorableDuo {
         /** {@inheritDoc} */
         @Override
         protected void extractData(final ScenarioState referenceState, final ScenarioState otherState,
-                                   final BodyShape earth, TopocentricFrame groundLocation, double[] data)
+                                   TopocentricFrame groundLocation, double[] data)
             throws OrekitException {
             final Vector3D otherP     = getPVCoordinates(otherState, groundLocation).getPosition();
             final Vector3D referenceP = getPVCoordinates(referenceState, groundLocation).getPosition();
-            data[0] = Vector3D.angle(referenceP, otherP);
+            data[0] = FastMath.toDegrees(Vector3D.angle(referenceP, otherP));
         }
 
     },
 
-    RELATIVE_POSITION_EME2000(3) {
+    RELATIVE_POSITION_INERTIAL(3) {
 
         /** {@inheritDoc} */
         @Override
         protected void extractData(final ScenarioState referenceState, final ScenarioState otherState,
-                                   final BodyShape earth, TopocentricFrame groundLocation, double[] data)
+                                   TopocentricFrame groundLocation, double[] data)
             throws OrekitException {
-            final Vector3D otherP     = getPVCoordinates(otherState, FramesFactory.getEME2000()).getPosition();
-            final Vector3D referenceP = getPVCoordinates(referenceState, FramesFactory.getEME2000()).getPosition();
+            final Vector3D otherP     = getPVCoordinates(otherState, referenceState.getInertialFrame()).getPosition();
+            final Vector3D referenceP = getPVCoordinates(referenceState, referenceState.getInertialFrame()).getPosition();
             data[0] = otherP.getX() - referenceP.getX();
             data[1] = otherP.getY() - referenceP.getY();
             data[2] = otherP.getZ() - referenceP.getZ();
@@ -91,15 +91,15 @@ public enum MonitorableDuoSKData implements MonitorableDuo {
 
     },
 
-    RELATIVE_VELOCITY_EME2000(3) {
+    RELATIVE_VELOCITY_INERTIAL(3) {
 
         /** {@inheritDoc} */
         @Override
         protected void extractData(final ScenarioState referenceState, final ScenarioState otherState,
-                                   final BodyShape earth, TopocentricFrame groundLocation, double[] data)
+                                   TopocentricFrame groundLocation, double[] data)
             throws OrekitException {
-            final Vector3D otherV     = getPVCoordinates(otherState, FramesFactory.getEME2000()).getVelocity();
-            final Vector3D referenceV = getPVCoordinates(referenceState, FramesFactory.getEME2000()).getVelocity();
+            final Vector3D otherV     = getPVCoordinates(otherState, referenceState.getInertialFrame()).getVelocity();
+            final Vector3D referenceV = getPVCoordinates(referenceState, referenceState.getInertialFrame()).getVelocity();
             data[0] = otherV.getX() - referenceV.getX();
             data[1] = otherV.getY() - referenceV.getY();
             data[2] = otherV.getZ() - referenceV.getZ();
@@ -107,15 +107,15 @@ public enum MonitorableDuoSKData implements MonitorableDuo {
 
     },
 
-    RELATIVE_POSITION_ITRF(3) {
+    RELATIVE_POSITION_EARTH(3) {
 
         /** {@inheritDoc} */
         @Override
         protected void extractData(final ScenarioState referenceState, final ScenarioState otherState,
-                                   final BodyShape earth, TopocentricFrame groundLocation, double[] data)
+                                   TopocentricFrame groundLocation, double[] data)
             throws OrekitException {
-            final Vector3D otherP     = getPVCoordinates(otherState, FramesFactory.getITRF2008()).getPosition();
-            final Vector3D referenceP = getPVCoordinates(referenceState, FramesFactory.getITRF2008()).getPosition();
+            final Vector3D otherP     = getPVCoordinates(otherState, referenceState.getEarth().getBodyFrame()).getPosition();
+            final Vector3D referenceP = getPVCoordinates(referenceState, referenceState.getEarth().getBodyFrame()).getPosition();
             data[0] = otherP.getX() - referenceP.getX();
             data[1] = otherP.getY() - referenceP.getY();
             data[2] = otherP.getZ() - referenceP.getZ();
@@ -123,15 +123,15 @@ public enum MonitorableDuoSKData implements MonitorableDuo {
 
     },
 
-    RELATIVE_VELOCITY_ITRF(3) {
+    RELATIVE_VELOCITY_EARTH(3) {
 
         /** {@inheritDoc} */
         @Override
         protected void extractData(final ScenarioState referenceState, final ScenarioState otherState,
-                                   final BodyShape earth, TopocentricFrame groundLocation, double[] data)
+                                   TopocentricFrame groundLocation, double[] data)
             throws OrekitException {
-            final Vector3D otherV     = getPVCoordinates(otherState, FramesFactory.getITRF2008()).getVelocity();
-            final Vector3D referenceV = getPVCoordinates(referenceState, FramesFactory.getITRF2008()).getVelocity();
+            final Vector3D otherV     = getPVCoordinates(otherState, referenceState.getEarth().getBodyFrame()).getVelocity();
+            final Vector3D referenceV = getPVCoordinates(referenceState, referenceState.getEarth().getBodyFrame()).getVelocity();
             data[0] = otherV.getX() - referenceV.getX();
             data[1] = otherV.getY() - referenceV.getY();
             data[2] = otherV.getZ() - referenceV.getZ();
@@ -144,7 +144,7 @@ public enum MonitorableDuoSKData implements MonitorableDuo {
         /** {@inheritDoc} */
         @Override
         protected void extractData(final ScenarioState referenceState, final ScenarioState otherState,
-                                   final BodyShape earth, TopocentricFrame groundLocation, double[] data)
+                                   TopocentricFrame groundLocation, double[] data)
             throws OrekitException {
             final KeplerianOrbit otherOrbit     = getKeplerianOrbit(otherState);
             final KeplerianOrbit referenceOrbit = getKeplerianOrbit(referenceState);
@@ -158,7 +158,7 @@ public enum MonitorableDuoSKData implements MonitorableDuo {
         /** {@inheritDoc} */
         @Override
         protected void extractData(final ScenarioState referenceState, final ScenarioState otherState,
-                                   final BodyShape earth, TopocentricFrame groundLocation, double[] data)
+                                   TopocentricFrame groundLocation, double[] data)
             throws OrekitException {
             final KeplerianOrbit otherOrbit     = getKeplerianOrbit(otherState);
             final KeplerianOrbit referenceOrbit = getKeplerianOrbit(referenceState);
@@ -172,11 +172,11 @@ public enum MonitorableDuoSKData implements MonitorableDuo {
         /** {@inheritDoc} */
         @Override
         protected void extractData(final ScenarioState referenceState, final ScenarioState otherState,
-                                   final BodyShape earth, TopocentricFrame groundLocation, double[] data)
+                                   TopocentricFrame groundLocation, double[] data)
             throws OrekitException {
             final KeplerianOrbit otherOrbit     = getKeplerianOrbit(otherState);
             final KeplerianOrbit referenceOrbit = getKeplerianOrbit(referenceState);
-            data[0] = otherOrbit.getI() - referenceOrbit.getI();
+            data[0] = FastMath.toDegrees(otherOrbit.getI() - referenceOrbit.getI());
         }
 
     },
@@ -186,7 +186,7 @@ public enum MonitorableDuoSKData implements MonitorableDuo {
         /** {@inheritDoc} */
         @Override
         protected void extractData(final ScenarioState referenceState, final ScenarioState otherState,
-                                   final BodyShape earth, TopocentricFrame groundLocation, double[] data)
+                                   TopocentricFrame groundLocation, double[] data)
             throws OrekitException {
             final CircularOrbit otherOrbit     = getCircularOrbit(otherState);
             final CircularOrbit referenceOrbit = getCircularOrbit(referenceState);
@@ -201,7 +201,7 @@ public enum MonitorableDuoSKData implements MonitorableDuo {
         /** {@inheritDoc} */
         @Override
         protected void extractData(final ScenarioState referenceState, final ScenarioState otherState,
-                                   final BodyShape earth, TopocentricFrame groundLocation, double[] data)
+                                   TopocentricFrame groundLocation, double[] data)
             throws OrekitException {
             final EquinoctialOrbit otherOrbit     = getEquinoctialOrbit(otherState);
             final EquinoctialOrbit referenceOrbit = getEquinoctialOrbit(referenceState);
@@ -216,7 +216,7 @@ public enum MonitorableDuoSKData implements MonitorableDuo {
         /** {@inheritDoc} */
         @Override
         protected void extractData(final ScenarioState referenceState, final ScenarioState otherState,
-                                   final BodyShape earth, TopocentricFrame groundLocation, double[] data)
+                                   TopocentricFrame groundLocation, double[] data)
             throws OrekitException {
             final EquinoctialOrbit otherOrbit     = getEquinoctialOrbit(otherState);
             final EquinoctialOrbit referenceOrbit = getEquinoctialOrbit(referenceState);
@@ -348,7 +348,7 @@ public enum MonitorableDuoSKData implements MonitorableDuo {
         for (int i = 0; i < states.length; ++i) {
             for (int j = 0; j < states.length; ++j) {
                 if (i != j) {
-                    extractData(states[i], states[j], earth, groundLocation, value[i][j]);
+                    extractData(states[i], states[j], groundLocation, value[i][j]);
                 }
             }
         }
@@ -363,14 +363,12 @@ public enum MonitorableDuoSKData implements MonitorableDuo {
     /** Extract the monitored data from the states.
      * @param referenceState state of the reference spacecraft
      * @param otherState state of the other spacecraft
-     * @param earth Earth model
      * @param groundLocation location of reference ground point
      * @param data placeholder where to put the extracted data
      * @exception OrekitException if data cannot be computed
      */
     protected abstract void extractData(ScenarioState referenceState, ScenarioState otherState,
-                                        BodyShape earth, TopocentricFrame groundLocation,
-                                        double[] data)
+                                        TopocentricFrame groundLocation, double[] data)
         throws OrekitException;
 
 }
