@@ -10,6 +10,8 @@ import org.orekit.propagation.Propagator;
 import org.orekit.time.AbsoluteDate;
 
 import eu.eumetsat.skat.control.SKParameter;
+import eu.eumetsat.skat.utils.SkatException;
+import eu.eumetsat.skat.utils.SkatMessages;
 
 /**
  * This class represents an impulse maneuver with free parameters for date
@@ -72,6 +74,7 @@ public class TunableManeuver {
      * @param minDateOffset offset for earliest allowed maneuver date
      * @param maxDateOffset offset for latest allowed maneuver date
      * @param convergenceDateOffset convergence threshold for sate offset
+     * @exception SkatException if calibration curves are not ordered
      */
     public TunableManeuver(final String name, final boolean inPlane,
                            final boolean relative, final Vector3D direction,
@@ -80,13 +83,26 @@ public class TunableManeuver {
                            final double convergenceIncrement,
                            final double nominal,
                            final double minDateOffset, final double maxDateOffset,
-                           final double convergenceDateOffset) {
+                           final double convergenceDateOffset)
+        throws SkatException {
         this.name         = name;
         this.inPlane      = inPlane;
         this.relative     = relative;
         this.direction    = direction.normalize();
         this.thrust       = thrust.clone();
+        for (int i = 1; i < thrust.length; ++i) {
+            if (thrust[i - 1][1] > thrust[i][1]) {
+                throw new SkatException(SkatMessages.NON_INCREASING_MASSES_IN_THRUST_CALIBRATION_CURVE,
+                                        thrust[i - 1][1], thrust[i][1]);
+            }
+        }
         this.isp          = isp.clone();
+        for (int i = 1; i < isp.length; ++i) {
+            if (isp[i - 1][1] > isp[i][1]) {
+                throw new SkatException(SkatMessages.NON_INCREASING_MASSES_IN_ISP_CALIBRATION_CURVE,
+                                        isp[i - 1][1], isp[i][1]);
+            }
+        }
         this.nominal      = nominal;
         velocityIncrement = new SKParameter(name + " (dV)", minIncrement, maxIncrement,
                                             convergenceIncrement,
