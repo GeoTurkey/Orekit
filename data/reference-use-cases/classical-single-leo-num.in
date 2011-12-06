@@ -1,0 +1,190 @@
+# General simulation parameters
+simulation       = {
+    output_base_name = "classical-single-leo";
+    inertial_frame   = "EME2000";
+    earth_frame      = "ITRF2008 with tides";
+    start_date       = 2000-01-01T00:00:00.000;
+    end_date         = 2005-01-01T00:00:00.000;
+    cycle_duration   = 15.0;
+    rolling_cycles   = 2;
+    ground_location  = {
+        latitude     = 49.85;
+        longitude    =  8.65;
+        altitude     =  0.0
+    };
+    output_step      = 1500.0;
+    random_seed      = 156325253;
+};
+
+# Array of initial states, there must be exactly one element for each spacecraft
+initial_states   = [
+    {
+        name                   = "Metop";
+        bol_mass               = 2000;
+        cycle_number           = 1;
+        in_plane_maneuvers     = 0;
+        in_plane_total_dV      = 0.0;
+        out_of_plane_maneuvers = 0;
+        out_of_plane_total_dV  = 0.0;
+        mass                   = 2000;
+
+        # the following orbit is very rough, it was converted from TLE position/velocity
+        # with a simple arithmetic mean on equinoctial parameters over a 2 days propagation
+        orbit                  = {
+            date               = 2000-01-01T00:00:00.000;
+            orbit_type         = KEPLERIAN;
+            angle_type         = MEAN;
+            a                  = 7195605.;
+            e                  = 0.001165;
+            i                  = 98.702198;
+            pa                 = 90.;
+            raan               = 62.4731;
+            anomaly 		   = 270.133359;
+        }
+    }
+];
+
+# Array of scenario components, each scenario component specifies to which spacecrafts it applies
+scenario         = [
+    {
+        component           = ORBIT_DETERMINATION;
+        managed_spacecrafts = [ "Metop" ];
+        orbit_type          = KEPLERIAN;
+        angle_type          = MEAN;
+        small               = 1.0e-12;  # this parameter is used to check correlation matrix semi-positiveness
+        correlation         = [
+            [  1.0, 0.0, 0.0, 0.0, 0.0, 0.0 ],
+            [  0.0, 1.0, 0.0, 0.0, 0.0, 0.0 ],
+            [  0.0, 0.0, 1.0, 0.0, 0.0, 0.0 ],
+            [  0.0, 0.0, 0.0, 1.0, 0.0, 0.0 ],
+            [  0.0, 0.0, 0.0, 0.0, 1.0, 0.0 ],
+            [  0.0, 0.0, 0.0, 0.0, 0.0, 1.0 ]
+        ];
+        standard_deviation  = [ 0., 0., 0., 0., 0., 0. ];
+    },
+    {
+        component                = CONTROL_LOOP;
+        controlled_spacecraft    = "Metop";  # note: control loop components control only ONE spacecraft each
+        first_cycle              = 1;
+        last_cycle               = 999;
+        max_eval                 = 1000;
+        global_stop_criterion    = 0.0005;
+        convergence_span		 = 5;
+        in_plane_elimination     = 0.005;
+        out_of_plane_elimination = 0.005;
+        optimizer                = {
+            method                     = NELDER_MEAD;
+            initial_simplex_size_ratio = 0.05;
+        };
+        propagator  = {
+            method                 = NUMERICAL;
+            min_step               = 0.1;
+            max_step               = 100.;
+            position_tolerance     = 10;
+            gravity_field_degree   = 2;
+            gravity_field_order    = 0;
+            cross_section          = 40.0;
+            third_body			   = [ SUN, MOON ];
+            drag_coefficient	   = 2.;
+        };
+        controls    = [
+            {
+                scaling_divisor     = 0.7; 
+                type                = MEAN_LOCAL_SOLAR_TIME;
+                name                = "local solar time (MST)";
+                latitude            = 0.;
+                ascending           = false;
+                solar_time			= 9.5;
+                min_solar_time		= 9.4;  #9.46;
+                max_solar_time		= 9.6;  #9.54;
+            }
+        ];
+        maneuvers   = [
+            {
+                in_plane             = true;
+                relative_to_previous = false;
+                name                 = "along velocity";
+                direction            = [ 1.0, 0.0, 0.0 ];
+                thrust               = [ [20, 0.0], [10, 180] ];
+                isp_curve            = [ [ 200, 0.0 ], [ 180, 100.0 ] ];
+                dv_min               = -1;
+                dv_max               = 1;
+                dv_convergence       = 0.01;
+                nominal_date         = 216000; 
+                dt_min               = -216000;
+                dt_max               = 216000;
+                dt_convergence       = 300.0;
+            },
+            {
+                in_plane             = true;
+                relative_to_previous = false;
+                name                 = "along velocity";
+                direction            = [ 1.0, 0.0, 0.0 ];
+                thrust               = [ [20, 0.0], [10, 180] ];
+                isp_curve            = [ [ 200, 0.0 ], [ 180, 100.0 ] ];
+                dv_min               = -1;
+                dv_max               = 1;
+                dv_convergence       = 0.01;
+                nominal_date         = 648000; 
+                dt_min               = -216000;
+                dt_max               = 216000;
+                dt_convergence       = 300.0;
+            },
+		    {
+                in_plane             = true;
+                relative_to_previous = false;
+                name                 = "along velocity";
+                direction            = [ 1.0, 0.0, 0.0 ];
+                thrust               = [ [20, 0.0], [10, 180] ];
+                isp_curve            = [ [ 200, 0.0 ], [ 180, 100.0 ] ];
+                dv_min               = -1;
+                dv_max               = 1;
+                dv_convergence       = 0.01;
+                nominal_date         = 1080000; 
+                dt_min               = -216000;
+                dt_max               = 216000;
+                dt_convergence       = 300.0;
+            }
+        ];
+    },
+     {
+        component           = MISSED_MANEUVER;
+        managed_spacecrafts = [ "Metop" ];
+        in_plane            = false;
+        out_of_plane        = false;
+        miss_threshold      = 0.05; #5% of missed maneuver
+        orbits_separation   = 1;
+    },
+    {
+        component              = PROPAGATION;
+        managed_spacecrafts    = [ "Metop" ];
+        long_burn_compensation = false;
+        propagator             = {
+            method                 = NUMERICAL;
+            min_step               = 0.1;
+            max_step               = 100.;
+            position_tolerance     = 10.0;
+            gravity_field_degree   = 10;
+            gravity_field_order    = 10;
+            cross_section          = 40.0;
+            drag_coefficient	   = 2.;
+            third_bodies           = [ SUN, MOON ];
+        }
+    }
+];
+
+monitoring_mono = [
+    CYCLES_NUMBER,
+    IN_PLANE_MANEUVER_NUMBER,
+    IN_PLANE_MANEUVER_CYCLE_DV,
+    IN_PLANE_MANEUVER_TOTAL_DV,
+    OUT_OF_PLANE_MANEUVER_NUMBER,
+    OUT_OF_PLANE_MANEUVER_CYCLE_DV,
+    OUT_OF_PLANE_MANEUVER_TOTAL_DV,
+    SPACECRAFT_MASS,
+    SEMI_MAJOR_AXIS,
+    EQUINOCTIAL_ECCENTRICITY_VECTOR,
+    EQUINOCTIAL_INCLINATION_VECTOR,
+    LATITUDE,
+    LONGITUDE
+]
