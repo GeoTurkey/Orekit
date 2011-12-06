@@ -29,7 +29,9 @@ public enum SupportedControlLaw {
             final double scalingDivisor = parser.getDouble(node,  ParameterKey.CONTROL_SCALING_DIVISOR);
             final boolean inPlane       = parser.getBoolean(node, ParameterKey.CONTROL_MINIMIZED_MANEUVERS_IN_PLANE);
             final boolean outOfPlane    = parser.getBoolean(node, ParameterKey.CONTROL_MINIMIZED_MANEUVERS_OUT_OF_PLANE);
-            return new MinimizedManeuvers(name, scalingDivisor, controlled, inPlane, outOfPlane);
+            return new MinimizedManeuvers(name, scalingDivisor,
+                                          controlled, skat.getSpacecraftIndex(controlled),
+                                          inPlane, outOfPlane);
         }
 
     },
@@ -46,7 +48,9 @@ public enum SupportedControlLaw {
             final double sampling       = parser.getDouble(node, ParameterKey.CONTROL_SAMPLING);
             final double lEast          = parser.getAngle(node,  ParameterKey.CONTROL_CENTERED_LONGITUDE_EAST);
             final double lWest          = parser.getAngle(node,  ParameterKey.CONTROL_CENTERED_LONGITUDE_WEST);
-            return new CenteredLongitude(name, scalingDivisor, controlled, lEast, lWest, sampling, skat.getEarth());
+            return new CenteredLongitude(name, scalingDivisor,
+                                         controlled, skat.getSpacecraftIndex(controlled),
+                                         lEast, lWest, sampling, skat.getEarth());
         }
 
     },
@@ -64,8 +68,9 @@ public enum SupportedControlLaw {
             final double ignoredStartDuration = parser.getDouble(node, ParameterKey.CONTROL_PARABOLIC_IGNORED_START_DURATION);
             final double lEast                = parser.getAngle(node,  ParameterKey.CONTROL_PARABOLIC_LONGITUDE_EAST);
             final double lWest                = parser.getAngle(node,  ParameterKey.CONTROL_PARABOLIC_LONGITUDE_WEST);
-            return new ParabolicLongitude(name, scalingDivisor, controlled, ignoredStartDuration,
-                                          lEast, lWest, sampling, skat.getEarth());
+            return new ParabolicLongitude(name, scalingDivisor,
+                                          controlled, skat.getSpacecraftIndex(controlled),
+                                          ignoredStartDuration,lEast, lWest, sampling, skat.getEarth());
         }
 
     },
@@ -83,8 +88,9 @@ public enum SupportedControlLaw {
             final double centerX        = parser.getDouble(node, ParameterKey.CONTROL_ECCENTRICITY_CIRCLE_CENTER_X);
             final double centerY        = parser.getDouble(node, ParameterKey.CONTROL_ECCENTRICITY_CIRCLE_CENTER_Y);
             final double radius         = parser.getDouble(node, ParameterKey.CONTROL_ECCENTRICITY_CIRCLE_RADIUS);
-            return new EccentricityCircle(name, scalingDivisor, controlled, centerX, centerY, radius,
-                                          skat.getSun(), sampling);
+            return new EccentricityCircle(name, scalingDivisor,
+                                          controlled, skat.getSpacecraftIndex(controlled),
+                                          centerX, centerY, radius, skat.getSun(), sampling);
         }
 
     },
@@ -102,7 +108,9 @@ public enum SupportedControlLaw {
             final double targetHx       = parser.getDouble(node, ParameterKey.CONTROL_INCLINATION_VECTOR_TARGET_X);
             final double targetHy       = parser.getDouble(node, ParameterKey.CONTROL_INCLINATION_VECTOR_TARGET_Y);
             final double circleRadius   = parser.getDouble(node, ParameterKey.CONTROL_INCLINATION_LIMIT_CIRCLE_RADIUS);
-            return new InclinationVector(name, scalingDivisor, controlled, targetHx, targetHy, circleRadius, sampling);
+            return new InclinationVector(name, scalingDivisor,
+                                         controlled, skat.getSpacecraftIndex(controlled),
+                                         targetHx, targetHy, circleRadius, sampling);
         }
 
     },
@@ -149,7 +157,9 @@ public enum SupportedControlLaw {
             final int daysPerPhasingCycle   = parser.getInt(node, ParameterKey.CONTROL_GROUND_TRACK_DAYS_PER_CYCLE);
             final double minLongitude       = parser.getAngle(node, ParameterKey.CONTROL_GROUND_TRACK_MIN_LONGITUDE);
             final double maxLongitude       = parser.getAngle(node, ParameterKey.CONTROL_GROUND_TRACK_MAX_LONGITUDE);
-            return new GroundTrackGrid(name, scalingDivisor, controlled, skat.getEarth(),
+            return new GroundTrackGrid(name, scalingDivisor,
+                                       controlled, skat.getSpacecraftIndex(controlled),
+                                       skat.getEarth(),
                                        latitude, longitude, ascending, orbitsPerPhasingCycle, daysPerPhasingCycle, minLongitude, maxLongitude);
         }
 
@@ -169,7 +179,9 @@ public enum SupportedControlLaw {
             final double solarTime      = parser.getDouble(node, ParameterKey.CONTROL_SOLAR_TIME_SOLAR_TIME);
             final double minSolarTime   = parser.getDouble(node, ParameterKey.CONTROL_SOLAR_TIME_MIN_SOLAR_TIME);
             final double maxSolarTime   = parser.getDouble(node, ParameterKey.CONTROL_SOLAR_TIME_MAX_SOLAR_TIME);
-            return new MeanLocalSolarTime(name, scalingDivisor, controlled, skat.getEarth(), latitude,
+            return new MeanLocalSolarTime(name, scalingDivisor, 
+                                          controlled, skat.getSpacecraftIndex(controlled),
+                                          skat.getEarth(), latitude,
                                           ascending, solarTime, minSolarTime, maxSolarTime);
         }
 

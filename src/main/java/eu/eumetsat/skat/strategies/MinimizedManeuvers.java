@@ -38,14 +38,15 @@ public class MinimizedManeuvers extends AbstractSKControl {
     /** Simple constructor.
      * @param name name of the control law
      * @param scalingDivisor divisor to use for scaling the control law
-     * @param controlled name of the controlled spacecraft
+     * @param controlledName name of the controlled spacecraft
+     * @param controlledIndex index of the controlled spacecraft
      * @param inPlane if true, in-plane maneuvers are taken into account
      * @param outOfPlane if true, out-of-plane maneuvers are taken into account
      */
     public MinimizedManeuvers(final String name, final double scalingDivisor,
-                              final String controlled,
+                              final String controlledName, final int controlledIndex,
                               final boolean inPlane, final boolean outOfPlane) {
-        super(name, scalingDivisor, controlled, null, 0.0,
+        super(name, scalingDivisor, controlledName, controlledIndex, null, -1, 0.0,
               Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY);
         this.inPlane    = inPlane;
         this.outOfPlane = outOfPlane;
@@ -57,7 +58,7 @@ public class MinimizedManeuvers extends AbstractSKControl {
                               final Propagator propagator,
                               final AbsoluteDate start, final AbsoluteDate end, int rollingCycles)
         throws OrekitException {
-        super.initializeRun(maneuvers, propagator, start, end, rollingCycles);
+        resetLimitsChecks();
         sumDeltaV = 0;
         for (final ScheduledManeuver maneuver : maneuvers) {
             if ((inPlane && maneuver.isInPlane()) || (outOfPlane && !(maneuver.isInPlane()))) {
