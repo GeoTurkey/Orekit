@@ -303,7 +303,7 @@ public class Skat {
                     new SpacecraftState(parser.getOrbit(orbitNode, inertialFrame, utc, mu), initialMass);
             ScenarioState scenarioState =
                     new ScenarioState(parser.getString(stateNode, ParameterKey.INITIAL_STATE_NAME),
-                                      bolMass,
+                                      inertialFrame, earth, bolMass,
                                       parser.getInt(stateNode,    ParameterKey.INITIAL_STATE_CYCLE_NUMBER),
                                       spacecraftState);
             scenarioState = scenarioState.updateInPlaneManeuvers(parser.getInt(stateNode, ParameterKey.INITIAL_STATE_IN_PLANE_MANEUVERS),

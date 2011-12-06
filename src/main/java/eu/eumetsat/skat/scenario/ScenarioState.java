@@ -3,6 +3,8 @@ package eu.eumetsat.skat.scenario;
 
 import java.util.List;
 
+import org.orekit.bodies.BodyShape;
+import org.orekit.frames.Frame;
 import org.orekit.propagation.BoundedPropagator;
 import org.orekit.propagation.SpacecraftState;
 
@@ -27,6 +29,12 @@ public class ScenarioState {
 
     /** Spacecraft name. */
     private final String name;
+
+    /** Inertial frame. */
+    private final Frame inertialFrame;
+
+    /** Earth model. */
+    private final BodyShape earth;
 
     /** Spacecraft mass at Begin Of Life. */
     private final double bolMass;
@@ -69,6 +77,8 @@ public class ScenarioState {
 
     /** complete constructor.
      * @param name spacecraft name
+     * @param inertialFrame inertial frame
+     * @param earth Earth model
      * @param bolMass spacecraft mass at Begin Of Life
      * @param cyclesNumber cycle number
      * @param inPlaneTotalDV total dV in-plane maneuvers
@@ -81,7 +91,8 @@ public class ScenarioState {
      * @param maneuvers list of maneuvers
      * @param inplane number of performed in-plane maneuvers
      */
-    private ScenarioState(final String name, final double bolMass, final int cyclesNumber,
+    private ScenarioState(final String name, final Frame inertialFrame, BodyShape earth,
+                          final double bolMass, final int cyclesNumber,
                           final int inPlane, final double inPlaneCycleDV, final double inPlaneTotalDV,
                           final int outOfPlane, final double outOfPlaneCycleDV, final double outOfPlaneTotalDV,
                           final SpacecraftState realStartState,
@@ -90,6 +101,8 @@ public class ScenarioState {
                           final BoundedPropagator performedEphemeris,
                           final List<ScheduledManeuver> maneuvers) {
         this.name                     = name;
+        this.inertialFrame            = inertialFrame;
+        this.earth                    = earth;
         this.bolMass                  = bolMass;
         this.cyclesNumber             = cyclesNumber;
         this.inPlaneManeuvers         = inPlane;
@@ -107,13 +120,16 @@ public class ScenarioState {
 
     /** Simple constructor.
      * @param name spacecraft name
+     * @param inertialFrame inertial frame
+     * @param earth Earth model
      * @param bolMass spacecraft mass at Begin Of Life
      * @param cyclesNumber cycles number
      * @param realState real state
      */
-    public ScenarioState(final String name, final double bolMass,
+    public ScenarioState(final String name, final Frame inertialFrame, BodyShape earth,
+                         final double bolMass,
                          final int cyclesNumber, final SpacecraftState realState) {
-        this(name, bolMass, cyclesNumber,
+        this(name, inertialFrame, earth, bolMass, cyclesNumber,
              0, 0.0, 0.0, 0, 0.0, 0.0,
              realState, null, null, null, null);
     }
@@ -123,6 +139,20 @@ public class ScenarioState {
      */
     public String getName() {
         return name;
+    }
+
+    /** Get the inertial frame.
+     * @return inertial frame
+     */
+    public Frame getInertialFrame() {
+        return inertialFrame;
+    }
+
+    /** Get the Earth model.
+     * @return Earth model
+     */
+    public BodyShape getEarth() {
+        return earth;
     }
 
     /** Get the spacecraft mass at Begin Of Life.
@@ -147,7 +177,7 @@ public class ScenarioState {
      * @return updated state
      */
     public ScenarioState updateCyclesNumber(final int cyclesNumber) {
-        return new ScenarioState(name, bolMass, cyclesNumber,
+        return new ScenarioState(name, inertialFrame, earth, bolMass, cyclesNumber,
                                  inPlaneManeuvers, inPlaneCycleDV, inPlaneTotalDV,
                                  outOfPlaneManeuvers, outOfPlaneCycleDV, outOfPlaneTotalDV,
                                  realStartState, estimatedStartState, realEndState,
@@ -185,7 +215,7 @@ public class ScenarioState {
      * @return updated state
      */
     public ScenarioState updateInPlaneManeuvers(final int number, final double cycleDV, final double totalDV) {
-        return new ScenarioState(name, bolMass, cyclesNumber,
+        return new ScenarioState(name, inertialFrame, earth, bolMass, cyclesNumber,
                                  number, cycleDV, totalDV,
                                  outOfPlaneManeuvers, outOfPlaneCycleDV, outOfPlaneTotalDV,
                                  realStartState, estimatedStartState, realEndState,
@@ -223,7 +253,7 @@ public class ScenarioState {
      * @return updated state
      */
     public ScenarioState updateOutOfPlaneManeuvers(final int number, final double cycleDV, final double totalDV) {
-        return new ScenarioState(name, bolMass, cyclesNumber,
+        return new ScenarioState(name, inertialFrame, earth, bolMass, cyclesNumber,
                                  inPlaneManeuvers, inPlaneCycleDV, inPlaneTotalDV,
                                  number, cycleDV, totalDV,
                                  realStartState, estimatedStartState, realEndState,
@@ -245,7 +275,7 @@ public class ScenarioState {
      * @return updated state
      */
     public ScenarioState updateRealStartState(final SpacecraftState state) {
-        return new ScenarioState(name, bolMass, cyclesNumber,
+        return new ScenarioState(name, inertialFrame, earth, bolMass, cyclesNumber,
                                  inPlaneManeuvers, inPlaneCycleDV, inPlaneTotalDV,
                                  outOfPlaneManeuvers, outOfPlaneCycleDV, outOfPlaneTotalDV,
                                  state, estimatedStartState, realEndState,
@@ -267,7 +297,7 @@ public class ScenarioState {
      * @return updated state
      */
     public ScenarioState updateEstimatedStartState(final SpacecraftState state) {
-        return new ScenarioState(name, bolMass, cyclesNumber,
+        return new ScenarioState(name, inertialFrame, earth, bolMass, cyclesNumber,
                                  inPlaneManeuvers, inPlaneCycleDV, inPlaneTotalDV,
                                  outOfPlaneManeuvers, outOfPlaneCycleDV, outOfPlaneTotalDV,
                                  realStartState, state, realEndState,
@@ -289,7 +319,7 @@ public class ScenarioState {
      * @return updated state
      */
     public ScenarioState updateRealEndState(final SpacecraftState state) {
-        return new ScenarioState(name, bolMass, cyclesNumber,
+        return new ScenarioState(name, inertialFrame, earth, bolMass, cyclesNumber,
                                  inPlaneManeuvers, inPlaneCycleDV, inPlaneTotalDV,
                                  outOfPlaneManeuvers, outOfPlaneCycleDV, outOfPlaneTotalDV,
                                  realStartState, estimatedStartState, state,
@@ -311,7 +341,7 @@ public class ScenarioState {
      * @return updated state
      */
     public ScenarioState updatePerformedEphemeris(final BoundedPropagator ephemeris) {
-        return new ScenarioState(name, bolMass, cyclesNumber,
+        return new ScenarioState(name, inertialFrame, earth, bolMass, cyclesNumber,
                                  inPlaneManeuvers, inPlaneCycleDV, inPlaneTotalDV,
                                  outOfPlaneManeuvers, outOfPlaneCycleDV, outOfPlaneTotalDV,
                                  realStartState, estimatedStartState, realEndState,
@@ -333,7 +363,7 @@ public class ScenarioState {
      * @return updated state
      */
     public ScenarioState updateManeuvers(final List<ScheduledManeuver> maneuvers) {
-        return new ScenarioState(name, bolMass, cyclesNumber,
+        return new ScenarioState(name, inertialFrame, earth, bolMass, cyclesNumber,
                                  inPlaneManeuvers, inPlaneCycleDV, inPlaneTotalDV,
                                  outOfPlaneManeuvers, outOfPlaneCycleDV, outOfPlaneTotalDV,
                                  realStartState, estimatedStartState, realEndState,
