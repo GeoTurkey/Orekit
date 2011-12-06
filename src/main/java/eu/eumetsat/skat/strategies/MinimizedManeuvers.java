@@ -55,9 +55,9 @@ public class MinimizedManeuvers extends AbstractSKControl {
     @Override
     public void initializeRun(final ScheduledManeuver[] maneuvers,
                               final Propagator propagator,
-                              final AbsoluteDate start, final AbsoluteDate end)
+                              final AbsoluteDate start, final AbsoluteDate end, int rollingCycles)
         throws OrekitException {
-        super.initializeRun(maneuvers, propagator, start, end);
+        super.initializeRun(maneuvers, propagator, start, end, rollingCycles);
         sumDeltaV = 0;
         for (final ScheduledManeuver maneuver : maneuvers) {
             if ((inPlane && maneuver.isInPlane()) || (outOfPlane && !(maneuver.isInPlane()))) {

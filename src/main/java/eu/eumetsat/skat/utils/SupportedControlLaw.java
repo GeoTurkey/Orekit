@@ -10,8 +10,9 @@ import eu.eumetsat.skat.strategies.MinimizedManeuvers;
 import eu.eumetsat.skat.strategies.geo.EccentricityCircle;
 import eu.eumetsat.skat.strategies.geo.CenteredLongitude;
 import eu.eumetsat.skat.strategies.geo.InclinationVector;
+import eu.eumetsat.skat.strategies.geo.ParabolicLongitude;
 import eu.eumetsat.skat.strategies.leo.GroundTrackGrid;
-import eu.eumetsat.skat.strategies.leo.LocalSolarTime;
+import eu.eumetsat.skat.strategies.leo.MeanLocalSolarTime;
 
 /** Enumerate for parsing the supported scenario components.
  */
@@ -46,6 +47,25 @@ public enum SupportedControlLaw {
             final double lEast          = parser.getAngle(node,  ParameterKey.CONTROL_CENTERED_LONGITUDE_EAST);
             final double lWest          = parser.getAngle(node,  ParameterKey.CONTROL_CENTERED_LONGITUDE_WEST);
             return new CenteredLongitude(name, scalingDivisor, controlled, lEast, lWest, sampling, skat.getEarth());
+        }
+
+    },
+
+    /** Constant for parabolic longitude control law. */
+    PARABOLIC_LONGITUDE() {
+
+        /** {@inheritDoc} */
+        public SKControl parse(final SkatFileParser parser, final Tree node,
+                               final String controlled, final Skat skat)
+            throws OrekitException, SkatException {
+            final String name                 = parser.getString(node, ParameterKey.CONTROL_NAME);
+            final double scalingDivisor       = parser.getAngle(node,  ParameterKey.CONTROL_SCALING_DIVISOR);
+            final double sampling             = parser.getDouble(node, ParameterKey.CONTROL_SAMPLING);
+            final double ignoredStartDuration = parser.getDouble(node, ParameterKey.CONTROL_PARABOLIC_IGNORED_START_DURATION);
+            final double lEast                = parser.getAngle(node,  ParameterKey.CONTROL_PARABOLIC_LONGITUDE_EAST);
+            final double lWest                = parser.getAngle(node,  ParameterKey.CONTROL_PARABOLIC_LONGITUDE_WEST);
+            return new ParabolicLongitude(name, scalingDivisor, controlled, ignoredStartDuration,
+                                          lEast, lWest, sampling, skat.getEarth());
         }
 
     },
@@ -135,8 +155,8 @@ public enum SupportedControlLaw {
 
     },
 
-    /** Constant for local solar time control law. */
-    LOCAL_SOLAR_TIME() {
+    /** Constant for mean local solar time control law. */
+    MEAN_LOCAL_SOLAR_TIME() {
 
         /** {@inheritDoc} */
         public SKControl parse(final SkatFileParser parser, final Tree node,
@@ -149,8 +169,8 @@ public enum SupportedControlLaw {
             final double solarTime      = parser.getDouble(node, ParameterKey.CONTROL_SOLAR_TIME_SOLAR_TIME);
             final double minSolarTime   = parser.getDouble(node, ParameterKey.CONTROL_SOLAR_TIME_MIN_SOLAR_TIME);
             final double maxSolarTime   = parser.getDouble(node, ParameterKey.CONTROL_SOLAR_TIME_MAX_SOLAR_TIME);
-            return new LocalSolarTime(name, scalingDivisor, controlled, skat.getEarth(), skat.getSun(),
-                                      latitude, ascending, solarTime, minSolarTime, maxSolarTime);
+            return new MeanLocalSolarTime(name, scalingDivisor, controlled, skat.getEarth(), latitude,
+                                          ascending, solarTime, minSolarTime, maxSolarTime);
         }
 
     };

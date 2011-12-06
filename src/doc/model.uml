@@ -1993,6 +1993,26 @@ It is updated by the updateStates methods of all scenario components.</body>
               <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_sPMgNvXJEeCTIMie9DR2WQ"/>
             </ownedEnd>
           </packagedElement>
+          <packagedElement xmi:type="uml:Class" xmi:id="_MECPMBz4EeG3Rf_jFMSSzQ" name="SimpleMonitorable" clientDependency="_R0i1QBz4EeG3Rf_jFMSSzQ _PIsdkBz5EeG3Rf_jFMSSzQ">
+            <interfaceRealization xmi:id="_R0i1QBz4EeG3Rf_jFMSSzQ" name="InterfaceRealization1" supplier="_dhPWIN6gEeCJNKrGCyr87w" client="_MECPMBz4EeG3Rf_jFMSSzQ" contract="_dhPWIN6gEeCJNKrGCyr87w"/>
+            <interfaceRealization xmi:id="_PIsdkBz5EeG3Rf_jFMSSzQ" name="InterfaceRealization2" supplier="_9j7M0PXIEeCTIMie9DR2WQ" client="_MECPMBz4EeG3Rf_jFMSSzQ" contract="_9j7M0PXIEeCTIMie9DR2WQ"/>
+          </packagedElement>
+          <packagedElement xmi:type="uml:Association" xmi:id="_gLshABz4EeG3Rf_jFMSSzQ" name="A_&lt;monitorableMonoSKData>_&lt;monitorableMono>" memberEnd="_gLtIEBz4EeG3Rf_jFMSSzQ _gLtIExz4EeG3Rf_jFMSSzQ">
+            <ownedEnd xmi:id="_gLtIEBz4EeG3Rf_jFMSSzQ" name="monitorableMonoSKData" association="_gLshABz4EeG3Rf_jFMSSzQ">
+              <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_gLtIERz4EeG3Rf_jFMSSzQ" value="1"/>
+              <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_gLtIEhz4EeG3Rf_jFMSSzQ" value="1"/>
+            </ownedEnd>
+            <ownedEnd xmi:id="_gLtIExz4EeG3Rf_jFMSSzQ" name="monitorableMono" type="_dhPWIN6gEeCJNKrGCyr87w" association="_gLshABz4EeG3Rf_jFMSSzQ">
+              <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_gLtIFBz4EeG3Rf_jFMSSzQ" value="1"/>
+              <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_gLtIFRz4EeG3Rf_jFMSSzQ" value="1"/>
+            </ownedEnd>
+          </packagedElement>
+          <packagedElement xmi:type="uml:Class" xmi:id="_v38XcBz4EeG3Rf_jFMSSzQ" name="MonitorableMonoSKData" clientDependency="_zcFzoBz4EeG3Rf_jFMSSzQ">
+            <interfaceRealization xmi:id="_zcFzoBz4EeG3Rf_jFMSSzQ" name="InterfaceRealization1" supplier="_dhPWIN6gEeCJNKrGCyr87w" client="_v38XcBz4EeG3Rf_jFMSSzQ" contract="_dhPWIN6gEeCJNKrGCyr87w"/>
+          </packagedElement>
+          <packagedElement xmi:type="uml:Class" xmi:id="_LHrfMBz5EeG3Rf_jFMSSzQ" name="MonitorableDuoSKData" clientDependency="_PpVsgBz5EeG3Rf_jFMSSzQ">
+            <interfaceRealization xmi:id="_PpVsgBz5EeG3Rf_jFMSSzQ" name="InterfaceRealization1" supplier="_9j7M0PXIEeCTIMie9DR2WQ" client="_LHrfMBz5EeG3Rf_jFMSSzQ" contract="_9j7M0PXIEeCTIMie9DR2WQ"/>
+          </packagedElement>
         </packagedElement>
         <packagedElement xmi:type="uml:Usage" xmi:id="_FKqCwN1hEeCO1uZVwIAJVg" supplier="_E9IkIN1hEeCO1uZVwIAJVg" client="_E1Ai4d1hEeCO1uZVwIAJVg"/>
         <packagedElement xmi:type="uml:Usage" xmi:id="_FKqCwd1hEeCO1uZVwIAJVg" supplier="_E9ODsN1hEeCO1uZVwIAJVg" client="_E1Ai4d1hEeCO1uZVwIAJVg"/>

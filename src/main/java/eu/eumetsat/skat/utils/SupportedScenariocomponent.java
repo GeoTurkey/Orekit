@@ -113,7 +113,7 @@ public enum SupportedScenariocomponent {
                 }
                 final String name          = parser.getString(maneuver,  ParameterKey.MANEUVERS_NAME);
                 final Vector3D direction   = parser.getVector(maneuver,  ParameterKey.MANEUVERS_DIRECTION).normalize();
-                final double thrust        = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_THRUST);
+                final double[][] thrust    = parser.getDoubleArray2(maneuver,  ParameterKey.MANEUVERS_THRUST);
                 final double[][] isp       = parser.getDoubleArray2(maneuver,  ParameterKey.MANEUVERS_ISP_CURVE);
                 final double dvMin         = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DV_MIN);
                 final double dvMax         = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DV_MAX);

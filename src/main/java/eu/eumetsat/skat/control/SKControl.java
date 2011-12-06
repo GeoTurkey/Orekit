@@ -57,10 +57,11 @@ public interface SKControl extends SKElement {
      * event detector} and {@link #getStepHandler() step handler} if any)
      * @param start start date of the propagation
      * @param end end date of the propagation
+     * @param rollingCycles number of rolling cycles
      * @exception OrekitException if something weird occurs with the propagator
      */
     void initializeRun(ScheduledManeuver[] maneuvers, Propagator propagator,
-                       AbsoluteDate start, AbsoluteDate end)
+                       AbsoluteDate start, AbsoluteDate end, int rollingCycles)
         throws OrekitException;
 
     /** Get the achieved value of the control.
