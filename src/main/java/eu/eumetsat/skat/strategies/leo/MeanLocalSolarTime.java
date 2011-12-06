@@ -189,8 +189,7 @@ public class MeanLocalSolarTime extends AbstractSKControl {
                 final Frame gcrf =  FramesFactory.getGCRF();
                 final Vector3D spacecraftPos = s.getPVCoordinates(gcrf).getPosition();
                 final double time = s.getDate().getComponents(utc).getTime().getSecondsInDay();
-                final double sunAlpha = gmod.getMeanSiderealTime(s.getDate()) +
-                                        (time / Constants.JULIAN_DAY - 0.5) * 2.0 * FastMath.PI;
+                final double sunAlpha = gmod.getMeanSiderealTime(s.getDate()) + FastMath.PI * (1 - time / (Constants.JULIAN_DAY * 0.5));
                 final double dAlpha = MathUtils.normalizeAngle(spacecraftPos.getAlpha() - sunAlpha, 0);
 
                 // convert the angle to solar time

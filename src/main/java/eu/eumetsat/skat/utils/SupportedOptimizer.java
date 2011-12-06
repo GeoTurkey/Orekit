@@ -161,6 +161,9 @@ public enum SupportedOptimizer {
         /** Did the simplex satisfy the convergence criteria */
         private boolean totalConverged;
         
+        /** Did every maneuver parameters converged */
+        private boolean totalParameterCheck;
+        
 
         /** Convergence span to stop the function evaluation. Convergence span is used to evaluate the function 
          * variation over a specific number of value. If values stay smaller than the stop criterion over the 
@@ -177,6 +180,7 @@ public enum SupportedOptimizer {
             this.stopCriterion = stopCriterion;
             this.convergenceSpan = convergenceSpan;
             this.totalConverged = true;
+            this.totalParameterCheck = true;
             this.dimension = -1;
             this.counter = -1;
             this.minSimplex = Double.POSITIVE_INFINITY;
@@ -194,7 +198,9 @@ public enum SupportedOptimizer {
             // Convergence watcher
             boolean convergence = false;
             // Evolution of each parameter watcher
-            boolean parameterCheck = false;
+            boolean currentParameterCheck = true;
+            // Total evolution of maneuvers parameter
+
             // Current simplex list of value
             List<Double> currentList;
 
@@ -207,10 +213,12 @@ public enum SupportedOptimizer {
                 // Update the list :
                 list.put(index, currentList);
             }else {
-                // Create a new list for the current simplex
+                // Create a new list for the new simplex
                 currentList = new ArrayList<Double>();
                 currentList.add(current.getValue());
                 list.put(index, currentList);
+                // Reset parameter watcher
+                totalParameterCheck = true;
             }
 
 
@@ -233,25 +241,27 @@ public enum SupportedOptimizer {
                     for (final TunableManeuver maneuver : maneuvers) {
                         for (final SKParameter parameter : maneuver.getParameters()) {
                             if (parameter.isTunable()) {
-                                if (FastMath.abs(c[index] - p[index]) < parameter.getConvergence()) {
-                                    parameterCheck = true;
-                                }else {
-                                    parameterCheck = false;
+                                if (FastMath.abs(c[index] - p[index]) > parameter.getConvergence()) {
+                                    currentParameterCheck = false;
                                 }
+                                totalParameterCheck &= currentParameterCheck;
                                 ++index;
                             }
                         }
                     }                    
                 counter++;
+            }else {
+                return false;
             }
-            totalConverged &= (convergence || parameterCheck);
+            
+            totalConverged &= (convergence && totalParameterCheck);
 
             // End of simplex evaluation : reset state
             if (counter == dimension){
                 // Reset state :
                 minSimplex = Double.POSITIVE_INFINITY;
                 maxSimplex = Double.NEGATIVE_INFINITY;
-                parameterCheck = true;
+                currentParameterCheck = true;
                 // If a solution has been found, reset the list 
                 if (totalConverged){
                     list.clear();
@@ -261,7 +271,7 @@ public enum SupportedOptimizer {
                 dimension = 0;
             }            
             // Get control on function evaluation convergence (parameterCheck) or on function x-axis converging (parameterCheck) 
-            return (parameterCheck || convergence);
+            return (totalParameterCheck && convergence);
         }
     }
     
