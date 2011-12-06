@@ -151,9 +151,10 @@ public enum SupportedPropagator {
             double dragCoeff =
                 parser.containsKey(node, ParameterKey.DSST_PROPAGATOR_DRAG_COEFFICIENT) ?
                 parser.getDouble(node, ParameterKey.DSST_PROPAGATOR_DRAG_COEFFICIENT) : 0.0;
-            double absorptionCoeff =
-                parser.containsKey(node, ParameterKey.DSST_PROPAGATOR_ABSORPTION_COEFFICIENT) ?
-                parser.getDouble(node, ParameterKey.DSST_PROPAGATOR_ABSORPTION_COEFFICIENT) : 0.0;
+            // Up to now the absorption coefficient is not used in the DSST SPR model
+//            double absorptionCoeff =
+//                parser.containsKey(node, ParameterKey.DSST_PROPAGATOR_ABSORPTION_COEFFICIENT) ?
+//                parser.getDouble(node, ParameterKey.DSST_PROPAGATOR_ABSORPTION_COEFFICIENT) : 0.0;
             double reflectionCoeff =
                 parser.containsKey(node, ParameterKey.DSST_PROPAGATOR_REFLECTION_COEFFICIENT) ?
                 parser.getDouble(node, ParameterKey.DSST_PROPAGATOR_REFLECTION_COEFFICIENT) : 0.0;
@@ -162,7 +163,7 @@ public enum SupportedPropagator {
                 parser.getDouble(node, ParameterKey.DSST_PROPAGATOR_CROSS_SECTION) : 0.0;
 
             // radiation pressure
-            if ((absorptionCoeff > 0) || (reflectionCoeff > 0)) {
+            if (reflectionCoeff > 0) {
                 DSSTForceModel srp = new DSSTSolarRadiationPressure(reflectionCoeff, crossSection,
                                                                     skat.getSun(),
                                                                     skat.getEarth().getEquatorialRadius());
