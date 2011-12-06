@@ -127,11 +127,13 @@ public enum ParameterKey {
 
     // Maneuvers 
     MANEUVERS_IN_PLANE("in_plane"),
-    MANEUVERS_RELATIVE_TO_PREVIOUS("relative_to_previous"),
+    MANEUVERS_DATE_RELATIVE_TO_MANEUVER("date_relative_to_maneuver"),
+    MANEUVERS_DV_RELATIVE_TO_MANEUVER("dv_relative_to_maneuver"),
     MANEUVERS_NAME("name"),
     MANEUVERS_DIRECTION("direction"),
     MANEUVERS_THRUST("thrust"),
     MANEUVERS_ISP_CURVE("isp_curve"),
+    MANEUVERS_NOMINAL_DV("nominal_dv"),
     MANEUVERS_DV_MIN("dv_min"),
     MANEUVERS_DV_MAX("dv_max"),
     MANEUVERS_DV_CONVERGENCE("dv_convergence"),

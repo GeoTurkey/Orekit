@@ -30,8 +30,11 @@ public class TunableManeuver {
     /** Indicator for in-plane maneuvers. */
     private final boolean inPlane;
 
-    /** Indicator for maneuver relative to the previous one. */
-    private final boolean relative;
+    /** Reference maneuver for date (may be null). */
+    private final TunableManeuver dateReferenceManeuver;
+
+    /** Reference maneuver for dv (may be null). */
+    private final TunableManeuver dVReferenceManeuver;
 
     /** Thrust direction in spacecraft frame. */
     private final Vector3D direction;
@@ -42,14 +45,17 @@ public class TunableManeuver {
     /** Specific impulse calibration curve. */
     private final double[][] isp;
 
+    /** Nominal offset with respect to reference dV. */
+    private final double dVNominal;
+
     /** Tunable velocity increment. */
     private final SKParameter velocityIncrement;
 
     /** Nominal offset with respect to reference date. */
-    private final double nominal;
+    private final double dtNominal;
 
-    /** Reference date of the maneuver. */
-    private AbsoluteDate reference;
+    /** Cycle start date. */
+    private AbsoluteDate cycleStart;
 
     /** Current thrust. */
     private double currentThrust;
@@ -63,33 +69,37 @@ public class TunableManeuver {
     /** Simple constructor.
      * @param name name of the maneuver
      * @param inPlane if true, the maneuver is considered to be in-plane
-     * @param relative if true, the maneuver date is relative to the previous maneuver
+     * @param dateReferenceManeuver reference maneuver for date (may be null)
+     * @param dVReferenceManeuver reference maneuver for date (may be null)
      * @param direction thrust direction in spacecraft frame
      * @param thrust engine thrust calibration curve (Newtons in row 0, consumed mass in row 1)
      * @param isp engine specific impulse calibration curve (seconds in row 0, consumed mass in row 1)
+     * @param dVNominal nominal offset with respect to reference dV
      * @param minIncrement minimal allowed value for velocity increment
      * @param maxIncrement maximal allowed value for velocity increment
      * @param convergenceIncrement convergence threshold for velocity increment
-     * @param nominal nominal offset with respect to reference date
+     * @param dtNominal nominal offset with respect to reference date
      * @param minDateOffset offset for earliest allowed maneuver date
      * @param maxDateOffset offset for latest allowed maneuver date
      * @param convergenceDateOffset convergence threshold for sate offset
      * @exception SkatException if calibration curves are not ordered
      */
     public TunableManeuver(final String name, final boolean inPlane,
-                           final boolean relative, final Vector3D direction,
+                           final TunableManeuver dateReferenceManeuver,
+                           final TunableManeuver dVReferenceManeuver,
+                           final Vector3D direction,
                            final double[][] thrust, final double[][] isp,
-                           final double minIncrement, final double maxIncrement,
+                           final double dVNominal, final double minIncrement, final double maxIncrement,
                            final double convergenceIncrement,
-                           final double nominal,
-                           final double minDateOffset, final double maxDateOffset,
+                           final double dtNominal, final double minDateOffset, final double maxDateOffset,
                            final double convergenceDateOffset)
         throws SkatException {
-        this.name         = name;
-        this.inPlane      = inPlane;
-        this.relative     = relative;
-        this.direction    = direction.normalize();
-        this.thrust       = thrust.clone();
+        this.name                  = name;
+        this.inPlane               = inPlane;
+        this.dateReferenceManeuver = dateReferenceManeuver;
+        this.dVReferenceManeuver   = dVReferenceManeuver;
+        this.direction             = direction.normalize();
+        this.thrust                = thrust.clone();
         for (int i = 1; i < thrust.length; ++i) {
             if (thrust[i - 1][1] > thrust[i][1]) {
                 throw new SkatException(SkatMessages.NON_INCREASING_MASSES_IN_THRUST_CALIBRATION_CURVE,
@@ -103,7 +113,8 @@ public class TunableManeuver {
                                         isp[i - 1][1], isp[i][1]);
             }
         }
-        this.nominal      = nominal;
+        this.dVNominal    = dVNominal;
+        this.dtNominal    = dtNominal;
         velocityIncrement = new SKParameter(name + " (dV)", minIncrement, maxIncrement,
                                             convergenceIncrement,
                                             0.5 * (minIncrement + maxIncrement),
@@ -121,18 +132,11 @@ public class TunableManeuver {
         return name;
     }
 
-    /** Check if maneuver date is relative to the previous one.
-     * @return true if maneuver date is relative to the previous one
+    /** Set the cycle start date.
+     * @param cycleStart cycle start date
      */
-    public boolean isRelativeToPrevious() {
-        return relative;
-    }
-
-    /** Set the reference date.
-     * @param reference reference date
-     */
-    public void setReferenceDate(final AbsoluteDate date) {
-        this.reference = date;
+    public void setCycleStartDate(final AbsoluteDate cycleStart) {
+        this.cycleStart = cycleStart;
     }
 
     /** Set the reference consumed mass.
@@ -227,15 +231,26 @@ public class TunableManeuver {
      */
     public ScheduledManeuver getManeuver(final Propagator trajectory) {
         return new ScheduledManeuver(name, inPlane, getDate(),
-                                     new Vector3D(velocityIncrement.getValue(), direction),
+                                     new Vector3D(getDV(), direction),
                                      currentThrust, currentIsp, trajectory);
+    }
+
+    /** Get the maneuver velocity increment.
+     * @return maneuver velocity increment
+     */
+    public double getDV() {
+        final double referenceDV = dVNominal +
+                                   ((dVReferenceManeuver == null) ? 0 : dVReferenceManeuver.getDV());
+        return referenceDV + velocityIncrement.getValue();
     }
 
     /** Get the maneuver date.
      * @return maneuver date
      */
     public AbsoluteDate getDate() {
-        return reference.shiftedBy(nominal + dateOffset.getValue());
+        final AbsoluteDate reference = (dateReferenceManeuver == null) ?
+                                       cycleStart : dateReferenceManeuver.getDate();
+        return reference.shiftedBy(dtNominal + dateOffset.getValue());
     }
 
 }

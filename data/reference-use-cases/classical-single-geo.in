@@ -114,11 +114,11 @@ scenario         = [
         maneuvers   = [
             {
                 in_plane             = false;
-                relative_to_previous = false;
                 name                 = "N/S";
                 direction            = [ 0.0, 1.0, 0.0 ];
                 thrust               = [ [  40, 0.0 ], [  30, 600.0 ] ];
                 isp_curve            = [ [ 315, 0.0 ], [ 300, 600.0 ] ];
+                nominal_dv           = 0.0;
                 dv_min               = 0.0;
                 dv_max               =  3.0;
                 dv_convergence       =  0.005;
@@ -211,11 +211,11 @@ scenario         = [
         maneuvers   = [
             {
                 in_plane             = true;
-                relative_to_previous = false;
                 name                 = "E/W-1";
                 direction            = [ 1.0, 0.0, 0.0 ];
                 thrust               = [ [  40, 0.0 ], [  30, 600.0 ] ];
                 isp_curve            = [ [ 315, 0.0 ], [ 300, 600.0 ] ];
+                nominal_dv           =  0.0;
                 dv_min               = -0.2;
                 dv_max               =  0.2;
                 dv_convergence       =  0.003;
@@ -225,14 +225,16 @@ scenario         = [
                 dt_convergence       =  60.0;
             },
             {
-                in_plane             = true;
-                relative_to_previous = true;
+                in_plane                  = true;
+                date_relative_to_maneuver = "E/W-1";
+                dv_relative_to_maneuver   = "E/W-1";
                 name                 = "E/W-2";
                 direction            = [ 1.0, 0.0, 0.0 ];
                 thrust               = [ [  40, 0.0 ], [  30, 600.0 ] ];
                 isp_curve            = [ [ 315, 0.0 ], [ 300, 600.0 ] ];
-                dv_min               = -0.2;
-                dv_max               =  0.2;
+                nominal_dv           = 0.0;
+                dv_min               = -0.0;
+                dv_max               =  0.0;
                 dv_convergence       =  0.003;
                 nominal_date         = 43200;
                 dt_min               =    0.0;
@@ -253,7 +255,7 @@ scenario         = [
         managed_spacecrafts = [ "Meteosat 7" ];
         in_plane            = true;
         out_of_plane        = false;
-        standard_deviation  = 0.002;
+        standard_deviation  = 0.02;
     },
     {
         component           = MISSED_MANEUVER;

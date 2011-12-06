@@ -80,18 +80,12 @@ class ObjectiveFunction implements MultivariateFunction {
         int index = 0;
         for (int i = 0; i < tunables.length; ++i) {
             final TunableManeuver maneuver = tunables[i];
-            if (maneuver.isRelativeToPrevious()) {
-                // the date of this maneuver is relative to the date of the previous one which
-                // has just been set at the previous iteration of this parameters setting loop
-                maneuver.setReferenceDate(tunables[i - 1].getDate());
-            } else {
-                // the date of this maneuver is relative to the cycle start
-                final int maneuversPerCycle   = tunables.length / rollingCycles;
-                final int cycleIndex          = i / maneuversPerCycle;
-                final double offset           = cycleIndex * cycleDuration * Constants.JULIAN_DAY;
-                final AbsoluteDate cycleStart = initialState.getDate().shiftedBy(offset);
-                maneuver.setReferenceDate(cycleStart);
-            }
+            // the date of this maneuver is relative to the cycle start
+            final int maneuversPerCycle   = tunables.length / rollingCycles;
+            final int cycleIndex          = i / maneuversPerCycle;
+            final double offset           = cycleIndex * cycleDuration * Constants.JULIAN_DAY;
+            final AbsoluteDate cycleStart = initialState.getDate().shiftedBy(offset);
+            maneuver.setCycleStartDate(cycleStart);
             for (final SKParameter parameter : maneuver.getParameters()) {
                 if (parameter.isTunable()) {
                     parameter.setValue(point[index++]);
