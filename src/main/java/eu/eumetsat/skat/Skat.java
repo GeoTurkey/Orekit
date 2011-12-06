@@ -537,15 +537,15 @@ public class Skat {
 
         if (controlLaw.getReferenceSpacecraftName() == null) {
             // this is a control law for a single spacecraft
-            final int index = getSpacecraftIndex(controlLaw.getControlledSpacecraftName());
+            final int index = controlLaw.getControlledSpacecraftIndex();
             monitorableResidual.register(configuredStates.length, monitorsMono[index]);
             if (monitorableViolation != null) {
                 monitorableViolation.register(configuredStates.length, monitorsMono[index]);
             }
         } else {
             // this is a control law for a spacecrafts pair
-            final int index1 = getSpacecraftIndex(controlLaw.getControlledSpacecraftName());
-            final int index2 = getSpacecraftIndex(controlLaw.getReferenceSpacecraftName());
+            final int index1 = controlLaw.getControlledSpacecraftIndex();
+            final int index2 = controlLaw.getReferenceSpacecraftIndex();
             monitorableResidual.register(configuredStates.length, monitorsDuo[index1][index2]);
             if (monitorableViolation != null) {
                 monitorableViolation.register(configuredStates.length, monitorsDuo[index1][index2]);

@@ -305,18 +305,6 @@ public enum SupportedScenariocomponent {
                                                                   SupportedPropagator.class);
                 propagators[i] = sp.parse(parser, propagatorNode, skat, i);
 
-                // register the control law handlers to the propagator
-                for (final SKControl controlLaw : skat.getControlLawsResidualsMap().keySet()) {
-                    if (indices[i] == skat.getSpacecraftIndex(controlLaw.getControlledSpacecraftName())) {
-                        if (controlLaw.getEventDetector() != null) {
-                            propagators[i].addEventDetector(controlLaw.getEventDetector());
-                        }
-                        if (controlLaw.getStepHandler() != null) {
-                            propagators[i].setMasterMode(controlLaw.getStepHandler());
-                        }
-                    }
-                }
-
             }
 
             // check if long burn inefficiency should be compensated

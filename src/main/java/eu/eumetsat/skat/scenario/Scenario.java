@@ -5,14 +5,18 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TimeZone;
 
 import org.orekit.bodies.BodyShape;
 import org.orekit.bodies.CelestialBody;
 import org.orekit.errors.OrekitException;
 import org.orekit.frames.TopocentricFrame;
+import org.orekit.propagation.BoundedPropagator;
+import org.orekit.propagation.sampling.OrekitStepHandlerMultiplexer;
 import org.orekit.time.AbsoluteDate;
 import org.orekit.time.TimeScale;
 import org.orekit.time.TimeScalesFactory;
@@ -147,39 +151,7 @@ public class Scenario implements ScenarioComponent {
                 states = component.updateStates(states);
             }
 
-            // monitor control laws residuals
-            for (final Map.Entry<SKControl, SimpleMonitorable> entry : controlsResiduals.entrySet()) {
-                final double value = entry.getKey().getAchievedValue();
-                entry.getValue().setSampledValue(startDate, new double[] { value });
-            }
-
-            // monitor control laws violations
-            for (final Map.Entry<SKControl, SimpleMonitorable> entry : controlsViolations.entrySet()) {
-                double[] v = entry.getValue().getValue(-1).clone();
-                if (entry.getKey().limitsExceeded()) {
-                    // this cycle has lead to constraints violations, increment counter
-                    v[0] += 1;
-                }
-                entry.getValue().setSampledValue(startDate, v);
-            }
-
-            // monitor data
-            AbsoluteDate tMin = states[0].getPerformedEphemeris().getMinDate();
-            AbsoluteDate tMax = states[0].getPerformedEphemeris().getMaxDate();
-            for (AbsoluteDate date = tMin; date.compareTo(tMax) <= 0; date = date.shiftedBy(outputstep)) {
-
-                // check for maneuvers that have occurred
-                updatePendingManeuvers(date, states);
-
-                // perform monitoring
-                for (final MonitorableMonoSKData monitorable : monitorablesMono) {
-                    monitorable.update(date, states, earth);
-                }
-                for (final MonitorableDuoSKData monitorable : monitorablesDuo) {
-                    monitorable.update(date, states, earth, groundLocation);
-                }
-
-            }
+            performMonitoring(states);
 
             // prepare next cycle
             for (int i = 0; i < states.length; ++i) {
@@ -203,6 +175,82 @@ public class Scenario implements ScenarioComponent {
         } while (iterationTarget.compareTo(cycleEnd) < 0);
 
         return states;
+
+    }
+
+    /** Perform monitoring.
+     * @param states scenario states
+     * @exception OrekitException if propagation fails
+     * @exception SkatException if there are no maneuvers
+     */
+    private void performMonitoring(ScenarioState[] states)
+        throws OrekitException, SkatException {
+
+        AbsoluteDate tMin = states[0].getPerformedEphemeris().getMinDate();
+        AbsoluteDate tMax = states[0].getPerformedEphemeris().getMaxDate();
+
+        // monitor control laws residuals and violations
+        Set<SKControl> controls = new HashSet<SKControl>();
+        controls.addAll(controlsResiduals.keySet());
+        controls.addAll(controlsViolations.keySet());
+        for (int i = 0; i < states.length; ++i) {
+
+            final BoundedPropagator propagator = states[i].getPerformedEphemeris();
+            propagator.clearEventsDetectors();
+            final OrekitStepHandlerMultiplexer multiplexer = new OrekitStepHandlerMultiplexer();
+            propagator.setMasterMode(multiplexer);
+
+            // register the control law handlers to the propagator
+            for (final SKControl controlLaw : controls) {
+                if (i == controlLaw.getControlledSpacecraftIndex()) {
+                    if (controlLaw.getEventDetector() != null) {
+                        propagator.addEventDetector(controlLaw.getEventDetector());
+                    }
+                    if (controlLaw.getStepHandler() != null) {
+                        multiplexer.add(controlLaw.getStepHandler());
+                    }
+                }
+            }
+
+            for (final SKControl controlLaw : controls) {
+                final List<ScheduledManeuver> maneuvers = states[i].getManeuvers();
+                controlLaw.initializeRun(maneuvers.toArray(new ScheduledManeuver[maneuvers.size()]),
+                                         propagator, tMin, tMax, 1);
+            }
+
+            propagator.propagate(tMin, tMax);
+
+        }
+
+        for (final Map.Entry<SKControl, SimpleMonitorable> entry : controlsResiduals.entrySet()) {
+            final double value = entry.getKey().getAchievedValue();
+            entry.getValue().setSampledValue(tMin, new double[] { value });
+        }
+
+        for (final Map.Entry<SKControl, SimpleMonitorable> entry : controlsViolations.entrySet()) {
+            double[] v = entry.getValue().getValue(-1).clone();
+            if (entry.getKey().limitsExceeded()) {
+                // this cycle has lead to constraints violations, increment counter
+                v[0] += 1;
+            }
+            entry.getValue().setSampledValue(tMin, v);
+        }
+
+        // monitor data
+        for (AbsoluteDate date = tMin; date.compareTo(tMax) <= 0; date = date.shiftedBy(outputstep)) {
+
+            // check for maneuvers that have occurred
+            updatePendingManeuvers(date, states);
+
+            // perform monitoring
+            for (final MonitorableMonoSKData monitorable : monitorablesMono) {
+                monitorable.update(date, states, earth);
+            }
+            for (final MonitorableDuoSKData monitorable : monitorablesDuo) {
+                monitorable.update(date, states, earth, groundLocation);
+            }
+
+        }
 
     }
 
