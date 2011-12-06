@@ -78,7 +78,7 @@ public class CenteredLongitude extends AbstractSKControl {
                              final double lEast, final double lWest,
                              final double samplingStep, final BodyShape earth) {
         super(name, scalingDivisor, controlled, null, 0,
-              lWest, MathUtils.normalizeAngle(lEast, lWest + FastMath.PI));
+              lWest, MathUtils.normalizeAngle(lEast, lWest));
         this.stephandler  = new Handler();
         this.samplingStep = samplingStep;
         this.earth        = earth;
