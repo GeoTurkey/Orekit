@@ -162,12 +162,13 @@ public enum SupportedOptimizer {
         private boolean totalConverged;
         
         /** Did every maneuver parameters converged */
-        private boolean totalParameterCheck;
-        
+        private boolean totalParameterCheck;        
 
-        /** Convergence span to stop the function evaluation. Convergence span is used to evaluate the function 
+        /** 
+         * Convergence span to stop the function evaluation. Convergence span is used to evaluate the function 
          * variation over a specific number of value. If values stay smaller than the stop criterion over the 
-         * convergence span, then we consider that the optimization algorithm converged. */
+         * convergence span, then we consider that the optimization algorithm converged.
+         **/
         private int convergenceSpan;
 
 
@@ -270,7 +271,7 @@ public enum SupportedOptimizer {
                 counter = -1;
                 dimension = 0;
             }            
-            // Get control on function evaluation convergence (parameterCheck) or on function x-axis converging (parameterCheck) 
+            // Get control on function evaluation convergence (parameterCheck) and on function x-axis converging (parameterCheck) 
             return (totalParameterCheck && convergence);
         }
     }
