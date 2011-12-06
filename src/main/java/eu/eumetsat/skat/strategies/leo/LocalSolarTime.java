@@ -26,12 +26,13 @@ import eu.eumetsat.skat.strategies.ScheduledManeuver;
 
 /**
  * Station-keeping control attempting to get local solar time in a deadband. The deadband is located around a main
- * value {@link #center}. A tolerance margin can be define through the minSolarTime and maxSolarTime parameters,
+ * value {@link #solarTime}. A tolerance margin can be define through the minSolarTime and maxSolarTime parameters,
  * defined by construction. If a violation occurs by getting out of the [minSolarTime, maxSolarTime] 
  * interval, a notifier will be triggered and this information will be monitored.
  *  <p>
  * This control value is:
  * <pre>
+ * TODO change this if 0.5 * (l75 + l25) - center is retained
  *   max(|&Omega;<sub>75</sub> - &Omega;<sub>c</sub>|,|&Omega;<sub>c</sub> - &Omega;<sub>25</sub>|)
  * </pre>
  * where &Omega;<sub>75</sub> and &Omega;<sub>25</sub> are the spacecraft right ascension of the ascending node
@@ -59,7 +60,7 @@ public class LocalSolarTime extends AbstractSKControl {
     private final List<Double> sample;
     
     /** Solar time target */
-    private final double center;
+    private final double solarTime;
 
     /** Simple constructor.
      * @param name name of the control law
@@ -86,7 +87,7 @@ public class LocalSolarTime extends AbstractSKControl {
         super(name, scalingDivisor, controlled, null, 0., minSolarTime, maxSolarTime);
         this.eventDetector = new Detector(600.0, 1.0e-3, earth, sun, latitude, ascending);
         this.sample = new ArrayList<Double>();
-        this.center = solarTime;
+        this.solarTime = solarTime;
     }
 
     /** {@inheritDoc} */
@@ -107,7 +108,8 @@ public class LocalSolarTime extends AbstractSKControl {
         final Percentile p = new Percentile();
         final double l75 = p.evaluate(data, 75.0);
         final double l25 = p.evaluate(data, 25.0);
-        return FastMath.max(FastMath.abs(l75 - center), FastMath.abs(center - l25));
+        return 0.5 * (l75 + l25) - solarTime;
+//        return FastMath.max(FastMath.abs(l75 - center), FastMath.abs(center - l25));
     }
 
     /** {@inheritDoc} */

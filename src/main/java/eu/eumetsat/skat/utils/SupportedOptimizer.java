@@ -1,7 +1,15 @@
 /* Copyright 2011 Eumetsat */
 package eu.eumetsat.skat.utils;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import org.antlr.runtime.tree.Tree;
 import org.apache.commons.math.analysis.MultivariateFunction;
@@ -22,17 +30,19 @@ import eu.eumetsat.skat.strategies.TunableManeuver;
 /** Enumerate for the supported optimizers.
  */
 public enum SupportedOptimizer {
+    
 
     /** Constant for Nelder-Mead. */
     NELDER_MEAD() {
         /** {@inheritDoc} */
         public BaseMultivariateRealOptimizer<MultivariateFunction>
             parse(final SkatFileParser parser, final Tree node,
-                  final TunableManeuver[] maneuvers, final double stopCriterion, final Skat skat) {
+                  final TunableManeuver[] maneuvers, final double stopCriterion, 
+                  final int convergenceSpan, final Skat skat) {
 
             final double[][] boundaries = getBoundaries(maneuvers);
 
-            final SimplexOptimizer optimizer = new SimplexOptimizer(new Checker(maneuvers, stopCriterion)) {
+            final SimplexOptimizer optimizer = new SimplexOptimizer(new NelderMeadChecker(maneuvers, stopCriterion, convergenceSpan)) {
 
                 /** {@inheritDoc} */
                 @Override
@@ -70,7 +80,8 @@ public enum SupportedOptimizer {
         /** {@inheritDoc} */
         public BaseMultivariateRealOptimizer<MultivariateFunction>
             parse(final SkatFileParser parser, final Tree node,
-                  final TunableManeuver[] maneuvers, final double stopCriterion, final Skat skat) {
+                  final TunableManeuver[] maneuvers, final double stopCriterion, 
+                  final int convergenceSpan, final Skat skat) {
             double[][] boundaries = getBoundaries(maneuvers);
             final double[] inputSigma        = new double[boundaries[0].length];
             for (int i = 0; i < inputSigma.length; ++i) {
@@ -93,7 +104,7 @@ public enum SupportedOptimizer {
      * @return parsed component
      */
     public abstract BaseMultivariateRealOptimizer<MultivariateFunction>
-        parse(SkatFileParser parser, Tree node, TunableManeuver[] maneuvers, double stopCriterion, Skat skat);
+        parse(SkatFileParser parser, Tree node, TunableManeuver[] maneuvers, double stopCriterion, int convergenceSpan, Skat skat);
 
     /** Get the parameters boundaries.
      * @param maneuvers maneuvers to optimize
@@ -122,11 +133,132 @@ public enum SupportedOptimizer {
                 }
             }
         }
-
         return boundaries;
-
     }
 
+    /** Local Nelder Mead class for convergence checking. */
+    private static class NelderMeadChecker implements ConvergenceChecker<RealPointValuePair> {
+
+        /** Maneuvers. */
+        private final TunableManeuver[] maneuvers;
+        
+        private Map<Integer, List<Double>> list;
+
+        /** Stop criterion on global value. */
+        private final double stopCriterion;
+        
+        /** Dimension problem */
+        private int dimension;
+        
+        /** Index in the Nelder Mead comparison*/
+        private int counter;
+        
+        /** Determine if the current evaluation of the Nelder Mead simplex converged */
+        private boolean totalConverged;
+        
+        /** Maximum value taken by one of the simplex contained in the */
+        private double maxSimplex;
+        
+        /** Minimum value taken by the */
+        private double minSimplex;
+        
+
+        /** Convergence span to stop the function evaluation. Convergence span is used to evaluate the function 
+         * variation over a specific number of value. If values stay smaller than the stop criterion over the 
+         * convergence span, then we consider that the optimization algorithm converged. */
+        private int convergenceSpan;
+
+
+        /** Simple constructor.
+         * @param maneuvers maneuvers to optimize
+         * @param stopCriterion stop criterion on global value
+         */
+        public NelderMeadChecker(final TunableManeuver[] maneuvers, final double stopCriterion, final int convergenceSpan) {
+            this.maneuvers     = maneuvers.clone();
+            this.stopCriterion = stopCriterion;
+            this.convergenceSpan = convergenceSpan;
+            this.dimension = -1;
+            this.counter = -1;
+            this.totalConverged = true;
+            this.minSimplex = Double.POSITIVE_INFINITY;
+            this.maxSimplex = Double.NEGATIVE_INFINITY;
+            this.list = new LinkedHashMap<Integer, List<Double>>();
+        }
+
+        /** {@inheritDoc} */
+        public boolean converged(final int iteration, 
+                                 final RealPointValuePair previous,
+                                 final RealPointValuePair current) {
+
+            // Simplex dimension
+            dimension = current.getPoint().length;
+            // Convergence watcher
+            boolean convergence = false;
+            // Evolution of each parameter watcher
+            boolean parameterCheck = true;
+            // Current simplex list of value
+            List<Double> currentList;
+
+            int index = iteration - 1;
+            if (list.containsKey(index)){
+                // Get the already existing list :
+                currentList = list.get(index);
+                // Add the current value
+                currentList.add(current.getValue());
+                // Update the list :
+                list.put(index, currentList);
+            }else {
+                // Create a new list for the current simplex
+                currentList = new ArrayList<Double>();
+                currentList.add(current.getValue());
+                list.put(index, currentList);
+            }
+            
+            if (list.size() >= convergenceSpan){
+                // The map is filed enough to evaluate the last simplex evolution over the convergence span:
+                for (int i = list.size() - convergenceSpan; i < list.size(); i++){
+                    List<Double> value = list.get(i);
+                    maxSimplex = FastMath.max(maxSimplex, Collections.max(value));
+                    minSimplex = FastMath.min(minSimplex, Collections.min(value));
+                }
+                convergence = (maxSimplex - minSimplex) < stopCriterion;
+               
+                    // get the optimal parameters values on the last iterations
+                    final double[] p = previous.getPoint();
+                    final double[] c = current.getPoint();
+                
+                    // check the evolution of each parameter
+                    index = 0;
+                    for (final TunableManeuver maneuver : maneuvers) {
+                        for (final SKParameter parameter : maneuver.getParameters()) {
+                            if (parameter.isTunable()) {
+                                if (FastMath.abs(c[index] - p[index]) > parameter.getConvergence()) {
+                                    parameterCheck = false;
+                                }
+                                ++index;
+                            }
+                        }
+                    }                    
+                totalConverged &= (convergence && parameterCheck);
+                counter++;
+            }
+
+            // Check if the solution has been found
+            if (counter == dimension){
+                // Reset state :
+                minSimplex = Double.POSITIVE_INFINITY;
+                maxSimplex = Double.NEGATIVE_INFINITY;
+                totalConverged = true;
+                parameterCheck = true;
+                list.clear();
+                counter = -1;
+                dimension = 0;
+            }            
+            // Get control on function evaluation convergence (parameterCheck) or on function x-axis converging (parameterCheck) 
+            return parameterCheck || convergence;
+        }
+    }
+    
     /** Local class for convergence checking. */
     private static class Checker implements ConvergenceChecker<RealPointValuePair> {
 
@@ -173,9 +305,8 @@ public enum SupportedOptimizer {
 
             // all parameters are within their convergence threshold
             return true;
-
         }
-        
     }
-
 }
+        
+
