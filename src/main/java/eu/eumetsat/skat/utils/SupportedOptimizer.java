@@ -35,9 +35,11 @@ public enum SupportedOptimizer {
         public BaseMultivariateRealOptimizer<MultivariateFunction>
             parse(final SkatFileParser parser, final Tree node,
                   final TunableManeuver[] maneuvers, final double stopCriterion, 
-                  final int convergenceSpan, final Skat skat) {
+                  final Skat skat) {
 
             final double[][] boundaries = getBoundaries(maneuvers);
+
+            final int convergenceSpan = parser.getInt(node, ParameterKey.NELDER_MEAD_CONVERGENCE_SPAN_CRITERION);
 
             final SimplexOptimizer optimizer = new SimplexOptimizer(new NelderMeadChecker(maneuvers, stopCriterion, convergenceSpan)) {
 
@@ -78,7 +80,7 @@ public enum SupportedOptimizer {
         public BaseMultivariateRealOptimizer<MultivariateFunction>
             parse(final SkatFileParser parser, final Tree node,
                   final TunableManeuver[] maneuvers, final double stopCriterion, 
-                  final int convergenceSpan, final Skat skat) {
+                  final Skat skat) {
             double[][] boundaries = getBoundaries(maneuvers);
             final double[] inputSigma        = new double[boundaries[0].length];
             for (int i = 0; i < inputSigma.length; ++i) {
@@ -101,7 +103,7 @@ public enum SupportedOptimizer {
      * @return parsed component
      */
     public abstract BaseMultivariateRealOptimizer<MultivariateFunction>
-        parse(SkatFileParser parser, Tree node, TunableManeuver[] maneuvers, double stopCriterion, int convergenceSpan, Skat skat);
+        parse(SkatFileParser parser, Tree node, TunableManeuver[] maneuvers, double stopCriterion, Skat skat);
 
     /** Get the parameters boundaries.
      * @param maneuvers maneuvers to optimize

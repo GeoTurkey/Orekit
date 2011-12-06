@@ -74,11 +74,11 @@ scenario         = [
         last_cycle               = 999;
         max_eval                 = 1000;
         global_stop_criterion    = 1.e-2;
-        convergence_span         = 5;
         in_plane_elimination     = 0.001;
         out_of_plane_elimination = 0.01;
         optimizer                = {
             method                     = NELDER_MEAD;
+            convergence_span           = 5;
             initial_simplex_size_ratio = 0.01
         };
         propagator  = {
@@ -162,11 +162,11 @@ scenario         = [
         last_cycle               = 999;
         max_eval                 = 1000;
         global_stop_criterion    = 1.e-2;
-        convergence_span         = 5;
         in_plane_elimination     = 0.001;
         out_of_plane_elimination = 0.01;
         optimizer                = {
             method                     = NELDER_MEAD;
+            convergence_span           = 5;
             initial_simplex_size_ratio = 0.01
         };
         propagator  = {
