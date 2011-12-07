@@ -15,7 +15,6 @@ simulation       = {
     output_step      = 43200.0;
     random_seed      = 156325253;
 };
-
 # Array of initial states
 # there must be exactly one element for each spacecraft
 initial_states   = [
@@ -28,10 +27,9 @@ initial_states   = [
         out_of_plane_maneuvers = 0;
         out_of_plane_total_dV  = 0.0;
         mass                   = 1200.0;
-
-        # the following orbit is very rough
-        # it was converted from TLE position/velocity with a simple arithmetic
-        # mean on equinoctial parameters over a 2 days propagation
+        # the following orbit is very rough it was converted from
+        # TLE position/velocity with a simple arithmetic mean
+        # on equinoctial parameters over a 2 days propagation
         orbit                  = {
             date               = 2011-10-23T01:47:06.165;
             orbit_type         = EQUINOCTIAL;
@@ -46,7 +44,6 @@ initial_states   = [
 
     }
 ];
-
 # Array of scenario components
 # each scenario component specifies to which spacecrafts it applies
 scenario         = [
@@ -73,13 +70,13 @@ scenario         = [
         first_cycle              = 1;
         last_cycle               = 999;
         max_eval                 = 1000;
-        global_stop_criterion    = 5.e-4;
+        global_stop_criterion    = 1.e-2;
         in_plane_elimination     = 0.001;
         out_of_plane_elimination = 0.01;
         optimizer                = {
             method                     = NELDER_MEAD;
-            initial_simplex_size_ratio = 0.01;
-            convergence_span		   = 5;
+            convergence_span           = 5;
+            initial_simplex_size_ratio = 0.01
         };
         propagator  = {
             method                 = NUMERICAL;
@@ -113,19 +110,19 @@ scenario         = [
         ];
         maneuvers   = [
             {
-                in_plane             = false;
-                name                 = "N/S";
-                direction            = [ 0.0, 1.0, 0.0 ];
-                thrust               = [ [  40, 0.0 ], [  30, 600.0 ] ];
-                isp_curve            = [ [ 315, 0.0 ], [ 300, 600.0 ] ];
-                nominal_dv           = 0.0;
-                dv_min               = 0.0;
-                dv_max               =  3.0;
-                dv_convergence       =  0.005;
-                nominal_date         = 172800;
-                dt_min               = -43200;
-                dt_max               =  43200;
-                dt_convergence       =  300.0;
+                in_plane       = false;
+                name           = "N/S";
+                direction      = [ 0.0, 1.0, 0.0 ];
+                thrust         = [ [  40, 0.0 ], [  30, 600.0 ] ];
+                isp_curve      = [ [ 315, 0.0 ], [ 300, 600.0 ] ];
+                nominal_dv     = 0.0;
+                dv_min         = 0.0;
+                dv_max         =  3.0;
+                dv_convergence =  0.005;
+                nominal_date   = 172800;
+                dt_min         = -43200;
+                dt_max         =  43200;
+                dt_convergence =  300.0;
             }
         ];
     },
@@ -144,8 +141,8 @@ scenario         = [
         in_plane            = false;
         out_of_plane        = true;
         nominal_direction   = [ 0.0, 1.0, 0.0 ];
-        coupling_direction  = [ 1.0, 0.0, 0.0 ];
-        coupling_ratio      = 0.002;
+        coupling_direction  = [ 0.0, 0.0, 1.0 ];
+        coupling_ratio      = 0.005;
     },
     {
         component           = MANEUVER_MAGNITUDE_ERROR;
@@ -161,13 +158,13 @@ scenario         = [
         first_cycle              = 1;
         last_cycle               = 999;
         max_eval                 = 1000;
-        global_stop_criterion    = 5.e-4;
+        global_stop_criterion    = 1.e-2;
         in_plane_elimination     = 0.001;
         out_of_plane_elimination = 0.01;
         optimizer                = {
             method                     = NELDER_MEAD;
-            initial_simplex_size_ratio = 0.01;
-            convergence_span		   = 5;
+            convergence_span           = 5;
+            initial_simplex_size_ratio = 0.01
         };
         propagator  = {
             method                 = NUMERICAL;
@@ -183,20 +180,20 @@ scenario         = [
         };
         controls    = [
             {
-                scaling_divisor     = 50.0;
-                type                = MINIMIZED_MANEUVERS;
-                name                = "minimized E/W deltaV";
-                in_plane            = true;
-                out_of_plane        = false;
+                scaling_divisor = 50.0;
+                type            = MINIMIZED_MANEUVERS;
+                name            = "minimized E/W deltaV";
+                in_plane        = true;
+                out_of_plane    = false;
             },
             {
-                scaling_divisor  = 0.1;
-                type             = PARABOLIC_LONGITUDE;
-                name             = "parabolic longitude";
+                scaling_divisor        = 0.1;
+                type                   = PARABOLIC_LONGITUDE;
+                name                   = "parabolic longitude";
                 ignored_start_duration = 345600.0;
-                east_longitude   =  -57.1;
-                west_longitude   =  -56.9;
-                sampling         = 10800.0;
+                east_longitude         =  -57.1;
+                west_longitude         =  -56.9;
+                sampling               = 10800.0;
             },
             {
                 scaling_divisor  = 1.0e-3;
@@ -226,20 +223,20 @@ scenario         = [
             },
             {
                 in_plane                  = true;
+                name                      = "E/W-2";
+                direction                 = [ 1.0, 0.0, 0.0 ];
+                thrust                    = [ [  40, 0.0 ], [  30, 600.0 ] ];
+                isp_curve                 = [ [ 315, 0.0 ], [ 300, 600.0 ] ];
                 date_relative_to_maneuver = "E/W-1";
+                nominal_date              = 43200;
+                dt_min                    =    0.0;
+                dt_max                    =    0.0;
+                dt_convergence            =  300.0;
                 dv_relative_to_maneuver   = "E/W-1";
-                name                 = "E/W-2";
-                direction            = [ 1.0, 0.0, 0.0 ];
-                thrust               = [ [  40, 0.0 ], [  30, 600.0 ] ];
-                isp_curve            = [ [ 315, 0.0 ], [ 300, 600.0 ] ];
-                nominal_dv           = 0.0;
-                dv_min               = -0.0;
-                dv_max               =  0.0;
-                dv_convergence       =  0.003;
-                nominal_date         = 43200;
-                dt_min               =    0.0;
-                dt_max               =    0.0;
-                dt_convergence       =  300.0;
+                nominal_dv                =  0.0;
+                dv_min                    = -0.0;
+                dv_max                    =  0.0;
+                dv_convergence            =  0.003;
             }
         ];
     },
