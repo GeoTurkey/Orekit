@@ -4,9 +4,7 @@ package eu.eumetsat.skat.utils;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.antlr.runtime.tree.Tree;
 import org.apache.commons.math.analysis.MultivariateFunction;
@@ -143,29 +141,11 @@ public enum SupportedOptimizer {
         /** Maneuvers. */
         private final TunableManeuver[] maneuvers;
         
-        private Map<Integer, List<Double>> list;
+        private List<List<Double>> list;
 
         /** Stop criterion on global value. */
         private final double stopCriterion;
         
-        /** Dimension problem */
-        private int dimension;
-        
-        /** Index in the Nelder Mead comparison*/
-        private int counter;
-        
-        /** Maximum value taken by one of the simplex contained in the */
-        private double maxSimplex;
-        
-        /** Minimum value taken by the */
-        private double minSimplex;
-        
-        /** Did the simplex satisfy the convergence criteria */
-        private boolean totalConverged;
-        
-        /** Did every maneuver parameters converged */
-        private boolean totalParameterCheck;        
-
         /** 
          * Convergence span to stop the function evaluation. Convergence span is used to evaluate the function 
          * variation over a specific number of value. If values stay smaller than the stop criterion over the 
@@ -182,13 +162,7 @@ public enum SupportedOptimizer {
             this.maneuvers     = maneuvers.clone();
             this.stopCriterion = stopCriterion;
             this.convergenceSpan = convergenceSpan;
-            this.totalConverged = true;
-            this.totalParameterCheck = true;
-            this.dimension = -1;
-            this.counter = -1;
-            this.minSimplex = Double.POSITIVE_INFINITY;
-            this.maxSimplex = Double.NEGATIVE_INFINITY;
-            this.list = new LinkedHashMap<Integer, List<Double>>();
+            this.list = new ArrayList<List<Double>>();
         }
 
         /** {@inheritDoc} */
@@ -196,86 +170,67 @@ public enum SupportedOptimizer {
                                  final RealPointValuePair previous,
                                  final RealPointValuePair current) {
 
-            // Simplex dimension
-            dimension = current.getPoint().length;
-            // Simplex evaluation convergence watcher
-            boolean convergence = false;
-            // Evolution of each parameter watcher
-            boolean currentParameterCheck = true;
-
-            // Current simplex list of value
-            List<Double> currentList;
-
-            int index = iteration - 1;
+           if (iteration == 1 && list.size() > 1) {
+                // we have started a new run, reset the checker
+                list.clear();
+            }
 
             // Get the already existing list :
-            if (list.containsKey(index)){
-                currentList = list.get(index);
-                // Add the current value
-                currentList.add(current.getValue());
-                // Update the list :
-                list.put(index, currentList);
-            }else {
+            while (list.size() < iteration) {
                 // Create a new list for the new simplex
-                currentList = new ArrayList<Double>();
-                currentList.add(current.getValue());
-                list.put(index, currentList);
-                // Reset parameter watcher
-                totalParameterCheck = true;
+                list.add(new ArrayList<Double>());
             }
 
-            // Check if a sufficient number of simplex have been evaluated
-            if (list.size() >= convergenceSpan){
-                // The map is filed enough to evaluate the last simplex evolution over the convergence span:
-                for (int i = iteration - convergenceSpan; i < list.size(); i++){
-                    List<Double> value = list.get(i);
-                    maxSimplex = FastMath.max(maxSimplex, Collections.max(value));
-                    minSimplex = FastMath.min(minSimplex, Collections.min(value));
-                }
-                convergence = (maxSimplex - minSimplex) < stopCriterion;
-               
-                    // get the optimal parameters values on the last iterations
-                    final double[] p = previous.getPoint();
-                    final double[] c = current.getPoint();
-                
-                    // check the evolution of each parameter
-                    index = 0;
-                    for (final TunableManeuver maneuver : maneuvers) {
-                        for (final SKParameter parameter : maneuver.getParameters()) {
-                            if (parameter.isTunable()) {
-                                if (FastMath.abs(c[index] - p[index]) > parameter.getConvergence()) {
-                                    currentParameterCheck = false;
-                                }
-                                totalParameterCheck &= currentParameterCheck;
-                                ++index;
-                            }
-                        }
-                    }                    
-                counter++;
-            }else {
-                // Not enough simplex to determine if convergence occured
+            // Add the current value
+            List<Double> currentList = list.get(iteration - 1);
+            currentList.add(current.getValue());
+
+            // Check if we have enough data to check convergence
+            if (list.size() < convergenceSpan) {
+                // we don't have enough data
                 return false;
             }
-            
-            totalConverged &= (convergence && totalParameterCheck);
+            if (currentList.size() < (current.getPoint().length + 1)) {
+                // we are in the last simplex, but not yet at the last point
+                // we need to act as if the first point converge, we will
+                // perform the final check on the last point of the simplex only
+                return true;
+            }
 
-            // End of simplex evaluation : reset state
-            if (counter == dimension){
-                // Reset state :
-                minSimplex = Double.POSITIVE_INFINITY;
-                maxSimplex = Double.NEGATIVE_INFINITY;
-                currentParameterCheck = true;
-                // If a solution has been found, reset the list 
-                if (totalConverged){
-                    list.clear();
+            // check convergence on function value
+            double minSimplex = Double.POSITIVE_INFINITY;
+            double maxSimplex = Double.NEGATIVE_INFINITY;
+            for (int i = 0; i < convergenceSpan; i++){
+                final List<Double> value = list.get(list.size() - 1 - i);
+                maxSimplex = FastMath.max(maxSimplex, Collections.max(value));
+                minSimplex = FastMath.min(minSimplex, Collections.min(value));
+            }
+            if ((maxSimplex - minSimplex) > stopCriterion) {
+                // no convergence on value
+                return false;
+            }
+
+            // check convergence on parameters
+            final double[] p = previous.getPoint();
+            final double[] c = current.getPoint();
+            int index = 0;
+            for (final TunableManeuver maneuver : maneuvers) {
+                for (final SKParameter parameter : maneuver.getParameters()) {
+                    if (parameter.isTunable()) {
+                        if (FastMath.abs(c[index] - p[index]) > parameter.getConvergence()) {
+                            // no convergence on parameters
+                            return false;
+                        }
+                        ++index;
+                    }
                 }
-                totalConverged = true;
-                counter = -1;
-                dimension = 0;
-            }            
-            // Get control on function evaluation convergence (parameterCheck) and on function x-axis converging (parameterCheck) 
-            return (totalParameterCheck && convergence);
+            }                    
+
+            // both value and parameters have converged
+            return true;
+
         }
+
     }
     
     /** Local class for convergence checking. */
