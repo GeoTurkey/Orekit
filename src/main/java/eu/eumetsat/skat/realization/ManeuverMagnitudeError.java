@@ -115,7 +115,8 @@ public class ManeuverMagnitudeError implements ScenarioComponent {
                                                        maneuver.getDate(),
                                                        new Vector3D(errorFactor, maneuver.getDeltaV()),
                                                        maneuver.getThrust(), maneuver.getIsp(),
-                                                       maneuver.getTrajectory()));
+                                                       maneuver.getTrajectory(),
+                                                       maneuver.getControlLaws()));
                 } else {
                     // the maneuver is immune to the error
                     modified.add(maneuver);

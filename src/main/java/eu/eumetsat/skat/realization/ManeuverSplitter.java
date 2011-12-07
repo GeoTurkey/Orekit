@@ -99,7 +99,8 @@ public class ManeuverSplitter implements ScenarioComponent {
                                                            maneuver.getDate().shiftedBy(j * orbitsSeparation * period),
                                                            new Vector3D(1.0 / nbParts, maneuver.getDeltaV()),
                                                            maneuver.getThrust(), maneuver.getIsp(),
-                                                           maneuver.getTrajectory()));
+                                                           maneuver.getTrajectory(),
+                                                           maneuver.getControlLaws()));
                     }
 
                 } else {

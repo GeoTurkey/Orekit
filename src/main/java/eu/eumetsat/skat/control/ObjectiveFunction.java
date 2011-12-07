@@ -92,7 +92,7 @@ class ObjectiveFunction implements MultivariateFunction {
                 }
             }
 
-            scheduled[i] = maneuver.getManeuver(propagator);
+            scheduled[i] = maneuver.getManeuver(propagator, controls);
             propagator.addManeuver(scheduled[i].getDate(), scheduled[i].getDeltaV(), scheduled[i].getIsp());
 
         }
