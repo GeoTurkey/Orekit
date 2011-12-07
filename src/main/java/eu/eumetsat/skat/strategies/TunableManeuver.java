@@ -9,6 +9,7 @@ import org.apache.commons.math.util.FastMath;
 import org.orekit.propagation.Propagator;
 import org.orekit.time.AbsoluteDate;
 
+import eu.eumetsat.skat.control.SKControl;
 import eu.eumetsat.skat.control.SKParameter;
 import eu.eumetsat.skat.utils.SkatException;
 import eu.eumetsat.skat.utils.SkatMessages;
@@ -228,11 +229,12 @@ public class TunableManeuver {
     /** Get the maneuver corresponding to the current value of the parameters.
      * @param trajectory to which this maneuver belongs
      * @return maneuver corresponding to the current value of the parameters
+     * @param controls control laws that were used to build this maneuver
      */
-    public ScheduledManeuver getManeuver(final Propagator trajectory) {
+    public ScheduledManeuver getManeuver(final Propagator trajectory, final List<SKControl> controls) {
         return new ScheduledManeuver(name, inPlane, getDate(),
                                      new Vector3D(getDV(), direction),
-                                     currentThrust, currentIsp, trajectory);
+                                     currentThrust, currentIsp, trajectory, controls);
     }
 
     /** Get the maneuver velocity increment.

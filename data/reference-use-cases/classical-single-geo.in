@@ -73,13 +73,22 @@ scenario         = [
         first_cycle              = 1;
         last_cycle               = 999;
         max_eval                 = 1000;
+<<<<<<< HEAD
         global_stop_criterion    = 1.e-2;
+=======
+        global_stop_criterion    = 5.e-4;
+>>>>>>> branch 'master' of ssh://git@www.orekit.org/skat.git
         in_plane_elimination     = 0.001;
         out_of_plane_elimination = 0.01;
         optimizer                = {
             method                     = NELDER_MEAD;
+<<<<<<< HEAD
             convergence_span           = 5;
             initial_simplex_size_ratio = 0.01
+=======
+            initial_simplex_size_ratio = 0.01;
+            convergence_span		   = 5;
+>>>>>>> branch 'master' of ssh://git@www.orekit.org/skat.git
         };
         propagator  = {
             method                 = NUMERICAL;
@@ -125,7 +134,7 @@ scenario         = [
                 nominal_date         = 172800;
                 dt_min               = -43200;
                 dt_max               =  43200;
-                dt_convergence       =  60.0;
+                dt_convergence       =  300.0;
             }
         ];
     },
@@ -161,13 +170,22 @@ scenario         = [
         first_cycle              = 1;
         last_cycle               = 999;
         max_eval                 = 1000;
+<<<<<<< HEAD
         global_stop_criterion    = 1.e-2;
+=======
+        global_stop_criterion    = 5.e-4;
+>>>>>>> branch 'master' of ssh://git@www.orekit.org/skat.git
         in_plane_elimination     = 0.001;
         out_of_plane_elimination = 0.01;
         optimizer                = {
             method                     = NELDER_MEAD;
+<<<<<<< HEAD
             convergence_span           = 5;
             initial_simplex_size_ratio = 0.01
+=======
+            initial_simplex_size_ratio = 0.01;
+            convergence_span		   = 5;
+>>>>>>> branch 'master' of ssh://git@www.orekit.org/skat.git
         };
         propagator  = {
             method                 = NUMERICAL;
@@ -222,7 +240,7 @@ scenario         = [
                 nominal_date         = 345600;
                 dt_min               = -43200;
                 dt_max               =  43200;
-                dt_convergence       =  60.0;
+                dt_convergence       =  300.0;
             },
             {
                 in_plane                  = true;
@@ -239,7 +257,7 @@ scenario         = [
                 nominal_date         = 43200;
                 dt_min               =    0.0;
                 dt_max               =    0.0;
-                dt_convergence       =  60.0;
+                dt_convergence       =  300.0;
             }
         ];
     },

@@ -113,7 +113,8 @@ public class ManeuverCrossCoupling implements ScenarioComponent {
                                                        maneuver.getDate(),
                                                        coupling.applyTo(maneuver.getDeltaV()),
                                                        maneuver.getThrust(), maneuver.getIsp(),
-                                                       maneuver.getTrajectory()));
+                                                       maneuver.getTrajectory(),
+                                                       maneuver.getControlLaws()));
                 } else {
                     // the maneuver is immune to the error
                     modified.add(maneuver);

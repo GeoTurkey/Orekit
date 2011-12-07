@@ -110,14 +110,16 @@ public class MissedManeuver implements ScenarioComponent {
                                                                maneuver.getDate().shiftedBy(orbitsSeparation * period),
                                                                maneuver.getDeltaV(),
                                                                maneuver.getThrust(), maneuver.getIsp(),
-                                                               maneuver.getTrajectory()));
+                                                               maneuver.getTrajectory(),
+                                                               maneuver.getControlLaws()));
                         } else {
                             // the maneuver is really missed
                             modified.add(new ScheduledManeuver(maneuver.getName(), maneuver.isInPlane(),
                                                                maneuver.getDate(),
                                                                Vector3D.ZERO,
                                                                maneuver.getThrust(), maneuver.getIsp(),
-                                                               maneuver.getTrajectory()));
+                                                               maneuver.getTrajectory(),
+                                                               maneuver.getControlLaws()));
                         }
 
                     } else {

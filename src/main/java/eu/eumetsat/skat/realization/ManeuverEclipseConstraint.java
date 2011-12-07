@@ -155,7 +155,8 @@ public class ManeuverEclipseConstraint implements ScenarioComponent {
                                                                firstPartDate.shiftedBy(j * nbOrbits * period),
                                                                new Vector3D(1.0 / nbParts, maneuver.getDeltaV()),
                                                                maneuver.getThrust(), maneuver.getIsp(),
-                                                               maneuver.getTrajectory()));
+                                                               maneuver.getTrajectory(),
+                                                               maneuver.getControlLaws()));
                         }
 
                     } else {

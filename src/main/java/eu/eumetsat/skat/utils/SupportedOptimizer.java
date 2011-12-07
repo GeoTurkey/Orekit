@@ -38,8 +38,7 @@ public enum SupportedOptimizer {
                   final Skat skat) {
 
             final double[][] boundaries = getBoundaries(maneuvers);
-
-            final int convergenceSpan = parser.getInt(node, ParameterKey.NELDER_MEAD_CONVERGENCE_SPAN_CRITERION);
+            final int convergenceSpan = parser.getInt(node, ParameterKey.NELDER_MEAD_CONVERGENCE_SPAN);
 
             final SimplexOptimizer optimizer = new SimplexOptimizer(new NelderMeadChecker(maneuvers, stopCriterion, convergenceSpan)) {
 
@@ -63,6 +62,7 @@ public enum SupportedOptimizer {
 
             // set up Nelder-Mead simplex steps
             final double   ratio = parser.getDouble(node, ParameterKey.NELDER_MEAD_INITIAL_SIMPLEX_SIZE_RATIO);
+            
             final double[] steps = new double[boundaries[0].length];
             for (int i = 0; i < steps.length; ++i) {
                 steps[i] = ratio * (boundaries[0][i] - boundaries[1][i]);
@@ -164,12 +164,13 @@ public enum SupportedOptimizer {
         private boolean totalConverged;
         
         /** Did every maneuver parameters converged */
-        private boolean totalParameterCheck;
-        
+        private boolean totalParameterCheck;        
 
-        /** Convergence span to stop the function evaluation. Convergence span is used to evaluate the function 
+        /** 
+         * Convergence span to stop the function evaluation. Convergence span is used to evaluate the function 
          * variation over a specific number of value. If values stay smaller than the stop criterion over the 
-         * convergence span, then we consider that the optimization algorithm converged. */
+         * convergence span, then we consider that the optimization algorithm converged.
+         **/
         private int convergenceSpan;
 
 
@@ -197,18 +198,18 @@ public enum SupportedOptimizer {
 
             // Simplex dimension
             dimension = current.getPoint().length;
-            // Convergence watcher
+            // Simplex evaluation convergence watcher
             boolean convergence = false;
             // Evolution of each parameter watcher
             boolean currentParameterCheck = true;
-            // Total evolution of maneuvers parameter
 
             // Current simplex list of value
             List<Double> currentList;
 
             int index = iteration - 1;
+
+            // Get the already existing list :
             if (list.containsKey(index)){
-                // Get the already existing list :
                 currentList = list.get(index);
                 // Add the current value
                 currentList.add(current.getValue());
@@ -223,8 +224,7 @@ public enum SupportedOptimizer {
                 totalParameterCheck = true;
             }
 
-
-       
+            // Check if a sufficient number of simplex have been evaluated
             if (list.size() >= convergenceSpan){
                 // The map is filed enough to evaluate the last simplex evolution over the convergence span:
                 for (int i = iteration - convergenceSpan; i < list.size(); i++){
@@ -253,6 +253,7 @@ public enum SupportedOptimizer {
                     }                    
                 counter++;
             }else {
+                // Not enough simplex to determine if convergence occured
                 return false;
             }
             
@@ -272,7 +273,7 @@ public enum SupportedOptimizer {
                 counter = -1;
                 dimension = 0;
             }            
-            // Get control on function evaluation convergence (parameterCheck) or on function x-axis converging (parameterCheck) 
+            // Get control on function evaluation convergence (parameterCheck) and on function x-axis converging (parameterCheck) 
             return (totalParameterCheck && convergence);
         }
     }

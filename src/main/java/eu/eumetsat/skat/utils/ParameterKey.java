@@ -81,7 +81,7 @@ public enum ParameterKey {
     COMPONENT_CONTROL_LOOP_OPTIMIZER("optimizer"),
     OPTIMIZER_METHOD("method"),
     NELDER_MEAD_INITIAL_SIMPLEX_SIZE_RATIO("initial_simplex_size_ratio"),
-    NELDER_MEAD_CONVERGENCE_SPAN_CRITERION("convergence_span"),
+    NELDER_MEAD_CONVERGENCE_SPAN("convergence_span"),
     CMAES_POPULATION_SIZE("population_size"),
     CMAES_MAX_ITERATIONS("max_iterations"),
     COMPONENT_CONTROL_LOOP_PROPAGATOR("propagator"),

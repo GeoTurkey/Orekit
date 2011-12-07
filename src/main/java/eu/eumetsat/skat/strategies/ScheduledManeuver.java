@@ -1,11 +1,15 @@
 /* Copyright 2011 Eumetsat */
 package eu.eumetsat.skat.strategies;
 
+import java.util.List;
+
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math.util.FastMath;
 import org.orekit.propagation.Propagator;
 import org.orekit.time.AbsoluteDate;
 import org.orekit.utils.Constants;
+
+import eu.eumetsat.skat.control.SKControl;
 
 /**
  * This class is a simple container for impulse maneuver that are completely defined.
@@ -37,6 +41,9 @@ public class ScheduledManeuver {
     /** Trajectory to which this maneuver belongs. */
     private final Propagator trajectory;
 
+    /** Control laws that were used to build this maneuver. */
+    private final List<SKControl> controls;
+
     /** Simple constructor.
      * @param inPlane if true, the maneuver is considered to be in-plane
      * @param date maneuver date
@@ -44,10 +51,11 @@ public class ScheduledManeuver {
      * @param thrust engine thrust
      * @param isp engine specific impulse (s)
      * @param trajectory trajectory to which this maneuver belongs
+     * @param controls control laws that were used to build this maneuver
      */
     public ScheduledManeuver(final String name, final boolean inPlane, final AbsoluteDate date,
                              final Vector3D deltaV, final double thrust, final double isp,
-                             final Propagator trajectory) {
+                             final Propagator trajectory, final List<SKControl> controls) {
         this.name       = name;
         this.inPlane    = inPlane;
         this.date       = date;
@@ -55,6 +63,7 @@ public class ScheduledManeuver {
         this.thrust     = thrust;
         this.isp        = isp;
         this.trajectory = trajectory;
+        this.controls   = controls;
     }
 
     /** Get the maneuver name.
@@ -115,6 +124,13 @@ public class ScheduledManeuver {
      */
     public Propagator getTrajectory() {
         return trajectory;
+    }
+
+    /** Get the control laws that were used to build this maneuver.
+     * @return control laws that were used to build this maneuver
+     */
+    public List<SKControl> getControlLaws() {
+        return controls;
     }
 
 }
