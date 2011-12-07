@@ -201,7 +201,8 @@ public class ControlLoop implements ScenarioComponent {
 
             // find the optimal parameters that minimize objective function
             final ObjectiveFunction objective =
-                    new ObjectiveFunction(reference, tunables, cycleDuration, rollingCycles,
+                    new ObjectiveFunction(reference, reference.getMinDate(), reference.getMaxDate(),
+                                          tunables, cycleDuration, rollingCycles,
                                           controls, original.getEstimatedStartState());
             final RealPointValuePair pointValue =
                     optimizer.optimize(maxEval, objective, GoalType.MINIMIZE, startPoint);

@@ -7,7 +7,7 @@ import java.util.Set;
 
 import org.apache.commons.math.analysis.MultivariateFunction;
 import org.orekit.errors.OrekitException;
-import org.orekit.propagation.BoundedPropagator;
+import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
 import org.orekit.propagation.analytical.ManeuverAdapterPropagator;
 import org.orekit.propagation.events.EventDetector;
@@ -25,7 +25,13 @@ import eu.eumetsat.skat.strategies.TunableManeuver;
 class ObjectiveFunction implements MultivariateFunction {
 
     /** Reference ephemeris. */
-    private final BoundedPropagator reference;
+    private final Propagator reference;
+
+    /** Start date of the reference ephemeris. */
+    private final AbsoluteDate start;
+
+    /** End date of the reference ephemeris. */
+    private final AbsoluteDate end;
 
     /** Station-keeping controls. */
     private final List<SKControl> controls;
@@ -44,17 +50,23 @@ class ObjectiveFunction implements MultivariateFunction {
 
     /** Simple constructor.
      * @param reference reference ephemeris on which maneuvers will be added
+     * @param start start date of the reference ephemeris
+     * @param start end date of the reference ephemeris
      * @param tunables station-keeping maneuvers
      * @param cycleDuration Cycle duration
      * @param rollingCycles number of cycles to use for rolling optimization
      * @param controls station-keeping controls
      * @param initialState initial state
      */
-    public ObjectiveFunction(final BoundedPropagator reference, final TunableManeuver[] tunables,
+    public ObjectiveFunction(final Propagator reference,
+                             final AbsoluteDate start, final AbsoluteDate end,
+                             final TunableManeuver[] tunables,
                              final double cycleDuration, final int rollingCycles,
                              final List<SKControl> controls, final SpacecraftState initialState) {
 
         this.reference     = reference;
+        this.start         = start;
+        this.end           = end;
         this.tunables      = tunables.clone();
         this.rollingCycles = rollingCycles;
         this.cycleDuration = cycleDuration;
@@ -135,13 +147,11 @@ class ObjectiveFunction implements MultivariateFunction {
 
             // prepare run
             for (final SKControl control : controls) {
-                control.initializeRun(maneuvers, propagator,
-                                      reference.getMinDate(), reference.getMaxDate(),
-                                      rollingCycles);
+                control.initializeRun(maneuvers, propagator, start, end, rollingCycles);
             }
 
             // perform propagation
-            propagator.propagate(reference.getMinDate().shiftedBy(rollingCycles * cycleDuration * Constants.JULIAN_DAY));
+            propagator.propagate(start.shiftedBy(rollingCycles * cycleDuration * Constants.JULIAN_DAY));
 
             // compute sum of squared scaled residuals
             double sum = 0;
