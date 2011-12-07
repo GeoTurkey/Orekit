@@ -122,18 +122,20 @@ public enum SupportedControlLaw {
         public SKControl parse(final SkatFileParser parser, final Tree node,
                                final String controlled, final Skat skat)
             throws OrekitException, SkatException {
-            final String name               = parser.getString(node, ParameterKey.CONTROL_NAME);
-            final double scalingDivisor     = parser.getDouble(node, ParameterKey.CONTROL_SCALING_DIVISOR);
-            final double latitude           = parser.getAngle(node, ParameterKey.CONTROL_GROUND_TRACK_LATITUDE);
-            final double longitude          = parser.getAngle(node, ParameterKey.CONTROL_GROUND_TRACK_LONGITUDE);
-            final boolean ascending         = parser.getBoolean(node, ParameterKey.CONTROL_GROUND_TRACK_ASCENDING);
-            final int orbitsPerPhasingCycle = parser.getInt(node, ParameterKey.CONTROL_GROUND_TRACK_ORBITS_PER_CYCLE);
-            final int daysPerPhasingCycle   = parser.getInt(node, ParameterKey.CONTROL_GROUND_TRACK_DAYS_PER_CYCLE);
-            final double maxDistance        = parser.getDouble(node, ParameterKey.CONTROL_GROUND_TRACK_MAX_CROSS_TRACK_DISTANCE);
+            final String name                 = parser.getString(node, ParameterKey.CONTROL_NAME);
+            final double scalingDivisor       = parser.getDouble(node, ParameterKey.CONTROL_SCALING_DIVISOR);
+            final double latitude             = parser.getAngle(node, ParameterKey.CONTROL_GROUND_TRACK_LATITUDE);
+            final double longitude            = parser.getAngle(node, ParameterKey.CONTROL_GROUND_TRACK_LONGITUDE);
+            final boolean ascending           = parser.getBoolean(node, ParameterKey.CONTROL_GROUND_TRACK_ASCENDING);
+            final int orbitsPerPhasingCycle   = parser.getInt(node, ParameterKey.CONTROL_GROUND_TRACK_ORBITS_PER_CYCLE);
+            final int daysPerPhasingCycle     = parser.getInt(node, ParameterKey.CONTROL_GROUND_TRACK_DAYS_PER_CYCLE);
+            final double maxDistance          = parser.getDouble(node, ParameterKey.CONTROL_GROUND_TRACK_MAX_CROSS_TRACK_DISTANCE);
+            final double ignoredStartDuration = parser.getDouble(node, ParameterKey.CONTROL_GROUND_TRACK_IGNORED_START_DURATION);
+            final int subSampling             = parser.getInt(node, ParameterKey.CONTROL_GROUND_TRACK_SUBSAMPLING);
             return new GroundTrackGrid(name, scalingDivisor,
-                                       controlled, skat.getSpacecraftIndex(controlled),
-                                       skat.getEarth(),
-                                       latitude, longitude, ascending, orbitsPerPhasingCycle, daysPerPhasingCycle, maxDistance);
+                                       controlled, skat.getSpacecraftIndex(controlled), skat.getEarth(),
+                                       latitude, longitude, ascending, orbitsPerPhasingCycle, daysPerPhasingCycle,
+                                       maxDistance, ignoredStartDuration, subSampling);
         }
 
     },
