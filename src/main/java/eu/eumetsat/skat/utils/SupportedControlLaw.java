@@ -115,32 +115,6 @@ public enum SupportedControlLaw {
 
     },
 
-    /** Constant for relative eccentricity vector control law. */
-    RELATIVE_ECCENTRICITY_VECTOR() {
-
-        /** {@inheritDoc} */
-        public SKControl parse(final SkatFileParser parser, final Tree node,
-                               final String controlled, final Skat skat)
-            throws OrekitException, SkatException {
-            // TODO
-            throw SkatException.createInternalError(null);
-        }
-
-    },
-
-    /** Constant for relative inclination vector control law. */
-    RELATIVE_INCLINATION_VECTOR() {
-
-        /** {@inheritDoc} */
-        public SKControl parse(final SkatFileParser parser, final Tree node,
-                               final String controlled, final Skat skat)
-            throws OrekitException, SkatException {
-            // TODO
-            throw SkatException.createInternalError(null);
-        }
-
-    },
-
     /** Constant for ground track grid control law. */
     GROUND_TRACK_GRID() {
 
