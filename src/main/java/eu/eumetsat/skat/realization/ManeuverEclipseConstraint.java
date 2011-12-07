@@ -10,7 +10,9 @@ import org.orekit.bodies.CelestialBody;
 import org.orekit.bodies.OneAxisEllipsoid;
 import org.orekit.errors.OrekitException;
 import org.orekit.frames.Frame;
+import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
+import org.orekit.propagation.analytical.ManeuverAdapterPropagator;
 import org.orekit.propagation.events.EclipseDetector;
 import org.orekit.time.AbsoluteDate;
 import org.orekit.utils.Constants;
@@ -124,7 +126,9 @@ public class ManeuverEclipseConstraint implements ScenarioComponent {
                     // find the closest eclipse
                     final double period         = state.getKeplerianPeriod();
                     final EclipseSelector selector = new EclipseSelector(state.getFrame(), centralDate);
-                    maneuver.getTrajectory().propagate(burnStart.shiftedBy(-1.5 * period), burnEnd.shiftedBy(1.5 * period));
+                    final Propagator tmpPropagator = new ManeuverAdapterPropagator(maneuver.getTrajectory());
+                    tmpPropagator.addEventDetector(selector);
+                    tmpPropagator.propagate(burnStart.shiftedBy(-1.5 * period), burnEnd.shiftedBy(1.5 * period));
                     if ((selector.getEntry() == null) || (selector.getExit() == null)) {
                         throw new SkatException(SkatMessages.NO_ECLIPSE_AROUND_DATE, centralDate);
                     }

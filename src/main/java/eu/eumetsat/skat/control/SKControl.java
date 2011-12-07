@@ -74,8 +74,9 @@ public interface SKControl extends SKElement {
      * {@link #getTarget target} as possible.
      * </p>
      * @return achieved value of the control
+     * @exception OrekitException
      */
-    double getAchievedValue();
+    double getAchievedValue() throws OrekitException;
 
     /** Check if the control limits have been exceeded.
      * @return true if the control limits have been exceeded

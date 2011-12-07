@@ -116,6 +116,8 @@ public enum ParameterKey {
     CONTROL_SOLAR_TIME_SOLAR_TIME("solar_time"),
     CONTROL_SOLAR_TIME_MIN_SOLAR_TIME("min_solar_time"),
     CONTROL_SOLAR_TIME_MAX_SOLAR_TIME("max_solar_time"),
+    CONTROL_SOLAR_TIME_CHECK_INTERVAL("check_interval"),
+    CONTROL_SOLAR_TIME_IGNORED_START_DURATION("ignored_start_duration"),
     // Ground track grid
     CONTROL_GROUND_TRACK_LATITUDE("latitude"),
     CONTROL_GROUND_TRACK_LONGITUDE("longitude"),

@@ -62,6 +62,12 @@ public class MeanLocalSolarTime extends AbstractSKControl {
     /** Solar time target */
     private final double center;
 
+    /** Duration of the ignored start part of the cycle. */
+    private final double ignoredStartDuration;
+
+    /** Search start. */
+    private AbsoluteDate searchStart;
+
     /** Simple constructor.
      * @param name name of the control law
      * @param scalingDivisor divisor to use for scaling the control law
@@ -74,22 +80,22 @@ public class MeanLocalSolarTime extends AbstractSKControl {
      * @param solarTime target solar time ((in fractional hour, i.e 9h30 = 9.5)
      * @param minSolarTime minimum accepted solar time (in fractional hour)
      * @param maxSolarTime maximum accepted solar time (in fractional hour)
+     * @param checkInterval check interval, to speed up computation
+     * @param ignoredStartDuration duration of the ignored start part of the cycle
      * @exception OrekitException if the UTC-TAI correction cannot be loaded
      */
     public MeanLocalSolarTime(final String name, final double scalingDivisor,
                               final String controlledName, final int controlledIndex,
-                              final BodyShape earth,
-                              final double latitude,
-                              final boolean ascending,
-                              final double solarTime,
-                              final double minSolarTime,
-                              final double maxSolarTime)
+                              final BodyShape earth, final double latitude, final boolean ascending,
+                              final double solarTime, final double minSolarTime, final double maxSolarTime,
+                              final double checkInterval, final double ignoredStartDuration)
         throws OrekitException {
         super(name, scalingDivisor, controlledName, controlledIndex, null, -1,
               0., minSolarTime, maxSolarTime);
-        this.eventDetector = new Detector(600.0, 1.0e-3, earth, latitude, ascending);
-        this.sample = new ArrayList<Double>();
-        this.center = solarTime;
+        this.eventDetector        = new Detector(checkInterval, 1.0, earth, latitude, ascending);
+        this.sample               = new ArrayList<Double>();
+        this.center               = solarTime;
+        this.ignoredStartDuration = ignoredStartDuration;
     }
 
     /** {@inheritDoc} */
@@ -97,6 +103,7 @@ public class MeanLocalSolarTime extends AbstractSKControl {
     public void initializeRun(final ScheduledManeuver[] maneuvers,
                               final Propagator propagator, AbsoluteDate start, AbsoluteDate end, int rollingCycles)
         throws OrekitException {
+        searchStart = start.shiftedBy(ignoredStartDuration);
     }
 
     /** {@inheritDoc} */
@@ -182,14 +189,15 @@ public class MeanLocalSolarTime extends AbstractSKControl {
         public Action eventOccurred(final SpacecraftState s, final boolean increasing)
             throws OrekitException {
 
-            if (increasing == ascending) {
+            if (increasing == ascending && s.getDate().compareTo(searchStart) > 0) {
                 // we crossed the specified latitude in the expected direction
 
                 // compute angle between Sun and spacecraft in the equatorial plane
                 final Frame gcrf =  FramesFactory.getGCRF();
                 final Vector3D spacecraftPos = s.getPVCoordinates(gcrf).getPosition();
                 final double time = s.getDate().getComponents(utc).getTime().getSecondsInDay();
-                final double sunAlpha = gmod.getMeanSiderealTime(s.getDate()) + FastMath.PI * (1 - time / (Constants.JULIAN_DAY * 0.5));
+                final double gmst     = gmod.getMeanSiderealTime(s.getDate());
+                final double sunAlpha = gmst + FastMath.PI * (1 - time / (Constants.JULIAN_DAY * 0.5));
                 final double dAlpha = MathUtils.normalizeAngle(spacecraftPos.getAlpha() - sunAlpha, 0);
 
                 // convert the angle to solar time
@@ -198,8 +206,10 @@ public class MeanLocalSolarTime extends AbstractSKControl {
                 checkLimits(achievedSolarTime);
                 sample.add(achievedSolarTime);
             }
+
             // just continue propagation
             return Action.CONTINUE;
+
         }
     }
 }

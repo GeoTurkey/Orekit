@@ -1,9 +1,6 @@
 /* Copyright 2011 Eumetsat */
 package eu.eumetsat.skat.strategies.leo;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.commons.math.analysis.UnivariateFunction;
 import org.apache.commons.math.analysis.solvers.BracketingNthOrderBrentSolver;
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
@@ -58,8 +55,8 @@ import eu.eumetsat.skat.utils.SkatMessages;
  */
 public class GroundTrackGrid extends AbstractSKControl {
 
-    /** Sampled offset to reference points. */
-    private final List<Double> sample;
+    /** Achieved value. */
+    private double achievedValue;
 
     /** Earth model. */
     private final BodyShape earth;
@@ -90,6 +87,15 @@ public class GroundTrackGrid extends AbstractSKControl {
 
     /** Elapsed time between two successive reference points encounters. */
     private double encountersGap;
+
+    /** Propagator. */
+    private Propagator propagator;
+
+    /** Cycle start. */
+    private AbsoluteDate cycleStart;
+
+    /** cycle end. */
+    private AbsoluteDate cycleEnd;
 
     /** Simple constructor.
      * <p>
@@ -145,7 +151,7 @@ public class GroundTrackGrid extends AbstractSKControl {
 
         this.ignoredStartDuration = ignoredStartDuration;
         this.subSampling          = subSampling;
-        sample = new ArrayList<Double>();
+        this.achievedValue        = Double.NaN;
 
     }
 
@@ -153,63 +159,80 @@ public class GroundTrackGrid extends AbstractSKControl {
     @Override
     public void initializeRun(final ScheduledManeuver[] maneuvers,
                               final Propagator propagator,
-                              final AbsoluteDate start, final AbsoluteDate end, int rollingCycles)
-        throws OrekitException {
-
-        try {
-            resetLimitsChecks();
-            sample.clear();
-
-            // synchronize station-keeping cycle with phasing cycle
-            synchronizeCycle(start.shiftedBy(ignoredStartDuration), propagator);
-
-            // evaluate ground track distances
-            // against reference points encountered during cycle
-            final int n = (int) FastMath.floor(end.durationFrom(firstCrossingDate) / encountersGap);
-            final BracketingNthOrderBrentSolver solver = new BracketingNthOrderBrentSolver(1.0e-2, 5);
-            double deltaAdjustment = 0.0;
-            double adjustment = 0.0;
-            for (int i = 0; i < n - 1; i += subSampling) {
-
-                // find closest approach to ith reference point
-                AbsoluteDate date = firstCrossingDate.shiftedBy(i * encountersGap);
-                final Vector3D point    = earthPoints[(firstCrossingIndex + i) % earthPoints.length];
-                final double previousAdjustment = adjustment;
-                adjustment = solver.solve(1000,
-                                          new RadialVelocity(date, point, propagator, earth),
-                                          adjustment + deltaAdjustment - encountersGap / 20,
-                                          adjustment + deltaAdjustment + encountersGap / 20,
-                                          adjustment + deltaAdjustment);
-                deltaAdjustment = adjustment - previousAdjustment;
-                date = date.shiftedBy(adjustment);
-                final PVCoordinates closest = propagator.getPVCoordinates(date, earth.getBodyFrame());
-
-                // compute signed ground track distance
-                final GeodeticPoint gp = earth.transform(closest.getPosition(), earth.getBodyFrame(), date);
-                final Vector3D subSatellite =
-                        earth.transform(new GeodeticPoint(gp.getLatitude(), gp.getLongitude(), 0.0));
-                double distance = subSatellite.distance(point);
-                if (Vector3D.dotProduct(point.subtract(closest.getPosition()), closest.getMomentum()) < 0) {
-                    distance = -distance;
-                }
-                checkLimits(distance);
-
-                // add distance to sample
-                sample.add(distance);
-
-            }
-        } catch (OrekitWrapperException owe) {
-            throw owe.getWrappedException();
-        }
+                              final AbsoluteDate start, final AbsoluteDate end, int rollingCycles) {
+        resetLimitsChecks();
+        this.achievedValue = Double.NaN;
+        this.propagator    = propagator;
+        cycleStart         = start;
+        cycleEnd           = end;
     }
 
     /** {@inheritDoc} */
-    public double getAchievedValue() {
-        final double[] data = new double[sample.size()];
-        for (int i = 0; i < data.length; ++i) {
-            data[i] = sample.get(i);
+    public double getAchievedValue() throws OrekitException {
+
+        if (Double.isNaN(achievedValue)) {
+
+            // lazy evaluation of the sample
+            try {
+                // synchronize station-keeping cycle with phasing cycle
+                AbsoluteDate searchStart = cycleStart.shiftedBy(ignoredStartDuration);
+                if (cycleEnd.durationFrom(searchStart) < propagator.getInitialState().getKeplerianPeriod()) {
+                    // when cycles are drastically truncated just before monitoring,
+                    // the ignored start may be too much
+                    searchStart = cycleStart;
+                }
+                synchronizeCycle(searchStart, propagator);
+
+                // evaluate ground track distances
+                // against reference points encountered during cycle
+                final int n = (int) FastMath.floor(cycleEnd.durationFrom(firstCrossingDate) / encountersGap);
+                final BracketingNthOrderBrentSolver solver = new BracketingNthOrderBrentSolver(1.0e-2, 5);
+                double deltaAdjustment = 0.0;
+                double adjustment = 0.0;
+                double[] data = new double[(n + subSampling - 2) / subSampling];
+                for (int i = 1; i < n - 1; i += subSampling) {
+
+                    // find closest approach to ith reference point
+                    AbsoluteDate date = firstCrossingDate.shiftedBy(i * encountersGap);
+                    final Vector3D point    = earthPoints[(firstCrossingIndex + i) % earthPoints.length];
+                    final double previousAdjustment = adjustment;
+                    adjustment = solver.solve(1000,
+                                              new RadialVelocity(date, point, propagator, earth),
+                                              adjustment + deltaAdjustment - encountersGap / 20,
+                                              adjustment + deltaAdjustment + encountersGap / 20,
+                                              adjustment + deltaAdjustment);
+                    deltaAdjustment = adjustment - previousAdjustment;
+                    date = date.shiftedBy(adjustment);
+                    final PVCoordinates closest = propagator.getPVCoordinates(date, earth.getBodyFrame());
+
+                    // compute signed ground track distance
+                    final GeodeticPoint gp = earth.transform(closest.getPosition(), earth.getBodyFrame(), date);
+                    final Vector3D subSatellite =
+                            earth.transform(new GeodeticPoint(gp.getLatitude(), gp.getLongitude(), 0.0));
+                    double distance = subSatellite.distance(point);
+                    if (Vector3D.dotProduct(point.subtract(closest.getPosition()), closest.getMomentum()) < 0) {
+                        distance = -distance;
+                    }
+                    checkLimits(distance);
+
+                    // add distance to sample
+                    try {
+                    data[(i - 1) / subSampling] = distance;
+                    } catch (ArrayIndexOutOfBoundsException ae) {
+                        System.out.println("gotcha!");
+                    }
+
+                }
+
+                achievedValue = new Percentile().evaluate(data, 75.0);
+
+            } catch (OrekitWrapperException owe) {
+                throw owe.getWrappedException();
+            }
         }
-        return new Percentile().evaluate(data, 75.0);
+
+        return achievedValue;
+
     }
 
     /** {@inheritDoc} */
@@ -228,7 +251,7 @@ public class GroundTrackGrid extends AbstractSKControl {
      * cycle which reference point (latitude, longitude) is first
      * encountered, when, and how much time separates the next encounter.
      * </p>
-     * @param start start date of the cycle
+     * @param start start date of the search
      * @param propagator propagator valid over the station-keeping cycle
      * @exception OrekitException if orbit cannot be propagated
      */
@@ -238,15 +261,14 @@ public class GroundTrackGrid extends AbstractSKControl {
         // first rough search based only on latitude
         final Frame earthFrame = earth.getBodyFrame();
         final SpacecraftState initialState = propagator.getInitialState();
-        final AbsoluteDate t0 = (start == null) ? initialState.getDate() : start;
         final double period     = initialState.getKeplerianPeriod();
         final double roughStep  = period / 100;
         final int safetyMargin  = 2;
-        AbsoluteDate roughDate = t0;
+        AbsoluteDate roughDate = start;
         double minDeltaL = Double.POSITIVE_INFINITY;
         for (int i = safetyMargin; i < safetyMargin + 100; ++i) {
 
-            final AbsoluteDate currentDate = t0.shiftedBy(i * roughStep);
+            final AbsoluteDate currentDate = start.shiftedBy(i * roughStep);
             final PVCoordinates pv = propagator.propagate(currentDate).getPVCoordinates(earthFrame);
 
             // Check if crossing is done in the same sense than the ascending boolean
@@ -280,7 +302,7 @@ public class GroundTrackGrid extends AbstractSKControl {
                     firstCrossingDate  = currentDate;
                     firstCrossingIndex = j;
                 }            
-            }            
+            }
         }
 
         // final refinement

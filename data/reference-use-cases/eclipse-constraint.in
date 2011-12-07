@@ -31,7 +31,7 @@ initial_states   = [
         # the following orbit is very rough, it was converted from TLE position/velocity
         # with a simple arithmetic mean on equinoctial parameters over a 2 days propagation
         orbit                  = {
-            date               = 2000-01-01T00:00:00.000;
+            date               = 2000-01-01T11:58:55.816;
             orbit_type         = KEPLERIAN;
             angle_type         = MEAN;
             a                  = 7195605.;
@@ -66,7 +66,7 @@ scenario         = [
         component                = CONTROL_LOOP;
         controlled_spacecraft    = "Metop";  # note: control loop components control only ONE spacecraft each
         first_cycle              = 1;
-        last_cycle               = 3;
+        last_cycle               = 4;
         max_eval                 = 1000;
         global_stop_criterion    = 1.0;
         in_plane_elimination     = 0.005;
@@ -89,15 +89,27 @@ scenario         = [
             {
                 scaling_divisor          = 1000.0; 
                 type                     = GROUND_TRACK_GRID;
-                name                     = "initial phasing";
+                name                     = "initial Earth phasing";
                 latitude                 = 60.0;
                 longitude                = 17.0;
                 ascending                = true;
                 orbits_per_cycle         = 412;
                 days_per_cycle           = 29;
                 max_cross_track_distance = 2000.0;
-                ignored_start_duration   = 432000.0;
+                ignored_start_duration   = 200000;
                 subsampling              = 20;
+            },
+            {
+                scaling_divisor          = 0.5; 
+                type                     = MEAN_LOCAL_SOLAR_TIME;
+                name                     = "initial Sun phasing";
+                latitude                 =  0.0;
+                ascending                = false;
+                solar_time               = 9.5;
+                min_solar_time           = 9.4666667;
+                max_solar_time           = 9.5333333;
+                ignored_start_duration   = 200000;
+                check_interval           = 86400.0;
             }
         ];
         maneuvers   = [
@@ -111,7 +123,7 @@ scenario         = [
                 dv_min               = -5;
                 dv_max               =  5;
                 dv_convergence       = 0.01;
-                nominal_date         = 172800; 
+                nominal_date         = 86400; 
                 dt_min               =  0;
                 dt_max               =  0;
                 dt_convergence       =  10.0;
@@ -138,7 +150,7 @@ scenario         = [
     {
         component                = CONTROL_LOOP;
         controlled_spacecraft    = "Metop";  # note: control loop components control only ONE spacecraft each
-        first_cycle              = 4;
+        first_cycle              = 5;
         last_cycle               = 999;
         max_eval                 = 1000;
         global_stop_criterion    = 0.05;
@@ -156,6 +168,8 @@ scenario         = [
             position_tolerance     = 10;
             gravity_field_degree   = 4;
             gravity_field_order    = 4;
+            cross_section          = 40.0;
+            drag_coefficient       = 2;
             third_body             = [ SUN, MOON ];
         };
         controls    = [
@@ -171,6 +185,18 @@ scenario         = [
                 max_cross_track_distance = 2000.0;
                 ignored_start_duration   = 432000.0;
                 subsampling              = 10;
+            },
+            {
+                scaling_divisor          = 0.03; 
+                type                     = MEAN_LOCAL_SOLAR_TIME;
+                name                     = "mean local solar time";
+                latitude                 =  0.0;
+                ascending                = false;
+                solar_time               = 9.5;
+                min_solar_time           = 9.4666667;
+                max_solar_time           = 9.5333333;
+                check_interval           = 86400.0;
+                ignored_start_duration   = 200000;
             }
         ];
         maneuvers   = [
@@ -182,12 +208,12 @@ scenario         = [
                 isp_curve            = [ [ 200, 0.0 ], [ 180, 100.0 ] ];
                 nominal_dv           = 0.0;
                 dv_min               = -10;
-                dv_max               = 10;
+                dv_max               =  10;
                 dv_convergence       = 0.01;
-                nominal_date         = 216000; 
-                dt_min               = -216000;
-                dt_max               = 216000;
-                dt_convergence       = 600.0;
+                nominal_date         = 86400; 
+                dt_min               = -6000;
+                dt_max               =  6000;
+                dt_convergence       = 120.0;
             },
             {
                 in_plane             = true;
@@ -234,16 +260,18 @@ scenario         = [
         orbits_separation   = 1;
     },
     {
-        component              = PROPAGATION;
-        managed_spacecrafts    = [ "Metop" ];
-        long_burn_compensation = false;
-        propagator             = {
+        component                  = PROPAGATION;
+        managed_spacecrafts        = [ "Metop" ];
+        long_burn_compensation     = false;
+        truncation_maneuver_name   = "Tangential 1";
+        truncation_maneuver_delay  = 345600.0;
+        propagator                 = {
             method                 = NUMERICAL;
             min_step               = 0.1;
             max_step               = 100.;
             position_tolerance     = 10.0;
-            gravity_field_degree   = 10;
-            gravity_field_order    = 10;
+            gravity_field_degree   = 6;
+            gravity_field_order    = 6;
             cross_section          = 40.0;
             drag_coefficient	   = 2.;
             third_bodies           = [ SUN, MOON ];

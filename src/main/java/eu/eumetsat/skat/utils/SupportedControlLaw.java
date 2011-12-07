@@ -147,17 +147,20 @@ public enum SupportedControlLaw {
         public SKControl parse(final SkatFileParser parser, final Tree node,
                                final String controlled, final Skat skat)
             throws OrekitException, SkatException {
-            final String name           = parser.getString(node, ParameterKey.CONTROL_NAME);
-            final double scalingDivisor = parser.getDouble(node, ParameterKey.CONTROL_SCALING_DIVISOR);
-            final double latitude       = parser.getAngle(node, ParameterKey.CONTROL_SOLAR_TIME_LATITUDE);
-            final boolean ascending     = parser.getBoolean(node, ParameterKey.CONTROL_SOLAR_TIME_ASCENDING);
-            final double solarTime      = parser.getDouble(node, ParameterKey.CONTROL_SOLAR_TIME_SOLAR_TIME);
-            final double minSolarTime   = parser.getDouble(node, ParameterKey.CONTROL_SOLAR_TIME_MIN_SOLAR_TIME);
-            final double maxSolarTime   = parser.getDouble(node, ParameterKey.CONTROL_SOLAR_TIME_MAX_SOLAR_TIME);
+            final String name                 = parser.getString(node, ParameterKey.CONTROL_NAME);
+            final double scalingDivisor       = parser.getDouble(node, ParameterKey.CONTROL_SCALING_DIVISOR);
+            final double latitude             = parser.getAngle(node, ParameterKey.CONTROL_SOLAR_TIME_LATITUDE);
+            final boolean ascending           = parser.getBoolean(node, ParameterKey.CONTROL_SOLAR_TIME_ASCENDING);
+            final double solarTime            = parser.getDouble(node, ParameterKey.CONTROL_SOLAR_TIME_SOLAR_TIME);
+            final double minSolarTime         = parser.getDouble(node, ParameterKey.CONTROL_SOLAR_TIME_MIN_SOLAR_TIME);
+            final double maxSolarTime         = parser.getDouble(node, ParameterKey.CONTROL_SOLAR_TIME_MAX_SOLAR_TIME);
+            final double checkInterval        = parser.getDouble(node, ParameterKey.CONTROL_SOLAR_TIME_CHECK_INTERVAL);
+            final double ignoredStartDuration = parser.getDouble(node, ParameterKey.CONTROL_SOLAR_TIME_IGNORED_START_DURATION);
             return new MeanLocalSolarTime(name, scalingDivisor, 
                                           controlled, skat.getSpacecraftIndex(controlled),
                                           skat.getEarth(), latitude,
-                                          ascending, solarTime, minSolarTime, maxSolarTime);
+                                          ascending, solarTime, minSolarTime, maxSolarTime,
+                                          checkInterval, ignoredStartDuration);
         }
 
     };
