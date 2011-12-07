@@ -122,7 +122,7 @@ public class ParabolicLongitude extends AbstractSKControl {
                               final int rollingCycles)
         throws OrekitException {
         this.start         = start;
-        this.firstManeuver = maneuvers[0].getDate();
+        this.firstManeuver = (maneuvers.length > 0) ? maneuvers[0].getDate(): start;
         this.cycleDuration = end.durationFrom(start) / rollingCycles;
     }
 
