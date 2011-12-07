@@ -28,6 +28,7 @@ import eu.eumetsat.skat.realization.Propagation;
 import eu.eumetsat.skat.scenario.Scenario;
 import eu.eumetsat.skat.scenario.ScenarioComponent;
 import eu.eumetsat.skat.strategies.TunableManeuver;
+import eu.eumetsat.skat.strategies.geo.OneOrTwoBurnsSelector;
 
 /** Enumerate for parsing the supported scenario components.
  */
@@ -317,6 +318,17 @@ public enum SupportedScenariocomponent {
             return new ManeuverEclipseConstraint(getIndices(parser, node, skat), inPlane, outOfPlane,
                                                  entryDelay, exitDelay, orbitsSeparation,
                                                  skat.getSun(), skat.getEarth());
+        }
+    },
+
+    /** Constant for one or two burns selection for in-plane control in GEO. */
+    ONE_OR_TWO_BURNS_SELECTOR() {
+        /** {@inheritDoc} */
+        public ScenarioComponent parse(final SkatFileParser parser, final Tree node, final Skat skat)
+            throws OrekitException, SkatException {
+            final String burnName =
+                    parser.getString(node, ParameterKey.COMPONENT_ONE_OR_TWO_BURNS_SPLIT_MANEUVER);
+            return new OneOrTwoBurnsSelector(getIndices(parser, node, skat), burnName);
         }
     },
 

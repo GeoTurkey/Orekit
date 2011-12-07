@@ -8,7 +8,6 @@ import java.util.Set;
 import org.apache.commons.math.analysis.MultivariateFunction;
 import org.orekit.errors.OrekitException;
 import org.orekit.propagation.Propagator;
-import org.orekit.propagation.SpacecraftState;
 import org.orekit.propagation.analytical.ManeuverAdapterPropagator;
 import org.orekit.propagation.events.EventDetector;
 import org.orekit.propagation.sampling.OrekitStepHandlerMultiplexer;
@@ -45,24 +44,19 @@ class ObjectiveFunction implements MultivariateFunction {
     /** Duration of cycle. */
     private final double cycleDuration;
 
-    /** Initial state. */
-    private final SpacecraftState initialState;
-
     /** Simple constructor.
      * @param reference reference ephemeris on which maneuvers will be added
      * @param start start date of the reference ephemeris
      * @param start end date of the reference ephemeris
-     * @param tunables station-keeping maneuvers
      * @param cycleDuration Cycle duration
      * @param rollingCycles number of cycles to use for rolling optimization
+     * @param tunables station-keeping maneuvers
      * @param controls station-keeping controls
-     * @param initialState initial state
      */
     public ObjectiveFunction(final Propagator reference,
                              final AbsoluteDate start, final AbsoluteDate end,
-                             final TunableManeuver[] tunables,
                              final double cycleDuration, final int rollingCycles,
-                             final List<SKControl> controls, final SpacecraftState initialState) {
+                             final TunableManeuver[] tunables, final List<SKControl> controls) {
 
         this.reference     = reference;
         this.start         = start;
@@ -71,7 +65,6 @@ class ObjectiveFunction implements MultivariateFunction {
         this.rollingCycles = rollingCycles;
         this.cycleDuration = cycleDuration;
         this.controls      = controls;
-        this.initialState  = initialState;
 
     }
 
@@ -96,7 +89,7 @@ class ObjectiveFunction implements MultivariateFunction {
             final int maneuversPerCycle   = tunables.length / rollingCycles;
             final int cycleIndex          = i / maneuversPerCycle;
             final double offset           = cycleIndex * cycleDuration * Constants.JULIAN_DAY;
-            final AbsoluteDate cycleStart = initialState.getDate().shiftedBy(offset);
+            final AbsoluteDate cycleStart = start.shiftedBy(offset);
             maneuver.setCycleStartDate(cycleStart);
             for (final SKParameter parameter : maneuver.getParameters()) {
                 if (parameter.isTunable()) {
