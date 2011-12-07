@@ -122,8 +122,7 @@ public enum ParameterKey {
     CONTROL_GROUND_TRACK_ASCENDING("ascending"),
     CONTROL_GROUND_TRACK_ORBITS_PER_CYCLE("orbits_per_cycle"),
     CONTROL_GROUND_TRACK_DAYS_PER_CYCLE("days_per_cycle"),
-    CONTROL_GROUND_TRACK_MIN_LONGITUDE("min_longitude"),
-    CONTROL_GROUND_TRACK_MAX_LONGITUDE("max_longitude"),
+    CONTROL_GROUND_TRACK_MAX_CROSS_TRACK_DISTANCE("max_cross_track_distance"),
 
     // Maneuvers 
     MANEUVERS_IN_PLANE("in_plane"),
@@ -172,6 +171,7 @@ public enum ParameterKey {
     COMPONENT_MANEUVER_ECLIPSE_CONSTRAINT_ENTRY_DELAY("entry_delay"),
     COMPONENT_MANEUVER_ECLIPSE_CONSTRAINT_EXIT_DELAY("exit_delay"),
     COMPONENT_MANEUVER_ECLIPSE_CONSTRAINT_ORBITS_SEPARATION("orbits_separation"),
+    COMPONENT_MANEUVER_ECLIPSE_CONSTRAINT_MIN_DURATION_RATIO("min_duration_ratio"),
 
     COMPONENT_ONE_OR_TWO_BURNS_SPLIT_MANEUVER("split_maneuver"),
 

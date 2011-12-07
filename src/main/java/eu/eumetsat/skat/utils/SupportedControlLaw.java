@@ -129,12 +129,11 @@ public enum SupportedControlLaw {
             final boolean ascending         = parser.getBoolean(node, ParameterKey.CONTROL_GROUND_TRACK_ASCENDING);
             final int orbitsPerPhasingCycle = parser.getInt(node, ParameterKey.CONTROL_GROUND_TRACK_ORBITS_PER_CYCLE);
             final int daysPerPhasingCycle   = parser.getInt(node, ParameterKey.CONTROL_GROUND_TRACK_DAYS_PER_CYCLE);
-            final double minLongitude       = parser.getAngle(node, ParameterKey.CONTROL_GROUND_TRACK_MIN_LONGITUDE);
-            final double maxLongitude       = parser.getAngle(node, ParameterKey.CONTROL_GROUND_TRACK_MAX_LONGITUDE);
+            final double maxDistance        = parser.getDouble(node, ParameterKey.CONTROL_GROUND_TRACK_MAX_CROSS_TRACK_DISTANCE);
             return new GroundTrackGrid(name, scalingDivisor,
                                        controlled, skat.getSpacecraftIndex(controlled),
                                        skat.getEarth(),
-                                       latitude, longitude, ascending, orbitsPerPhasingCycle, daysPerPhasingCycle, minLongitude, maxLongitude);
+                                       latitude, longitude, ascending, orbitsPerPhasingCycle, daysPerPhasingCycle, maxDistance);
         }
 
     },

@@ -99,8 +99,7 @@ public class GroundTrackGrid extends AbstractSKControl {
      * specified latitude from south to north
      * @param orbitsPerPhasingCycle number of orbits per phasing cycle
      * @param daysPerPhasingCycle approximate number of days per phasing cycle
-     * @param maxLongitude maximum accepted longitude
-     * @param minLongitude minimum accepted longitude
+     * @param maxDistance maximal cross distance to ground track allowed
      * @exception SkatException if orbits and days per phasing cycle are not
      * mutually prime numbers
      */
@@ -109,10 +108,9 @@ public class GroundTrackGrid extends AbstractSKControl {
                            final BodyShape earth,
                            final double latitude, final double longitude, final boolean ascending,
                            final int orbitsPerPhasingCycle, final int daysPerPhasingCycle, 
-                           final double minLongitude,
-                           final double maxLongitude) throws SkatException {
+                           final double maxDistance) throws SkatException {
         super(name, scalingDivisor, controlledName, controlledIndex, null, -1,
-              0.0, minLongitude, maxLongitude);
+              0.0, -maxDistance, maxDistance);
         if (ArithmeticUtils.gcd(orbitsPerPhasingCycle, daysPerPhasingCycle) != 1) {
             throw new SkatException(SkatMessages.PHASING_NUMBERS_NOT_MUTUALLY_PRIMES,
                                     orbitsPerPhasingCycle, daysPerPhasingCycle);
@@ -161,12 +159,16 @@ public class GroundTrackGrid extends AbstractSKControl {
             date = date.shiftedBy(adjustment);
             final PVCoordinates closest = propagator.getPVCoordinates(date, earth.getBodyFrame());
 
-            // compute ground track distance
+            // compute signed ground track distance
             final GeodeticPoint gp = earth.transform(closest.getPosition(), earth.getBodyFrame(), date);
             final Vector3D subSatellite =
                     earth.transform(new GeodeticPoint(gp.getLatitude(), gp.getLongitude(), 0.0));
-            final double distance = subSatellite.distance(point);
+            double distance = subSatellite.distance(point);
+            if (Vector3D.dotProduct(point.subtract(closest.getPosition()), closest.getMomentum()) < 0) {
+                distance = -distance;
+            }
             checkLimits(distance);
+
             // add distance to sample
             sample.add(distance);
 
