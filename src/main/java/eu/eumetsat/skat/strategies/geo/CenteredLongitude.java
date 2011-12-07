@@ -20,6 +20,8 @@ import org.orekit.time.AbsoluteDate;
 
 import eu.eumetsat.skat.control.AbstractSKControl;
 import eu.eumetsat.skat.strategies.ScheduledManeuver;
+import eu.eumetsat.skat.utils.SkatException;
+import eu.eumetsat.skat.utils.SkatMessages;
 
 /**
  * Station-keeping control attempting to center East-West longitude
@@ -73,13 +75,19 @@ public class CenteredLongitude extends AbstractSKControl {
      * @param lWest longitude slot Westward boundary
      * @param samplingStep step to use for sampling throughout propagation
      * @param earth Earth model to use to compute longitudes
+     * @exception SkatException if longitudes limits are not sorted properly
      */
     public CenteredLongitude(final String name, final double scalingDivisor,
                              final String controlledName, final int controlledIndex,
                              final double lEast, final double lWest,
-                             final double samplingStep, final BodyShape earth) {
+                             final double samplingStep, final BodyShape earth)
+        throws SkatException {
         super(name, scalingDivisor, controlledName, controlledIndex, null, -1, 0,
               lWest, MathUtils.normalizeAngle(lEast, lWest));
+        if (getMin() >= getMax()) {
+            throw new SkatException(SkatMessages.UNSORTED_LONGITUDES,
+                                    FastMath.toDegrees(getMin()), FastMath.toDegrees(getMax()));
+        }
         this.stephandler  = new Handler();
         this.samplingStep = samplingStep;
         this.earth        = earth;

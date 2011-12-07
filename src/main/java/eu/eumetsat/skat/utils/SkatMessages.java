@@ -58,7 +58,8 @@ public enum SkatMessages implements Localizable {
     NO_ECLIPSE_AROUND_DATE("no eclipse around date {0}"),
     INITIAL_MASS_LARGER_THAN_BOL_MASS("initial mass ({0} kg) larger than Begin Of Life mass ({1} kg)"),
     NON_INCREASING_MASSES_IN_THRUST_CALIBRATION_CURVE("non increasing masses in thrust decay law: {0} > {1}"),
-    NON_INCREASING_MASSES_IN_ISP_CALIBRATION_CURVE("non increasing masses in ISP decay law: {0} > {1}");
+    NON_INCREASING_MASSES_IN_ISP_CALIBRATION_CURVE("non increasing masses in ISP decay law: {0} > {1}"),
+    UNSORTED_LONGITUDES("unsorted longitude limits: {0} >= {1}");
 
     // CHECKSTYLE: resume JavadocVariable check
 
