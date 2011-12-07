@@ -191,8 +191,8 @@ scenario         = [
                 type                   = PARABOLIC_LONGITUDE;
                 name                   = "parabolic longitude";
                 ignored_start_duration = 345600.0;
-                east_longitude         =  -57.1;
-                west_longitude         =  -56.9;
+                east_longitude         =  -56.9;
+                west_longitude         =  -57.1;
                 sampling               = 10800.0;
             },
             {
