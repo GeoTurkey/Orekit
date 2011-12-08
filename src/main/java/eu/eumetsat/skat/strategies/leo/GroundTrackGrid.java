@@ -35,10 +35,11 @@ import eu.eumetsat.skat.utils.SkatMessages;
  * <p>
  * This control value is:
  * <pre>
- *   d<sub>75</sub>
+ *   (d<sub>25</sub> + d<sub>75</sub>) / 2
  * </pre>
- * where d<sub>75</sub> is the 75% quantities of ground track distances for
- * all encounters with the reference ground track points for the complete
+ * where d<sub>25</sub> and d<sub>75</sub> are respectively the 25% quantile and
+ * the 75% quantile of signed ground track distances for the considered
+ * encounters with the reference ground track points for the complete
  * station-keeping cycle duration (which may be completely different from
  * the phasing cycle).
  * </p>
@@ -48,7 +49,7 @@ import eu.eumetsat.skat.utils.SkatMessages;
  * track points.
  * </p>
  * <p>
- * Using quantities instead of min/max improves robustness with respect to
+ * Using quantiles instead of min/max improves robustness with respect to
  * outliers, which occur when starting far from the desired window for example
  * at the end of LEOP. Here, we ignore 25% outliers.
  * </p>
@@ -69,9 +70,6 @@ public class GroundTrackGrid extends AbstractSKControl {
 
     /** Reference track points latitude. */
     private final double latitude;
-
-    /** Reference track points longitudes. */
-    private final double[] longitudes;
 
     /** Duration of the ignored start part of the cycle. */
     private final double ignoredStartDuration;
@@ -132,12 +130,11 @@ public class GroundTrackGrid extends AbstractSKControl {
         this.latitude  = latitude;
 
         // compute the reference longitudes
-        longitudes = new double[orbitsPerPhasingCycle];
         earthPoints = new Vector3D[orbitsPerPhasingCycle];
         final double deltaLOneOrbit = (2 * FastMath.PI * daysPerPhasingCycle) / orbitsPerPhasingCycle;
         for (int i = 0; i < orbitsPerPhasingCycle; ++i) {
-            longitudes[i] = MathUtils.normalizeAngle(longitude - i * deltaLOneOrbit, FastMath.PI);
-            earthPoints[i] = earth.transform(new GeodeticPoint(latitude, longitudes[i], 0));
+            final double longitudeI = MathUtils.normalizeAngle(longitude - i * deltaLOneOrbit, FastMath.PI);
+            earthPoints[i] = earth.transform(new GeodeticPoint(latitude, longitudeI, 0));
         }
 
         this.ignoredStartDuration = ignoredStartDuration;
@@ -198,15 +195,14 @@ public class GroundTrackGrid extends AbstractSKControl {
                 checkLimits(distance);
 
                 // add distance to sample
-                try {
-                    data[(i - 1) / subSampling] = distance;
-                } catch (ArrayIndexOutOfBoundsException ae) {
-                    System.out.println("gotcha!");
-                }
+                data[(i - 1) / subSampling] = distance;
 
             }
 
-            achievedValue = new Percentile().evaluate(data, 75.0);
+            final Percentile percentile = new Percentile();
+            final double d25 = percentile.evaluate(data, 25.0);
+            final double d75 = percentile.evaluate(data, 75.0);
+            achievedValue = 0.5 * (d25 + d75);
 
         } catch (OrekitWrapperException owe) {
             throw owe.getWrappedException();
@@ -270,7 +266,7 @@ public class GroundTrackGrid extends AbstractSKControl {
         firstCrossingDate  = start;
         firstCrossingIndex = 0;
         double minDistance = Double.POSITIVE_INFINITY;
-        double fineStep = period / (3 * longitudes.length);
+        double fineStep = period / (3 * earthPoints.length);
         for (double dt = -roughStep; dt < roughStep; dt += fineStep) {
             final AbsoluteDate currentDate = roughDate.shiftedBy(dt);
             final PVCoordinates pv = propagator.propagate(currentDate).getPVCoordinates(earthFrame);
