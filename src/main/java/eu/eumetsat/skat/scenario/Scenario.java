@@ -219,7 +219,8 @@ public class Scenario implements ScenarioComponent {
             }
             propagator.setMasterMode(multiplexer);
 
-            propagator.propagate(tMin, tMax);
+            final double safetyMargin = 1.0e-3;
+            propagator.propagate(tMin.shiftedBy(safetyMargin), tMax.shiftedBy(-safetyMargin));
 
         }
 
