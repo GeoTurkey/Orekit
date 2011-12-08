@@ -80,14 +80,14 @@ scenario         = [
             method                 = NUMERICAL;
             min_step               = 0.1;
             max_step               = 100.;
-            position_tolerance     = 10;
+            position_tolerance     = 20;
             gravity_field_degree   = 4;
             gravity_field_order    = 4;
             third_body             = [ SUN, MOON ];
         };
         controls    = [
             {
-                scaling_divisor          = 1000.0; 
+                scaling_divisor          = 2000.0; 
                 type                     = GROUND_TRACK_GRID;
                 name                     = "initial Earth phasing";
                 latitude                 = 60.0;
@@ -100,7 +100,7 @@ scenario         = [
                 subsampling              = 20;
             },
             {
-                scaling_divisor          = 0.5; 
+                scaling_divisor          = 0.1; 
                 type                     = MEAN_LOCAL_SOLAR_TIME;
                 name                     = "initial Sun phasing";
                 latitude                 =  0.0;
@@ -165,7 +165,7 @@ scenario         = [
             method                 = NUMERICAL;
             min_step               = 0.1;
             max_step               = 100.;
-            position_tolerance     = 10;
+            position_tolerance     = 20;
             gravity_field_degree   = 4;
             gravity_field_order    = 4;
             drag_cross_section     = 40.0;
@@ -269,7 +269,7 @@ scenario         = [
             method                 = NUMERICAL;
             min_step               = 0.1;
             max_step               = 100.;
-            position_tolerance     = 10.0;
+            position_tolerance     = 20.0;
             gravity_field_degree   = 6;
             gravity_field_order    = 6;
             drag_cross_section     = 40.0;

@@ -238,7 +238,10 @@ public class Scenario implements ScenarioComponent {
         }
 
         // monitor data
-        for (AbsoluteDate date = tMin; date.compareTo(tMax) <= 0; date = date.shiftedBy(outputstep)) {
+        final double safetyMargin = 1.0e-3;
+        for (AbsoluteDate date = tMin.shiftedBy(safetyMargin);
+             date.compareTo(tMax.shiftedBy(-safetyMargin)) <= 0;
+             date = date.shiftedBy(outputstep)) {
 
             // check for maneuvers that have occurred
             updatePendingManeuvers(date, states);
