@@ -3,6 +3,8 @@ package eu.eumetsat.skat.strategies.leo;
 
 import org.apache.commons.math.analysis.UnivariateFunction;
 import org.apache.commons.math.analysis.solvers.BracketingNthOrderBrentSolver;
+import org.apache.commons.math.analysis.solvers.UnivariateRealSolverUtils;
+import org.apache.commons.math.exception.NoBracketingException;
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math.stat.descriptive.rank.Percentile;
 import org.apache.commons.math.util.ArithmeticUtils;
@@ -165,7 +167,6 @@ public class GroundTrackGrid extends AbstractSKControl {
             // evaluate ground track distances
             // against reference points encountered during cycle
             final int n = (int) FastMath.floor(end.durationFrom(firstCrossingDate) / encountersGap);
-            final BracketingNthOrderBrentSolver solver = new BracketingNthOrderBrentSolver(1.0e-2, 5);
             double deltaAdjustment = 0.0;
             double adjustment = 0.0;
             double[] data = new double[(n + subSampling - 2) / subSampling];
@@ -175,11 +176,9 @@ public class GroundTrackGrid extends AbstractSKControl {
                 AbsoluteDate date = firstCrossingDate.shiftedBy(i * encountersGap);
                 final Vector3D point    = earthPoints[(firstCrossingIndex + i) % earthPoints.length];
                 final double previousAdjustment = adjustment;
-                adjustment = solver.solve(1000,
-                                          new RadialVelocity(date, point, propagator, earth),
-                                          adjustment + deltaAdjustment - encountersGap / 20,
-                                          adjustment + deltaAdjustment + encountersGap / 20,
-                                          adjustment + deltaAdjustment);
+                adjustment = findEncounter(date, point,
+                                           adjustment + deltaAdjustment, encountersGap / 20,
+                                           encountersGap, propagator);
                 deltaAdjustment = adjustment - previousAdjustment;
                 date = date.shiftedBy(adjustment);
                 final PVCoordinates closest = propagator.getPVCoordinates(date, earth.getBodyFrame());
@@ -285,20 +284,52 @@ public class GroundTrackGrid extends AbstractSKControl {
         }
 
         // final refinement
-        final BracketingNthOrderBrentSolver solver = new BracketingNthOrderBrentSolver(1.0e-3, 5);
-        final double adjustment = solver.solve(1000,
-                                               new RadialVelocity(firstCrossingDate,
-                                                                  earthPoints[firstCrossingIndex],
-                                                                  propagator, earth),
-                                               -2 * fineStep, 2 * fineStep, 0.0);
+        final double adjustment = findEncounter(firstCrossingDate, earthPoints[firstCrossingIndex],
+                                                0, fineStep, period, propagator);
         firstCrossingDate = firstCrossingDate.shiftedBy(adjustment);
 
         // find time between first and second reference point encounter
-        encountersGap = solver.solve(1000,
-                                     new RadialVelocity(firstCrossingDate,
-                                                        earthPoints[(firstCrossingIndex + 1) % earthPoints.length],
-                                                        propagator, earth),
-                                     period - roughStep, period + roughStep, period);
+        encountersGap = findEncounter(firstCrossingDate,
+                                      earthPoints[(firstCrossingIndex + 1) % earthPoints.length],
+                                      period, fineStep, period, propagator);
+
+    }
+
+    /** Find the relative date of a reference point encounter.
+     * @param referenceDate reference date
+     * @param earthPoint point on Earth against which encounter is computed
+     * @param guess guessed relative date of the encounter
+     * @param minSpan minimal span of the search around guess
+     * @param maxSpan maximal span of the search around guess
+     * @param propagator propagator to use
+     * @exception OrekitException if propagator fails during search
+     * @exception NoBracketingException if encounter cannot be bracketed
+     */
+    private double findEncounter(final AbsoluteDate referenceDate, final Vector3D earthPoint,
+                                 final double guess, final double minSpan, final double maxSpan,
+                                 final Propagator propagator)
+        throws OrekitException, NoBracketingException {
+
+        final UnivariateFunction radialVelocity =
+                new RadialVelocity(referenceDate, earthPoint, propagator, earth);
+
+        // try to bracket the encounter
+        double span = minSpan;
+        while (!UnivariateRealSolverUtils.isBracketing(radialVelocity, guess - span, guess + span)) {
+
+            if (2 * span > maxSpan) {
+                // let the Apache Commons Math exception be thrown
+                UnivariateRealSolverUtils.verifyBracketing(radialVelocity, guess - span, guess + span);
+            }
+
+            // expand the search interval
+            span *= 2;
+
+        }
+
+        // find the encounter in the bracketed interval
+        final BracketingNthOrderBrentSolver solver = new BracketingNthOrderBrentSolver(0.1, 5);
+        return solver.solve(1000, radialVelocity, guess - span, guess + span, guess);
 
     }
 
