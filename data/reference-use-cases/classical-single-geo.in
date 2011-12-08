@@ -85,7 +85,7 @@ scenario         = [
             position_tolerance     = 100.0;
             gravity_field_degree   = 6;
             gravity_field_order    = 6;
-            cross_section          = 20.0;
+            srp_cross_section      = 20.0;
             absorption_coefficient = 1.5;
             reflection_coefficient = 2.0;
             third_bodies           = [ SUN, MOON ];
@@ -102,9 +102,9 @@ scenario         = [
                 scaling_divisor     = 1.0e-4;
                 type                = INCLINATION_VECTOR;
                 name                = "inclination vector";
-                target_x            = 9.0e-4;
+                target_x            =  9.0e-4;
                 target_y            =  0.0;
-                limit_circle_radius = 8.45e-4;
+                limit_circle_radius =  8.45e-4;
                 sampling            = 7200.0;
             }
         ];
@@ -115,8 +115,8 @@ scenario         = [
                 direction      = [ 0.0, 1.0, 0.0 ];
                 thrust         = [ [  40, 0.0 ], [  30, 600.0 ] ];
                 isp_curve      = [ [ 315, 0.0 ], [ 300, 600.0 ] ];
-                nominal_dv     = 0.0;
-                dv_min         = 0.0;
+                nominal_dv     =  0.0;
+                dv_min         =  0.0;
                 dv_max         =  3.0;
                 dv_convergence =  0.005;
                 nominal_date   = 172800;
@@ -173,7 +173,7 @@ scenario         = [
             position_tolerance     = 100.0;
             gravity_field_degree   = 6;
             gravity_field_order    = 6;
-            cross_section          = 20.0;
+            srp_cross_section      = 20.0;
             absorption_coefficient = 1.5;
             reflection_coefficient = 2.0;
             third_bodies           = [ SUN, MOON ];
@@ -191,8 +191,8 @@ scenario         = [
                 type                   = PARABOLIC_LONGITUDE;
                 name                   = "parabolic longitude";
                 ignored_start_duration = 345600.0;
-                east_longitude         =  -56.9;
-                west_longitude         =  -57.1;
+                east_longitude         = -56.9;
+                west_longitude         = -57.1;
                 sampling               = 10800.0;
             },
             {
@@ -201,7 +201,7 @@ scenario         = [
                 name             = "eccentricity circle";
                 center_x         = -1.5e-4;
                 center_y         =  0.0;
-                radius           = 2.0e-4;
+                radius           =  2.0e-4;
                 sampling         = 10800.0;
             }
         ];
@@ -229,14 +229,14 @@ scenario         = [
                 isp_curve                 = [ [ 315, 0.0 ], [ 300, 600.0 ] ];
                 date_relative_to_maneuver = "E/W-1";
                 nominal_date              = 43200;
-                dt_min                    =    0.0;
-                dt_max                    =    0.0;
-                dt_convergence            =  300.0;
+                dt_min                    =   0.0;
+                dt_max                    =   0.0;
+                dt_convergence            =   1.0;
                 dv_relative_to_maneuver   = "E/W-1";
-                nominal_dv                =  0.0;
-                dv_min                    = -0.0;
-                dv_max                    =  0.0;
-                dv_convergence            =  0.003;
+                nominal_dv                =   0.0;
+                dv_min                    =   0.0;
+                dv_max                    =   0.0;
+                dv_convergence            =   0.1;
             }
         ];
     },
@@ -273,7 +273,7 @@ scenario         = [
             position_tolerance     = 50.0;
             gravity_field_degree   = 10;
             gravity_field_order    = 10;
-            cross_section          = 20.0;
+            srp_cross_section      = 20.0;
             absorption_coefficient = 1.5;
             reflection_coefficient = 2.0;
             third_bodies           = [ SUN, MOON ];

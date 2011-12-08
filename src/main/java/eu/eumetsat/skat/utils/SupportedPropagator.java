@@ -10,9 +10,7 @@ import org.orekit.attitudes.LofOffset;
 import org.orekit.errors.OrekitException;
 import org.orekit.forces.ForceModel;
 import org.orekit.forces.SphericalSpacecraft;
-import org.orekit.forces.drag.Atmosphere;
 import org.orekit.forces.drag.DragForce;
-import org.orekit.forces.drag.HarrisPriester;
 import org.orekit.forces.gravity.CunninghamAttractionModel;
 import org.orekit.forces.gravity.ThirdBodyAttraction;
 import org.orekit.forces.gravity.potential.PotentialCoefficientsProvider;
@@ -63,33 +61,35 @@ public enum SupportedPropagator {
                                                                gravityField.getS(degree, order, false));
             numPropagator.addForceModel(gravity);
 
+            // drag
+            double dragCrossSection =
+                parser.containsKey(node, ParameterKey.NUMERICAL_PROPAGATOR_DRAG_CROSS_SECTION) ?
+                parser.getDouble(node, ParameterKey.NUMERICAL_PROPAGATOR_DRAG_CROSS_SECTION) : 0.0;
             double dragCoeff =
                 parser.containsKey(node, ParameterKey.NUMERICAL_PROPAGATOR_DRAG_COEFFICIENT) ?
                 parser.getDouble(node, ParameterKey.NUMERICAL_PROPAGATOR_DRAG_COEFFICIENT) : 0.0;
+
+            if (dragCrossSection > 0 && dragCoeff > 0) {
+                SphericalSpacecraft s = new SphericalSpacecraft(dragCrossSection, dragCoeff, 0., 0.);
+                numPropagator.addForceModel(new DragForce(skat.getAtmosphere(), s));
+            }
+
+            // solar radiation pressure
+            double srpCrossSection =
+                parser.containsKey(node, ParameterKey.NUMERICAL_PROPAGATOR_SRP_CROSS_SECTION) ?
+                parser.getDouble(node, ParameterKey.NUMERICAL_PROPAGATOR_SRP_CROSS_SECTION) : 0.0;
             double absorptionCoeff =
                 parser.containsKey(node, ParameterKey.NUMERICAL_PROPAGATOR_ABSORPTION_COEFFICIENT) ?
                 parser.getDouble(node, ParameterKey.NUMERICAL_PROPAGATOR_ABSORPTION_COEFFICIENT) : 0.0;
             double reflectionCoeff =
                 parser.containsKey(node, ParameterKey.NUMERICAL_PROPAGATOR_REFLECTION_COEFFICIENT) ?
                 parser.getDouble(node, ParameterKey.NUMERICAL_PROPAGATOR_REFLECTION_COEFFICIENT) : 0.0;
-            double crossSection =
-                parser.containsKey(node, ParameterKey.NUMERICAL_PROPAGATOR_CROSS_SECTION) ?
-                parser.getDouble(node, ParameterKey.NUMERICAL_PROPAGATOR_CROSS_SECTION) : 0.0;
 
-            // radiation pressure
-            SphericalSpacecraft s =
-                new SphericalSpacecraft(crossSection, dragCoeff, absorptionCoeff, reflectionCoeff);
-
-            if ((absorptionCoeff > 0) || (reflectionCoeff > 0)) {
+            if (srpCrossSection > 0 && (absorptionCoeff > 0) || (reflectionCoeff > 0)) {
+                SphericalSpacecraft s = new SphericalSpacecraft(srpCrossSection, 0., absorptionCoeff, reflectionCoeff);
                 numPropagator.addForceModel(new SolarRadiationPressure(skat.getSun(),
                                                                        skat.getEarth().getEquatorialRadius(),
                                                                        s));
-            }
-
-            // drag
-            if (dragCoeff > 0) {
-                numPropagator.addForceModel(new DragForce(new HarrisPriester(skat.getSun(), skat.getEarth()),
-                                                          s));
             }
 
             // third bodies
@@ -148,9 +148,23 @@ public enum SupportedPropagator {
                                                          null, 1.e-4);
             dsstPropagator.addForceModel(gravity);
 
+            // drag
+            double dragCrossSection =
+                parser.containsKey(node, ParameterKey.DSST_PROPAGATOR_DRAG_CROSS_SECTION) ?
+                parser.getDouble(node, ParameterKey.DSST_PROPAGATOR_DRAG_CROSS_SECTION) : 0.0;
             double dragCoeff =
                 parser.containsKey(node, ParameterKey.DSST_PROPAGATOR_DRAG_COEFFICIENT) ?
                 parser.getDouble(node, ParameterKey.DSST_PROPAGATOR_DRAG_COEFFICIENT) : 0.0;
+
+            if (dragCrossSection > 0 && dragCoeff > 0) {
+                DSSTForceModel drag = new DSSTAtmosphericDrag(skat.getAtmosphere(), dragCoeff, dragCrossSection);
+                dsstPropagator.addForceModel(drag);
+            }
+
+            // radiation pressure
+            double srpCrossSection =
+                parser.containsKey(node, ParameterKey.DSST_PROPAGATOR_SRP_CROSS_SECTION) ?
+                parser.getDouble(node, ParameterKey.DSST_PROPAGATOR_SRP_CROSS_SECTION) : 0.0;
             // Up to now the absorption coefficient is not used in the DSST SPR model
 //            double absorptionCoeff =
 //                parser.containsKey(node, ParameterKey.DSST_PROPAGATOR_ABSORPTION_COEFFICIENT) ?
@@ -158,23 +172,12 @@ public enum SupportedPropagator {
             double reflectionCoeff =
                 parser.containsKey(node, ParameterKey.DSST_PROPAGATOR_REFLECTION_COEFFICIENT) ?
                 parser.getDouble(node, ParameterKey.DSST_PROPAGATOR_REFLECTION_COEFFICIENT) : 0.0;
-            double crossSection =
-                parser.containsKey(node, ParameterKey.DSST_PROPAGATOR_CROSS_SECTION) ?
-                parser.getDouble(node, ParameterKey.DSST_PROPAGATOR_CROSS_SECTION) : 0.0;
 
-            // radiation pressure
-            if (reflectionCoeff > 0) {
-                DSSTForceModel srp = new DSSTSolarRadiationPressure(reflectionCoeff, crossSection,
+            if (srpCrossSection > 0 && reflectionCoeff > 0) {
+                DSSTForceModel srp = new DSSTSolarRadiationPressure(reflectionCoeff, srpCrossSection,
                                                                     skat.getSun(),
                                                                     skat.getEarth().getEquatorialRadius());
                 dsstPropagator.addForceModel(srp);
-            }
-
-            // drag
-            if (dragCoeff > 0) {
-                Atmosphere atm = new HarrisPriester(skat.getSun(), skat.getEarth());
-                DSSTForceModel drag = new DSSTAtmosphericDrag(atm, dragCoeff, crossSection);
-                dsstPropagator.addForceModel(drag);
             }
 
             // third bodies

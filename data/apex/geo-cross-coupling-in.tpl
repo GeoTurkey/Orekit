@@ -2,7 +2,7 @@
 simulation       = {
     output_base_name = "geo-cross-coupling";
     inertial_frame   = "EME2000";
-    earth_frame      = "ITRF2008 with tides";
+    earth_frame      = "GMOD";
     start_date       = 2011-10-23T00:00:00.000;
     end_date         = 2011-12-01T00:00:00.000;
     cycle_duration   = 14.0;
@@ -15,7 +15,6 @@ simulation       = {
     output_step      = 21600.0;
     random_seed      = 156325253;
 };
-
 # Array of initial states
 # there must be exactly one element for each spacecraft
 initial_states   = [
@@ -28,7 +27,6 @@ initial_states   = [
         out_of_plane_maneuvers = 0;
         out_of_plane_total_dV  = 0.0;
         mass                   = 1200.0;
-
         orbit                  = {
             date               = 2011-10-23T01:47:06.165;
             orbit_type         = EQUINOCTIAL;
@@ -42,7 +40,6 @@ initial_states   = [
         }
     }
 ];
-
 # Array of scenario components
 # each scenario component specifies to which spacecrafts it applies
 scenario         = [
@@ -73,6 +70,7 @@ scenario         = [
         out_of_plane_elimination = 0.01;
         optimizer             = {
             method                     = NELDER_MEAD;
+            convergence_span           = 1;
             initial_simplex_size_ratio = 0.01
         };
         propagator  = {
@@ -82,7 +80,7 @@ scenario         = [
             position_tolerance     = 100.0;
             gravity_field_degree   = 6;
             gravity_field_order    = 6;
-            cross_section          = 20.0;
+            srp_cross_section      = 20.0;
             absorption_coefficient = 1.5;
             reflection_coefficient = 2.0;
             third_bodies           = [ SUN, MOON ];
@@ -92,9 +90,9 @@ scenario         = [
                 scaling_divisor     = 1.0e-4;
                 type                = INCLINATION_VECTOR;
                 name                = "inclination vector";
-                target_x            = 9.0e-4;
+                target_x            =  9.0e-4;
                 target_y            =  0.0;
-                limit_circle_radius = 8.45e-4;
+                limit_circle_radius =  8.45e-4;
                 sampling            = 7200.0;
             }
         ];
@@ -104,8 +102,9 @@ scenario         = [
                 relative_to_previous = false;
                 name                 = "N/S";
                 direction            = [ 0.0, 1.0, 0.0 ];
-                thrust               = 40;
+                thrust               = [ [  40, 0.0 ], [  30, 600.0 ] ];
                 isp_curve            = [ [ 315, 0.0 ], [ 300, 600.0 ] ];
+                nominal_dv           =  0.0;
                 dv_min               = -3.0;
                 dv_max               =  3.0;
                 dv_convergence       =  0.01;
@@ -127,6 +126,7 @@ scenario         = [
         out_of_plane_elimination = 0.01;
         optimizer             = {
             method                     = NELDER_MEAD;
+            convergence_span           = 1;
             initial_simplex_size_ratio = 0.01
         };
         propagator  = {
@@ -136,19 +136,20 @@ scenario         = [
             position_tolerance     = 100.0;
             gravity_field_degree   = 6;
             gravity_field_order    = 6;
-            cross_section          = 20.0;
+            srp_cross_section      = 20.0;
             absorption_coefficient = 1.5;
             reflection_coefficient = 2.0;
             third_bodies           = [ SUN, MOON ];
         };
         controls    = [
             {
-                scaling_divisor  = 0.1;
-                type             = CENTERED_LONGITUDE;
-                name             = "centered longitude";
-                east_longitude   =  -57.1;
-                west_longitude   =  -56.9;
-                sampling         = 7200.0;
+                scaling_divisor        = 0.1;
+                type                   = PARABOLIC_LONGITUDE;
+                name                   = "parabolic longitude";
+                ignored_start_duration = 345600.0;
+                west_longitude         =  -57.3;
+                east_longitude         =  -56.7;
+                sampling               = 10800.0;
             },
             {
                 scaling_divisor  = 1.0e-4;
@@ -163,11 +164,11 @@ scenario         = [
         maneuvers   = [
             {
                 in_plane             = true;
-                relative_to_previous = false;
                 name                 = "E/W-1";
                 direction            = [ 1.0, 0.0, 0.0 ];
-                thrust               = 40;
+                thrust               = [ [  40, 0.0 ], [  30, 600.0 ] ];
                 isp_curve            = [ [ 315, 0.0 ], [ 300, 600.0 ] ];
+                nominal_dv           =  0.0;
                 dv_min               = -0.3;
                 dv_max               =  0.3;
                 dv_convergence       =  0.01;
@@ -177,19 +178,20 @@ scenario         = [
                 dt_convergence       =  60.0;
             },
             {
-                in_plane             = true;
-                relative_to_previous = true;
-                name                 = "E/W-2";
-                direction            = [ 1.0, 0.0, 0.0 ];
-                thrust               = 40;
-                isp_curve            = [ [ 315, 0.0 ], [ 300, 600.0 ] ];
-                dv_min               = -0.3;
-                dv_max               =  0.3;
-                dv_convergence       =  0.01;
-                nominal_date         = 43200;
-                dt_min               =    0.0;
-                dt_max               =    0.0;
-                dt_convergence       =  60.0;
+                in_plane                  = true;
+                name                      = "E/W-2";
+                direction                 = [ 1.0, 0.0, 0.0 ];
+                thrust                    = [ [  40, 0.0 ], [  30, 600.0 ] ];
+                isp_curve                 = [ [ 315, 0.0 ], [ 300, 600.0 ] ];
+                nominal_dv                =  0.0;
+                dv_min                    = -0.3;
+                dv_max                    =  0.3;
+                dv_convergence            =  0.01;
+                date_relative_to_maneuver = "E/W-1";
+                nominal_date              = 43200;
+                dt_min                    =   0.0;
+                dt_max                    =   0.0;
+                dt_convergence            =  60.0;
             }
         ];
     },
@@ -251,7 +253,7 @@ scenario         = [
             position_tolerance     = 50.0;
             gravity_field_degree   = 10;
             gravity_field_order    = 10;
-            cross_section          = 20.0;
+            srp_cross_section      = 20.0;
             absorption_coefficient = 1.5;
             reflection_coefficient = 2.0;
             third_bodies           = [ SUN, MOON ];

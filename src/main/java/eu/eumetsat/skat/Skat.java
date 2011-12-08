@@ -38,6 +38,10 @@ import org.orekit.bodies.OneAxisEllipsoid;
 import org.orekit.data.DataProvidersManager;
 import org.orekit.data.DirectoryCrawler;
 import org.orekit.errors.OrekitException;
+import org.orekit.forces.drag.Atmosphere;
+import org.orekit.forces.drag.DTM2000;
+import org.orekit.forces.drag.MarshallSolarActivityFutureEstimation;
+import org.orekit.forces.drag.MarshallSolarActivityFutureEstimation.StrengthLevel;
 import org.orekit.forces.gravity.potential.GravityFieldFactory;
 import org.orekit.forces.gravity.potential.PotentialCoefficientsProvider;
 import org.orekit.frames.Frame;
@@ -109,6 +113,9 @@ public class Skat {
 
     /** Gravity field. */
     private final PotentialCoefficientsProvider gravityField;
+
+    /** Atmosphere. */
+    private final Atmosphere atmosphere;
 
     /** Reference ground location. */
     private TopocentricFrame groundLocation;
@@ -266,6 +273,16 @@ public class Skat {
         sun           = CelestialBodyFactory.getSun();
         moon          = CelestialBodyFactory.getMoon();
         gravityField  = GravityFieldFactory.getPotentialProvider();
+
+        final String supportedNames = "(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\\p{Digit}\\p{Digit}\\p{Digit}\\p{Digit}F10\\.(?:txt|TXT)";
+        final StrengthLevel strengthLevel = (StrengthLevel) parser.getEnumerate(simulationNode,
+                                                                                ParameterKey.SIMULATION_SOLAR_ACTIVITY_STRENGTH,
+                                                                                StrengthLevel.class);
+        MarshallSolarActivityFutureEstimation msafe = new MarshallSolarActivityFutureEstimation(supportedNames, strengthLevel);
+        DataProvidersManager.getInstance().feed(msafe.getSupportedNames(), msafe);
+        atmosphere = new DTM2000(msafe, sun, earth);
+//      atmosphere = new HarrisPriester(sun, earth);
+
         startDate     = parser.getDate(simulationNode, ParameterKey.SIMULATION_START_DATE, utc);
         generator     = new Well19937a(parser.getInt(simulationNode, ParameterKey.SIMULATION_RANDOM_SEED));
         cycleDuration = parser.getDouble(simulationNode, ParameterKey.SIMULATION_CYCLE_DURATION);
@@ -427,6 +444,13 @@ public class Skat {
      */
     public PotentialCoefficientsProvider getgravityField() {
         return gravityField;
+    }
+
+    /** Get the configured atmosphere.
+     * @return configured atmosphere
+     */
+    public Atmosphere getAtmosphere() {
+        return atmosphere;
     }
 
     /** Get the configured ground location.
