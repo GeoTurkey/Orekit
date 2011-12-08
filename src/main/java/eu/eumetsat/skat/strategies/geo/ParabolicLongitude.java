@@ -115,7 +115,6 @@ public class ParabolicLongitude extends AbstractSKControl {
     }
 
     /** {@inheritDoc} */
-    @Override
     public void initializeRun(final ScheduledManeuver[] maneuvers,
                               final Propagator propagator,
                               final AbsoluteDate start, final AbsoluteDate end,

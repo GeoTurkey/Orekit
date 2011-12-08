@@ -1,11 +1,6 @@
 /* Copyright 2011 Eumetsat */
 package eu.eumetsat.skat.control;
 
-import org.orekit.errors.OrekitException;
-import org.orekit.propagation.Propagator;
-import org.orekit.time.AbsoluteDate;
-
-import eu.eumetsat.skat.strategies.ScheduledManeuver;
 
 
 /**
@@ -105,13 +100,6 @@ public abstract class AbstractSKControl implements SKControl {
     public void resetLimitsChecks() {
         limitsExceeded = false;
     }
-
-    /** {@inheritDoc} */
-    public abstract void initializeRun(final ScheduledManeuver[] maneuvers,
-                                       final Propagator propagator,
-                                       final AbsoluteDate start, final AbsoluteDate end,
-                                       int rollingCycles)
-        throws OrekitException;
 
     /** {@inheritDoc} */
     public double getTargetValue() {

@@ -197,8 +197,14 @@ public class Scenario implements ScenarioComponent {
 
             final BoundedPropagator propagator = states[i].getPerformedEphemeris();
             propagator.clearEventsDetectors();
+
+            for (final SKControl controlLaw : controls) {
+                final List<ScheduledManeuver> maneuvers = states[i].getManeuvers();
+                controlLaw.initializeRun(maneuvers.toArray(new ScheduledManeuver[maneuvers.size()]),
+                                         propagator, tMin, tMax, 1);
+            }
+
             final OrekitStepHandlerMultiplexer multiplexer = new OrekitStepHandlerMultiplexer();
-            propagator.setMasterMode(multiplexer);
 
             // register the control law handlers to the propagator
             for (final SKControl controlLaw : controls) {
@@ -211,12 +217,7 @@ public class Scenario implements ScenarioComponent {
                     }
                 }
             }
-
-            for (final SKControl controlLaw : controls) {
-                final List<ScheduledManeuver> maneuvers = states[i].getManeuvers();
-                controlLaw.initializeRun(maneuvers.toArray(new ScheduledManeuver[maneuvers.size()]),
-                                         propagator, tMin, tMax, 1);
-            }
+            propagator.setMasterMode(multiplexer);
 
             propagator.propagate(tMin, tMax);
 

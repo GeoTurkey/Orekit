@@ -210,10 +210,15 @@ public class OneOrTwoBurnsSelector implements ScenarioComponent {
                                     final ScenarioState state)
         throws OrekitException {
 
-        final OrekitStepHandlerMultiplexer multiplexer = new OrekitStepHandlerMultiplexer();
-        propagator.setMasterMode(multiplexer);
+        final AbsoluteDate cycleStart = state.getEstimatedStartState().getDate();
+        for (final SKControl controlLaw : controls) {
+            final List<ScheduledManeuver> maneuvers = state.getManeuvers();
+            controlLaw.initializeRun(maneuvers.toArray(new ScheduledManeuver[maneuvers.size()]),
+                                     propagator, cycleStart, cycleEnd, 1);
+        }
 
         // register the control law handlers to the propagator
+        final OrekitStepHandlerMultiplexer multiplexer = new OrekitStepHandlerMultiplexer();
         for (final SKControl controlLaw : controls) {
             if (controlLaw.getEventDetector() != null) {
                 propagator.addEventDetector(controlLaw.getEventDetector());
@@ -222,13 +227,8 @@ public class OneOrTwoBurnsSelector implements ScenarioComponent {
                 multiplexer.add(controlLaw.getStepHandler());
             }
         }
+        propagator.setMasterMode(multiplexer);
 
-        final AbsoluteDate cycleStart = state.getEstimatedStartState().getDate();
-        for (final SKControl controlLaw : controls) {
-            final List<ScheduledManeuver> maneuvers = state.getManeuvers();
-            controlLaw.initializeRun(maneuvers.toArray(new ScheduledManeuver[maneuvers.size()]),
-                                     propagator, cycleStart, cycleEnd, 1);
-        }
 
         // perform propagation
         propagator.propagate(cycleStart, cycleEnd);

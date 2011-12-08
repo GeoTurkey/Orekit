@@ -97,7 +97,6 @@ public class EccentricityCircle extends AbstractSKControl {
     }
 
     /** {@inheritDoc} */
-    @Override
     public void initializeRun(final ScheduledManeuver[] maneuvers,
                               final Propagator propagator, AbsoluteDate start, AbsoluteDate end, int rollingCycles)
         throws OrekitException {

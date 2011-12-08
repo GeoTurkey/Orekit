@@ -53,7 +53,7 @@ public interface SKControl extends SKElement {
      * </p>
      * @param maneuvers maneuvers scheduled for this control law
      * @param propagator propagator for the cycle (it already takes
-     * the maneuvers into account, as well as the {@link #getEventDetector()
+     * the maneuvers into account, but <em>none</em> of the {@link #getEventDetector()
      * event detector} and {@link #getStepHandler() step handler} if any)
      * @param start start date of the propagation
      * @param end end date of the propagation

@@ -115,6 +115,11 @@ class ObjectiveFunction implements MultivariateFunction {
             final ManeuverAdapterPropagator propagator = new ManeuverAdapterPropagator(reference);
             final ScheduledManeuver[] maneuvers = setUpManeuvers(point, propagator);
 
+            // prepare run
+            for (final SKControl control : controls) {
+                control.initializeRun(maneuvers, propagator, start, end, rollingCycles);
+            }
+
             // get the detectors associated with control laws
             final Set<EventDetector> detectors = new HashSet<EventDetector>();
             for (final SKControl control : controls) {
@@ -136,11 +141,6 @@ class ObjectiveFunction implements MultivariateFunction {
             // that are part of the optimization process in the control loop
             for (final EventDetector detector : detectors) {
                 propagator.addEventDetector(detector);
-            }
-
-            // prepare run
-            for (final SKControl control : controls) {
-                control.initializeRun(maneuvers, propagator, start, end, rollingCycles);
             }
 
             // perform propagation
