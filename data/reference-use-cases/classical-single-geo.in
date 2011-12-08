@@ -1,19 +1,20 @@
 # General simulation parameters
 simulation       = {
-    output_base_name = "classical-single-geo";
-    inertial_frame   = "GCRF";
-    earth_frame      = "GMOD";
-    start_date       = 2011-10-23T00:00:00.000;
-    end_date         = 2013-01-01T00:00:00.000;
-    cycle_duration   = 14.0;
-    rolling_cycles   = 2;
-    ground_location  = {
+    output_base_name        = "classical-single-geo";
+    inertial_frame          = "GCRF";
+    earth_frame             = "GMOD";
+    solar_activity_strength = AVERAGE;
+    start_date              = 2011-10-23T00:00:00.000;
+    end_date                = 2013-01-01T00:00:00.000;
+    cycle_duration          = 14.0;
+    rolling_cycles          = 2;
+    output_step             = 43200.0;
+    random_seed             = 156325253;
+    ground_location         = {
         latitude     = 49.85;
         longitude    =  8.65;
         altitude     =  0.0
     };
-    output_step      = 43200.0;
-    random_seed      = 156325253;
 };
 # Array of initial states
 # there must be exactly one element for each spacecraft
