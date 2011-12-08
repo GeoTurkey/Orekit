@@ -1,19 +1,20 @@
 # General simulation parameters
 simulation       = {
-    output_base_name = "geo-cross-coupling";
-    inertial_frame   = "EME2000";
-    earth_frame      = "GMOD";
-    start_date       = 2011-10-23T00:00:00.000;
-    end_date         = 2011-12-01T00:00:00.000;
-    cycle_duration   = 14.0;
-    rolling_cycles   = 2;
-    ground_location  = {
+    output_base_name        = "geo-cross-coupling";
+    inertial_frame          = "EME2000";
+    earth_frame             = "GMOD";
+    solar_activity_strength = AVERAGE;
+    start_date              = 2011-10-23T00:00:00.000;
+    end_date                = 2011-12-01T00:00:00.000;
+    cycle_duration          = 14.0;
+    rolling_cycles          = 2;
+    output_step             = 21600.0;
+    random_seed             = 156325253;
+    ground_location         = {
         latitude     = 49.85;
         longitude    =  8.65;
         altitude     =  0.0
     };
-    output_step      = 21600.0;
-    random_seed      = 156325253;
 };
 # Array of initial states
 # there must be exactly one element for each spacecraft
@@ -163,19 +164,19 @@ scenario         = [
         ];
         maneuvers   = [
             {
-                in_plane             = true;
-                name                 = "E/W-1";
-                direction            = [ 1.0, 0.0, 0.0 ];
-                thrust               = [ [  40, 0.0 ], [  30, 600.0 ] ];
-                isp_curve            = [ [ 315, 0.0 ], [ 300, 600.0 ] ];
-                nominal_dv           =  0.0;
-                dv_min               = -0.3;
-                dv_max               =  0.3;
-                dv_convergence       =  0.01;
-                nominal_date         = 345600;
-                dt_min               = -43200;
-                dt_max               =  43200;
-                dt_convergence       =  60.0;
+                in_plane       = true;
+                name           = "E/W-1";
+                direction      = [ 1.0, 0.0, 0.0 ];
+                thrust         = [ [  40, 0.0 ], [  30, 600.0 ] ];
+                isp_curve      = [ [ 315, 0.0 ], [ 300, 600.0 ] ];
+                nominal_dv     =  0.0;
+                dv_min         = -0.3;
+                dv_max         =  0.3;
+                dv_convergence =  0.01;
+                nominal_date   = 345600;
+                dt_min         = -43200;
+                dt_max         =  43200;
+                dt_convergence =  60.0;
             },
             {
                 in_plane                  = true;
