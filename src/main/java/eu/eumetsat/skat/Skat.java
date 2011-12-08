@@ -696,7 +696,7 @@ public class Skat {
                            "= {");
             final Orbit orbit = state.getRealStartState().getOrbit(); 
             finalOutput.println(formatIndent(3 * baseIndent) +
-                                formatKey(keysWidth, ParameterKey.ORBIT_TYPE) +
+                                formatKey(keysWidth - baseIndent, ParameterKey.ORBIT_TYPE) +
                                 "= " + orbit.getType() + ";");
             switch (orbit.getType()) {
             case CARTESIAN :
