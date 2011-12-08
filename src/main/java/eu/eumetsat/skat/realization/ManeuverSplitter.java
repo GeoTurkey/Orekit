@@ -100,7 +100,7 @@ public class ManeuverSplitter implements ScenarioComponent {
                                                            new Vector3D(1.0 / nbParts, maneuver.getDeltaV()),
                                                            maneuver.getThrust(), maneuver.getIsp(),
                                                            maneuver.getTrajectory(),
-                                                           maneuver.getControlLaws()));
+                                                           maneuver.getControlLaws(), false));
                     }
 
                 } else {

@@ -44,6 +44,9 @@ public class ScheduledManeuver {
     /** Control laws that were used to build this maneuver. */
     private final List<SKControl> controls;
 
+    /** Indicator for replanned maneuvers. */
+    private final boolean replanned;
+
     /** Simple constructor.
      * @param inPlane if true, the maneuver is considered to be in-plane
      * @param date maneuver date
@@ -52,10 +55,12 @@ public class ScheduledManeuver {
      * @param isp engine specific impulse (s)
      * @param trajectory trajectory to which this maneuver belongs
      * @param controls control laws that were used to build this maneuver
+     * @param replanned if true, the maneuver was missed and has been replanned
      */
     public ScheduledManeuver(final String name, final boolean inPlane, final AbsoluteDate date,
                              final Vector3D deltaV, final double thrust, final double isp,
-                             final Propagator trajectory, final List<SKControl> controls) {
+                             final Propagator trajectory, final List<SKControl> controls,
+                             final boolean replanned) {
         this.name       = name;
         this.inPlane    = inPlane;
         this.date       = date;
@@ -64,6 +69,7 @@ public class ScheduledManeuver {
         this.isp        = isp;
         this.trajectory = trajectory;
         this.controls   = controls;
+        this.replanned  = replanned;
     }
 
     /** Get the maneuver name.
@@ -131,6 +137,13 @@ public class ScheduledManeuver {
      */
     public List<SKControl> getControlLaws() {
         return controls;
+    }
+
+    /** Check if the maneuver has been replanned.
+     * @return true is the maneuver has been replanned
+     */
+    public boolean isReplanned() {
+        return replanned;
     }
 
 }

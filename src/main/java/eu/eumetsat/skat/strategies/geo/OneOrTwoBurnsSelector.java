@@ -133,14 +133,14 @@ public class OneOrTwoBurnsSelector implements ScenarioComponent {
                         new ScheduledManeuver(singleBurn.getName() + "(A)", singleBurn.isInPlane(),
                                               tA, new Vector3D(optimumRatio, singleBurn.getDeltaV()),
                                               singleBurn.getThrust(), singleBurn.getIsp(),
-                                              reference, singleBurn.getControlLaws());
+                                              reference, singleBurn.getControlLaws(), false);
                 modified.add(partA);
                 reference.addManeuver(partA.getDate(), partA.getDeltaV(), partA.getIsp());
                 final ScheduledManeuver partB =
                         new ScheduledManeuver(singleBurn.getName() + "(B)", singleBurn.isInPlane(),
                                               tB, new Vector3D(1 - optimumRatio, singleBurn.getDeltaV()),
                                               singleBurn.getThrust(), singleBurn.getIsp(),
-                                              reference, singleBurn.getControlLaws());
+                                              reference, singleBurn.getControlLaws(), false);
                 modified.add(partB);
                 reference.addManeuver(partB.getDate(), partB.getDeltaV(), partB.getIsp());
 

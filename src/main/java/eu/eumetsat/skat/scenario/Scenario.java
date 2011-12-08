@@ -291,10 +291,13 @@ public class Scenario implements ScenarioComponent {
                     }
 
                     // print the maneuver
-                    maneuversOutput.println(maneuver.getDate()             + " " +
-                                            maneuver.getName()             + " " +
-                                            maneuver.getDeltaV().getNorm() + " " +
-                                            states[i].getName());
+                    maneuversOutput.println(maneuver.getDate()          + " " +
+                                            maneuver.getName()          + " " +
+                                            maneuver.getDeltaV().getX() + " " +
+                                            maneuver.getDeltaV().getY() + " " +
+                                            maneuver.getDeltaV().getZ() + " " +
+                                            states[i].getName()         + " " +
+                                            (maneuver.isReplanned() ? "replanned" : ""));
                 }
             }
         }

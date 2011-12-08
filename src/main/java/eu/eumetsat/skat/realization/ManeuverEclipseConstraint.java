@@ -164,7 +164,7 @@ public class ManeuverEclipseConstraint implements ScenarioComponent {
                                                            new Vector3D(partDuration / burnDuration, maneuver.getDeltaV()),
                                                            maneuver.getThrust(), maneuver.getIsp(),
                                                            maneuver.getTrajectory(),
-                                                           maneuver.getControlLaws()));
+                                                           maneuver.getControlLaws(), false));
                     }
 
                 } else {

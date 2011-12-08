@@ -111,7 +111,7 @@ public class MissedManeuver implements ScenarioComponent {
                                                                maneuver.getDeltaV(),
                                                                maneuver.getThrust(), maneuver.getIsp(),
                                                                maneuver.getTrajectory(),
-                                                               maneuver.getControlLaws()));
+                                                               maneuver.getControlLaws(), true));
                         } else {
                             // the maneuver is really missed
                             modified.add(new ScheduledManeuver(maneuver.getName(), maneuver.isInPlane(),
@@ -119,7 +119,7 @@ public class MissedManeuver implements ScenarioComponent {
                                                                Vector3D.ZERO,
                                                                maneuver.getThrust(), maneuver.getIsp(),
                                                                maneuver.getTrajectory(),
-                                                               maneuver.getControlLaws()));
+                                                               maneuver.getControlLaws(), true));
                         }
 
                     } else {

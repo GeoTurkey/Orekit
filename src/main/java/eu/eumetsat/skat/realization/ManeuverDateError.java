@@ -92,7 +92,7 @@ public class ManeuverDateError implements ScenarioComponent {
                                                        maneuver.getDeltaV(),
                                                        maneuver.getThrust(), maneuver.getIsp(),
                                                        maneuver.getTrajectory(),
-                                                       maneuver.getControlLaws()));
+                                                       maneuver.getControlLaws(), false));
                 } else {
                     // the maneuver is immune to the error
                     modified.add(maneuver);

@@ -234,7 +234,7 @@ public class TunableManeuver {
     public ScheduledManeuver getManeuver(final Propagator trajectory, final List<SKControl> controls) {
         return new ScheduledManeuver(name, inPlane, getDate(),
                                      new Vector3D(getDV(), direction),
-                                     currentThrust, currentIsp, trajectory, controls);
+                                     currentThrust, currentIsp, trajectory, controls, false);
     }
 
     /** Get the maneuver velocity increment.
