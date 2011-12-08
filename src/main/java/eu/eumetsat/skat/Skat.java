@@ -666,125 +666,131 @@ public class Skat {
         for (int i = 0; i < finalStates.length; ++i) {
             final ScenarioState state = finalStates[i];
             finalOutput.println("    {");
-            finalOutput.println(formatIndent(baseIndent) +
+            finalOutput.println(formatIndent(2 * baseIndent) +
                            formatKey(keysWidth, ParameterKey.INITIAL_STATE_NAME) +
                            "= \"" + state.getName() + "\";");
-            finalOutput.println(formatIndent(baseIndent) +
+            finalOutput.println(formatIndent(2 * baseIndent) +
                            formatKey(keysWidth, ParameterKey.INITIAL_STATE_CYCLE_NUMBER) +
                            "= " + state.getCyclesNumber() + ";");
-            finalOutput.println(formatIndent(baseIndent) +
+            finalOutput.println(formatIndent(2 * baseIndent) +
                            formatKey(keysWidth, ParameterKey.INITIAL_STATE_IN_PLANE_MANEUVERS) +
                            "= " + state.getInPlaneManeuvers() + ";");
-            finalOutput.println(formatIndent(baseIndent) +
+            finalOutput.println(formatIndent(2 * baseIndent) +
                            formatKey(keysWidth, ParameterKey.INITIAL_STATE_IN_PLANE_TOTAL_DV) +
                            "= " + state.getInPlaneTotalDV() + ";");
-            finalOutput.println(formatIndent(baseIndent) +
+            finalOutput.println(formatIndent(2 * baseIndent) +
                            formatKey(keysWidth, ParameterKey.INITIAL_STATE_OUT_OF_PLANE_MANEUVERS) +
                            "= " + state.getOutOfPlaneManeuvers() + ";");
-            finalOutput.println(formatIndent(baseIndent) +
+            finalOutput.println(formatIndent(2 * baseIndent) +
                            formatKey(keysWidth, ParameterKey.INITIAL_STATE_OUT_OF_PLANE_TOTAL_DV) +
                            "= " + state.getOutOfPlaneTotalDV() + ";");
-            finalOutput.println(formatIndent(baseIndent) +
-                           formatKey(keysWidth, ParameterKey.INITIAL_STATE_MASS) +
-                           "= " + state.getRealStartState().getMass() + ";");
+            finalOutput.println(formatIndent(2 * baseIndent) +
+                                formatKey(keysWidth, ParameterKey.INITIAL_STATE_BOL_MASS) +
+                                "= " + state.getBOLMass() + ";");
+            finalOutput.println(formatIndent(2 * baseIndent) +
+                                formatKey(keysWidth, ParameterKey.INITIAL_STATE_MASS) +
+                                "= " + state.getRealStartState().getMass() + ";");
 
-            finalOutput.println(formatIndent(baseIndent) +
+            finalOutput.println(formatIndent(2 * baseIndent) +
                            formatKey(keysWidth, ParameterKey.INITIAL_STATE_ORBIT) +
                            "= {");
             final Orbit orbit = state.getRealStartState().getOrbit(); 
+            finalOutput.println(formatIndent(3 * baseIndent) +
+                                formatKey(keysWidth, ParameterKey.ORBIT_TYPE) +
+                                "= " + orbit.getType() + ";");
             switch (orbit.getType()) {
             case CARTESIAN :
                 final PVCoordinates pv = orbit.getPVCoordinates(inertialFrame);
                 final Vector3D p = pv.getPosition();
                 final Vector3D v = pv.getVelocity();
-                finalOutput.println(formatIndent(2 * baseIndent) +
+                finalOutput.println(formatIndent(3 * baseIndent) +
                                formatKey(keysWidth - baseIndent, ParameterKey.ORBIT_CARTESIAN_DATE) +
                                "= " + orbit.getDate().toString(utc) + ";");
-                finalOutput.println(formatIndent(2 * baseIndent) +
+                finalOutput.println(formatIndent(3 * baseIndent) +
                                formatKey(keysWidth - baseIndent, ParameterKey.ORBIT_CARTESIAN_POSITION) +
                                "= [" + p.getX() + ", " + p.getY() + ", " + p.getZ() + "];");
-                finalOutput.println(formatIndent(2 * baseIndent) +
+                finalOutput.println(formatIndent(3 * baseIndent) +
                                formatKey(keysWidth - baseIndent, ParameterKey.ORBIT_CARTESIAN_VELOCITY) +
                                "= [" + v.getX() + ", " + v.getY() + ", " + v.getZ() + "];");
                 break;
             case KEPLERIAN :
                 final KeplerianOrbit kep = (KeplerianOrbit) orbit;
-                finalOutput.println(formatIndent(2 * baseIndent) +
+                finalOutput.println(formatIndent(3 * baseIndent) +
                                formatKey(keysWidth - baseIndent, ParameterKey.ORBIT_KEPLERIAN_DATE) +
                                "= " + orbit.getDate().toString(utc) + ";");
-                finalOutput.println(formatIndent(2 * baseIndent) +
+                finalOutput.println(formatIndent(3 * baseIndent) +
                                formatKey(keysWidth - baseIndent, ParameterKey.ORBIT_KEPLERIAN_A) +
                                "= " + kep.getA() + ";");
-                finalOutput.println(formatIndent(2 * baseIndent) +
+                finalOutput.println(formatIndent(3 * baseIndent) +
                                formatKey(keysWidth - baseIndent, ParameterKey.ORBIT_KEPLERIAN_E) +
                                "= " + kep.getE() + ";");
-                finalOutput.println(formatIndent(2 * baseIndent) +
+                finalOutput.println(formatIndent(3 * baseIndent) +
                                formatKey(keysWidth - baseIndent, ParameterKey.ORBIT_KEPLERIAN_I) +
                                "= " + FastMath.toDegrees(kep.getI()) + ";");
-                finalOutput.println(formatIndent(2 * baseIndent) +
+                finalOutput.println(formatIndent(3 * baseIndent) +
                                formatKey(keysWidth - baseIndent, ParameterKey.ORBIT_KEPLERIAN_PA) +
                                "= " + FastMath.toDegrees(kep.getPerigeeArgument()) + ";");
-                finalOutput.println(formatIndent(2 * baseIndent) +
+                finalOutput.println(formatIndent(3 * baseIndent) +
                                formatKey(keysWidth - baseIndent, ParameterKey.ORBIT_KEPLERIAN_RAAN) +
                                "= " + FastMath.toDegrees(kep.getRightAscensionOfAscendingNode()) + ";");
-                finalOutput.println(formatIndent(2 * baseIndent) +
+                finalOutput.println(formatIndent(3 * baseIndent) +
                                formatKey(keysWidth - baseIndent, ParameterKey.ORBIT_KEPLERIAN_ANOMALY) +
                                "= " + FastMath.toDegrees(kep.getMeanAnomaly()) + ";");
-                finalOutput.println(formatIndent(2 * baseIndent) +
+                finalOutput.println(formatIndent(3 * baseIndent) +
                                formatKey(keysWidth - baseIndent, ParameterKey.ANGLE_TYPE) +
                                "= " + PositionAngle.MEAN + ";");
                break;
             case CIRCULAR :
                 final CircularOrbit cir = (CircularOrbit) orbit;
-                finalOutput.println(formatIndent(2 * baseIndent) +
+                finalOutput.println(formatIndent(3 * baseIndent) +
                                formatKey(keysWidth - baseIndent, ParameterKey.ORBIT_CIRCULAR_DATE) +
                                "= " + orbit.getDate().toString(utc) + ";");
-                finalOutput.println(formatIndent(2 * baseIndent) +
+                finalOutput.println(formatIndent(3 * baseIndent) +
                                formatKey(keysWidth - baseIndent, ParameterKey.ORBIT_CIRCULAR_A) +
                                "= " + cir.getA() + ";");
-                finalOutput.println(formatIndent(2 * baseIndent) +
+                finalOutput.println(formatIndent(3 * baseIndent) +
                                formatKey(keysWidth - baseIndent, ParameterKey.ORBIT_CIRCULAR_EX) +
                                "= " + cir.getCircularEx() + ";");
-                finalOutput.println(formatIndent(2 * baseIndent) +
+                finalOutput.println(formatIndent(3 * baseIndent) +
                                formatKey(keysWidth - baseIndent, ParameterKey.ORBIT_CIRCULAR_EY) +
                                "= " + cir.getCircularEy() + ";");
-                finalOutput.println(formatIndent(2 * baseIndent) +
+                finalOutput.println(formatIndent(3 * baseIndent) +
                                formatKey(keysWidth - baseIndent, ParameterKey.ORBIT_CIRCULAR_I) +
                                "= " + FastMath.toDegrees(cir.getI()) + ";");
-                finalOutput.println(formatIndent(2 * baseIndent) +
+                finalOutput.println(formatIndent(3 * baseIndent) +
                                formatKey(keysWidth - baseIndent, ParameterKey.ORBIT_CIRCULAR_RAAN) +
                                "= " + FastMath.toDegrees(cir.getRightAscensionOfAscendingNode()) + ";");
-                finalOutput.println(formatIndent(2 * baseIndent) +
+                finalOutput.println(formatIndent(3 * baseIndent) +
                                formatKey(keysWidth - baseIndent, ParameterKey.ORBIT_CIRCULAR_LATITUDE_ARGUMENT) +
                                "= " + FastMath.toDegrees(cir.getAlphaM()) + ";");
-                finalOutput.println(formatIndent(2 * baseIndent) +
+                finalOutput.println(formatIndent(3 * baseIndent) +
                                formatKey(keysWidth - baseIndent, ParameterKey.ANGLE_TYPE) +
                                "= " + PositionAngle.MEAN + ";");
                 break;
             case EQUINOCTIAL :
                 final EquinoctialOrbit equ = (EquinoctialOrbit) orbit;
-                finalOutput.println(formatIndent(2 * baseIndent) +
+                finalOutput.println(formatIndent(3 * baseIndent) +
                                formatKey(keysWidth - baseIndent, ParameterKey.ORBIT_EQUINOCTIAL_DATE) +
                                "= " + orbit.getDate().toString(utc) + ";");
-                finalOutput.println(formatIndent(2 * baseIndent) +
+                finalOutput.println(formatIndent(3 * baseIndent) +
                                formatKey(keysWidth - baseIndent, ParameterKey.ORBIT_EQUINOCTIAL_A) +
                                "= " + equ.getA() + ";");
-                finalOutput.println(formatIndent(2 * baseIndent) +
+                finalOutput.println(formatIndent(3 * baseIndent) +
                                formatKey(keysWidth - baseIndent, ParameterKey.ORBIT_EQUINOCTIAL_EX) +
                                "= " + equ.getEquinoctialEx() + ";");
-                finalOutput.println(formatIndent(2 * baseIndent) +
+                finalOutput.println(formatIndent(3 * baseIndent) +
                                formatKey(keysWidth - baseIndent, ParameterKey.ORBIT_EQUINOCTIAL_EY) +
                                "= " + equ.getEquinoctialEy() + ";");
-                finalOutput.println(formatIndent(2 * baseIndent) +
+                finalOutput.println(formatIndent(3 * baseIndent) +
                                formatKey(keysWidth - baseIndent, ParameterKey.ORBIT_EQUINOCTIAL_HX) +
                                "= " + equ.getHx() + ";");
-                finalOutput.println(formatIndent(2 * baseIndent) +
+                finalOutput.println(formatIndent(3 * baseIndent) +
                                formatKey(keysWidth - baseIndent, ParameterKey.ORBIT_EQUINOCTIAL_HY) +
                                "= " + equ.getHy() + ";");
-                finalOutput.println(formatIndent(2 * baseIndent) +
+                finalOutput.println(formatIndent(3 * baseIndent) +
                                formatKey(keysWidth - baseIndent, ParameterKey.ORBIT_EQUINOCTIAL_LONGITUDE_ARGUMENT) +
                                "= " + FastMath.toDegrees(equ.getLM()) + ";");
-                finalOutput.println(formatIndent(2 * baseIndent) +
+                finalOutput.println(formatIndent(3 * baseIndent) +
                                formatKey(keysWidth - baseIndent, ParameterKey.ANGLE_TYPE) +
                                "= " + PositionAngle.MEAN + ";");
                 break;
@@ -792,10 +798,12 @@ public class Skat {
                 // this should never happen
                 throw SkatException.createInternalError(null);
             }
+            finalOutput.println(formatIndent(2 * baseIndent) + "}");
+
             finalOutput.println(formatIndent(baseIndent) + ((i < finalStates.length - 1) ? "}," : "}"));
 
         }
-        finalOutput.println("]");
+        finalOutput.println("];");
 
     }
 
