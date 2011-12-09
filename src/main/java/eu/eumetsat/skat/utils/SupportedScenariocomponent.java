@@ -39,6 +39,7 @@ public enum SupportedScenariocomponent {
         /** {@inheritDoc} */
         public ScenarioComponent parse(final SkatFileParser parser, final Tree node, final Skat skat)
             throws OrekitException, SkatException {
+            final Tree scenarioNode = parser.getValue(node, ParameterKey.SCENARIO);
             final Scenario scenario = new Scenario(skat.getCycleDuration() * Constants.JULIAN_DAY,
                                                    skat.getOutputStep(), skat.getEarth(), skat.getSun(),
                                                    skat.getGroundLocation(),
@@ -46,8 +47,8 @@ public enum SupportedScenariocomponent {
                                                    skat.getControlLawsResidualsMap(),
                                                    skat.getControlLawsViolationsMap(),
                                                    skat.getManeuversOutput());
-            for (int j = 0; j < parser.getElementsNumber(node); ++j) {
-                final Tree componentNode = parser.getElement(node, j);
+            for (int j = 0; j < parser.getElementsNumber(scenarioNode); ++j) {
+                final Tree componentNode = parser.getElement(scenarioNode, j);
                 final SupportedScenariocomponent component =
                         (SupportedScenariocomponent) parser.getEnumerate(componentNode, ParameterKey.COMPONENT_TYPE,
                                                                          SupportedScenariocomponent.class);
@@ -374,7 +375,9 @@ public enum SupportedScenariocomponent {
             // notify the Skat application this component manages the specified spacecrafts
             for (final int index : indices) {
                 if (skat.isManaged(index)) {
-                    throw new SkatException(SkatMessages.SPACECRAFT_MANAGED_TWICE, skat.getSpacecraftName(index));
+                    final SkatException se =
+                            new SkatException(SkatMessages.SPACECRAFT_MANAGED_TWICE, skat.getSpacecraftName(index));
+                    System.err.println("WARNING: " + se.getLocalizedMessage());
                 }
                 skat.manage(index, propagation);
             }

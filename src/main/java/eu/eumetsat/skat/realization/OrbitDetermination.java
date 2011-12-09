@@ -86,7 +86,7 @@ public class OrbitDetermination implements ScenarioComponent {
             final int index = spacecraftIndices[i];
 
             // get the real state vector
-            final SpacecraftState realState = originals[index].getRealStartState();
+            final SpacecraftState realState = originals[index].getRealState();
             final Orbit realOrbit           = orbitType.convertType(realState.getOrbit());
             final double[] orbitArray       = new double[6];
             orbitType.mapOrbitToArray(realOrbit, positionAngle, orbitArray);
@@ -111,7 +111,7 @@ public class OrbitDetermination implements ScenarioComponent {
                                         realState.getMass());
 
             // update the state
-            updated[index] = originals[index].updateEstimatedStartState(estimatedState);
+            updated[index] = originals[index].updateEstimatedState(estimatedState);
         }
 
         // return the updated states

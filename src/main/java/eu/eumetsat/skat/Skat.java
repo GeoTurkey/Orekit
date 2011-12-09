@@ -391,8 +391,7 @@ public class Skat {
         controlsViolations = new HashMap<SKControl, SimpleMonitorable>();
 
         // set up scenario components
-        final Tree scenarioNode = parser.getValue(root, ParameterKey.SCENARIO);
-        scenario = (Scenario) SupportedScenariocomponent.SCENARIO.parse(parser, scenarioNode, this);
+        scenario = (Scenario) SupportedScenariocomponent.SCENARIO.parse(parser, root, this);
         scenario.setCycleEnd(parser.getDate(simulationNode, ParameterKey.SIMULATION_END_DATE, utc));
 
         // check that every spacecraft is managed by at least one propagation component
@@ -479,7 +478,7 @@ public class Skat {
      * @return configured initial orbit for the specified spacecraft
      */
     public Orbit getInitialOrbit(final int spacecraftIndex) {
-        return configuredStates[spacecraftIndex].getRealStartState().getOrbit();
+        return configuredStates[spacecraftIndex].getRealState().getOrbit();
     }
 
     /** Get the cycle duration.
@@ -641,9 +640,6 @@ public class Skat {
             propagation.setCycleEnd(startDate);
             initialStates = propagation.updateStates(initialStates);
         }
-        for (int i = 0; i < initialStates.length; ++i) {
-            initialStates[i] = initialStates[i].updateRealStartState(initialStates[i].getRealEndState());
-        }
 
         // perform the complete simulation
         final ScenarioState[] finalStates = scenario.updateStates(initialStates);
@@ -689,12 +685,12 @@ public class Skat {
                                 "= " + state.getBOLMass() + ";");
             finalOutput.println(formatIndent(2 * baseIndent) +
                                 formatKey(keysWidth, ParameterKey.INITIAL_STATE_MASS) +
-                                "= " + state.getRealStartState().getMass() + ";");
+                                "= " + state.getRealState().getMass() + ";");
 
             finalOutput.println(formatIndent(2 * baseIndent) +
                            formatKey(keysWidth, ParameterKey.INITIAL_STATE_ORBIT) +
                            "= {");
-            final Orbit orbit = state.getRealStartState().getOrbit(); 
+            final Orbit orbit = state.getRealState().getOrbit(); 
             finalOutput.println(formatIndent(3 * baseIndent) +
                                 formatKey(keysWidth - baseIndent, ParameterKey.ORBIT_TYPE) +
                                 "= " + orbit.getType() + ";");

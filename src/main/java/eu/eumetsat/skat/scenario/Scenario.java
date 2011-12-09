@@ -27,7 +27,6 @@ import eu.eumetsat.skat.utils.MonitorableDuoSKData;
 import eu.eumetsat.skat.utils.MonitorableMonoSKData;
 import eu.eumetsat.skat.utils.SimpleMonitorable;
 import eu.eumetsat.skat.utils.SkatException;
-import eu.eumetsat.skat.utils.SkatMessages;
 
 /** Station-Keeping scenario.
  * <p>
@@ -136,8 +135,11 @@ public class Scenario implements ScenarioComponent {
         do {
 
             // set target date for iteration using cycle duration
-            final AbsoluteDate startDate = states[0].getRealStartState().getDate();
+            final AbsoluteDate startDate = states[0].getRealState().getDate();
             iterationTarget = startDate.shiftedBy(cycleDuration);
+            if (iterationTarget.compareTo(cycleEnd) > 0) {
+                iterationTarget = cycleEnd;
+            }
 
             final TimeScale utc = TimeScalesFactory.getUTC();
             final Date now = Calendar.getInstance(TimeZone.getTimeZone("Etc/UTC")).getTime();
@@ -155,10 +157,6 @@ public class Scenario implements ScenarioComponent {
 
             // prepare next cycle
             for (int i = 0; i < states.length; ++i) {
-                if (states[i].getRealEndState() == null) {
-                    throw new SkatException(SkatMessages.NO_END_STATE,
-                                            states[i].getName(), states[i].getCyclesNumber());
-                }
                 states[i] = states[i].updateCyclesNumber(states[i].getCyclesNumber() + 1);
                 states[i] = states[i].updateInPlaneManeuvers(states[i].getInPlaneManeuvers(),
                                                              0.0,
@@ -166,13 +164,11 @@ public class Scenario implements ScenarioComponent {
                 states[i] = states[i].updateOutOfPlaneManeuvers(states[i].getOutOfPlaneManeuvers(),
                                                                 0.0,
                                                                 states[i].getOutOfPlaneTotalDV());
-                states[i] = states[i].updateRealStartState(states[i].getRealEndState());
-                states[i] = states[i].updateEstimatedStartState(null);
-                states[i] = states[i].updateRealEndState(null);
+                states[i] = states[i].updateEstimatedState(null);
                 states[i] = states[i].updateManeuvers(null);
             }
 
-        } while (iterationTarget.compareTo(cycleEnd) < 0);
+        } while (cycleEnd.durationFrom(iterationTarget) > 1.0);
 
         return states;
 
@@ -200,8 +196,13 @@ public class Scenario implements ScenarioComponent {
 
             for (final SKControl controlLaw : controls) {
                 final List<ScheduledManeuver> maneuvers = states[i].getManeuvers();
-                controlLaw.initializeRun(maneuvers.toArray(new ScheduledManeuver[maneuvers.size()]),
-                                         propagator, tMin, tMax, 1);
+                if (maneuvers == null) {
+                    controlLaw.initializeRun(new ScheduledManeuver[0],
+                                             propagator, tMin, tMax, 1);
+                } else {
+                    controlLaw.initializeRun(maneuvers.toArray(new ScheduledManeuver[maneuvers.size()]),
+                                             propagator, tMin, tMax, 1);
+                }
             }
 
             final OrekitStepHandlerMultiplexer multiplexer = new OrekitStepHandlerMultiplexer();
@@ -271,34 +272,32 @@ public class Scenario implements ScenarioComponent {
         final AbsoluteDate previous = date.shiftedBy(-outputstep);
 
         for (int i = 0; i < states.length; ++i) {
-            if (states[i].getManeuvers() == null) {
-                throw new SkatException(SkatMessages.NO_MANEUVERS_STATE,
-                                        states[i].getName(), states[i].getCyclesNumber());
-            }
-            for (final ScheduledManeuver maneuver : states[i].getManeuvers()) {
-                if ((maneuver.getDate().compareTo(previous) > 0) &&
-                    (maneuver.getDate().compareTo(date) <= 0)) {
+            if (states[i].getManeuvers() != null) {
+                for (final ScheduledManeuver maneuver : states[i].getManeuvers()) {
+                    if ((maneuver.getDate().compareTo(previous) > 0) &&
+                            (maneuver.getDate().compareTo(date) <= 0)) {
 
-                    // the maneuver occurred during last step, take it into account
-                    final double dv = maneuver.getDeltaV().getNorm();
-                    if (maneuver.isInPlane()) {
-                        states[i] = states[i].updateInPlaneManeuvers(states[i].getInPlaneManeuvers() + 1,
-                                                                     states[i].getInPlaneCycleDV() + dv,
-                                                                     states[i].getInPlaneTotalDV() + dv);
-                    } else {
-                        states[i] = states[i].updateOutOfPlaneManeuvers(states[i].getOutOfPlaneManeuvers() + 1,
-                                                                        states[i].getOutOfPlaneCycleDV() + dv,
-                                                                        states[i].getOutOfPlaneTotalDV() + dv);
+                        // the maneuver occurred during last step, take it into account
+                        final double dv = maneuver.getDeltaV().getNorm();
+                        if (maneuver.isInPlane()) {
+                            states[i] = states[i].updateInPlaneManeuvers(states[i].getInPlaneManeuvers() + 1,
+                                                                         states[i].getInPlaneCycleDV() + dv,
+                                                                         states[i].getInPlaneTotalDV() + dv);
+                        } else {
+                            states[i] = states[i].updateOutOfPlaneManeuvers(states[i].getOutOfPlaneManeuvers() + 1,
+                                                                            states[i].getOutOfPlaneCycleDV() + dv,
+                                                                            states[i].getOutOfPlaneTotalDV() + dv);
+                        }
+
+                        // print the maneuver
+                        maneuversOutput.println(maneuver.getDate()          + " " +
+                                                maneuver.getName()          + " " +
+                                                maneuver.getDeltaV().getX() + " " +
+                                                maneuver.getDeltaV().getY() + " " +
+                                                maneuver.getDeltaV().getZ() + " " +
+                                                states[i].getName()         + " " +
+                                                (maneuver.isReplanned() ? "replanned" : ""));
                     }
-
-                    // print the maneuver
-                    maneuversOutput.println(maneuver.getDate()          + " " +
-                                            maneuver.getName()          + " " +
-                                            maneuver.getDeltaV().getX() + " " +
-                                            maneuver.getDeltaV().getY() + " " +
-                                            maneuver.getDeltaV().getZ() + " " +
-                                            states[i].getName()         + " " +
-                                            (maneuver.isReplanned() ? "replanned" : ""));
                 }
             }
         }

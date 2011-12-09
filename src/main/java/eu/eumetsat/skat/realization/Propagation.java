@@ -108,7 +108,7 @@ public class Propagation implements ScenarioComponent {
 
             // set up the propagator with the maneuvers to perform
             final Propagator propagator =
-                    randomizers[i].getPropagator(originals[index].getRealStartState());
+                    randomizers[i].getPropagator(originals[index].getRealState());
 
             for (final ScheduledManeuver maneuver : performed) {
                 if (maneuver.getDeltaV().getNorm() > 1.0e-10) {
@@ -149,7 +149,7 @@ public class Propagation implements ScenarioComponent {
             propagator.setEphemerisMode();
 
             // perform propagation
-            updated[index] = originals[index].updateRealEndState(propagator.propagate(cycleEnd));
+            updated[index] = originals[index].updateRealState(propagator.propagate(cycleEnd));
 
             // retrieve continuous data
             updated[index] = updated[index].updatePerformedEphemeris(propagator.getGeneratedEphemeris());

@@ -186,18 +186,18 @@ public class ControlLoop implements ScenarioComponent {
             // set the reference consumed mass for maneuvers
             for (int i = 0; i < tunables.length; ++i) {
                 final TunableManeuver tunable = tunables[i];
-                SpacecraftState estimated = original.getEstimatedStartState();
+                SpacecraftState estimated = original.getEstimatedState();
                 if (estimated == null) {
                     throw new SkatException(SkatMessages.NO_ESTIMATED_STATE,
                                             original.getName(), original.getCyclesNumber());
                 }
                 tunable.setReferenceConsumedMass(original.getBOLMass() -
-                                                 original.getEstimatedStartState().getMass());
+                                                 original.getEstimatedState().getMass());
             }
 
             // compute a reference ephemeris, on which tunable maneuvers will be added
             final BoundedPropagator reference =
-                    computeReferenceEphemeris(original.getEstimatedStartState(), original.getManeuvers());
+                    computeReferenceEphemeris(original.getEstimatedState(), original.getManeuvers());
 
             // find the optimal parameters that minimize objective function
             final ObjectiveFunction objective =

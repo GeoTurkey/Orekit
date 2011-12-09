@@ -210,7 +210,7 @@ public class OneOrTwoBurnsSelector implements ScenarioComponent {
                                     final ScenarioState state)
         throws OrekitException {
 
-        final AbsoluteDate cycleStart = state.getEstimatedStartState().getDate();
+        final AbsoluteDate cycleStart = state.getEstimatedState().getDate();
         for (final SKControl controlLaw : controls) {
             final List<ScheduledManeuver> maneuvers = state.getManeuvers();
             controlLaw.initializeRun(maneuvers.toArray(new ScheduledManeuver[maneuvers.size()]),

@@ -98,7 +98,7 @@ public enum MonitorableMonoSKData implements MonitorableMono {
         /** {@inheritDoc} */
         @Override
         protected void extractData(final ScenarioState state, double[] data) {
-            data[0] = state.getRealStartState().getMass();
+            data[0] = state.getRealState().getMass();
         }
 
     },
@@ -168,7 +168,7 @@ public enum MonitorableMonoSKData implements MonitorableMono {
             final BodyShape earth    = state.getEarth();
             final Frame earthFrame   = earth.getBodyFrame();
             final Vector3D position  = getPVCoordinates(state, earthFrame).getPosition();
-            final AbsoluteDate  date = state.getRealStartState().getDate();
+            final AbsoluteDate  date = state.getRealState().getDate();
             final GeodeticPoint gp   = earth.transform(position, earthFrame, date);
             data[0] = FastMath.toDegrees(gp.getLatitude());
         }
@@ -184,7 +184,7 @@ public enum MonitorableMonoSKData implements MonitorableMono {
             final BodyShape earth    = state.getEarth();
             final Frame earthFrame   = earth.getBodyFrame();
             final Vector3D position  = getPVCoordinates(state, earthFrame).getPosition();
-            final AbsoluteDate  date = state.getRealStartState().getDate();
+            final AbsoluteDate  date = state.getRealState().getDate();
             final GeodeticPoint gp   = earth.transform(position, earthFrame, date);
             data[0] = FastMath.toDegrees(gp.getLongitude());
         }
@@ -200,7 +200,7 @@ public enum MonitorableMonoSKData implements MonitorableMono {
             final BodyShape earth    = state.getEarth();
             final Frame earthFrame   = earth.getBodyFrame();
             final Vector3D position  = getPVCoordinates(state, earthFrame).getPosition();
-            final AbsoluteDate  date = state.getRealStartState().getDate();
+            final AbsoluteDate  date = state.getRealState().getDate();
             final GeodeticPoint gp   = earth.transform(position, earthFrame, date);
             data[0] = gp.getAltitude();
         }
