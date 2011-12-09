@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.apache.commons.math.util.FastMath;
 import org.orekit.errors.OrekitException;
+import org.orekit.forces.ForceModel;
 import org.orekit.forces.maneuvers.ConstantThrustManeuver;
 import org.orekit.forces.maneuvers.ImpulseManeuver;
 import org.orekit.orbits.CircularOrbit;
@@ -20,6 +21,7 @@ import eu.eumetsat.skat.scenario.ScenarioState;
 import eu.eumetsat.skat.strategies.ScheduledManeuver;
 import eu.eumetsat.skat.utils.SkatException;
 import eu.eumetsat.skat.utils.SkatMessages;
+import eu.eumetsat.skat.utils.SupportedPropagator.PropagatorRandomizer;
 
 /**
  * Class for simple propagation of a station-keeping cycle.
@@ -35,8 +37,8 @@ public class Propagation implements ScenarioComponent {
     /** Indices of the spacecrafts managed by this component. */
     private final int[] spacecraftIndices;
 
-    /** Orbit propagators. */
-    private final Propagator[] propagators;
+    /** Orbit propagator randomizers. */
+    private final PropagatorRandomizer[] randomizers;
 
     /** Name of the maneuver triggering cycle truncation (may be null). */
     private final String truncationManeuverName;
@@ -52,16 +54,16 @@ public class Propagation implements ScenarioComponent {
 
     /** Simple constructor.
      * @param spacecraftIndices indices of the spacecrafts managed by this component
-     * @param propagators propagators to use for each spacecraft
+     * @param randomizers orbit propagator randomizers to use for each spacecraft
      * @param truncationManeuverName name of the maneuver triggering cycle truncation (may be null)
      * @param truncationManeuverDelay truncation delay after maneuver
      * @param compensateLongBurn if true, long burn inefficiency should be compensated
      */
-    public Propagation(final int[] spacecraftIndices, final Propagator[] propagators,
+    public Propagation(final int[] spacecraftIndices, final PropagatorRandomizer[] randomizers,
                        final String truncationManeuverName, final double truncationManeuverDelay,
                        final boolean compensateLongBurn) {
         this.spacecraftIndices       = spacecraftIndices.clone();
-        this.propagators             = propagators.clone();
+        this.randomizers             = randomizers.clone();
         this.truncationManeuverName  = truncationManeuverName;
         this.truncationManeuverDelay = truncationManeuverDelay;
         this.compensateLongBurn      = compensateLongBurn;
@@ -105,7 +107,9 @@ public class Propagation implements ScenarioComponent {
             }
 
             // set up the propagator with the maneuvers to perform
-            propagators[i].clearEventsDetectors();
+            final Propagator propagator =
+                    randomizers[i].getPropagator(originals[index].getRealStartState());
+
             for (final ScheduledManeuver maneuver : performed) {
                 final Propagator p = maneuver.getTrajectory();
                 final double nominalDuration = maneuver.getDuration(p.propagate(maneuver.getDate()).getMass());
@@ -127,26 +131,26 @@ public class Propagation implements ScenarioComponent {
                 } else {
                     inefficiency = 1.0;
                 }
-                if (propagators[i] instanceof NumericalPropagator) {
-                    ((NumericalPropagator) propagators[i]).addForceModel(new ConstantThrustManeuver(maneuver.getDate().shiftedBy(-0.5 * nominalDuration),
-                                                                                                    nominalDuration,
-                                                                                                    maneuver.getThrust(),
-                                                                                                    maneuver.getIsp(),
-                                                                                                    maneuver.getDeltaV().normalize()));
+                if (propagator instanceof NumericalPropagator) {
+                    final ForceModel ctm = new ConstantThrustManeuver(maneuver.getDate().shiftedBy(-0.5 * nominalDuration),
+                                                                      nominalDuration,
+                                                                      maneuver.getThrust(),
+                                                                      maneuver.getIsp(),
+                                                                      maneuver.getDeltaV().normalize());
+                    ((NumericalPropagator) propagator).addForceModel(ctm);
                 } else {
-                    propagators[i].addEventDetector(new ImpulseManeuver(new DateDetector(maneuver.getDate()),
-                                                                        maneuver.getDeltaV(),
-                                                                        inefficiency * maneuver.getIsp()));
+                    propagator.addEventDetector(new ImpulseManeuver(new DateDetector(maneuver.getDate()),
+                                                                    maneuver.getDeltaV(),
+                                                                    inefficiency * maneuver.getIsp()));
                 }
             }
-            propagators[i].setEphemerisMode();
+            propagator.setEphemerisMode();
 
             // perform propagation
-            propagators[i].resetInitialState(originals[index].getRealStartState());
-            updated[index] = originals[index].updateRealEndState(propagators[i].propagate(cycleEnd));
+            updated[index] = originals[index].updateRealEndState(propagator.propagate(cycleEnd));
 
             // retrieve continuous data
-            updated[index] = updated[index].updatePerformedEphemeris(propagators[i].getGeneratedEphemeris());
+            updated[index] = updated[index].updatePerformedEphemeris(propagator.getGeneratedEphemeris());
 
         }
 

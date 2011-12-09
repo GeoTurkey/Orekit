@@ -1,6 +1,6 @@
 # General simulation parameters
 simulation       = {
-    output_base_name = "eclipse-constraint-on";
+    output_base_name = "randomized-force-model-off";
     inertial_frame   = "EME2000";
     earth_frame      = "GMOD";
     start_date       = 2011-02-25T00:00:00.000;
@@ -75,15 +75,15 @@ scenario         = [
             convergence_span           = 5;
         };
         propagator  = {
-            method                 = NUMERICAL;
-            min_step               = 0.01;
-            max_step               = 100.;
-            position_tolerance     = 2;
-            gravity_field_degree   = 4;
-            gravity_field_order    = 4;
-            drag_cross_section     = 40.0;
-            drag_coefficient       = 2;
-            third_body             = [ SUN, MOON ];
+            method                  = NUMERICAL;
+            min_step                = 0.01;
+            max_step                = 100.;
+            position_tolerance      = 2;
+            gravity_field_degree    = 4;
+            gravity_field_order     = 4;
+            drag_cross_section      = 40.0;
+            drag_coefficient        = 2;
+            third_body              = [ SUN, MOON ];
         };
         controls    = [
             {
@@ -168,26 +168,6 @@ scenario         = [
                 dt_convergence            =     1.0;
             }
         ];
-    },
-    {
-        # this test case triggers the eclipse constraint with a
-        # 0.9629 m/s normal maneuver at 2011-2011-02-26T00:10:37.838
-        # with the following low performances, its duration is 1922.172 seconds
-        # the closest eclipse is slightly before the nominal maneuver start,
-        # from 23:10:39.556 to 23:39:37.524, so its duration is 1737.968 seconds.
-        # The maneuver is split in four 480.543 seconds long burns, which
-        # are larger than the required 80%, and it is shifted 2700.586 seconds
-        # earlier.
-        # The first burn finally occurs between 23:21:36.981 and 23:29:37.524,
-        # so it ends exactly 600 seconds before eclipse end.
-        component           = MANEUVER_ECLIPSE_CONSTRAINT;
-        managed_spacecrafts = [ "Metop" ];
-        in_plane            = false;
-        out_of_plane        = true;
-        entry_delay         = 600.0;
-        exit_delay          = 600.0;
-        min_duration_ratio  = 0.8;
-        orbits_separation   = 2;
     },
     {
         component                  = PROPAGATION;

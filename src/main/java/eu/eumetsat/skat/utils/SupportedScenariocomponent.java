@@ -11,7 +11,6 @@ import org.apache.commons.math.optimization.BaseMultivariateRealOptimizer;
 import org.orekit.errors.OrekitException;
 import org.orekit.orbits.OrbitType;
 import org.orekit.orbits.PositionAngle;
-import org.orekit.propagation.Propagator;
 import org.orekit.utils.Constants;
 
 import eu.eumetsat.skat.Skat;
@@ -29,6 +28,7 @@ import eu.eumetsat.skat.scenario.Scenario;
 import eu.eumetsat.skat.scenario.ScenarioComponent;
 import eu.eumetsat.skat.strategies.TunableManeuver;
 import eu.eumetsat.skat.strategies.geo.OneOrTwoBurnsSelector;
+import eu.eumetsat.skat.utils.SupportedPropagator.PropagatorRandomizer;
 
 /** Enumerate for parsing the supported scenario components.
  */
@@ -178,7 +178,7 @@ public enum SupportedScenariocomponent {
             final  SupportedPropagator sp =
                     (SupportedPropagator) parser.getEnumerate(propagatorNode, ParameterKey.COMPONENT_PROPAGATION_METHOD,
                                                               SupportedPropagator.class);
-            final  Propagator propagator =
+            final  PropagatorRandomizer propagator =
                     sp.parse(parser, propagatorNode, skat, spacecraftIndex);
 
 
@@ -341,15 +341,15 @@ public enum SupportedScenariocomponent {
             throws OrekitException, SkatException {
 
             final int[] indices = getIndices(parser, node, skat);
-            final  Propagator[] propagators = new Propagator[indices.length];
-            for (int i = 0; i < propagators.length; ++i) {
+            final  PropagatorRandomizer[] randomizers = new PropagatorRandomizer[indices.length];
+            for (int i = 0; i < randomizers.length; ++i) {
 
-                // build the propagator for the selected spacecraft
+                // build the propagator randomizer for the selected spacecraft
                 final Tree propagatorNode = parser.getValue(node, ParameterKey.COMPONENT_PROPAGATION_PROPAGATOR);
                 final SupportedPropagator sp =
                         (SupportedPropagator) parser.getEnumerate(propagatorNode, ParameterKey.COMPONENT_PROPAGATION_METHOD,
                                                                   SupportedPropagator.class);
-                propagators[i] = sp.parse(parser, propagatorNode, skat, i);
+                randomizers[i] = sp.parse(parser, propagatorNode, skat, i);
 
             }
 
@@ -367,7 +367,7 @@ public enum SupportedScenariocomponent {
             final boolean compensateLongBurn = parser.getBoolean(node, ParameterKey.COMPONENT_PROPAGATION_LONG_BURN_COMPENSATION);
 
             // build the component
-            Propagation propagation = new Propagation(indices, propagators,
+            Propagation propagation = new Propagation(indices, randomizers,
                                                       truncationManeuverName, truncationManeuverDelay,
                                                       compensateLongBurn);
 

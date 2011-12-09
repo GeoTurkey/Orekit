@@ -9,7 +9,6 @@ import org.apache.commons.math.optimization.BaseMultivariateRealOptimizer;
 import org.apache.commons.math.optimization.GoalType;
 import org.apache.commons.math.optimization.RealPointValuePair;
 import org.orekit.errors.OrekitException;
-import org.orekit.errors.PropagationException;
 import org.orekit.forces.maneuvers.ConstantThrustManeuver;
 import org.orekit.forces.maneuvers.ImpulseManeuver;
 import org.orekit.propagation.BoundedPropagator;
@@ -27,6 +26,7 @@ import eu.eumetsat.skat.strategies.ScheduledManeuver;
 import eu.eumetsat.skat.strategies.TunableManeuver;
 import eu.eumetsat.skat.utils.SkatException;
 import eu.eumetsat.skat.utils.SkatMessages;
+import eu.eumetsat.skat.utils.SupportedPropagator.PropagatorRandomizer;
 
 
 /**
@@ -56,8 +56,8 @@ public class ControlLoop implements ScenarioComponent {
     /** Optimizing engine. */
     private final BaseMultivariateRealOptimizer<MultivariateFunction> optimizer;
 
-    /** Orbit propagator. */
-    private final Propagator propagator;
+    /** Orbit propagator randomizer. */
+    private final PropagatorRandomizer randomizer;
 
     /** Cycle duration. */
     private final double cycleDuration;
@@ -101,7 +101,7 @@ public class ControlLoop implements ScenarioComponent {
      * @param tunables tunable maneuvers (for all rolling cycles)
      * @param maxEval maximal number of objective function evaluations
      * @param optimizer optimizing engine
-     * @param propagator orbit propagator
+     * @param randomizer orbit propagator randomizer
      * @param cycleDuration Cycle duration
      * @param rollingCycles number of cycles to use for rolling optimization
      * @param inPlaneEliminationThreshold threshold for eliminating to small in-plane maneuvers
@@ -110,14 +110,14 @@ public class ControlLoop implements ScenarioComponent {
     public ControlLoop(final int spacecraftIndex, final int firstCycle, final int lastCycle,
                        final TunableManeuver[] tunables, final int maxEval,
                        final BaseMultivariateRealOptimizer<MultivariateFunction> optimizer,
-                       final Propagator propagator, final double cycleDuration, final int rollingCycles,
+                       final PropagatorRandomizer randomizer, final double cycleDuration, final int rollingCycles,
                        final double inPlaneEliminationThreshold, final double outOfPlaneEliminationThreshold) {
         this.spacecraftIndex                = spacecraftIndex;
         this.firstCycle                     = firstCycle;
         this.lastCycle                      = lastCycle;
         this.maxEval                        = maxEval;
         this.optimizer                      = optimizer;
-        this.propagator                     = propagator;
+        this.randomizer                     = randomizer;
         this.tunables                       = tunables.clone();
         this.controls                       = new ArrayList<SKControl>();
         this.cycleDuration                  = cycleDuration;
@@ -252,14 +252,15 @@ public class ControlLoop implements ScenarioComponent {
      * @param initialState initial state
      * @param scheduledManeuvers maneuvers that are already scheduled
      * and hence not optimized themselves, may be null
-     * @exception PropagationException if propagation cannot be performed
+     * @exception OrekitException if propagation cannot be performed
      */
     private BoundedPropagator computeReferenceEphemeris(final SpacecraftState initialState,
                                                         final List<ScheduledManeuver> scheduledManeuvers)
-        throws PropagationException {
+        throws OrekitException {
+
         // set up the propagator with the station-keeping elements
         // that are part of the optimization process in the control loop
-        propagator.clearEventsDetectors();
+        final Propagator propagator = randomizer.getPropagator(initialState);
         propagator.setEphemerisMode();
 
         if (scheduledManeuvers != null) {
@@ -283,9 +284,8 @@ public class ControlLoop implements ScenarioComponent {
         }
 
         // perform propagation
-        propagator.resetInitialState(initialState);
         final double propagationDuration = rollingCycles * cycleDuration * Constants.JULIAN_DAY;
-        final AbsoluteDate endDate       = initialState.getDate().shiftedBy(propagationDuration);
+        final AbsoluteDate endDate = initialState.getDate().shiftedBy(propagationDuration);
         propagator.propagate(endDate);
 
         return propagator.getGeneratedEphemeris();
