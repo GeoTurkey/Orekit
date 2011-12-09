@@ -111,37 +111,39 @@ public class Propagation implements ScenarioComponent {
                     randomizers[i].getPropagator(originals[index].getRealStartState());
 
             for (final ScheduledManeuver maneuver : performed) {
-                final Propagator p = maneuver.getTrajectory();
-                final double nominalDuration = maneuver.getDuration(p.propagate(maneuver.getDate()).getMass());
-                final double inefficiency;
-                if (compensateLongBurn && (!maneuver.isInPlane())) {
-                    // this is a long out of plane maneuver, we adapt Isp to reflect
-                    // the fact more mass will be consumed to achieve the same velocity increment
+                if (maneuver.getDeltaV().getNorm() > 1.0e-10) {
+                    final Propagator p = maneuver.getTrajectory();
+                    final double nominalDuration = maneuver.getDuration(p.propagate(maneuver.getDate()).getMass());
+                    final double inefficiency;
+                    if (compensateLongBurn && (!maneuver.isInPlane())) {
+                        // this is a long out of plane maneuver, we adapt Isp to reflect
+                        // the fact more mass will be consumed to achieve the same velocity increment
 
-                    final SpacecraftState startState = p.propagate(maneuver.getDate().shiftedBy(-0.5 * nominalDuration));
-                    final CircularOrbit startOrbit   = (CircularOrbit) (OrbitType.CIRCULAR.convertType(startState.getOrbit()));
-                    final double alphaS              = startOrbit.getAlphaV();
+                        final SpacecraftState startState = p.propagate(maneuver.getDate().shiftedBy(-0.5 * nominalDuration));
+                        final CircularOrbit startOrbit   = (CircularOrbit) (OrbitType.CIRCULAR.convertType(startState.getOrbit()));
+                        final double alphaS              = startOrbit.getAlphaV();
 
-                    final SpacecraftState endState   = p.propagate(maneuver.getDate().shiftedBy(0.5 * nominalDuration));
-                    final CircularOrbit endOrbit     = (CircularOrbit) (OrbitType.CIRCULAR.convertType(endState.getOrbit()));
-                    final double alphaE              = endOrbit.getAlphaV();
+                        final SpacecraftState endState   = p.propagate(maneuver.getDate().shiftedBy(0.5 * nominalDuration));
+                        final CircularOrbit endOrbit     = (CircularOrbit) (OrbitType.CIRCULAR.convertType(endState.getOrbit()));
+                        final double alphaE              = endOrbit.getAlphaV();
 
-                    inefficiency = (FastMath.sin(alphaE) - FastMath.sin(alphaS)) / (alphaE - alphaS);
+                        inefficiency = (FastMath.sin(alphaE) - FastMath.sin(alphaS)) / (alphaE - alphaS);
 
-                } else {
-                    inefficiency = 1.0;
-                }
-                if (propagator instanceof NumericalPropagator) {
-                    final ForceModel ctm = new ConstantThrustManeuver(maneuver.getDate().shiftedBy(-0.5 * nominalDuration),
-                                                                      nominalDuration,
-                                                                      maneuver.getThrust(),
-                                                                      maneuver.getIsp(),
-                                                                      maneuver.getDeltaV().normalize());
-                    ((NumericalPropagator) propagator).addForceModel(ctm);
-                } else {
-                    propagator.addEventDetector(new ImpulseManeuver(new DateDetector(maneuver.getDate()),
-                                                                    maneuver.getDeltaV(),
-                                                                    inefficiency * maneuver.getIsp()));
+                    } else {
+                        inefficiency = 1.0;
+                    }
+                    if (propagator instanceof NumericalPropagator) {
+                        final ForceModel ctm = new ConstantThrustManeuver(maneuver.getDate().shiftedBy(-0.5 * nominalDuration),
+                                                                          nominalDuration,
+                                                                          maneuver.getThrust(),
+                                                                          maneuver.getIsp(),
+                                                                          maneuver.getDeltaV().normalize());
+                        ((NumericalPropagator) propagator).addForceModel(ctm);
+                    } else {
+                        propagator.addEventDetector(new ImpulseManeuver(new DateDetector(maneuver.getDate()),
+                                                                        maneuver.getDeltaV(),
+                                                                        inefficiency * maneuver.getIsp()));
+                    }
                 }
             }
             propagator.setEphemerisMode();
