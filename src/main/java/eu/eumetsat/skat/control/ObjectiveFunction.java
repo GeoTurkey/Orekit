@@ -148,15 +148,11 @@ class ObjectiveFunction implements MultivariateFunction {
 
             // compute sum of squared scaled residuals
             double sum = 0;
-            for (double p : point) {
-                System.out.print(p + " ");
-            }
             for (final SKControl s : controls) {
                 final double residual = s.getAchievedValue() - s.getTargetValue();
                 final double scaledResidual = residual / s.getScalingDivisor();
                 sum += scaledResidual * scaledResidual;
             }
-            System.out.println(" -> " + sum);
 
             // return the sum of squared scaled residuals
             return sum;
