@@ -143,6 +143,15 @@
           </ownedOperation>
         </packagedElement>
         <packagedElement xmi:type="uml:Package" xmi:id="_E21u4N1hEeCO1uZVwIAJVg" name="control" clientDependency="_FKr38N1hEeCO1uZVwIAJVg _FKr38d1hEeCO1uZVwIAJVg _FKr38t1hEeCO1uZVwIAJVg _FKr3891hEeCO1uZVwIAJVg">
+          <ownedComment xmi:id="_4EbqoCPxEeG6mOXI37upWQ" annotatedElement="_E3ufsN1hEeCO1uZVwIAJVg">
+            <body>uses initializeRun</body>
+          </ownedComment>
+          <ownedComment xmi:id="_Bk_a4CPyEeG6mOXI37upWQ" annotatedElement="_YLDHkO3VEeCpOqUFV6jmRA">
+            <body>uses event detector</body>
+          </ownedComment>
+          <ownedComment xmi:id="_R_qdkCPyEeG6mOXI37upWQ" annotatedElement="_E3rcYN1hEeCO1uZVwIAJVg _E3sqgN1hEeCO1uZVwIAJVg _6V7R8O3UEeCpOqUFV6jmRA _uNFyECPxEeG6mOXI37upWQ _NG7pgCPxEeG6mOXI37upWQ">
+            <body>use step handler</body>
+          </ownedComment>
           <packagedElement xmi:type="uml:Class" xmi:id="_E28ckN1hEeCO1uZVwIAJVg" name="ControlLoop" clientDependency="_E_WKoN1hEeCO1uZVwIAJVg">
             <eAnnotations xmi:id="_E28ckd1hEeCO1uZVwIAJVg" source="http://www.topcased.org/documentation">
               <details xmi:id="_E28ckt1hEeCO1uZVwIAJVg" key="documentation" value=" Class representing a control loop between {@link ControlParametersSet control&#xA; parameters} and {@link StationKeepingGoal station-keeping goals}.&#xA; &lt;p>&#xA; This loop is mainly an optimization loop that adjust the control parameters&#xA; in order to minimize an objective function J defined as:&lt;br>&#xA;   J = &amp;sum;(((goal&lt;sub>i&lt;/sub>.{@link StationKeepingGoal#getAchievedValue() getAchievedValue()}&#xA;             - goal&lt;sub>i&lt;/sub>.{@link StationKeepingGoal#getTarget() getTarget()})&#xA;             / scale&lt;sub>i&lt;/sub>)&lt;sup>2&lt;/sup>)&lt;br>&#xA; the sum being computed across all scaled goals.&#xA; &lt;/p>&#xA; @see ControlParametersSet&#xA; @see StationKeepingGoal&#xA; @author Luc Maisonobe&#xA;"/>
@@ -207,22 +216,29 @@
               <eAnnotations xmi:id="_E_hJwd1hEeCO1uZVwIAJVg" source="http://www.topcased.org/documentation">
                 <details xmi:id="_E_hJwt1hEeCO1uZVwIAJVg" key="documentation" value="Add a scaled goal.&#xA; &lt;p>&#xA; The scale of the goal is a scalar parameter with the same physical unit&#xA; as the goal itself (radians, meters, seconds ...). It's purpose is to&#xA; allow mixing goals in a global scalar objective function by computing&lt;br>&#xA;   J = &amp;sum;(((goal&lt;sub>i&lt;/sub>.{@link StationKeepingGoal#getAchievedValue() getAchievedValue()}&#xA;             - goal&lt;sub>i&lt;/sub>.{@link StationKeepingGoal#getTarget() getTarget()})&#xA;             / scale&lt;sub>i&lt;/sub>)&lt;sup>2&lt;/sup>)&lt;br>&#xA; the sum being computed across all scaled goals.&#xA; &lt;/p>&#xA; @param scale scale of the goal&#xA; @param goal goal to add&#xA; "/>
               </eAnnotations>
-              <ownedParameter xmi:id="_E_hJw91hEeCO1uZVwIAJVg" name="scale" type="_E_Z1BN1hEeCO1uZVwIAJVg"/>
-              <ownedParameter xmi:id="_E_hJxN1hEeCO1uZVwIAJVg" name="goal" type="_E3KfAN1hEeCO1uZVwIAJVg"/>
+              <ownedParameter xmi:id="_4tsuQCPqEeG6mOXI37upWQ" name="controlLaw" visibility="public" type="_E3KfAN1hEeCO1uZVwIAJVg">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_4tsuQSPqEeG6mOXI37upWQ" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_4tsuQiPqEeG6mOXI37upWQ" value="1"/>
+              </ownedParameter>
             </ownedOperation>
-            <ownedOperation xmi:id="_E_n3cN1hEeCO1uZVwIAJVg" name="addTunableManeuver" visibility="public" method="_E_n3dN1hEeCO1uZVwIAJVg">
+            <ownedOperation xmi:id="_E_n3cN1hEeCO1uZVwIAJVg" name="setCycleEnd" visibility="public" method="_E_n3dN1hEeCO1uZVwIAJVg">
               <eAnnotations xmi:id="_E_n3cd1hEeCO1uZVwIAJVg" source="http://www.topcased.org/documentation">
                 <details xmi:id="_E_n3ct1hEeCO1uZVwIAJVg" key="documentation" value="Add the tunable parameters from a control parameters set.&#xA; @param parametersSet control parameters set to use&#xA; "/>
               </eAnnotations>
-              <ownedParameter xmi:id="_E_n3c91hEeCO1uZVwIAJVg" name="tunable" type="_E3lVwN1hEeCO1uZVwIAJVg"/>
+              <ownedParameter xmi:id="_GxeLACPrEeG6mOXI37upWQ" name="cycleEnd" visibility="public" type="_E9bfEN1hEeCO1uZVwIAJVg">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_GxeLASPrEeG6mOXI37upWQ" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_GxeLAiPrEeG6mOXI37upWQ" value="1"/>
+              </ownedParameter>
             </ownedOperation>
             <ownedOperation xmi:id="_E_xocN1hEeCO1uZVwIAJVg" name="updateStates" visibility="public" method="_E_xodt1hEeCO1uZVwIAJVg">
               <eAnnotations xmi:id="_E_xocd1hEeCO1uZVwIAJVg" source="http://www.topcased.org/documentation">
                 <details xmi:id="_E_xoct1hEeCO1uZVwIAJVg" key="documentation" value="{@inheritDoc}&#xA; &lt;p>&#xA; Optimize the control parameters to achieve the goals.&#xA; &lt;/p>&#xA; &lt;p>&#xA; At the end of the optimization the {@link&#xA; #addControlParametersSet(ControlParametersSet) control parameters} values&#xA; will be set to the optimal values that best fulfill the {@link&#xA; #addGoal(StationKeepingGoal) station keeping goals}.&#xA; &lt;/p>&#xA; "/>
               </eAnnotations>
               <ownedParameter xmi:id="_E_xoc91hEeCO1uZVwIAJVg" name="originals" type="_E3iScN1hEeCO1uZVwIAJVg"/>
-              <ownedParameter xmi:id="_E_xodN1hEeCO1uZVwIAJVg" name="target" type="_E9bfEN1hEeCO1uZVwIAJVg"/>
-              <ownedParameter xmi:id="_E_xodd1hEeCO1uZVwIAJVg" type="_E3iScN1hEeCO1uZVwIAJVg" direction="return"/>
+              <ownedParameter xmi:id="_WB62QCPrEeG6mOXI37upWQ" visibility="public" type="_E3iScN1hEeCO1uZVwIAJVg" direction="return">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_WB62QSPrEeG6mOXI37upWQ" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_WB62QiPrEeG6mOXI37upWQ" value="1"/>
+              </ownedParameter>
             </ownedOperation>
           </packagedElement>
           <packagedElement xmi:type="uml:Class" xmi:id="_E3CjMN1hEeCO1uZVwIAJVg" name="SKParameter" clientDependency="_2alyMOBJEeC0rbAAcgLFmg" isAbstract="true">
@@ -259,6 +275,12 @@
                 <details xmi:id="_E_5kQt1hEeCO1uZVwIAJVg" key="documentation" value="Set the tunable flag.&#xA; @param tunable if true, the parameter becomes tunable&#xA; "/>
               </eAnnotations>
               <ownedParameter xmi:id="_E_5kQ91hEeCO1uZVwIAJVg" name="tunable" type="_E_3vEt1hEeCO1uZVwIAJVg"/>
+            </ownedOperation>
+            <ownedOperation xmi:id="_dFe8cCPnEeGRbZh-MY9luw" name="getConvergence">
+              <ownedParameter xmi:id="_gvkBgCPnEeGRbZh-MY9luw" visibility="public" type="_26xTseRSEeCC7oKz25Mm0Q" direction="return">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_gvkBgSPnEeGRbZh-MY9luw" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_gvkBgiPnEeGRbZh-MY9luw" value="1"/>
+              </ownedParameter>
             </ownedOperation>
           </packagedElement>
           <packagedElement xmi:type="uml:Usage" xmi:id="_FKr38N1hEeCO1uZVwIAJVg" supplier="_E_ZN8N1hEeCO1uZVwIAJVg" client="_E21u4N1hEeCO1uZVwIAJVg"/>
@@ -298,18 +320,13 @@
             <ownedOperation xmi:id="_7EghwN7XEeCkStxwmGS-Mw" name="isConstrained">
               <ownedParameter xmi:id="_8zkEkN7XEeCkStxwmGS-Mw" name="return" type="_E_3vEt1hEeCO1uZVwIAJVg" direction="return"/>
             </ownedOperation>
-            <ownedOperation xmi:id="_H-9rkfAnEeCkVpw_tSg2-A" name="getEventDetector">
-              <ownedParameter xmi:id="_KO9YQPAnEeCkVpw_tSg2-A" name="return" type="_u80KUOBPEeCxMfzvkTl0-w" direction="return"/>
-            </ownedOperation>
-            <ownedOperation xmi:id="_NBGvwPAnEeCkVpw_tSg2-A" name="getStepHandler">
-              <ownedParameter xmi:id="_PEotwPAnEeCkVpw_tSg2-A" name="return" type="_NH0FIOBXEeCxMfzvkTl0-w" direction="return"/>
-            </ownedOperation>
           </packagedElement>
           <packagedElement xmi:type="uml:Interface" xmi:id="_E3KfAN1hEeCO1uZVwIAJVg" name="SKControl">
             <eAnnotations xmi:id="_E3KfAd1hEeCO1uZVwIAJVg" source="http://www.topcased.org/documentation">
               <details xmi:id="_E3KfAt1hEeCO1uZVwIAJVg" key="documentation" value=" Interface representing a station-keeping goal that should be achieved.&#xA; &lt;p>&#xA; Station-keeping goals can be for example to ensure that spacecraft&#xA; remains within its allowed slot with as large margins as possible.&#xA; &lt;/p>&#xA; @see ControlParametersSet&#xA; @author Luc Maisonobe&#xA;"/>
             </eAnnotations>
             <generalization xmi:id="_LUUi0N7ZEeCkStxwmGS-Mw" general="_9b7-EN7VEeCzQIF1TbkANw"/>
+            <generalization xmi:id="_r0yCcCPnEeGRbZh-MY9luw" general="_9b7-EN7VEeCzQIF1TbkANw"/>
             <ownedOperation xmi:id="_E_8AgN1hEeCO1uZVwIAJVg" name="getName">
               <eAnnotations xmi:id="_E_8nkN1hEeCO1uZVwIAJVg" source="http://www.topcased.org/documentation">
                 <details xmi:id="_E_8nkd1hEeCO1uZVwIAJVg" key="documentation" value="Get the name of the goal.&#xA; @return name of the goal&#xA; "/>
@@ -328,16 +345,70 @@
               </eAnnotations>
               <ownedParameter xmi:id="_E_9Oo91hEeCO1uZVwIAJVg" type="_E_Z1BN1hEeCO1uZVwIAJVg" direction="return"/>
             </ownedOperation>
-          </packagedElement>
-          <packagedElement xmi:type="uml:Association" xmi:id="_tgILEOBpEeCdstVTjind5Q" name="A_&lt;controlLoop>_&lt;bOBYQAOptimizer>" memberEnd="_tgILEeBpEeCdstVTjind5Q _tgILFOBpEeCdstVTjind5Q">
-            <ownedEnd xmi:id="_tgILEeBpEeCdstVTjind5Q" name="controlLoop" type="_E28ckN1hEeCO1uZVwIAJVg" association="_tgILEOBpEeCdstVTjind5Q">
-              <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_tgILEuBpEeCdstVTjind5Q" value="1"/>
-              <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_tgILE-BpEeCdstVTjind5Q" value="1"/>
-            </ownedEnd>
-            <ownedEnd xmi:id="_tgILFOBpEeCdstVTjind5Q" name="bOBYQAOptimizer" visibility="protected" type="_krYX8OBpEeCdstVTjind5Q" aggregation="shared" association="_tgILEOBpEeCdstVTjind5Q">
-              <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_tgILFeBpEeCdstVTjind5Q" value="1"/>
-              <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_tgILFuBpEeCdstVTjind5Q" value="1"/>
-            </ownedEnd>
+            <ownedOperation xmi:id="_NBGvwPAnEeCkVpw_tSg2-A" name="getStepHandler">
+              <ownedParameter xmi:id="_PEotwPAnEeCkVpw_tSg2-A" name="return" type="_NH0FIOBXEeCxMfzvkTl0-w" direction="return"/>
+            </ownedOperation>
+            <ownedOperation xmi:id="_H-9rkfAnEeCkVpw_tSg2-A" name="getEventDetector">
+              <ownedParameter xmi:id="_KO9YQPAnEeCkVpw_tSg2-A" name="return" type="_u80KUOBPEeCxMfzvkTl0-w" direction="return"/>
+            </ownedOperation>
+            <ownedOperation xmi:id="_0blgMCPnEeGRbZh-MY9luw" name="getScalingDivisor">
+              <ownedParameter xmi:id="_4A5aACPnEeGRbZh-MY9luw" visibility="public" type="_26xTseRSEeCC7oKz25Mm0Q" direction="return">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_4A6BECPnEeGRbZh-MY9luw" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_4A6BESPnEeGRbZh-MY9luw" value="1"/>
+              </ownedParameter>
+            </ownedOperation>
+            <ownedOperation xmi:id="_8AxI4CPnEeGRbZh-MY9luw" name="limitsExceeded">
+              <ownedParameter xmi:id="_-H9e4CPnEeGRbZh-MY9luw" visibility="public" type="_-V404CPhEeGlStagX1ZcuA" direction="return">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_-H9e4SPnEeGRbZh-MY9luw" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_-H9e4iPnEeGRbZh-MY9luw" value="1"/>
+              </ownedParameter>
+            </ownedOperation>
+            <ownedOperation xmi:id="_DAZNcCPoEeGRbZh-MY9luw" name="getControlledSpacecraftName">
+              <ownedParameter xmi:id="_KLydICPoEeGRbZh-MY9luw" visibility="public" type="_E9voId1hEeCO1uZVwIAJVg" direction="return">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_KLydISPoEeGRbZh-MY9luw" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_KLydIiPoEeGRbZh-MY9luw" value="1"/>
+              </ownedParameter>
+            </ownedOperation>
+            <ownedOperation xmi:id="_Dwi4ACPoEeGRbZh-MY9luw" name="getControlledSpacecraftIndex" visibility="public">
+              <ownedParameter xmi:id="_Wtwv8CPoEeGRbZh-MY9luw" visibility="public" type="_buJvwPXJEeCTIMie9DR2WQ" direction="return">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_Wtwv8SPoEeGRbZh-MY9luw" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_Wtwv8iPoEeGRbZh-MY9luw" value="1"/>
+              </ownedParameter>
+            </ownedOperation>
+            <ownedOperation xmi:id="_EfXs4CPoEeGRbZh-MY9luw" name="getReferenceSpacecraftName">
+              <ownedParameter xmi:id="_S8bzYCPoEeGRbZh-MY9luw" visibility="public" type="_E9voId1hEeCO1uZVwIAJVg" direction="return">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_S8bzYSPoEeGRbZh-MY9luw" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_S8bzYiPoEeGRbZh-MY9luw" value="1"/>
+              </ownedParameter>
+            </ownedOperation>
+            <ownedOperation xmi:id="_FO66gCPoEeGRbZh-MY9luw" name="getReferenceSpacecraftIndex">
+              <ownedParameter xmi:id="_VicMUCPoEeGRbZh-MY9luw" visibility="public" type="_buJvwPXJEeCTIMie9DR2WQ" direction="return">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_VicMUSPoEeGRbZh-MY9luw" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_VicMUiPoEeGRbZh-MY9luw" value="1"/>
+              </ownedParameter>
+            </ownedOperation>
+            <ownedOperation xmi:id="_pj1eECPoEeGRbZh-MY9luw" name="initializeRun">
+              <ownedParameter xmi:id="_odLtICPqEeG6mOXI37upWQ" name="maneuvers" visibility="public" type="_GNPugCPpEeGRbZh-MY9luw">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_odLtISPqEeG6mOXI37upWQ" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_odLtIiPqEeG6mOXI37upWQ" value="1"/>
+              </ownedParameter>
+              <ownedParameter xmi:id="_FLSFwCPqEeGRbZh-MY9luw" name="propagator" visibility="public" type="_E9Zp491hEeCO1uZVwIAJVg">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_FLSFwSPqEeGRbZh-MY9luw" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_FLSFwiPqEeGRbZh-MY9luw" value="1"/>
+              </ownedParameter>
+              <ownedParameter xmi:id="_24hAMCPoEeGRbZh-MY9luw" name="start" visibility="public" type="_E9bfEN1hEeCO1uZVwIAJVg">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_24hAMSPoEeGRbZh-MY9luw" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_24hAMiPoEeGRbZh-MY9luw" value="1"/>
+              </ownedParameter>
+              <ownedParameter xmi:id="_24iOUCPoEeGRbZh-MY9luw" name="end" visibility="public" type="_E9bfEN1hEeCO1uZVwIAJVg">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_24iOUSPoEeGRbZh-MY9luw" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_24iOUiPoEeGRbZh-MY9luw" value="1"/>
+              </ownedParameter>
+              <ownedParameter xmi:id="_24jccCPoEeGRbZh-MY9luw" name="rollingCycles" visibility="public" type="_buJvwPXJEeCTIMie9DR2WQ">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_24jccSPoEeGRbZh-MY9luw" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_24jcciPoEeGRbZh-MY9luw" value="1"/>
+              </ownedParameter>
+            </ownedOperation>
           </packagedElement>
           <packagedElement xmi:type="uml:Collaboration" xmi:id="_fo_msOBqEeCdstVTjind5Q">
             <ownedBehavior xmi:type="uml:Interaction" xmi:id="_fo_mseBqEeCdstVTjind5Q">
@@ -526,6 +597,16 @@
           <packagedElement xmi:type="uml:CallEvent" xmi:id="_XFgckRzMEeGxYPlzdkTvMQ" name="CallEvent10"/>
           <packagedElement xmi:type="uml:CallEvent" xmi:id="_u_IkIBzMEeGxYPlzdkTvMQ" name="CallEvent11"/>
           <packagedElement xmi:type="uml:CallEvent" xmi:id="_36Fs8BzMEeGxYPlzdkTvMQ" name="CallEvent14"/>
+          <packagedElement xmi:type="uml:Association" xmi:id="_0rduQCPyEeG6mOXI37upWQ" name="A_&lt;controlLoop>_&lt;baseMultivariateRealOptimizer>" memberEnd="_0rduQSPyEeG6mOXI37upWQ _0rduRCPyEeG6mOXI37upWQ">
+            <ownedEnd xmi:id="_0rduQSPyEeG6mOXI37upWQ" name="controlLoop" type="_E28ckN1hEeCO1uZVwIAJVg" association="_0rduQCPyEeG6mOXI37upWQ">
+              <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_0rduQiPyEeG6mOXI37upWQ" value="1"/>
+              <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_0rduQyPyEeG6mOXI37upWQ" value="1"/>
+            </ownedEnd>
+            <ownedEnd xmi:id="_0rduRCPyEeG6mOXI37upWQ" name="baseMultivariateRealOptimizer" type="_BbN18OBpEeCdstVTjind5Q" aggregation="composite" association="_0rduQCPyEeG6mOXI37upWQ">
+              <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_0rduRSPyEeG6mOXI37upWQ" value="1"/>
+              <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_0rduRiPyEeG6mOXI37upWQ" value="1"/>
+            </ownedEnd>
+          </packagedElement>
         </packagedElement>
         <packagedElement xmi:type="uml:Package" xmi:id="_E3eBAN1hEeCO1uZVwIAJVg" name="scenario" clientDependency="_FKsfAt1hEeCO1uZVwIAJVg _FKsfA91hEeCO1uZVwIAJVg _FKsfBN1hEeCO1uZVwIAJVg _FKsfBd1hEeCO1uZVwIAJVg _FKsfBt1hEeCO1uZVwIAJVg">
           <ownedComment xmi:id="_5lGl0N1pEeCO1uZVwIAJVg" annotatedElement="_E3iScN1hEeCO1uZVwIAJVg">
@@ -544,8 +625,10 @@ It is updated by the updateStates methods of all scenario components.</body>
                 <details xmi:id="_FCMqUt1hEeCO1uZVwIAJVg" key="documentation" value="Apply the scenario component.&#xA; @param original original state of the scenario&#xA; @param target target date for end of simulation&#xA; @return achieved state&#xA; @exception OrekitException if simulation cannot be performed&#xA; "/>
               </eAnnotations>
               <ownedParameter xmi:id="_FCMqU91hEeCO1uZVwIAJVg" name="originals" type="_E3iScN1hEeCO1uZVwIAJVg"/>
-              <ownedParameter xmi:id="_FCMqVN1hEeCO1uZVwIAJVg" name="target" type="_E9bfEN1hEeCO1uZVwIAJVg"/>
-              <ownedParameter xmi:id="_FCMqVd1hEeCO1uZVwIAJVg" type="_E3iScN1hEeCO1uZVwIAJVg" direction="return"/>
+              <ownedParameter xmi:id="_SgBc0CPrEeG6mOXI37upWQ" visibility="public" type="_E3iScN1hEeCO1uZVwIAJVg" direction="return">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_SgBc0SPrEeG6mOXI37upWQ" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_SgBc0iPrEeG6mOXI37upWQ" value="1"/>
+              </ownedParameter>
             </ownedOperation>
             <ownedOperation xmi:id="_pVlLkBzVEeGxYPlzdkTvMQ" name="setCycleEnd">
               <ownedParameter xmi:id="_szjHQBzVEeGxYPlzdkTvMQ" name="cycleEnd" type="_E9bfEN1hEeCO1uZVwIAJVg"/>
@@ -621,23 +704,32 @@ It is updated by the updateStates methods of all scenario components.</body>
             <elementImport xmi:id="_FCflQN1hEeCO1uZVwIAJVg" visibility="private" importedElement="_E_ZN891hEeCO1uZVwIAJVg"/>
             <elementImport xmi:id="_FCgMUt1hEeCO1uZVwIAJVg" visibility="private" importedElement="_sB1yAPApEeCkVpw_tSg2-A"/>
             <elementImport xmi:id="_FCgMU91hEeCO1uZVwIAJVg" visibility="private" importedElement="_E9aQ8d1hEeCO1uZVwIAJVg"/>
-            <ownedOperation xmi:id="_FCiBgN1hEeCO1uZVwIAJVg" name="getRealStartState" visibility="public">
+            <ownedOperation xmi:id="_FCiBgN1hEeCO1uZVwIAJVg" name="getRealState" visibility="public">
               <eAnnotations xmi:id="_FCiBgd1hEeCO1uZVwIAJVg" source="http://www.topcased.org/documentation">
                 <details xmi:id="_FCiBgt1hEeCO1uZVwIAJVg" key="documentation" value="Get the real state.&#xA; @return real state&#xA; "/>
               </eAnnotations>
-              <ownedParameter xmi:id="_FCiBg91hEeCO1uZVwIAJVg" type="_E9aQ8d1hEeCO1uZVwIAJVg" direction="return"/>
+              <ownedParameter xmi:id="_RyVZ8CP3EeG6mOXI37upWQ" visibility="public" type="_E9aQ8d1hEeCO1uZVwIAJVg" direction="return">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_RyWBACP3EeG6mOXI37upWQ" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_RyWBASP3EeG6mOXI37upWQ" value="1"/>
+              </ownedParameter>
             </ownedOperation>
-            <ownedOperation xmi:id="_FCj2sN1hEeCO1uZVwIAJVg" name="getEstimatedStartState" visibility="public">
+            <ownedOperation xmi:id="_FCj2sN1hEeCO1uZVwIAJVg" name="getEstimatedState" visibility="public">
               <eAnnotations xmi:id="_FCj2sd1hEeCO1uZVwIAJVg" source="http://www.topcased.org/documentation">
                 <details xmi:id="_FCj2st1hEeCO1uZVwIAJVg" key="documentation" value="Get the estimated state.&#xA; @return estimated state&#xA; "/>
               </eAnnotations>
-              <ownedParameter xmi:id="_FCj2s91hEeCO1uZVwIAJVg" type="_E9aQ8d1hEeCO1uZVwIAJVg" direction="return"/>
+              <ownedParameter xmi:id="_Sv5OYCP3EeG6mOXI37upWQ" visibility="public" type="_E9aQ8d1hEeCO1uZVwIAJVg" direction="return">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_Sv5OYSP3EeG6mOXI37upWQ" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_Sv5OYiP3EeG6mOXI37upWQ" value="1"/>
+              </ownedParameter>
             </ownedOperation>
             <ownedOperation xmi:id="_7jm7cOA-EeC0rbAAcgLFmg" name="getManeuvers">
               <ownedParameter xmi:id="_95LrsOA-EeC0rbAAcgLFmg" name="return" type="_E_ZN891hEeCO1uZVwIAJVg" direction="return"/>
             </ownedOperation>
-            <ownedOperation xmi:id="_g_CecfS0EeCwdKSYhKL5Dg" name="getCycleNumber">
-              <ownedParameter xmi:id="_i9_ecPS0EeCwdKSYhKL5Dg" name="return" type="_FDK6sN1hEeCO1uZVwIAJVg" direction="return"/>
+            <ownedOperation xmi:id="_g_CecfS0EeCwdKSYhKL5Dg" name="getCyclesNumber">
+              <ownedParameter xmi:id="_JZYyACP3EeG6mOXI37upWQ" visibility="public" type="_buJvwPXJEeCTIMie9DR2WQ" direction="return">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_JZYyASP3EeG6mOXI37upWQ" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_JZYyAiP3EeG6mOXI37upWQ" value="1"/>
+              </ownedParameter>
             </ownedOperation>
             <ownedOperation xmi:id="_zir0QPS-EeCwdKSYhKL5Dg" name="getInPlaneManeuvers">
               <ownedParameter xmi:id="_6xoHMPS-EeCwdKSYhKL5Dg" name="return" type="_FDK6sN1hEeCO1uZVwIAJVg" direction="return"/>
@@ -666,8 +758,17 @@ It is updated by the updateStates methods of all scenario components.</body>
             <ownedOperation xmi:id="_ST_xMBzTEeGxYPlzdkTvMQ" name="getName">
               <ownedParameter xmi:id="_T7DOkBzTEeGxYPlzdkTvMQ" name="return" type="_E9voId1hEeCO1uZVwIAJVg" direction="return"/>
             </ownedOperation>
-            <ownedOperation xmi:id="_QyxkIBzVEeGxYPlzdkTvMQ" name="getRealEndState">
-              <ownedParameter xmi:id="_TNbBoBzVEeGxYPlzdkTvMQ" name="return" type="_E9aQ8d1hEeCO1uZVwIAJVg" direction="return"/>
+            <ownedOperation xmi:id="_59hg8CP2EeG6mOXI37upWQ" name="getEarth">
+              <ownedParameter xmi:id="__xhf4CP2EeG6mOXI37upWQ" visibility="public" type="_E9S8Md1hEeCO1uZVwIAJVg" direction="return">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="__xhf4SP2EeG6mOXI37upWQ" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="__xhf4iP2EeG6mOXI37upWQ" value="1"/>
+              </ownedParameter>
+            </ownedOperation>
+            <ownedOperation xmi:id="_7Y7H8CP2EeG6mOXI37upWQ" name="getInertialFrame">
+              <ownedParameter xmi:id="_FBmSYCP3EeG6mOXI37upWQ" visibility="public" type="_E9XNod1hEeCO1uZVwIAJVg" direction="return">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_FBmSYSP3EeG6mOXI37upWQ" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_FBmSYiP3EeG6mOXI37upWQ" value="1"/>
+              </ownedParameter>
             </ownedOperation>
           </packagedElement>
           <packagedElement xmi:type="uml:Usage" xmi:id="_FKsfAt1hEeCO1uZVwIAJVg" supplier="_E9UxYN1hEeCO1uZVwIAJVg" client="_E3eBAN1hEeCO1uZVwIAJVg"/>
@@ -962,6 +1063,25 @@ It is updated by the updateStates methods of all scenario components.</body>
               <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_9v9WVvXLEeCTIMie9DR2WQ"/>
             </ownedEnd>
           </packagedElement>
+          <packagedElement xmi:type="uml:Class" xmi:id="_JEu4ACP0EeG6mOXI37upWQ" name="ManeuverCrossCoupling" clientDependency="_i_yEwCP0EeG6mOXI37upWQ">
+            <interfaceRealization xmi:id="_i_yEwCP0EeG6mOXI37upWQ" name="InterfaceRealization1" supplier="_E3eoEN1hEeCO1uZVwIAJVg" client="_JEu4ACP0EeG6mOXI37upWQ" contract="_E3eoEN1hEeCO1uZVwIAJVg"/>
+          </packagedElement>
+          <packagedElement xmi:type="uml:Class" xmi:id="_M_v8ECP0EeG6mOXI37upWQ" name="ManeuverEclipseConstraint" clientDependency="_jsfZwCP0EeG6mOXI37upWQ">
+            <interfaceRealization xmi:id="_jsfZwCP0EeG6mOXI37upWQ" name="InterfaceRealization1" supplier="_E3eoEN1hEeCO1uZVwIAJVg" client="_M_v8ECP0EeG6mOXI37upWQ" contract="_E3eoEN1hEeCO1uZVwIAJVg"/>
+          </packagedElement>
+          <packagedElement xmi:type="uml:Class" xmi:id="_RILxECP0EeG6mOXI37upWQ" name="MissedManeuver" clientDependency="_kPA4ACP0EeG6mOXI37upWQ">
+            <interfaceRealization xmi:id="_kPA4ACP0EeG6mOXI37upWQ" name="InterfaceRealization1" supplier="_E3eoEN1hEeCO1uZVwIAJVg" client="_RILxECP0EeG6mOXI37upWQ" contract="_E3eoEN1hEeCO1uZVwIAJVg"/>
+          </packagedElement>
+          <packagedElement xmi:type="uml:Association" xmi:id="_9fSpcCP0EeG6mOXI37upWQ" name="A_&lt;randomGenerator>_&lt;missedManeuver>" memberEnd="_9fSpcSP0EeG6mOXI37upWQ _9fTQgCP0EeG6mOXI37upWQ">
+            <ownedEnd xmi:id="_9fSpcSP0EeG6mOXI37upWQ" name="randomGenerator" type="_FEMOYt1hEeCO1uZVwIAJVg" aggregation="shared" association="_9fSpcCP0EeG6mOXI37upWQ">
+              <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_9fSpciP0EeG6mOXI37upWQ" value="1"/>
+              <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_9fSpcyP0EeG6mOXI37upWQ" value="1"/>
+            </ownedEnd>
+            <ownedEnd xmi:id="_9fTQgCP0EeG6mOXI37upWQ" name="missedManeuver" type="_RILxECP0EeG6mOXI37upWQ" association="_9fSpcCP0EeG6mOXI37upWQ">
+              <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_9fTQgSP0EeG6mOXI37upWQ" value="1"/>
+              <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_9fTQgiP0EeG6mOXI37upWQ" value="1"/>
+            </ownedEnd>
+          </packagedElement>
         </packagedElement>
         <packagedElement xmi:type="uml:Package" xmi:id="_E3pAIN1hEeCO1uZVwIAJVg" name="strategies">
           <ownedComment xmi:id="_yPuoYOBWEeCxMfzvkTl0-w" annotatedElement="_Pa2DsN1iEeCO1uZVwIAJVg">
@@ -990,7 +1110,34 @@ It is updated by the updateStates methods of all scenario components.</body>
               <ownedParameter xmi:id="_FD4sY91hEeCO1uZVwIAJVg" type="_E_ZN891hEeCO1uZVwIAJVg" direction="return"/>
             </ownedOperation>
             <ownedOperation xmi:id="_mVuZMPAoEeCkVpw_tSg2-A" name="getManeuver">
-              <ownedParameter xmi:id="_5KBlsPAoEeCkVpw_tSg2-A" name="return" type="_sB1yAPApEeCkVpw_tSg2-A" direction="return"/>
+              <ownedParameter xmi:id="_dAjJYCP4EeG6mOXI37upWQ" visibility="public" type="_dAgtISP4EeG6mOXI37upWQ" direction="return">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_dAjJYSP4EeG6mOXI37upWQ" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_dAjJYiP4EeG6mOXI37upWQ" value="1"/>
+              </ownedParameter>
+            </ownedOperation>
+            <ownedOperation xmi:id="_wZcQsCP4EeG6mOXI37upWQ" name="updateThrust">
+              <ownedParameter xmi:id="_1bHa0CP4EeG6mOXI37upWQ" name="consumedMass" visibility="public" type="_26xTseRSEeCC7oKz25Mm0Q">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_1bHa0SP4EeG6mOXI37upWQ" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_1bHa0iP4EeG6mOXI37upWQ" value="1"/>
+              </ownedParameter>
+            </ownedOperation>
+            <ownedOperation xmi:id="_xWyCsCP4EeG6mOXI37upWQ" name="updateIsp">
+              <ownedParameter xmi:id="_7IWDYCP4EeG6mOXI37upWQ" name="consumedMass" visibility="public" type="_26xTseRSEeCC7oKz25Mm0Q">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_7IWqcCP4EeG6mOXI37upWQ" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_7IWqcSP4EeG6mOXI37upWQ" value="1"/>
+              </ownedParameter>
+            </ownedOperation>
+            <ownedOperation xmi:id="_yCbnwCP4EeG6mOXI37upWQ" name="getDV">
+              <ownedParameter xmi:id="__TnJ8CP4EeG6mOXI37upWQ" visibility="public" type="_26xTseRSEeCC7oKz25Mm0Q" direction="return">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="__TnJ8SP4EeG6mOXI37upWQ" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="__TnJ8iP4EeG6mOXI37upWQ" value="1"/>
+              </ownedParameter>
+            </ownedOperation>
+            <ownedOperation xmi:id="_ysi7wCP4EeG6mOXI37upWQ" name="getDate">
+              <ownedParameter xmi:id="_DwsZQCP5EeG6mOXI37upWQ" visibility="public" type="_E9bfEN1hEeCO1uZVwIAJVg" direction="return">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_DwsZQSP5EeG6mOXI37upWQ" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_DwsZQiP5EeG6mOXI37upWQ" value="1"/>
+              </ownedParameter>
             </ownedOperation>
           </packagedElement>
           <packagedElement xmi:type="uml:Association" xmi:id="_o_bJYOBQEeCxMfzvkTl0-w" name="A_&lt;tunableManeuver>_&lt;impulseManeuver>" memberEnd="_o_bwcOBQEeCxMfzvkTl0-w _o_bwc-BQEeCxMfzvkTl0-w">
@@ -1004,7 +1151,7 @@ It is updated by the updateStates methods of all scenario components.</body>
             </ownedEnd>
           </packagedElement>
           <packagedElement xmi:type="uml:Package" xmi:id="_E3pAId1hEeCO1uZVwIAJVg" name="geo" clientDependency="_FKttIN1hEeCO1uZVwIAJVg _FKttId1hEeCO1uZVwIAJVg _FKttIt1hEeCO1uZVwIAJVg _FKttI91hEeCO1uZVwIAJVg _FKttJN1hEeCO1uZVwIAJVg _FKttJd1hEeCO1uZVwIAJVg _FKttJt1hEeCO1uZVwIAJVg _FKttJ91hEeCO1uZVwIAJVg">
-            <packagedElement xmi:type="uml:Class" xmi:id="_E3rcYN1hEeCO1uZVwIAJVg" name="LongitudeSlotMargins" clientDependency="_FE4K4N1hEeCO1uZVwIAJVg _eAAOcOBQEeCxMfzvkTl0-w">
+            <packagedElement xmi:type="uml:Class" xmi:id="_E3rcYN1hEeCO1uZVwIAJVg" name="CenteredLongitude" clientDependency="_FE4K4N1hEeCO1uZVwIAJVg _eAAOcOBQEeCxMfzvkTl0-w">
               <eAnnotations xmi:id="_E3rcYd1hEeCO1uZVwIAJVg" source="http://www.topcased.org/documentation">
                 <details xmi:id="_E3rcYt1hEeCO1uZVwIAJVg" key="documentation" value=" Station-keeping goal attempting to balance East-West margins&#xA; throughout a cycle.&#xA; &lt;p>&#xA; This goal value is:&#xA; &lt;pre>&#xA;   (l&lt;sub>E&lt;/sub> - max(l(t))) - (min(l(t)) - l&lt;sub>W&lt;/sub>)&#xA; &lt;/pre>&#xA; where l&lt;sub>E&lt;/sub> is the East boundary of the longitude slot,&#xA; l&lt;sub>W&lt;/sub> is the West boundary of the longitude slot, l(t) is&#xA; the spacecraft longitude at time t and the min anx max functions&#xA; are evaluated for the complete cycle duration.&#xA; &lt;/p>&#xA; &lt;p>&#xA; The previous definition implies that setting the target of this goal&#xA; to zero attempts to have a longitude excursion covered by the satellite&#xA; during the station-keeping cycle that is well balanced near the center&#xA; of the longitude slot, the same margin being available on both sides.&#xA; Setting the target of this goal to a non-zero value attempts to have&#xA; a shifted longitude excursion, the shift being towards West if the target&#xA; value is positive, and towards East otherwise.&#xA; &lt;/p>&#xA; @author Luc Maisonobe&#xA;"/>
               </eAnnotations>
@@ -1220,8 +1367,11 @@ It is updated by the updateStates methods of all scenario components.</body>
             <packagedElement xmi:type="uml:Usage" xmi:id="_FKttJd1hEeCO1uZVwIAJVg" supplier="_E9a4Ad1hEeCO1uZVwIAJVg" client="_E3pAId1hEeCO1uZVwIAJVg"/>
             <packagedElement xmi:type="uml:Usage" xmi:id="_FKttJt1hEeCO1uZVwIAJVg" supplier="_E9a4BN1hEeCO1uZVwIAJVg" client="_E3pAId1hEeCO1uZVwIAJVg"/>
             <packagedElement xmi:type="uml:Usage" xmi:id="_FKttJ91hEeCO1uZVwIAJVg" supplier="_E21u4N1hEeCO1uZVwIAJVg" client="_E3pAId1hEeCO1uZVwIAJVg"/>
-            <packagedElement xmi:type="uml:Class" xmi:id="_6V7R8O3UEeCpOqUFV6jmRA" name="InclinationControlBox" clientDependency="_AcCUkO3VEeCpOqUFV6jmRA">
+            <packagedElement xmi:type="uml:Class" xmi:id="_6V7R8O3UEeCpOqUFV6jmRA" name="InclinationVector" clientDependency="_AcCUkO3VEeCpOqUFV6jmRA">
               <interfaceRealization xmi:id="_AcCUkO3VEeCpOqUFV6jmRA" name="InterfaceRealization1" supplier="_E3KfAN1hEeCO1uZVwIAJVg" client="_6V7R8O3UEeCpOqUFV6jmRA" contract="_E3KfAN1hEeCO1uZVwIAJVg"/>
+            </packagedElement>
+            <packagedElement xmi:type="uml:Class" xmi:id="_uNFyECPxEeG6mOXI37upWQ" name="ParabolicLongitude" clientDependency="_yxFhsCPxEeG6mOXI37upWQ">
+              <interfaceRealization xmi:id="_yxFhsCPxEeG6mOXI37upWQ" name="InterfaceRealization1" supplier="_E3KfAN1hEeCO1uZVwIAJVg" client="_uNFyECPxEeG6mOXI37upWQ" contract="_E3KfAN1hEeCO1uZVwIAJVg"/>
             </packagedElement>
           </packagedElement>
           <packagedElement xmi:type="uml:Package" xmi:id="_E3tRkN1hEeCO1uZVwIAJVg" name="leo" clientDependency="_FKttKN1hEeCO1uZVwIAJVg _FKttKd1hEeCO1uZVwIAJVg _FKttKt1hEeCO1uZVwIAJVg">
@@ -1347,24 +1497,134 @@ It is updated by the updateStates methods of all scenario components.</body>
               <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_0IeFdvAqEeCkVpw_tSg2-A" value="1"/>
             </ownedEnd>
           </packagedElement>
-          <packagedElement xmi:type="uml:Association" xmi:id="_PbJzgPArEeCkVpw_tSg2-A" name="A_&lt;groundTrackGrid>_&lt;orekitStepHandler>" memberEnd="_PbJzgfArEeCkVpw_tSg2-A _PbJzhPArEeCkVpw_tSg2-A">
-            <ownedEnd xmi:id="_PbJzgfArEeCkVpw_tSg2-A" name="groundTrackGrid" type="_E3ufsN1hEeCO1uZVwIAJVg" association="_PbJzgPArEeCkVpw_tSg2-A">
-              <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_PbJzgvArEeCkVpw_tSg2-A" value="1"/>
-              <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_PbJzg_ArEeCkVpw_tSg2-A" value="1"/>
-            </ownedEnd>
-            <ownedEnd xmi:id="_PbJzhPArEeCkVpw_tSg2-A" name="orekitStepHandler" type="_NH0FIOBXEeCxMfzvkTl0-w" aggregation="shared" association="_PbJzgPArEeCkVpw_tSg2-A">
-              <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_PbJzhfArEeCkVpw_tSg2-A" value="1"/>
-              <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_PbJzhvArEeCkVpw_tSg2-A" value="1"/>
-            </ownedEnd>
-          </packagedElement>
           <packagedElement xmi:type="uml:Association" xmi:id="_ScIRMPArEeCkVpw_tSg2-A" name="A_&lt;meanLocalSolarTime>_&lt;orekitStepHandler>" memberEnd="_ScIRMfArEeCkVpw_tSg2-A _ScIRNPArEeCkVpw_tSg2-A">
             <ownedEnd xmi:id="_ScIRMfArEeCkVpw_tSg2-A" name="meanLocalSolarTime" type="_YLDHkO3VEeCpOqUFV6jmRA" association="_ScIRMPArEeCkVpw_tSg2-A">
               <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_ScIRMvArEeCkVpw_tSg2-A" value="1"/>
               <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_ScIRM_ArEeCkVpw_tSg2-A" value="1"/>
             </ownedEnd>
-            <ownedEnd xmi:id="_ScIRNPArEeCkVpw_tSg2-A" name="orekitStepHandler" type="_NH0FIOBXEeCxMfzvkTl0-w" aggregation="shared" association="_ScIRMPArEeCkVpw_tSg2-A">
+            <ownedEnd xmi:id="_ScIRNPArEeCkVpw_tSg2-A" name="orekitStepHandler" type="_u80KUOBPEeCxMfzvkTl0-w" aggregation="shared" association="_ScIRMPArEeCkVpw_tSg2-A">
               <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_ScIRNfArEeCkVpw_tSg2-A" value="1"/>
               <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_ScIRNvArEeCkVpw_tSg2-A" value="1"/>
+            </ownedEnd>
+          </packagedElement>
+          <packagedElement xmi:type="uml:Class" xmi:id="_GNPugCPpEeGRbZh-MY9luw" name="ScheduledManeuver">
+            <ownedOperation xmi:id="_GFT1UCP7EeG6mOXI37upWQ" name="getName">
+              <ownedParameter xmi:id="_TGd-gCP7EeG6mOXI37upWQ" visibility="public" type="_E9voId1hEeCO1uZVwIAJVg" direction="return">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_TGd-gSP7EeG6mOXI37upWQ" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_TGd-giP7EeG6mOXI37upWQ" value="1"/>
+              </ownedParameter>
+            </ownedOperation>
+            <ownedOperation xmi:id="_G_TYYCP7EeG6mOXI37upWQ" name="isInPlane">
+              <ownedParameter xmi:id="_Wf2VICP7EeG6mOXI37upWQ" visibility="public" type="_-V404CPhEeGlStagX1ZcuA" direction="return">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_Wf28MCP7EeG6mOXI37upWQ" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_Wf28MSP7EeG6mOXI37upWQ" value="1"/>
+              </ownedParameter>
+            </ownedOperation>
+            <ownedOperation xmi:id="_H0od4CP7EeG6mOXI37upWQ" name="isReplanned">
+              <ownedParameter xmi:id="_ZUJBsCP7EeG6mOXI37upWQ" visibility="public" type="_-V404CPhEeGlStagX1ZcuA" direction="return">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_ZUJBsSP7EeG6mOXI37upWQ" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_ZUJBsiP7EeG6mOXI37upWQ" value="1"/>
+              </ownedParameter>
+            </ownedOperation>
+            <ownedOperation xmi:id="_IfXc8CP7EeG6mOXI37upWQ" name="getDate">
+              <ownedParameter xmi:id="_kHWsoCP7EeG6mOXI37upWQ" visibility="public" type="_E9bfEN1hEeCO1uZVwIAJVg" direction="return">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_kHWsoSP7EeG6mOXI37upWQ" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_kHWsoiP7EeG6mOXI37upWQ" value="1"/>
+              </ownedParameter>
+            </ownedOperation>
+            <ownedOperation xmi:id="_JIpDcCP7EeG6mOXI37upWQ" name="getDeltaV">
+              <ownedParameter xmi:id="_q1ZR8CP7EeG6mOXI37upWQ" name="Parameter1" visibility="protected" type="_E9PR1d1hEeCO1uZVwIAJVg" direction="return"/>
+            </ownedOperation>
+            <ownedOperation xmi:id="_JyEa8CP7EeG6mOXI37upWQ" name="getThrust">
+              <ownedParameter xmi:id="_zDOPACP7EeG6mOXI37upWQ" visibility="public" type="_26xTseRSEeCC7oKz25Mm0Q" direction="return">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_zDOPASP7EeG6mOXI37upWQ" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_zDOPAiP7EeG6mOXI37upWQ" value="1"/>
+              </ownedParameter>
+            </ownedOperation>
+            <ownedOperation xmi:id="_KaWi8CP7EeG6mOXI37upWQ" name="getIsp">
+              <ownedParameter xmi:id="_0ivhACP7EeG6mOXI37upWQ" visibility="public" type="_26xTseRSEeCC7oKz25Mm0Q" direction="return">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_0ivhASP7EeG6mOXI37upWQ" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_0ivhAiP7EeG6mOXI37upWQ" value="1"/>
+              </ownedParameter>
+            </ownedOperation>
+            <ownedOperation xmi:id="_LCLX8CP7EeG6mOXI37upWQ" name="getDuration">
+              <ownedParameter xmi:id="_3eOasCP7EeG6mOXI37upWQ" name="mass" visibility="public" type="_26xTseRSEeCC7oKz25Mm0Q">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_3eOasSP7EeG6mOXI37upWQ" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_3ePBwCP7EeG6mOXI37upWQ" value="1"/>
+              </ownedParameter>
+              <ownedParameter xmi:id="_3eQP4CP7EeG6mOXI37upWQ" visibility="public" type="_26xTseRSEeCC7oKz25Mm0Q" direction="return">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_3eQP4SP7EeG6mOXI37upWQ" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_3eQP4iP7EeG6mOXI37upWQ" value="1"/>
+              </ownedParameter>
+            </ownedOperation>
+            <ownedOperation xmi:id="_LmbUgCP7EeG6mOXI37upWQ" name="getTrajectory">
+              <ownedParameter xmi:id="_8TvYICP7EeG6mOXI37upWQ" name="Parameter1" type="_E9Zp491hEeCO1uZVwIAJVg" direction="return"/>
+            </ownedOperation>
+            <ownedOperation xmi:id="_MKgR8CP7EeG6mOXI37upWQ" name="Operation10">
+              <ownedParameter xmi:id="_BSXOQCP8EeG6mOXI37upWQ" name="Parameter1" type="_E3KfAN1hEeCO1uZVwIAJVg" direction="return"/>
+            </ownedOperation>
+          </packagedElement>
+          <packagedElement xmi:type="uml:Class" xmi:id="_NG7pgCPxEeG6mOXI37upWQ" name="MinimizedManeuvers" clientDependency="_YRak8CPxEeG6mOXI37upWQ">
+            <interfaceRealization xmi:id="_YRak8CPxEeG6mOXI37upWQ" name="InterfaceRealization1" supplier="_E3KfAN1hEeCO1uZVwIAJVg" client="_NG7pgCPxEeG6mOXI37upWQ" contract="_E3KfAN1hEeCO1uZVwIAJVg"/>
+          </packagedElement>
+          <packagedElement xmi:type="uml:Association" xmi:id="_hIiScCP4EeG6mOXI37upWQ" name="A_&lt;tunableManeuver>_&lt;scheduledManeuver>" memberEnd="_hIiScSP4EeG6mOXI37upWQ _hIiSdCP4EeG6mOXI37upWQ" navigableOwnedEnd="_hIiSdCP4EeG6mOXI37upWQ">
+            <ownedEnd xmi:id="_hIiScSP4EeG6mOXI37upWQ" name="tunableManeuver" type="_E3lVwN1hEeCO1uZVwIAJVg" association="_hIiScCP4EeG6mOXI37upWQ">
+              <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_hIiSciP4EeG6mOXI37upWQ" value="1"/>
+              <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_hIiScyP4EeG6mOXI37upWQ" value="1"/>
+            </ownedEnd>
+            <ownedEnd xmi:id="_hIiSdCP4EeG6mOXI37upWQ" name="creates" type="_GNPugCPpEeGRbZh-MY9luw" association="_hIiScCP4EeG6mOXI37upWQ">
+              <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_hIiSdSP4EeG6mOXI37upWQ" value="1"/>
+              <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_hIi5gCP4EeG6mOXI37upWQ" value="1"/>
+            </ownedEnd>
+          </packagedElement>
+          <packagedElement xmi:type="uml:Association" xmi:id="_GgxUMCP5EeG6mOXI37upWQ" name="A_&lt;tunableManeuver>_&lt;tunableManeuver>" memberEnd="_GgxUMSP5EeG6mOXI37upWQ _GgxUNCP5EeG6mOXI37upWQ">
+            <ownedEnd xmi:id="_GgxUMSP5EeG6mOXI37upWQ" name="dvReference" type="_E3lVwN1hEeCO1uZVwIAJVg" aggregation="shared" association="_GgxUMCP5EeG6mOXI37upWQ">
+              <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_GgxUMiP5EeG6mOXI37upWQ" value="1"/>
+              <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_GgxUMyP5EeG6mOXI37upWQ"/>
+            </ownedEnd>
+            <ownedEnd xmi:id="_GgxUNCP5EeG6mOXI37upWQ" name="tunableManeuver" type="_E3lVwN1hEeCO1uZVwIAJVg" association="_GgxUMCP5EeG6mOXI37upWQ">
+              <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_GgxUNSP5EeG6mOXI37upWQ" value="1"/>
+              <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_GgxUNiP5EeG6mOXI37upWQ" value="1"/>
+            </ownedEnd>
+          </packagedElement>
+          <packagedElement xmi:type="uml:Association" xmi:id="_VL8vMCP5EeG6mOXI37upWQ" name="A_&lt;tunableManeuver>_&lt;tunableManeuver>_2" memberEnd="_VL8vMSP5EeG6mOXI37upWQ _VL8vNCP5EeG6mOXI37upWQ">
+            <ownedEnd xmi:id="_VL8vMSP5EeG6mOXI37upWQ" name="tunableManeuver" type="_E3lVwN1hEeCO1uZVwIAJVg" association="_VL8vMCP5EeG6mOXI37upWQ">
+              <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_VL8vMiP5EeG6mOXI37upWQ" value="1"/>
+              <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_VL8vMyP5EeG6mOXI37upWQ" value="1"/>
+            </ownedEnd>
+            <ownedEnd xmi:id="_VL8vNCP5EeG6mOXI37upWQ" name="dateReference" type="_E3lVwN1hEeCO1uZVwIAJVg" aggregation="shared" association="_VL8vMCP5EeG6mOXI37upWQ">
+              <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_VL8vNSP5EeG6mOXI37upWQ" value="1"/>
+              <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_VL8vNiP5EeG6mOXI37upWQ"/>
+            </ownedEnd>
+          </packagedElement>
+          <packagedElement xmi:type="uml:Association" xmi:id="_YEqzUCP6EeG6mOXI37upWQ" name="A_&lt;scheduledManeuver>_&lt;propagator>" memberEnd="_YEqzUSP6EeG6mOXI37upWQ _YEqzVCP6EeG6mOXI37upWQ">
+            <ownedEnd xmi:id="_YEqzUSP6EeG6mOXI37upWQ" name="scheduledManeuver" type="_GNPugCPpEeGRbZh-MY9luw" association="_YEqzUCP6EeG6mOXI37upWQ">
+              <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_YEqzUiP6EeG6mOXI37upWQ" value="1"/>
+              <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_YEqzUyP6EeG6mOXI37upWQ" value="1"/>
+            </ownedEnd>
+            <ownedEnd xmi:id="_YEqzVCP6EeG6mOXI37upWQ" name="trajectory" type="_E9Zp491hEeCO1uZVwIAJVg" aggregation="shared" association="_YEqzUCP6EeG6mOXI37upWQ">
+              <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_YEqzVSP6EeG6mOXI37upWQ" value="1"/>
+              <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_YEqzViP6EeG6mOXI37upWQ" value="1"/>
+            </ownedEnd>
+          </packagedElement>
+          <packagedElement xmi:type="uml:Association" xmi:id="_01ZMsCP6EeG6mOXI37upWQ" name="A_&lt;scheduledManeuver>_&lt;sKControl>" memberEnd="_01ZMsSP6EeG6mOXI37upWQ _01ZMtCP6EeG6mOXI37upWQ">
+            <ownedEnd xmi:id="_01ZMsSP6EeG6mOXI37upWQ" name="scheduledManeuver" type="_GNPugCPpEeGRbZh-MY9luw" association="_01ZMsCP6EeG6mOXI37upWQ">
+              <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_01ZMsiP6EeG6mOXI37upWQ" value="1"/>
+              <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_01ZMsyP6EeG6mOXI37upWQ" value="1"/>
+            </ownedEnd>
+            <ownedEnd xmi:id="_01ZMtCP6EeG6mOXI37upWQ" name="control laws" type="_E3KfAN1hEeCO1uZVwIAJVg" aggregation="shared" association="_01ZMsCP6EeG6mOXI37upWQ">
+              <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_01ZMtSP6EeG6mOXI37upWQ" value="*"/>
+              <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_01ZMtiP6EeG6mOXI37upWQ" value="1"/>
+            </ownedEnd>
+          </packagedElement>
+          <packagedElement xmi:type="uml:Association" xmi:id="_zs4akCP8EeG6mOXI37upWQ" name="A_&lt;parabolicLongitude>_&lt;orekitStepHandler>" memberEnd="_zs4akSP8EeG6mOXI37upWQ _zs4alCP8EeG6mOXI37upWQ">
+            <ownedEnd xmi:id="_zs4akSP8EeG6mOXI37upWQ" name="parabolicLongitude" type="_uNFyECPxEeG6mOXI37upWQ" association="_zs4akCP8EeG6mOXI37upWQ">
+              <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_zs4akiP8EeG6mOXI37upWQ" value="1"/>
+              <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_zs4akyP8EeG6mOXI37upWQ" value="1"/>
+            </ownedEnd>
+            <ownedEnd xmi:id="_zs4alCP8EeG6mOXI37upWQ" name="orekitStepHandler" type="_NH0FIOBXEeCxMfzvkTl0-w" aggregation="shared" association="_zs4akCP8EeG6mOXI37upWQ">
+              <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_zs4alSP8EeG6mOXI37upWQ" value="1"/>
+              <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_zs4aliP8EeG6mOXI37upWQ" value="1"/>
             </ownedEnd>
           </packagedElement>
         </packagedElement>
@@ -1373,12 +1633,12 @@ It is updated by the updateStates methods of all scenario components.</body>
             <eAnnotations xmi:id="_E3wU4d1hEeCO1uZVwIAJVg" source="http://www.topcased.org/documentation">
               <details xmi:id="_E3wU4t1hEeCO1uZVwIAJVg" key="documentation" value="Input parameter keys for SKAT.&#xA;"/>
             </eAnnotations>
-            <ownedLiteral xmi:id="_FGZ04N1hEeCO1uZVwIAJVg" name="OUTPUT_FILE_NAME"/>
-            <ownedLiteral xmi:id="_FGab8N1hEeCO1uZVwIAJVg" name="INERTIAL_FRAME"/>
-            <ownedLiteral xmi:id="_FGab8d1hEeCO1uZVwIAJVg" name="EARTH_FRAME"/>
-            <ownedLiteral xmi:id="_FGab8t1hEeCO1uZVwIAJVg" name="GRAVITY_FIELD_DEGREE"/>
-            <ownedLiteral xmi:id="_FGab891hEeCO1uZVwIAJVg" name="GRAVITY_FIELD_ORDER"/>
-            <ownedLiteral xmi:id="_FGab9N1hEeCO1uZVwIAJVg" name="ORBIT_CARTESIAN_DATE"/>
+            <ownedLiteral xmi:id="_FGZ04N1hEeCO1uZVwIAJVg" name="SIMULATION_OUTPUT_BASE_NAME"/>
+            <ownedLiteral xmi:id="_FGab8N1hEeCO1uZVwIAJVg" name="SIMULATION_INERTIAL_FRAME"/>
+            <ownedLiteral xmi:id="_FGab8d1hEeCO1uZVwIAJVg" name="SIMULATION_CYCLE_DURATION"/>
+            <ownedLiteral xmi:id="_FGab8t1hEeCO1uZVwIAJVg" name="..."/>
+            <ownedLiteral xmi:id="_FGab891hEeCO1uZVwIAJVg" name="COMPONENT_CONTROL_LOOP_FIRST_CYCLE"/>
+            <ownedLiteral xmi:id="_FGab9N1hEeCO1uZVwIAJVg" name="CONTROL_ECCENTRICITY_CIRCLE_CENTER_X"/>
             <ownedLiteral xmi:id="_FGab9d1hEeCO1uZVwIAJVg" name="ORBIT_CARTESIAN_PX"/>
             <ownedLiteral xmi:id="_FGab9t1hEeCO1uZVwIAJVg" name="ORBIT_CARTESIAN_PY"/>
             <ownedLiteral xmi:id="_FGab991hEeCO1uZVwIAJVg" name="ORBIT_CARTESIAN_PZ"/>
@@ -1406,12 +1666,11 @@ It is updated by the updateStates methods of all scenario components.</body>
             <ownedLiteral xmi:id="_FGbqF91hEeCO1uZVwIAJVg" name="ORBIT_EQUINOCTIAL_HX"/>
             <ownedLiteral xmi:id="_FGbqGN1hEeCO1uZVwIAJVg" name="ORBIT_EQUINOCTIAL_HY"/>
             <ownedLiteral xmi:id="_FGbqGd1hEeCO1uZVwIAJVg" name="..."/>
-            <ownedLiteral xmi:id="_FGbqGt1hEeCO1uZVwIAJVg" name="SIMULATION_START_DATE"/>
-            <ownedLiteral xmi:id="_FGcRIN1hEeCO1uZVwIAJVg" name="SIMULATION_POSITION_TOLERANCE"/>
-            <ownedLiteral xmi:id="_FGcRId1hEeCO1uZVwIAJVg" name="SIMULATION_CYCLE_DURATION"/>
-            <ownedLiteral xmi:id="_FGcRIt1hEeCO1uZVwIAJVg" name="SIMULATION_CYCLE_NUMBER"/>
+            <ownedLiteral xmi:id="_FGcRIN1hEeCO1uZVwIAJVg" name="NUMERICAL_PROPAGATOR_TOLERANCE"/>
+            <ownedLiteral xmi:id="_FGcRId1hEeCO1uZVwIAJVg" name="MONITORING_MONO"/>
+            <ownedLiteral xmi:id="_FGcRIt1hEeCO1uZVwIAJVg" name="MONITORING_DUO"/>
           </packagedElement>
-          <packagedElement xmi:type="uml:Class" xmi:id="_E38iIN1hEeCO1uZVwIAJVg" name="KeyValueFileParser">
+          <packagedElement xmi:type="uml:Class" xmi:id="_E38iIN1hEeCO1uZVwIAJVg" name="SkatFileParser">
             <eAnnotations xmi:id="_E38iId1hEeCO1uZVwIAJVg" source="http://www.topcased.org/documentation">
               <details xmi:id="_E38iIt1hEeCO1uZVwIAJVg" key="documentation" value="Simple parser for key/value files.&#xA; &lt;p>&#xA; This file is a slightly modified copy (changed package name)&#xA; of the similar file present in the Orekit library tutorials,&#xA; which is distributed under the terms of the Apache Software&#xA; License V2.&#xA; &lt;/p>&#xA; @param Key type of the parameter keys&#xA;"/>
             </eAnnotations>
@@ -1433,12 +1692,7 @@ It is updated by the updateStates methods of all scenario components.</body>
             <elementImport xmi:id="_FGrhs91hEeCO1uZVwIAJVg" visibility="private" importedElement="_FGrhst1hEeCO1uZVwIAJVg"/>
             <elementImport xmi:id="_FGrhtN1hEeCO1uZVwIAJVg" visibility="private" importedElement="_E9bfEN1hEeCO1uZVwIAJVg"/>
             <elementImport xmi:id="_FGrhtd1hEeCO1uZVwIAJVg" visibility="private" importedElement="_E9bfEt1hEeCO1uZVwIAJVg"/>
-            <ownedTemplateSignature xmi:type="uml:RedefinableTemplateSignature" xmi:id="_E38iI91hEeCO1uZVwIAJVg" parameter="_E38iJN1hEeCO1uZVwIAJVg">
-              <ownedParameter xmi:type="uml:ClassifierTemplateParameter" xmi:id="_E38iJN1hEeCO1uZVwIAJVg" parameteredElement="_E38iJd1hEeCO1uZVwIAJVg">
-                <ownedParameteredElement xmi:type="uml:Class" xmi:id="_E38iJd1hEeCO1uZVwIAJVg" name="Key" templateParameter="_E38iJN1hEeCO1uZVwIAJVg"/>
-              </ownedParameter>
-            </ownedTemplateSignature>
-            <ownedBehavior xmi:type="uml:OpaqueBehavior" xmi:id="_FG3u8N1hEeCO1uZVwIAJVg" name="parseInput" specification="_FG3H4N1hEeCO1uZVwIAJVg">
+            <ownedBehavior xmi:type="uml:OpaqueBehavior" xmi:id="_FG3u8N1hEeCO1uZVwIAJVg" name="parseInput">
               <ownedParameter xmi:id="_FG3u8d1hEeCO1uZVwIAJVg" name="input" type="_FGpFc91hEeCO1uZVwIAJVg"/>
               <language>JAVA</language>
               <body>@link Key} enumerate constants, given that matching is not
@@ -1475,7 +1729,7 @@ It is updated by the updateStates methods of all scenario components.</body>
     </body>
             </ownedBehavior>
             <ownedBehavior xmi:type="uml:OpaqueBehavior" xmi:id="_FG8AZd1hEeCO1uZVwIAJVg" name="containsKey" specification="_FG8AYN1hEeCO1uZVwIAJVg">
-              <ownedParameter xmi:id="_FG8AZt1hEeCO1uZVwIAJVg" name="key" type="_E38iJd1hEeCO1uZVwIAJVg"/>
+              <ownedParameter xmi:id="_FG8AZt1hEeCO1uZVwIAJVg" name="key"/>
               <ownedParameter xmi:id="_FG8AZ91hEeCO1uZVwIAJVg" type="_E_3vEt1hEeCO1uZVwIAJVg"/>
               <language>JAVA</language>
               <body>
@@ -1483,7 +1737,7 @@ It is updated by the updateStates methods of all scenario components.</body>
     </body>
             </ownedBehavior>
             <ownedBehavior xmi:type="uml:OpaqueBehavior" xmi:id="_FHEjQN1hEeCO1uZVwIAJVg" name="getString" specification="_FHD8MN1hEeCO1uZVwIAJVg">
-              <ownedParameter xmi:id="_FHEjQd1hEeCO1uZVwIAJVg" name="key" type="_E38iJd1hEeCO1uZVwIAJVg"/>
+              <ownedParameter xmi:id="_FHEjQd1hEeCO1uZVwIAJVg" name="key"/>
               <ownedParameter xmi:id="_FHEjQt1hEeCO1uZVwIAJVg" type="_E9voId1hEeCO1uZVwIAJVg"/>
               <language>JAVA</language>
               <body>
@@ -1495,7 +1749,7 @@ It is updated by the updateStates methods of all scenario components.</body>
     </body>
             </ownedBehavior>
             <ownedBehavior xmi:type="uml:OpaqueBehavior" xmi:id="_FHI0td1hEeCO1uZVwIAJVg" name="getDouble" specification="_FHI0sN1hEeCO1uZVwIAJVg">
-              <ownedParameter xmi:id="_FHI0tt1hEeCO1uZVwIAJVg" name="key" type="_E38iJd1hEeCO1uZVwIAJVg"/>
+              <ownedParameter xmi:id="_FHI0tt1hEeCO1uZVwIAJVg" name="key"/>
               <ownedParameter xmi:id="_FHI0t91hEeCO1uZVwIAJVg" type="_E_Z1BN1hEeCO1uZVwIAJVg"/>
               <language>JAVA</language>
               <body>
@@ -1503,7 +1757,7 @@ It is updated by the updateStates methods of all scenario components.</body>
     </body>
             </ownedBehavior>
             <ownedBehavior xmi:type="uml:OpaqueBehavior" xmi:id="_FHNGJd1hEeCO1uZVwIAJVg" name="getInt" specification="_FHNGIN1hEeCO1uZVwIAJVg">
-              <ownedParameter xmi:id="_FHNGJt1hEeCO1uZVwIAJVg" name="key" type="_E38iJd1hEeCO1uZVwIAJVg"/>
+              <ownedParameter xmi:id="_FHNGJt1hEeCO1uZVwIAJVg" name="key"/>
               <ownedParameter xmi:id="_FHNGJ91hEeCO1uZVwIAJVg" type="_FDK6sN1hEeCO1uZVwIAJVg"/>
               <language>JAVA</language>
               <body>
@@ -1511,7 +1765,7 @@ It is updated by the updateStates methods of all scenario components.</body>
     </body>
             </ownedBehavior>
             <ownedBehavior xmi:type="uml:OpaqueBehavior" xmi:id="_FHR-oN1hEeCO1uZVwIAJVg" name="getAngle" specification="_FHRXkN1hEeCO1uZVwIAJVg">
-              <ownedParameter xmi:id="_FHR-od1hEeCO1uZVwIAJVg" name="key" type="_E38iJd1hEeCO1uZVwIAJVg"/>
+              <ownedParameter xmi:id="_FHR-od1hEeCO1uZVwIAJVg" name="key"/>
               <ownedParameter xmi:id="_FHR-ot1hEeCO1uZVwIAJVg" type="_E_Z1BN1hEeCO1uZVwIAJVg"/>
               <language>JAVA</language>
               <body>
@@ -1519,7 +1773,7 @@ It is updated by the updateStates methods of all scenario components.</body>
     </body>
             </ownedBehavior>
             <ownedBehavior xmi:type="uml:OpaqueBehavior" xmi:id="_FHgoJt1hEeCO1uZVwIAJVg" name="getDate" specification="_FHgoIN1hEeCO1uZVwIAJVg">
-              <ownedParameter xmi:id="_FHgoJ91hEeCO1uZVwIAJVg" name="key" type="_E38iJd1hEeCO1uZVwIAJVg"/>
+              <ownedParameter xmi:id="_FHgoJ91hEeCO1uZVwIAJVg" name="key"/>
               <ownedParameter xmi:id="_FHgoKN1hEeCO1uZVwIAJVg" name="scale" type="_E9bfEt1hEeCO1uZVwIAJVg"/>
               <ownedParameter xmi:id="_FHgoKd1hEeCO1uZVwIAJVg" type="_E9bfEN1hEeCO1uZVwIAJVg"/>
               <language>JAVA</language>
@@ -1528,9 +1782,9 @@ It is updated by the updateStates methods of all scenario components.</body>
     </body>
             </ownedBehavior>
             <ownedBehavior xmi:type="uml:OpaqueBehavior" xmi:id="_FHxG0N1hEeCO1uZVwIAJVg" name="getVector" specification="_FHwfwN1hEeCO1uZVwIAJVg">
-              <ownedParameter xmi:id="_FHxG0d1hEeCO1uZVwIAJVg" name="xKey" type="_E38iJd1hEeCO1uZVwIAJVg"/>
-              <ownedParameter xmi:id="_FHxG0t1hEeCO1uZVwIAJVg" name="yKey" type="_E38iJd1hEeCO1uZVwIAJVg"/>
-              <ownedParameter xmi:id="_FHxG091hEeCO1uZVwIAJVg" name="zKey" type="_E38iJd1hEeCO1uZVwIAJVg"/>
+              <ownedParameter xmi:id="_FHxG0d1hEeCO1uZVwIAJVg" name="xKey"/>
+              <ownedParameter xmi:id="_FHxG0t1hEeCO1uZVwIAJVg" name="yKey"/>
+              <ownedParameter xmi:id="_FHxG091hEeCO1uZVwIAJVg" name="zKey"/>
               <ownedParameter xmi:id="_FHxG1N1hEeCO1uZVwIAJVg" type="_E9PR1d1hEeCO1uZVwIAJVg"/>
               <language>JAVA</language>
               <body>
@@ -1538,7 +1792,7 @@ It is updated by the updateStates methods of all scenario components.</body>
     </body>
             </ownedBehavior>
             <ownedBehavior xmi:type="uml:OpaqueBehavior" xmi:id="_FH5CoN1hEeCO1uZVwIAJVg" name="getInertialFrame" specification="_FH4bkN1hEeCO1uZVwIAJVg">
-              <ownedParameter xmi:id="_FH5Cod1hEeCO1uZVwIAJVg" name="key" type="_E38iJd1hEeCO1uZVwIAJVg"/>
+              <ownedParameter xmi:id="_FH5Cod1hEeCO1uZVwIAJVg" name="key"/>
               <ownedParameter xmi:id="_FH5Cot1hEeCO1uZVwIAJVg" type="_E9XNod1hEeCO1uZVwIAJVg"/>
               <language>JAVA</language>
               <body>
@@ -1564,7 +1818,7 @@ It is updated by the updateStates methods of all scenario components.</body>
     </body>
             </ownedBehavior>
             <ownedBehavior xmi:type="uml:OpaqueBehavior" xmi:id="_FIA-dd1hEeCO1uZVwIAJVg" name="getEarthFrame" specification="_FIA-cN1hEeCO1uZVwIAJVg">
-              <ownedParameter xmi:id="_FIA-dt1hEeCO1uZVwIAJVg" name="key" type="_E38iJd1hEeCO1uZVwIAJVg"/>
+              <ownedParameter xmi:id="_FIA-dt1hEeCO1uZVwIAJVg" name="key"/>
               <ownedParameter xmi:id="_FIA-d91hEeCO1uZVwIAJVg" type="_E9XNod1hEeCO1uZVwIAJVg"/>
               <language>JAVA</language>
               <body>
@@ -1588,77 +1842,286 @@ It is updated by the updateStates methods of all scenario components.</body>
 
     </body>
             </ownedBehavior>
-            <ownedOperation xmi:id="_FG3H4N1hEeCO1uZVwIAJVg" name="parseInput" visibility="public" method="_FG3u8N1hEeCO1uZVwIAJVg">
-              <eAnnotations xmi:id="_FG3H4d1hEeCO1uZVwIAJVg" source="http://www.topcased.org/documentation">
-                <details xmi:id="_FG3H4t1hEeCO1uZVwIAJVg" key="documentation" value="Parse an input file.&#xA; &lt;p>&#xA; The input file syntax is a set of key=value lines. Blank lines and lines&#xA; starting with '#' (after whitespace trimming) are silently ignored. The&#xA; equal sign may be surrounded by space characters. Keys must correspond to&#xA; the {@link Key} enumerate constants, given that matching is not&#xA; case sensitive and that '_' characters may appear as '.' characters in the&#xA; file. This means that the lines:&#xA; &lt;pre>&#xA;   # this is the semi-major axis&#xA;   orbit.circular.a   = 7231582&#xA; &lt;/pre>&#xA; are perfectly right and correspond to key {@code Key#ORBIT_CIRCULAR_A} if&#xA; such a constant exists in the enumerate.&#xA; &lt;/p>&#xA; @param input input stream&#xA; @exception IOException if input file cannot be read&#xA; @exception IllegalArgumentException if a line cannot be read properly&#xA; "/>
-              </eAnnotations>
-              <ownedParameter xmi:id="_FG3H491hEeCO1uZVwIAJVg" name="input" type="_FGpFc91hEeCO1uZVwIAJVg"/>
-            </ownedOperation>
             <ownedOperation xmi:id="_FG8AYN1hEeCO1uZVwIAJVg" name="containsKey" visibility="public" method="_FG8AZd1hEeCO1uZVwIAJVg">
               <eAnnotations xmi:id="_FG8AYd1hEeCO1uZVwIAJVg" source="http://www.topcased.org/documentation">
                 <details xmi:id="_FG8AYt1hEeCO1uZVwIAJVg" key="documentation" value="Check if a key is contained in the map.&#xA; @param key parameter key&#xA; @return true if the key is contained in the map&#xA; "/>
               </eAnnotations>
-              <ownedParameter xmi:id="_FG8AY91hEeCO1uZVwIAJVg" name="key" type="_E38iJd1hEeCO1uZVwIAJVg"/>
-              <ownedParameter xmi:id="_FG8AZN1hEeCO1uZVwIAJVg" type="_E_3vEt1hEeCO1uZVwIAJVg" direction="return"/>
+              <ownedParameter xmi:id="_-WKhsCPhEeGlStagX1ZcuA" name="node" visibility="public" type="_mf3a8CPhEeGlStagX1ZcuA">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_-WLIwCPhEeGlStagX1ZcuA" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_-WLIwSPhEeGlStagX1ZcuA" value="1"/>
+              </ownedParameter>
+              <ownedParameter xmi:id="_-WG3UCPhEeGlStagX1ZcuA" visibility="public" type="_-V404CPhEeGlStagX1ZcuA" direction="return">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_-WG3USPhEeGlStagX1ZcuA" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_-WG3UiPhEeGlStagX1ZcuA" value="1"/>
+              </ownedParameter>
+              <ownedParameter xmi:id="_VqduoSPiEeGRbZh-MY9luw" name="key" visibility="protected" type="_E3wU4N1hEeCO1uZVwIAJVg" effect="update"/>
             </ownedOperation>
             <ownedOperation xmi:id="_FHD8MN1hEeCO1uZVwIAJVg" name="getString" visibility="public" method="_FHEjQN1hEeCO1uZVwIAJVg">
               <eAnnotations xmi:id="_FHD8Md1hEeCO1uZVwIAJVg" source="http://www.topcased.org/documentation">
                 <details xmi:id="_FHD8Mt1hEeCO1uZVwIAJVg" key="documentation" value="Get a raw string value from a parameters map.&#xA; @param key parameter key&#xA; @return string value corresponding to the key&#xA; @exception NoSuchElementException if key is not in the map&#xA; "/>
               </eAnnotations>
-              <ownedParameter xmi:id="_FHD8M91hEeCO1uZVwIAJVg" name="key" type="_E38iJd1hEeCO1uZVwIAJVg"/>
-              <ownedParameter xmi:id="_FHD8NN1hEeCO1uZVwIAJVg" type="_E9voId1hEeCO1uZVwIAJVg" direction="return"/>
+              <ownedParameter xmi:id="_pCUUICPiEeGRbZh-MY9luw" name="node" visibility="public" type="_mf3a8CPhEeGlStagX1ZcuA">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_pCUUISPiEeGRbZh-MY9luw" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_pCUUIiPiEeGRbZh-MY9luw" value="1"/>
+              </ownedParameter>
+              <ownedParameter xmi:id="_pCViQCPiEeGRbZh-MY9luw" name="key" visibility="public" type="_E3wU4N1hEeCO1uZVwIAJVg">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_pCViQSPiEeGRbZh-MY9luw" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_pCViQiPiEeGRbZh-MY9luw" value="1"/>
+              </ownedParameter>
+              <ownedParameter xmi:id="_pCR34CPiEeGRbZh-MY9luw" visibility="public" type="_E9voId1hEeCO1uZVwIAJVg" direction="return">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_pCR34SPiEeGRbZh-MY9luw" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_pCR34iPiEeGRbZh-MY9luw" value="1"/>
+              </ownedParameter>
             </ownedOperation>
             <ownedOperation xmi:id="_FHI0sN1hEeCO1uZVwIAJVg" name="getDouble" visibility="public" method="_FHI0td1hEeCO1uZVwIAJVg">
               <eAnnotations xmi:id="_FHI0sd1hEeCO1uZVwIAJVg" source="http://www.topcased.org/documentation">
                 <details xmi:id="_FHI0st1hEeCO1uZVwIAJVg" key="documentation" value="Get a raw double value from a parameters map.&#xA; @param key parameter key&#xA; @return double value corresponding to the key&#xA; @exception NoSuchElementException if key is not in the map&#xA; "/>
               </eAnnotations>
-              <ownedParameter xmi:id="_FHI0s91hEeCO1uZVwIAJVg" name="key" type="_E38iJd1hEeCO1uZVwIAJVg"/>
-              <ownedParameter xmi:id="_FHI0tN1hEeCO1uZVwIAJVg" type="_E_Z1BN1hEeCO1uZVwIAJVg" direction="return"/>
+              <ownedParameter xmi:id="_rE86QCPiEeGRbZh-MY9luw" name="node" visibility="public" type="_mf3a8CPhEeGlStagX1ZcuA">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_rE86QSPiEeGRbZh-MY9luw" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_rE86QiPiEeGRbZh-MY9luw" value="1"/>
+              </ownedParameter>
+              <ownedParameter xmi:id="_rE-IYCPiEeGRbZh-MY9luw" name="key" visibility="public" type="_E3wU4N1hEeCO1uZVwIAJVg">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_rE-IYSPiEeGRbZh-MY9luw" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_rE-IYiPiEeGRbZh-MY9luw" value="1"/>
+              </ownedParameter>
+              <ownedParameter xmi:id="_rE6eACPiEeGRbZh-MY9luw" visibility="public" type="_26xTseRSEeCC7oKz25Mm0Q" direction="return">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_rE6eASPiEeGRbZh-MY9luw" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_rE6eAiPiEeGRbZh-MY9luw" value="1"/>
+              </ownedParameter>
             </ownedOperation>
             <ownedOperation xmi:id="_FHNGIN1hEeCO1uZVwIAJVg" name="getInt" visibility="public" method="_FHNGJd1hEeCO1uZVwIAJVg">
               <eAnnotations xmi:id="_FHNGId1hEeCO1uZVwIAJVg" source="http://www.topcased.org/documentation">
                 <details xmi:id="_FHNGIt1hEeCO1uZVwIAJVg" key="documentation" value="Get a raw int value from a parameters map.&#xA; @param key parameter key&#xA; @return int value corresponding to the key&#xA; @exception NoSuchElementException if key is not in the map&#xA; "/>
               </eAnnotations>
-              <ownedParameter xmi:id="_FHNGI91hEeCO1uZVwIAJVg" name="key" type="_E38iJd1hEeCO1uZVwIAJVg"/>
-              <ownedParameter xmi:id="_FHNGJN1hEeCO1uZVwIAJVg" type="_FDK6sN1hEeCO1uZVwIAJVg" direction="return"/>
+              <ownedParameter xmi:id="_r-P5wCPiEeGRbZh-MY9luw" name="node" visibility="public" type="_mf3a8CPhEeGlStagX1ZcuA">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_r-P5wSPiEeGRbZh-MY9luw" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_r-P5wiPiEeGRbZh-MY9luw" value="1"/>
+              </ownedParameter>
+              <ownedParameter xmi:id="_r-Qg0CPiEeGRbZh-MY9luw" name="key" visibility="public" type="_E3wU4N1hEeCO1uZVwIAJVg">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_r-Qg0SPiEeGRbZh-MY9luw" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_r-Qg0iPiEeGRbZh-MY9luw" value="1"/>
+              </ownedParameter>
+              <ownedParameter xmi:id="_r-OEkCPiEeGRbZh-MY9luw" visibility="public" type="_buJvwPXJEeCTIMie9DR2WQ" direction="return">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_r-OEkSPiEeGRbZh-MY9luw" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_r-OEkiPiEeGRbZh-MY9luw" value="1"/>
+              </ownedParameter>
             </ownedOperation>
             <ownedOperation xmi:id="_FHRXkN1hEeCO1uZVwIAJVg" name="getAngle" visibility="public" method="_FHR-oN1hEeCO1uZVwIAJVg">
               <eAnnotations xmi:id="_FHRXkd1hEeCO1uZVwIAJVg" source="http://www.topcased.org/documentation">
                 <details xmi:id="_FHRXkt1hEeCO1uZVwIAJVg" key="documentation" value="Get an angle value from a parameters map.&#xA; &lt;p>&#xA; The angle is considered to be in degrees in the file, it will be returned in radians&#xA; &lt;/p>&#xA; @param key parameter key&#xA; @return angular value corresponding to the key, in radians&#xA; @exception NoSuchElementException if key is not in the map&#xA; "/>
               </eAnnotations>
-              <ownedParameter xmi:id="_FHRXk91hEeCO1uZVwIAJVg" name="key" type="_E38iJd1hEeCO1uZVwIAJVg"/>
-              <ownedParameter xmi:id="_FHRXlN1hEeCO1uZVwIAJVg" type="_E_Z1BN1hEeCO1uZVwIAJVg" direction="return"/>
+              <ownedParameter xmi:id="_tJFVMCPiEeGRbZh-MY9luw" name="node" visibility="public" type="_mf3a8CPhEeGlStagX1ZcuA">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_tJFVMSPiEeGRbZh-MY9luw" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_tJFVMiPiEeGRbZh-MY9luw" value="1"/>
+              </ownedParameter>
+              <ownedParameter xmi:id="_tJF8QCPiEeGRbZh-MY9luw" name="key" visibility="public" type="_E3wU4N1hEeCO1uZVwIAJVg">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_tJF8QSPiEeGRbZh-MY9luw" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_tJF8QiPiEeGRbZh-MY9luw" value="1"/>
+              </ownedParameter>
+              <ownedParameter xmi:id="_tJDgACPiEeGRbZh-MY9luw" visibility="public" type="_26xTseRSEeCC7oKz25Mm0Q" direction="return">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_tJDgASPiEeGRbZh-MY9luw" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_tJDgAiPiEeGRbZh-MY9luw" value="1"/>
+              </ownedParameter>
             </ownedOperation>
             <ownedOperation xmi:id="_FHgoIN1hEeCO1uZVwIAJVg" name="getDate" visibility="public" method="_FHgoJt1hEeCO1uZVwIAJVg">
               <eAnnotations xmi:id="_FHgoId1hEeCO1uZVwIAJVg" source="http://www.topcased.org/documentation">
                 <details xmi:id="_FHgoIt1hEeCO1uZVwIAJVg" key="documentation" value="Get a date value from a parameters map.&#xA; &lt;p>&#xA; The date is considered to be in UTC in the file&#xA; &lt;/p>&#xA; @param key parameter key&#xA; @param scale time scale in which the date is to be parsed&#xA; @return date value corresponding to the key&#xA; @exception NoSuchElementException if key is not in the map&#xA; "/>
               </eAnnotations>
-              <ownedParameter xmi:id="_FHgoI91hEeCO1uZVwIAJVg" name="key" type="_E38iJd1hEeCO1uZVwIAJVg"/>
+              <ownedParameter xmi:id="_uTZzQCPiEeGRbZh-MY9luw" name="node" visibility="public" type="_mf3a8CPhEeGlStagX1ZcuA">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_uTZzQSPiEeGRbZh-MY9luw" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_uTZzQiPiEeGRbZh-MY9luw" value="1"/>
+              </ownedParameter>
+              <ownedParameter xmi:id="_uTbBYCPiEeGRbZh-MY9luw" name="key" visibility="public" type="_E3wU4N1hEeCO1uZVwIAJVg">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_uTbBYSPiEeGRbZh-MY9luw" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_uTbBYiPiEeGRbZh-MY9luw" value="1"/>
+              </ownedParameter>
               <ownedParameter xmi:id="_FHgoJN1hEeCO1uZVwIAJVg" name="scale" type="_E9bfEt1hEeCO1uZVwIAJVg"/>
-              <ownedParameter xmi:id="_FHgoJd1hEeCO1uZVwIAJVg" type="_E9bfEN1hEeCO1uZVwIAJVg" direction="return"/>
+              <ownedParameter xmi:id="_uTXXACPiEeGRbZh-MY9luw" visibility="public" type="_E9bfEN1hEeCO1uZVwIAJVg" direction="return">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_uTX-ECPiEeGRbZh-MY9luw" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_uTX-ESPiEeGRbZh-MY9luw" value="1"/>
+              </ownedParameter>
             </ownedOperation>
             <ownedOperation xmi:id="_FHwfwN1hEeCO1uZVwIAJVg" name="getVector" visibility="public" method="_FHxG0N1hEeCO1uZVwIAJVg">
               <eAnnotations xmi:id="_FHwfwd1hEeCO1uZVwIAJVg" source="http://www.topcased.org/documentation">
                 <details xmi:id="_FHwfwt1hEeCO1uZVwIAJVg" key="documentation" value="Get a vector value from a parameters map.&#xA; @param xKey parameter key for abscissa&#xA; @param yKey parameter key for ordinate&#xA; @param zKey parameter key for height&#xA; @param scale time scale in which the date is to be parsed&#xA; @return date value corresponding to the key&#xA; @exception NoSuchElementException if key is not in the map&#xA; "/>
               </eAnnotations>
-              <ownedParameter xmi:id="_FHwfw91hEeCO1uZVwIAJVg" name="xKey" type="_E38iJd1hEeCO1uZVwIAJVg"/>
-              <ownedParameter xmi:id="_FHwfxN1hEeCO1uZVwIAJVg" name="yKey" type="_E38iJd1hEeCO1uZVwIAJVg"/>
-              <ownedParameter xmi:id="_FHwfxd1hEeCO1uZVwIAJVg" name="zKey" type="_E38iJd1hEeCO1uZVwIAJVg"/>
-              <ownedParameter xmi:id="_FHwfxt1hEeCO1uZVwIAJVg" type="_E9PR1d1hEeCO1uZVwIAJVg" direction="return"/>
+              <ownedParameter xmi:id="_vM0HgCPiEeGRbZh-MY9luw" name="node" visibility="public" type="_mf3a8CPhEeGlStagX1ZcuA">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_vM0HgSPiEeGRbZh-MY9luw" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_vM0HgiPiEeGRbZh-MY9luw" value="1"/>
+              </ownedParameter>
+              <ownedParameter xmi:id="_vM0ukCPiEeGRbZh-MY9luw" name="key" visibility="public" type="_E3wU4N1hEeCO1uZVwIAJVg">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_vM0ukSPiEeGRbZh-MY9luw" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_vM0ukiPiEeGRbZh-MY9luw" value="1"/>
+              </ownedParameter>
+              <ownedParameter xmi:id="_vMySUCPiEeGRbZh-MY9luw" visibility="public" type="_E9PR1d1hEeCO1uZVwIAJVg" direction="return">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_vMySUSPiEeGRbZh-MY9luw" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_vMySUiPiEeGRbZh-MY9luw" value="1"/>
+              </ownedParameter>
             </ownedOperation>
             <ownedOperation xmi:id="_FH4bkN1hEeCO1uZVwIAJVg" name="getInertialFrame" visibility="public" method="_FH5CoN1hEeCO1uZVwIAJVg">
               <eAnnotations xmi:id="_FH4bkd1hEeCO1uZVwIAJVg" source="http://www.topcased.org/documentation">
                 <details xmi:id="_FH4bkt1hEeCO1uZVwIAJVg" key="documentation" value="Get an inertial frame from a parameters map.&#xA; @param key parameter key&#xA; @return inertial frame corresponding to the key&#xA; @exception NoSuchElementException if key is not in the map&#xA; @exception OrekitException if frame cannot be built&#xA; "/>
               </eAnnotations>
-              <ownedParameter xmi:id="_FH4bk91hEeCO1uZVwIAJVg" name="key" type="_E38iJd1hEeCO1uZVwIAJVg"/>
-              <ownedParameter xmi:id="_FH4blN1hEeCO1uZVwIAJVg" type="_E9XNod1hEeCO1uZVwIAJVg" direction="return"/>
+              <ownedParameter xmi:id="_wNVJUCPiEeGRbZh-MY9luw" name="node" visibility="public" type="_mf3a8CPhEeGlStagX1ZcuA">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_wNVJUSPiEeGRbZh-MY9luw" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_wNVJUiPiEeGRbZh-MY9luw" value="1"/>
+              </ownedParameter>
+              <ownedParameter xmi:id="_wNWXcCPiEeGRbZh-MY9luw" name="key" visibility="public" type="_E3wU4N1hEeCO1uZVwIAJVg">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_wNWXcSPiEeGRbZh-MY9luw" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_wNWXciPiEeGRbZh-MY9luw" value="1"/>
+              </ownedParameter>
+              <ownedParameter xmi:id="_wNT7MCPiEeGRbZh-MY9luw" visibility="public" type="_E9XNod1hEeCO1uZVwIAJVg" direction="return">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_wNT7MSPiEeGRbZh-MY9luw" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_wNT7MiPiEeGRbZh-MY9luw" value="1"/>
+              </ownedParameter>
             </ownedOperation>
             <ownedOperation xmi:id="_FIA-cN1hEeCO1uZVwIAJVg" name="getEarthFrame" visibility="public" method="_FIA-dd1hEeCO1uZVwIAJVg">
               <eAnnotations xmi:id="_FIA-cd1hEeCO1uZVwIAJVg" source="http://www.topcased.org/documentation">
                 <details xmi:id="_FIA-ct1hEeCO1uZVwIAJVg" key="documentation" value="Get an Earth frame from a parameters map.&#xA; &lt;p>&#xA; We consider Earth frames are the frames with name starting with &quot;ITRF&quot;.&#xA; &lt;/p>&#xA; @param key parameter key&#xA; @param parameters key/value map containing the parameters&#xA; @return Earth frame corresponding to the key&#xA; @exception NoSuchElementException if key is not in the map&#xA; @exception OrekitException if frame cannot be built&#xA; "/>
               </eAnnotations>
-              <ownedParameter xmi:id="_FIA-c91hEeCO1uZVwIAJVg" name="key" type="_E38iJd1hEeCO1uZVwIAJVg"/>
-              <ownedParameter xmi:id="_FIA-dN1hEeCO1uZVwIAJVg" type="_E9XNod1hEeCO1uZVwIAJVg" direction="return"/>
+              <ownedParameter xmi:id="_w5JGcCPiEeGRbZh-MY9luw" name="node" visibility="public" type="_mf3a8CPhEeGlStagX1ZcuA">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_w5JGcSPiEeGRbZh-MY9luw" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_w5JGciPiEeGRbZh-MY9luw" value="1"/>
+              </ownedParameter>
+              <ownedParameter xmi:id="_w5JtgCPiEeGRbZh-MY9luw" name="key" visibility="public" type="_E3wU4N1hEeCO1uZVwIAJVg">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_w5JtgSPiEeGRbZh-MY9luw" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_w5JtgiPiEeGRbZh-MY9luw" value="1"/>
+              </ownedParameter>
+              <ownedParameter xmi:id="_w5HRQCPiEeGRbZh-MY9luw" visibility="public" type="_E9XNod1hEeCO1uZVwIAJVg" direction="return">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_w5HRQSPiEeGRbZh-MY9luw" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_w5HRQiPiEeGRbZh-MY9luw" value="1"/>
+              </ownedParameter>
+            </ownedOperation>
+            <ownedOperation xmi:id="_Nl1UYCPjEeGRbZh-MY9luw" name="getDoubleArray1">
+              <ownedParameter xmi:id="_r3tXcCPjEeGRbZh-MY9luw" name="node" visibility="public" type="_mf3a8CPhEeGlStagX1ZcuA">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_r3tXcSPjEeGRbZh-MY9luw" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_r3tXciPjEeGRbZh-MY9luw" value="1"/>
+              </ownedParameter>
+              <ownedParameter xmi:id="_r3t-gCPjEeGRbZh-MY9luw" name="key" visibility="public" type="_E3wU4N1hEeCO1uZVwIAJVg">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_r3t-gSPjEeGRbZh-MY9luw" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_r3t-giPjEeGRbZh-MY9luw" value="1"/>
+              </ownedParameter>
+              <ownedParameter xmi:id="_r3sJUCPjEeGRbZh-MY9luw" visibility="public" type="_E_ZN8d1hEeCO1uZVwIAJVg" direction="return">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_r3sJUSPjEeGRbZh-MY9luw" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_r3sJUiPjEeGRbZh-MY9luw" value="1"/>
+              </ownedParameter>
+            </ownedOperation>
+            <ownedOperation xmi:id="_ReQXcCPjEeGRbZh-MY9luw" name="getDoubleArray2">
+              <ownedParameter xmi:id="_wUzN0CPjEeGRbZh-MY9luw" name="node" visibility="public" type="_mf3a8CPhEeGlStagX1ZcuA">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_wUzN0SPjEeGRbZh-MY9luw" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_wUzN0iPjEeGRbZh-MY9luw" value="1"/>
+              </ownedParameter>
+              <ownedParameter xmi:id="_wU0b8CPjEeGRbZh-MY9luw" name="key" visibility="public" type="_E3wU4N1hEeCO1uZVwIAJVg">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_wU0b8SPjEeGRbZh-MY9luw" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_wU0b8iPjEeGRbZh-MY9luw" value="1"/>
+              </ownedParameter>
+              <ownedParameter xmi:id="_wU1DACPjEeGRbZh-MY9luw" visibility="public" type="_E_ZN8d1hEeCO1uZVwIAJVg" direction="return">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_wU1DASPjEeGRbZh-MY9luw" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_wU1DAiPjEeGRbZh-MY9luw" value="1"/>
+              </ownedParameter>
+            </ownedOperation>
+            <ownedOperation xmi:id="_SYAp8CPjEeGRbZh-MY9luw" name="getOrbit">
+              <ownedParameter xmi:id="_4ycIgCPjEeGRbZh-MY9luw" name="node" visibility="public" type="_mf3a8CPhEeGlStagX1ZcuA">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_4ycIgSPjEeGRbZh-MY9luw" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_4ycIgiPjEeGRbZh-MY9luw" value="1"/>
+              </ownedParameter>
+              <ownedParameter xmi:id="_4yd9sCPjEeGRbZh-MY9luw" name="key" visibility="public" type="_E3wU4N1hEeCO1uZVwIAJVg">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_4yd9sSPjEeGRbZh-MY9luw" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_4yd9siPjEeGRbZh-MY9luw" value="1"/>
+              </ownedParameter>
+              <ownedParameter xmi:id="_-T0GYCPjEeGRbZh-MY9luw" visibility="public" type="_E9ZC0t1hEeCO1uZVwIAJVg" direction="return">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_-T0GYSPjEeGRbZh-MY9luw" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_-T0GYiPjEeGRbZh-MY9luw" value="1"/>
+              </ownedParameter>
+            </ownedOperation>
+            <ownedOperation xmi:id="_TNzCcCPjEeGRbZh-MY9luw" name="getBoolean">
+              <ownedParameter xmi:id="_EzQPACPkEeGRbZh-MY9luw" name="node" visibility="public" type="_mf3a8CPhEeGlStagX1ZcuA">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_EzQPASPkEeGRbZh-MY9luw" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_EzQPAiPkEeGRbZh-MY9luw" value="1"/>
+              </ownedParameter>
+              <ownedParameter xmi:id="_EzRdICPkEeGRbZh-MY9luw" name="key" visibility="public" type="_E3wU4N1hEeCO1uZVwIAJVg">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_EzRdISPkEeGRbZh-MY9luw" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_EzRdIiPkEeGRbZh-MY9luw" value="1"/>
+              </ownedParameter>
+              <ownedParameter xmi:id="_EzRdIyPkEeGRbZh-MY9luw" visibility="public" type="_-V404CPhEeGlStagX1ZcuA" direction="return">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_EzRdJCPkEeGRbZh-MY9luw" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_EzRdJSPkEeGRbZh-MY9luw" value="1"/>
+              </ownedParameter>
+            </ownedOperation>
+            <ownedOperation xmi:id="_UbAccCPjEeGRbZh-MY9luw" name="getValue">
+              <ownedParameter xmi:id="_J6ICMCPkEeGRbZh-MY9luw" name="node" visibility="public" type="_mf3a8CPhEeGlStagX1ZcuA">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_J6ICMSPkEeGRbZh-MY9luw" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_J6ICMiPkEeGRbZh-MY9luw" value="1"/>
+              </ownedParameter>
+              <ownedParameter xmi:id="_J6JQUCPkEeGRbZh-MY9luw" name="key" visibility="public" type="_E3wU4N1hEeCO1uZVwIAJVg">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_J6JQUSPkEeGRbZh-MY9luw" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_J6JQUiPkEeGRbZh-MY9luw" value="1"/>
+              </ownedParameter>
+              <ownedParameter xmi:id="_NB8HsCPkEeGRbZh-MY9luw" visibility="public" type="_mf3a8CPhEeGlStagX1ZcuA" direction="return">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_NB8HsSPkEeGRbZh-MY9luw" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_NB8HsiPkEeGRbZh-MY9luw" value="1"/>
+              </ownedParameter>
+            </ownedOperation>
+            <ownedOperation xmi:id="_VJBZACPjEeGRbZh-MY9luw" name="getElementsNumber">
+              <ownedParameter xmi:id="_RStZUCPkEeGRbZh-MY9luw" name="node" visibility="public" type="_mf3a8CPhEeGlStagX1ZcuA">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_RStZUSPkEeGRbZh-MY9luw" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_RStZUiPkEeGRbZh-MY9luw" value="1"/>
+              </ownedParameter>
+              <ownedParameter xmi:id="_aKzbYCPkEeGRbZh-MY9luw" visibility="public" type="_buJvwPXJEeCTIMie9DR2WQ" direction="return">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_aKzbYSPkEeGRbZh-MY9luw" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_aKzbYiPkEeGRbZh-MY9luw" value="1"/>
+              </ownedParameter>
+            </ownedOperation>
+            <ownedOperation xmi:id="_V2Bo8CPjEeGRbZh-MY9luw" name="getElement">
+              <ownedParameter xmi:id="_csFFUCPkEeGRbZh-MY9luw" name="node" visibility="public" type="_mf3a8CPhEeGlStagX1ZcuA">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_csFsYCPkEeGRbZh-MY9luw" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_csFsYSPkEeGRbZh-MY9luw" value="1"/>
+              </ownedParameter>
+              <ownedParameter xmi:id="_csHhkCPkEeGRbZh-MY9luw" name="index" visibility="public" type="_buJvwPXJEeCTIMie9DR2WQ">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_csHhkSPkEeGRbZh-MY9luw" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_csHhkiPkEeGRbZh-MY9luw" value="1"/>
+              </ownedParameter>
+              <ownedParameter xmi:id="_csIvsCPkEeGRbZh-MY9luw" visibility="public" type="_buJvwPXJEeCTIMie9DR2WQ" direction="return">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_csIvsSPkEeGRbZh-MY9luw" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_csIvsiPkEeGRbZh-MY9luw" value="1"/>
+              </ownedParameter>
+            </ownedOperation>
+            <ownedOperation xmi:id="_Wi4u8CPjEeGRbZh-MY9luw" name="getEnumerate">
+              <ownedParameter xmi:id="_5v6n8CPkEeGRbZh-MY9luw" name="node" visibility="public" type="_mf3a8CPhEeGlStagX1ZcuA">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_5v6n8SPkEeGRbZh-MY9luw" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_5v6n8iPkEeGRbZh-MY9luw" value="1"/>
+              </ownedParameter>
+              <ownedParameter xmi:id="_5v72ECPkEeGRbZh-MY9luw" name="key" visibility="public" type="_E3wU4N1hEeCO1uZVwIAJVg">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_5v72ESPkEeGRbZh-MY9luw" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_5v72EiPkEeGRbZh-MY9luw" value="1"/>
+              </ownedParameter>
+              <ownedParameter xmi:id="_5v8dICPkEeGRbZh-MY9luw" name="class" visibility="public" type="_urrecCPkEeGRbZh-MY9luw">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_5v8dISPkEeGRbZh-MY9luw" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_5v8dIiPkEeGRbZh-MY9luw" value="1"/>
+              </ownedParameter>
+              <ownedParameter xmi:id="_5v9EMCPkEeGRbZh-MY9luw" visibility="private" type="_CZKVsCPlEeGRbZh-MY9luw" direction="return">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_5v9rQCPkEeGRbZh-MY9luw" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_5v9rQSPkEeGRbZh-MY9luw" value="1"/>
+              </ownedParameter>
+            </ownedOperation>
+            <ownedOperation xmi:id="_XTzOgCPjEeGRbZh-MY9luw" name="getEnumerate">
+              <ownedParameter xmi:id="_MlBFsCPlEeGRbZh-MY9luw" name="node" visibility="public" type="_mf3a8CPhEeGlStagX1ZcuA">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_MlBFsSPlEeGRbZh-MY9luw" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_MlBFsiPlEeGRbZh-MY9luw" value="1"/>
+              </ownedParameter>
+              <ownedParameter xmi:id="_MlCT0CPlEeGRbZh-MY9luw" name="index" visibility="public" type="_buJvwPXJEeCTIMie9DR2WQ">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_MlCT0SPlEeGRbZh-MY9luw" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_MlCT0iPlEeGRbZh-MY9luw" value="1"/>
+              </ownedParameter>
+              <ownedParameter xmi:id="_MlC64CPlEeGRbZh-MY9luw" name="class" visibility="public" type="_urrecCPkEeGRbZh-MY9luw">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_MlC64SPlEeGRbZh-MY9luw" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_MlC64iPlEeGRbZh-MY9luw" value="1"/>
+              </ownedParameter>
+              <ownedParameter xmi:id="_MlDh8CPlEeGRbZh-MY9luw" visibility="public" type="_CZKVsCPlEeGRbZh-MY9luw" direction="return">
+                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_MlDh8SPlEeGRbZh-MY9luw" value="1"/>
+                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_MlDh8iPlEeGRbZh-MY9luw" value="1"/>
+              </ownedParameter>
             </ownedOperation>
           </packagedElement>
           <packagedElement xmi:type="uml:Usage" xmi:id="_FKuUMN1hEeCO1uZVwIAJVg" supplier="_E9IkIN1hEeCO1uZVwIAJVg" client="_E3ufs91hEeCO1uZVwIAJVg"/>
@@ -2013,6 +2476,7 @@ It is updated by the updateStates methods of all scenario components.</body>
           <packagedElement xmi:type="uml:Class" xmi:id="_LHrfMBz5EeG3Rf_jFMSSzQ" name="MonitorableDuoSKData" clientDependency="_PpVsgBz5EeG3Rf_jFMSSzQ">
             <interfaceRealization xmi:id="_PpVsgBz5EeG3Rf_jFMSSzQ" name="InterfaceRealization1" supplier="_9j7M0PXIEeCTIMie9DR2WQ" client="_LHrfMBz5EeG3Rf_jFMSSzQ" contract="_9j7M0PXIEeCTIMie9DR2WQ"/>
           </packagedElement>
+          <packagedElement xmi:type="uml:Enumeration" xmi:id="_CZKVsCPlEeGRbZh-MY9luw" name="Enumerate"/>
         </packagedElement>
         <packagedElement xmi:type="uml:Usage" xmi:id="_FKqCwN1hEeCO1uZVwIAJVg" supplier="_E9IkIN1hEeCO1uZVwIAJVg" client="_E1Ai4d1hEeCO1uZVwIAJVg"/>
         <packagedElement xmi:type="uml:Usage" xmi:id="_FKqCwd1hEeCO1uZVwIAJVg" supplier="_E9ODsN1hEeCO1uZVwIAJVg" client="_E1Ai4d1hEeCO1uZVwIAJVg"/>
@@ -2091,6 +2555,7 @@ It is updated by the updateStates methods of all scenario components.</body>
       <packagedElement xmi:type="uml:DataType" xmi:id="_FBPoEN1hEeCO1uZVwIAJVg" name="Object"/>
       <packagedElement xmi:type="uml:DataType" xmi:id="_FBRdQN1hEeCO1uZVwIAJVg" name="Throwable"/>
       <packagedElement xmi:type="uml:DataType" xmi:id="_FBUgkN1hEeCO1uZVwIAJVg" name="RuntimeException"/>
+      <packagedElement xmi:type="uml:DataType" xmi:id="_urrecCPkEeGRbZh-MY9luw" name="Class"/>
     </packagedElement>
     <packagedElement xmi:type="uml:Package" xmi:id="_E_ZN8N1hEeCO1uZVwIAJVg" name="util">
       <packagedElement xmi:type="uml:DataType" xmi:id="_E_ZN8d1hEeCO1uZVwIAJVg" name="ArrayList"/>
@@ -2127,11 +2592,8 @@ It is updated by the updateStates methods of all scenario components.</body>
               <packagedElement xmi:type="uml:DataType" xmi:id="_E9RuEN1hEeCO1uZVwIAJVg" name="UnivariateRealPointValuePair"/>
             </packagedElement>
             <packagedElement xmi:type="uml:Package" xmi:id="_p1gv8eBoEeCdstVTjind5Q" name="direct">
-              <packagedElement xmi:type="uml:Interface" xmi:id="_BbN18OBpEeCdstVTjind5Q" name="BaseAbstractScalarOptimizer">
+              <packagedElement xmi:type="uml:Interface" xmi:id="_BbN18OBpEeCdstVTjind5Q" name="BaseMultivariateRealOptimizer">
                 <ownedOperation xmi:id="_I7KZUOBpEeCdstVTjind5Q" name="optimize"/>
-              </packagedElement>
-              <packagedElement xmi:type="uml:Class" xmi:id="_krYX8OBpEeCdstVTjind5Q" name="BOBYQAOptimizer" clientDependency="_qeOgUOBpEeCdstVTjind5Q">
-                <interfaceRealization xmi:id="_qeOgUOBpEeCdstVTjind5Q" name="InterfaceRealization1" supplier="_BbN18OBpEeCdstVTjind5Q" client="_krYX8OBpEeCdstVTjind5Q" contract="_BbN18OBpEeCdstVTjind5Q"/>
               </packagedElement>
             </packagedElement>
           </packagedElement>
@@ -2237,11 +2699,17 @@ It is updated by the updateStates methods of all scenario components.</body>
         <packagedElement xmi:type="uml:DataType" xmi:id="_E9ctMd1hEeCO1uZVwIAJVg" name="PVCoordinates"/>
       </packagedElement>
     </packagedElement>
+    <packagedElement xmi:type="uml:Package" xmi:id="_edm0sCPhEeGlStagX1ZcuA" name="antlr">
+      <packagedElement xmi:type="uml:Package" xmi:id="_h1TwUCPhEeGlStagX1ZcuA" name="runtime">
+        <packagedElement xmi:type="uml:Package" xmi:id="_j1Gd0CPhEeGlStagX1ZcuA" name="tree">
+          <packagedElement xmi:type="uml:DataType" xmi:id="_mf3a8CPhEeGlStagX1ZcuA" name="Tree"/>
+        </packagedElement>
+      </packagedElement>
+    </packagedElement>
   </packagedElement>
   <packagedElement xmi:type="uml:DataType" xmi:id="_E_Z1BN1hEeCO1uZVwIAJVg" name="double"/>
   <packagedElement xmi:type="uml:DataType" xmi:id="_E_3vEt1hEeCO1uZVwIAJVg" name="boolean"/>
   <packagedElement xmi:type="uml:DataType" xmi:id="_FDK6sN1hEeCO1uZVwIAJVg" name="int"/>
-  <packagedElement xmi:type="uml:DataType" xmi:id="_FG7ZUN1hEeCO1uZVwIAJVg" name="Key"/>
   <packagedElement xmi:type="uml:Component" xmi:id="_h0tAgd7OEeCzQIF1TbkANw">
     <nestedClassifier xmi:type="uml:Component" xmi:id="__V5bQN7TEeCzQIF1TbkANw" name="Orekit" clientDependency="_1vJG8N7UEeCzQIF1TbkANw"/>
     <nestedClassifier xmi:type="uml:Component" xmi:id="_bZUpwN7UEeCzQIF1TbkANw" name="Apache Commons Math"/>
@@ -2268,5 +2736,9 @@ It is updated by the updateStates methods of all scenario components.</body>
     <packagedElement xmi:type="uml:PrimitiveType" xmi:id="_26xTseRSEeCC7oKz25Mm0Q" name="double"/>
     <packagedElement xmi:type="uml:PrimitiveType" xmi:id="_1_1DgORUEeCC7oKz25Mm0Q" name="void"/>
     <packagedElement xmi:type="uml:PrimitiveType" xmi:id="_buJvwPXJEeCTIMie9DR2WQ" name="int"/>
+    <packagedElement xmi:type="uml:PrimitiveType" xmi:id="_-V404CPhEeGlStagX1ZcuA" name="boolean"/>
+    <packagedElement xmi:type="uml:Package" xmi:id="_dAgtICP4EeG6mOXI37upWQ" name="eu.eumetsat.skat.strategies">
+      <packagedElement xmi:type="uml:Class" xmi:id="_dAgtISP4EeG6mOXI37upWQ" name="ScheduledManeuver"/>
+    </packagedElement>
   </packagedElement>
 </uml:Model>
