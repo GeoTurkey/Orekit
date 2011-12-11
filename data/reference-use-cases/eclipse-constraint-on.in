@@ -171,14 +171,14 @@ scenario         = [
     },
     {
         # this test case triggers the eclipse constraint with a
-        # 0.9629 m/s normal maneuver at 2011-2011-02-26T00:10:37.838
-        # with the following low performances, its duration is 1922.172 seconds
+        # 0.72404046 m/s normal maneuver at 2011-02-26T00:08:08.008
+        # with the low performances above, its duration is 1445.422 seconds
         # the closest eclipse is slightly before the nominal maneuver start,
         # from 23:10:39.556 to 23:39:37.524, so its duration is 1737.968 seconds.
-        # The maneuver is split in four 480.543 seconds long burns, which
-        # are larger than the required 80%, and it is shifted 2700.586 seconds
+        # The maneuver is split in three 481.807 seconds long burns, which
+        # are larger than the required 80%, and it is shifted 2551.388 seconds
         # earlier.
-        # The first burn finally occurs between 23:21:36.981 and 23:29:37.524,
+        # The first burn finally occurs between 23:21:35.716 and 23:29:37.524,
         # so it ends exactly 600 seconds before eclipse end.
         component           = MANEUVER_ECLIPSE_CONSTRAINT;
         managed_spacecrafts = [ "Metop" ];

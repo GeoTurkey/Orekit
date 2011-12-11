@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.math.analysis.MultivariateFunction;
+import org.apache.commons.math.util.FastMath;
 import org.orekit.errors.OrekitException;
 import org.orekit.propagation.Propagator;
 import org.orekit.propagation.analytical.ManeuverAdapterPropagator;
@@ -149,8 +150,11 @@ class ObjectiveFunction implements MultivariateFunction {
             // compute sum of squared scaled residuals
             double sum = 0;
             for (final SKControl s : controls) {
-                final double residual = s.getAchievedValue() - s.getTargetValue();
-                final double scaledResidual = residual / s.getScalingDivisor();
+                final double residual = FastMath.abs(s.getAchievedValue() - s.getTargetValue());
+                double scaledResidual = residual / s.getScalingDivisor();
+                if (s.limitsExceeded()) {
+                    scaledResidual += 1000.0;
+                }
                 sum += scaledResidual * scaledResidual;
             }
 
