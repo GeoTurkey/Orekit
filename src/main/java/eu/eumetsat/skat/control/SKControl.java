@@ -79,9 +79,9 @@ public interface SKControl extends SKElement {
     double getAchievedValue() throws OrekitException;
 
     /** Check if the control limits have been exceeded.
-     * @return true if the control limits have been exceeded
+     * @return a positive value if limit is exceeded
      */
-    boolean limitsExceeded();
+    double limitsExceeded();
 
     /** Get the name of the controlled spacecraft.
      * @return name of the controlled spacecraft.

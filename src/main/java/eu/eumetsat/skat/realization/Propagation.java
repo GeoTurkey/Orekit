@@ -74,6 +74,10 @@ public class Propagation implements ScenarioComponent {
         this.cycleEnd = cycleEnd;
     }
 
+    public Propagator getPropagator(int i, SpacecraftState s) throws OrekitException {
+        return randomizers[i].getPropagator(s);
+    }
+
     /** {@inheritDoc} */
     public ScenarioState[] updateStates(final ScenarioState[] originals)
         throws OrekitException, SkatException {

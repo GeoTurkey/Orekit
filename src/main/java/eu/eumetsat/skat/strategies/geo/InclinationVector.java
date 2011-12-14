@@ -90,7 +90,7 @@ public class InclinationVector extends AbstractSKControl {
     /** {@inheritDoc} */
     public double getAchievedValue() {
 
-        if (limitsExceeded()) {
+        if (limitsExceeded() > 0) {
             // we escaped the limit circle during the cycle, we need to adjust the maneuvers
 
             // compute center of the motion along the x axis

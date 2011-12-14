@@ -1,6 +1,8 @@
 /* Copyright 2011 Eumetsat */
 package eu.eumetsat.skat.control;
 
+import org.apache.commons.math.util.FastMath;
+
 
 
 /**
@@ -36,7 +38,7 @@ public abstract class AbstractSKControl implements SKControl {
     private final double max;
 
     /** Indicator of constraint violation during the cycle. */
-    private boolean limitsExceeded;
+    private double limitsExceeded;
 
     /** Simple constructor.
      * @param name name of the control law
@@ -98,7 +100,7 @@ public abstract class AbstractSKControl implements SKControl {
     /** Reset the limits checks.
      */
     public void resetLimitsChecks() {
-        limitsExceeded = false;
+        limitsExceeded = 0;
     }
 
     /** {@inheritDoc} */
@@ -122,7 +124,7 @@ public abstract class AbstractSKControl implements SKControl {
     }
 
     /** {@inheritDoc} */
-    public boolean limitsExceeded() {
+    public double limitsExceeded() {
         return limitsExceeded;
     }
 
@@ -130,8 +132,10 @@ public abstract class AbstractSKControl implements SKControl {
      * @param value current value of the control law
      */
     protected void checkLimits(final double value) {
-        if ((value < min) || (value > max)) {
-            limitsExceeded = true;
+        if (value < min) {
+            limitsExceeded = FastMath.max(limitsExceeded, min - value);
+        } else if (value > max) {
+            limitsExceeded = FastMath.max(limitsExceeded, value - max);
         }
     }
 

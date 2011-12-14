@@ -191,7 +191,7 @@ public class OneOrTwoBurnsSelector implements ScenarioComponent {
 
         // check constraints
         for (final SKControl controlLaw : controls) {
-            if (controlLaw.limitsExceeded()) {
+            if (controlLaw.limitsExceeded() < 0) {
                 return false;
             }
         }

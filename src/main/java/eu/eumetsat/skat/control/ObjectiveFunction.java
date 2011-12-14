@@ -148,18 +148,18 @@ class ObjectiveFunction implements MultivariateFunction {
             propagator.propagate(start.shiftedBy(rollingCycles * cycleDuration * Constants.JULIAN_DAY));
 
             // compute sum of squared scaled residuals
-            double sum = 0;
+            double sum        = 0;
+            double sumLimits  = 0;
             for (final SKControl s : controls) {
                 final double residual = FastMath.abs(s.getAchievedValue() - s.getTargetValue());
                 double scaledResidual = residual / s.getScalingDivisor();
-                if (s.limitsExceeded()) {
-                    scaledResidual += 1000.0;
-                }
+                sumLimits += s.limitsExceeded();
                 sum += scaledResidual * scaledResidual;
             }
+            double result = (sumLimits > 0) ? 1000.0 + 1e6 * sumLimits : sum;
 
-            // return the sum of squared scaled residuals
-            return sum;
+            // return the overall objective function value
+            return result;
 
         } catch (OrekitException oe) {
             return Double.POSITIVE_INFINITY;
