@@ -156,11 +156,24 @@ public enum SupportedScenariocomponent {
                 final double dtConvergence = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DT_CONVERGENCE);
                 for (int j = 0; j < rollingCycles; ++j) {
                     // set up the maneuver for several cycles that will be optimized together
-                    maneuvers[j * maneuversPerCycle + i] = new TunableManeuver(name, inPlane,
-                                                                               dateReferenceManeuver, dVReferenceManeuver,
-                                                                               direction, thrust, isp,
-                                                                               dvNominal, dvMin, dvMax, dvConvergence,
-                                                                               dtNominal, dtMin, dtMax, dtConvergence);
+                    final TunableManeuver m = new TunableManeuver(name, inPlane,
+                                                                  dateReferenceManeuver, dVReferenceManeuver,
+                                                                  direction, thrust, isp,
+                                                                  dvNominal, dvMin, dvMax, dvConvergence,
+                                                                  dtNominal, dtMin, dtMax, dtConvergence);
+                    if (m.getEarliestDateOffset() < 0) {
+                        throw new SkatException(SkatMessages.MANEUVER_MAY_OCCUR_BEFORE_CYCLE,
+                                                name, -m.getEarliestDateOffset(),
+                                                parser.getValue(maneuver,  ParameterKey.MANEUVERS_DT_MIN).getLine(),
+                                                parser.getInputName());
+                    }
+                    if (m.getLatestDateOffset() > skat.getCycleDuration() * Constants.JULIAN_DAY) {
+                        throw new SkatException(SkatMessages.MANEUVER_MAY_OCCUR_AFTER_CYCLE,
+                                                name, m.getLatestDateOffset() - skat.getCycleDuration() * Constants.JULIAN_DAY,
+                                                parser.getValue(maneuver,  ParameterKey.MANEUVERS_DT_MAX).getLine(),
+                                                parser.getInputName());
+                    }
+                    maneuvers[j * maneuversPerCycle + i] = m;
                 }
             }
 

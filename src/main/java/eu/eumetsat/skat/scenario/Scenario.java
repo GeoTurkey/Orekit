@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 
+import org.apache.commons.math.util.FastMath;
 import org.orekit.bodies.BodyShape;
 import org.orekit.bodies.CelestialBody;
 import org.orekit.errors.OrekitException;
@@ -241,9 +242,8 @@ public class Scenario implements ScenarioComponent {
 
         // monitor data
         final double safetyMargin = 1.0e-3;
-        for (AbsoluteDate date = tMin.shiftedBy(safetyMargin);
-             date.compareTo(tMax.shiftedBy(-safetyMargin)) <= 0;
-             date = date.shiftedBy(outputstep)) {
+        AbsoluteDate date = tMin.shiftedBy(safetyMargin);
+        while (date.compareTo(tMax) <= 0) {
 
             // check for maneuvers that have occurred
             updatePendingManeuvers(date, states);
@@ -254,6 +254,15 @@ public class Scenario implements ScenarioComponent {
             }
             for (final MonitorableDuoSKData monitorable : monitorablesDuo) {
                 monitorable.update(date, states, earth, groundLocation);
+            }
+
+            // go to next step, adjusting the last step to be slightly before the limit
+            if (tMax.durationFrom(date) > outputstep + safetyMargin) {
+                date = date.shiftedBy(outputstep);
+            } else if (FastMath.abs(tMax.durationFrom(date)) > 2 * safetyMargin) {
+                date = tMax.shiftedBy(-safetyMargin);
+            } else {
+                date = AbsoluteDate.FUTURE_INFINITY;
             }
 
         }

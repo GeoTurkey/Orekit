@@ -1,0 +1,168 @@
+# General simulation parameters
+simulation       = {
+    output_base_name        = "issue-40";
+    inertial_frame   = "TOD with EOP";
+	earth_frame      = "ITRF2008 with tides";
+    solar_activity_strength = AVERAGE;
+    start_date              = 2013-02-20T00:00:00.000;
+    end_date                = 2013-04-20T00:00:00.000;
+    cycle_duration          = 14.0;
+    rolling_cycles          = 2;
+    output_step             = 86400.0;
+    random_seed             = 156325253;
+    ground_location         = {
+        latitude     = 49.85;
+        longitude    =  8.65;
+        altitude     =  0.0
+    };
+};
+# Array of initial states
+# there must be exactly one element for each spacecraft
+initial_states   = [
+    {
+        name                   = "Meteosat 7"; 
+        bol_mass               = 1160;
+        cycle_number           = 1;
+        in_plane_maneuvers     = 0;
+        in_plane_total_dV      = 0.0;
+        out_of_plane_maneuvers = 0;
+        out_of_plane_total_dV  = 0.0;
+        mass                   = 1160.0;
+        orbit                  = {
+            date               = 2012-10-31T00:00:00.000;
+            orbit_type         = CIRCULAR; #def for equinoctical kep(3:6)=kep(3:6)*pi/180;e_vect=kep(2)*[sin(kep(4)+kep(5)) cos(kep(4)+kep(5))];i_vect=tan(kep(3)/2)*[-cos(kep(4)) -sin(kep(4))];long_arg=mod(sum(kep(4:6))*180/pi,360);
+            angle_type         = TRUE;
+            a                  =  42164537;   	
+			ex                 =  0;
+            ey                 =  0;
+            i                  =  0.8;
+            raan               =  146;  
+            latitude_argument  =  163.693; 
+        } 
+
+    }
+];
+# Array of scenario components
+# each scenario component specifies to which spacecrafts it applies
+scenario         = [
+    {
+        component           = ORBIT_DETERMINATION;
+        managed_spacecrafts = [ "Meteosat 7" ];
+        orbit_type          = EQUINOCTIAL;
+        angle_type          = MEAN;
+        small               = 1.0e-12;
+        correlation         = [
+            [  1.0, 0.0, 0.0, 0.0, 0.0, 0.0 ],
+            [  0.0, 1.0, 0.0, 0.0, 0.0, 0.0 ],
+            [  0.0, 0.0, 1.0, 0.0, 0.0, 0.0 ],
+            [  0.0, 0.0, 0.0, 1.0, 0.0, 0.0 ],
+            [  0.0, 0.0, 0.0, 0.0, 1.0, 0.0 ],
+            [  0.0, 0.0, 0.0, 0.0, 0.0, 1.0 ]
+        ];
+        standard_deviation  = [ 5.0, 1.0e-7, 1.0e-7, 1.0e-6, 1.0e-6, 1.0e-6 ];
+    },
+    {
+        component                = CONTROL_LOOP;
+        # note: control loop components control only ONE spacecraft each
+        controlled_spacecraft    = "Meteosat 7";
+        first_cycle              = 1;
+        last_cycle               = 999;
+        max_eval                 = 1000;
+        global_stop_criterion    = 1.e-2;
+        in_plane_elimination     = 0.001;
+        out_of_plane_elimination = 40;
+        optimizer                = {
+            method                     = NELDER_MEAD;
+            convergence_span           = 5;
+            initial_simplex_size_ratio = 0.01
+        };
+        propagator  = {
+            method                 = NUMERICAL;
+            min_step               = 1.0;
+            max_step               = 900.0;
+            position_tolerance     = 5.0;
+            gravity_field_degree   = 6;
+            gravity_field_order    = 6;
+            srp_cross_section      = 8.475;
+            absorption_coefficient = 0.0;
+            reflection_coefficient = 1.25;
+            third_bodies           = [ SUN, MOON ];
+        };
+        controls    = [
+            {
+                scaling_divisor     = 500.0;
+                type                = MINIMIZED_MANEUVERS;
+                name                = "minimized N/S deltaV";
+                in_plane            = false;
+                out_of_plane        = true;
+            },
+            {
+                scaling_divisor     = 1.0e-4;
+                type                = INCLINATION_VECTOR;
+                name                = "inclination vector";
+                target_x            =  0.0;
+                target_y            =  0.0;
+                limit_circle_radius =  0.00872686779075879; #=> tan(1 deg *pi/180 *1/2)
+                sampling            = 7200.0;
+            }
+        ];
+        maneuvers   = [
+            {
+                in_plane       = false;
+                name           = "N/S";
+                direction      = [ 0.0, 1.0, 0.0 ];
+                thrust         = [ [  40, 0.0 ], [  30, 600.0 ] ];
+                isp_curve      = [ [ 315, 0.0 ], [ 300, 600.0 ] ];
+                nominal_dv     =  0.0;
+                dv_min         =  30.0;
+                dv_max         =  100.0;
+                dv_convergence =  0.005;
+                nominal_date   = 172800;
+                dt_min         = -43200;
+                dt_max         =  1036800;
+                dt_convergence =  300.0;
+            }
+        ];
+    },
+    {
+        component              = PROPAGATION;
+        managed_spacecrafts    = [ "Meteosat 7" ];
+        long_burn_compensation = false;
+        propagator             = {
+            method                 = NUMERICAL;
+            min_step               = 10.0;
+            max_step               = 900.0;
+            position_tolerance     = 5.0;
+            gravity_field_degree   = 10;
+            gravity_field_order    = 10;
+            srp_cross_section      = 8.475;
+            absorption_coefficient = 0.0;
+            reflection_coefficient = 1.25;
+            third_bodies           = [ SUN, MOON ];
+        }
+    }
+];
+
+monitoring_mono = [
+    POSITION_INERTIAL,
+    VELOCITY_INERTIAL,
+    POSITION_EARTH,
+    VELOCITY_EARTH,	
+    IN_PLANE_MANEUVER_NUMBER,
+    IN_PLANE_MANEUVER_CYCLE_DV,
+    IN_PLANE_MANEUVER_TOTAL_DV,
+    OUT_OF_PLANE_MANEUVER_NUMBER,
+    OUT_OF_PLANE_MANEUVER_CYCLE_DV,
+    OUT_OF_PLANE_MANEUVER_TOTAL_DV,
+    SPACECRAFT_MASS,
+    LATITUDE,
+    LONGITUDE,
+    ALTITUDE,
+    SEMI_MAJOR_AXIS,
+    ECCENTRICITY,
+    INCLINATION,
+    CIRCULAR_ECCENTRICITY_VECTOR,
+    EQUINOCTIAL_ECCENTRICITY_VECTOR,
+    EQUINOCTIAL_INCLINATION_VECTOR,
+    CYCLES_NUMBER	
+]
