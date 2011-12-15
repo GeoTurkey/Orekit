@@ -255,4 +255,20 @@ public class TunableManeuver {
         return reference.shiftedBy(dtNominal + dateOffset.getValue());
     }
 
+    /** Get earliest date offset from cycle start.
+     * @return earliest date offset from cycle start
+     */
+    public double getEarliestDateOffset() {
+        return dateOffset.getMin() + dtNominal +
+               ((dateReferenceManeuver == null) ? 0 : dateReferenceManeuver.getEarliestDateOffset());
+    }
+
+    /** Get latest date offset from cycle start.
+     * @return latest date offset from cycle start
+     */
+    public double getLatestDateOffset() {
+        return dateOffset.getMax() + dtNominal +
+               ((dateReferenceManeuver == null) ? 0 : dateReferenceManeuver.getLatestDateOffset());
+    }
+
 }

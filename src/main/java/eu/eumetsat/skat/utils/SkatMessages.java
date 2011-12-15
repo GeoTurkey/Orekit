@@ -42,6 +42,8 @@ public enum SkatMessages implements Localizable {
     WRONG_TYPE("type error at line {0} of input file {1}, expected {2} but was {3}"),
     MISSING_INPUT_DATA("missing data near line {0} of input file {1}: {2}"),
     REFERENCE_MANEUVER_NOT_FOUND("reference maneuver {0} not be found (line {1} of input file {2})"),
+    MANEUVER_MAY_OCCUR_BEFORE_CYCLE("maneuver {0} may occur up to {1} seconds before cycle start (line {2} of input file {3})"),
+    MANEUVER_MAY_OCCUR_AFTER_CYCLE("maneuver {0} may occur up to {1} seconds after cycle end (line {2} of input file {3})"),
     UNSUPPORTED_KEY("unsupported key \"{0}\" at line {1} of input file {2}, supported keys: {3}"),
     UNKNOWN_SPACECRAFT("unknown spacecraft {0}, known spacecrafts: {1}"),
     SPACECRAFT_MANAGED_TWICE("spacecraft {0} is managed by several propagation scenario components"),
