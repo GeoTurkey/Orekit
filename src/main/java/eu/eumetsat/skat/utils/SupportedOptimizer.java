@@ -8,7 +8,7 @@ import java.util.List;
 
 import org.antlr.runtime.tree.Tree;
 import org.apache.commons.math.analysis.MultivariateFunction;
-import org.apache.commons.math.optimization.BaseMultivariateRealOptimizer;
+import org.apache.commons.math.optimization.BaseMultivariateOptimizer;
 import org.apache.commons.math.optimization.ConvergenceChecker;
 import org.apache.commons.math.optimization.GoalType;
 import org.apache.commons.math.optimization.RealPointValuePair;
@@ -30,7 +30,7 @@ public enum SupportedOptimizer {
     /** Constant for Nelder-Mead. */
     NELDER_MEAD() {
         /** {@inheritDoc} */
-        public BaseMultivariateRealOptimizer<MultivariateFunction>
+        public BaseMultivariateOptimizer<MultivariateFunction>
             parse(final SkatFileParser parser, final Tree node,
                   final TunableManeuver[] maneuvers, final double stopCriterion, 
                   final Skat skat) {
@@ -75,7 +75,7 @@ public enum SupportedOptimizer {
     /** Constant for Covariance Matrix Adaptation Evolution Strategy (CMA-ES). */
     CMA_ES() {
         /** {@inheritDoc} */
-        public BaseMultivariateRealOptimizer<MultivariateFunction>
+        public BaseMultivariateOptimizer<MultivariateFunction>
             parse(final SkatFileParser parser, final Tree node,
                   final TunableManeuver[] maneuvers, final double stopCriterion, 
                   final Skat skat) {
@@ -100,7 +100,7 @@ public enum SupportedOptimizer {
      * @param skat enclosing Skat tool
      * @return parsed component
      */
-    public abstract BaseMultivariateRealOptimizer<MultivariateFunction>
+    public abstract BaseMultivariateOptimizer<MultivariateFunction>
         parse(SkatFileParser parser, Tree node, TunableManeuver[] maneuvers, double stopCriterion, Skat skat);
 
     /** Get the parameters boundaries.

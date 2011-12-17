@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.math.analysis.MultivariateFunction;
-import org.apache.commons.math.optimization.BaseMultivariateRealOptimizer;
+import org.apache.commons.math.optimization.BaseMultivariateOptimizer;
 import org.apache.commons.math.optimization.GoalType;
 import org.apache.commons.math.optimization.RealPointValuePair;
 import org.orekit.errors.OrekitException;
@@ -54,7 +54,7 @@ public class ControlLoop implements ScenarioComponent {
     private final int maxEval;
 
     /** Optimizing engine. */
-    private final BaseMultivariateRealOptimizer<MultivariateFunction> optimizer;
+    private final BaseMultivariateOptimizer<MultivariateFunction> optimizer;
 
     /** Orbit propagator randomizer. */
     private final PropagatorRandomizer randomizer;
@@ -109,7 +109,7 @@ public class ControlLoop implements ScenarioComponent {
      */
     public ControlLoop(final int spacecraftIndex, final int firstCycle, final int lastCycle,
                        final TunableManeuver[] tunables, final int maxEval,
-                       final BaseMultivariateRealOptimizer<MultivariateFunction> optimizer,
+                       final BaseMultivariateOptimizer<MultivariateFunction> optimizer,
                        final PropagatorRandomizer randomizer, final double cycleDuration, final int rollingCycles,
                        final double inPlaneEliminationThreshold, final double outOfPlaneEliminationThreshold) {
         this.spacecraftIndex                = spacecraftIndex;

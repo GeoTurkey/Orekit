@@ -7,7 +7,7 @@ import org.apache.commons.math.exception.DimensionMismatchException;
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math.linear.Array2DRowRealMatrix;
 import org.apache.commons.math.linear.RealMatrix;
-import org.apache.commons.math.optimization.BaseMultivariateRealOptimizer;
+import org.apache.commons.math.optimization.BaseMultivariateOptimizer;
 import org.orekit.errors.OrekitException;
 import org.orekit.orbits.OrbitType;
 import org.orekit.orbits.PositionAngle;
@@ -184,7 +184,7 @@ public enum SupportedScenariocomponent {
             final SupportedOptimizer so =
                     (SupportedOptimizer) parser.getEnumerate(optimizerNode, ParameterKey.OPTIMIZER_METHOD,
                                                              SupportedOptimizer.class);
-            final BaseMultivariateRealOptimizer<MultivariateFunction> optimizer =
+            final BaseMultivariateOptimizer<MultivariateFunction> optimizer =
                     so.parse(parser, optimizerNode, maneuvers, stopCriterion, skat);
 
             // propagator
