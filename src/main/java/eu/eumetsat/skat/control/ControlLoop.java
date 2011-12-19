@@ -2,12 +2,10 @@
 package eu.eumetsat.skat.control;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
-import org.apache.commons.math.analysis.MultivariateFunction;
-import org.apache.commons.math.optimization.BaseMultivariateOptimizer;
-import org.apache.commons.math.optimization.GoalType;
-import org.apache.commons.math.optimization.RealPointValuePair;
 import org.orekit.errors.OrekitException;
 import org.orekit.forces.maneuvers.ConstantThrustManeuver;
 import org.orekit.forces.maneuvers.ImpulseManeuver;
@@ -16,7 +14,9 @@ import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
 import org.orekit.propagation.analytical.ManeuverAdapterPropagator;
 import org.orekit.propagation.events.DateDetector;
+import org.orekit.propagation.events.EventDetector;
 import org.orekit.propagation.numerical.NumericalPropagator;
+import org.orekit.propagation.sampling.OrekitStepHandlerMultiplexer;
 import org.orekit.time.AbsoluteDate;
 import org.orekit.utils.Constants;
 
@@ -50,11 +50,8 @@ public class ControlLoop implements ScenarioComponent {
     /** Index of the spacecraft controlled by this component. */
     private final int spacecraftIndex;
 
-    /** Maximal number of objective function evaluations. */
-    private final int maxEval;
-
-    /** Optimizing engine. */
-    private final BaseMultivariateOptimizer<MultivariateFunction> optimizer;
+    /** Maximal number of iterations. */
+    private final int maxIter;
 
     /** Orbit propagator randomizer. */
     private final PropagatorRandomizer randomizer;
@@ -99,8 +96,7 @@ public class ControlLoop implements ScenarioComponent {
      * @param firstCycle first cycle this loop should control
      * @param lastCycle last cycle this loop should control
      * @param tunables tunable maneuvers (for all rolling cycles)
-     * @param maxEval maximal number of objective function evaluations
-     * @param optimizer optimizing engine
+     * @param maxIter maximal number of iterations
      * @param randomizer orbit propagator randomizer
      * @param cycleDuration Cycle duration
      * @param rollingCycles number of cycles to use for rolling optimization
@@ -108,15 +104,14 @@ public class ControlLoop implements ScenarioComponent {
      * @param outOfPlaneEliminationThreshold threshold for eliminating to small out_of-plane maneuvers
      */
     public ControlLoop(final int spacecraftIndex, final int firstCycle, final int lastCycle,
-                       final TunableManeuver[] tunables, final int maxEval,
-                       final BaseMultivariateOptimizer<MultivariateFunction> optimizer,
-                       final PropagatorRandomizer randomizer, final double cycleDuration, final int rollingCycles,
-                       final double inPlaneEliminationThreshold, final double outOfPlaneEliminationThreshold) {
+                       final TunableManeuver[] tunables, final int maxIter,
+                       final PropagatorRandomizer randomizer,
+                       final double cycleDuration, final int rollingCycles, final double inPlaneEliminationThreshold,
+                       final double outOfPlaneEliminationThreshold) {
         this.spacecraftIndex                = spacecraftIndex;
         this.firstCycle                     = firstCycle;
         this.lastCycle                      = lastCycle;
-        this.maxEval                        = maxEval;
-        this.optimizer                      = optimizer;
+        this.maxIter                        = maxIter;
         this.randomizer                     = randomizer;
         this.tunables                       = tunables.clone();
         this.controls                       = new ArrayList<SKControl>();
@@ -199,20 +194,47 @@ public class ControlLoop implements ScenarioComponent {
             final BoundedPropagator reference =
                     computeReferenceEphemeris(original.getEstimatedState(), original.getManeuvers());
 
-            // find the optimal parameters that minimize objective function
-            final ObjectiveFunction objective =
-                    new ObjectiveFunction(reference, reference.getMinDate(), reference.getMaxDate(),
-                                          cycleDuration, rollingCycles, tunables, controls);
-            final RealPointValuePair pointValue =
-                    optimizer.optimize(maxEval, objective, GoalType.MINIMIZE, startPoint);
-            final double[] optimum = pointValue.getPoint();
+            // initial setting for tunable maneuvers
+            ManeuverAdapterPropagator propagator = new ManeuverAdapterPropagator(reference);
+            ScheduledManeuver[] maneuvers = setUpManeuvers(reference.getMinDate(), propagator);
+
+            // find the optimal parameters that fulfill control laws
+            boolean converged = false;
+            for (int i = 0; i < maxIter && !converged; ++i) {
+
+                // compute the control laws
+                runCycle(maneuvers, propagator, reference.getMinDate(), reference.getMaxDate());
+
+                // update the maneuvers
+                converged = true;
+                propagator = new ManeuverAdapterPropagator(reference);
+                for (final SKControl controlLaw : controls) {
+                    converged &= controlLaw.tuneManeuvers(tunables);
+                }
+
+                for (int j = 0; j < maneuvers.length; ++j) {
+                    maneuvers[j] = tunables[j].getManeuver(propagator, controls);
+                    propagator.addManeuver(maneuvers[j].getDate(), maneuvers[j].getDeltaV(), maneuvers[j].getIsp());
+                }
+
+            }
+
+            if (!converged) {
+                final StringBuilder builder = new StringBuilder();
+                for (int j = 0; j < controls.size(); ++j) {
+                    if (j > 0) {
+                        builder.append(", ");
+                    }
+                    builder.append(controls.get(j).getName());
+                }
+                throw new SkatException(SkatMessages.NO_CONVERGENCE, maxIter, builder.toString());
+            }
 
             // update the scheduled maneuvers, adding the newly optimized set
             final List<ScheduledManeuver> theoreticalManeuvers = new ArrayList<ScheduledManeuver>();
             if (original.getManeuvers() != null) {
                 theoreticalManeuvers.addAll(original.getManeuvers());
             }
-            final ScheduledManeuver[] maneuvers = objective.setUpManeuvers(optimum, new ManeuverAdapterPropagator(reference));
             for (int i = 0; i < tunables.length / rollingCycles; ++i) {
                 // extract the optimized maneuver for the next cycle only
                 if (maneuvers[i].isInPlane()) {
@@ -229,17 +251,27 @@ public class ControlLoop implements ScenarioComponent {
             // build the updated scenario state
             updated[spacecraftIndex] = original.updateManeuvers(theoreticalManeuvers);
 
-//            // prepare start point for next cycle by shifting already optimized maneuvers one cycle
-//            // and repeating last cycle
-//            if (rollingCycles > 1) {
-//                final int parametersPerCycle = startPoint.length / rollingCycles;
-//                System.arraycopy(optimum,    parametersPerCycle,
-//                                 startPoint, 0,
-//                                 startPoint.length - parametersPerCycle);
-//                System.arraycopy(startPoint, startPoint.length - 2 * parametersPerCycle,
-//                                 startPoint, startPoint.length - parametersPerCycle,
-//                                 parametersPerCycle);
-//            }
+        }
+
+        // prepare start point for next cycle
+        if (rollingCycles > 1) {
+
+            // shift already optimized maneuvers one cycle ahead
+            int index = 0;
+            final int maneuversPerCycle  = tunables.length   / rollingCycles;
+            for (int i = maneuversPerCycle; i < tunables.length - 1; ++i) {
+                for (final SKParameter parameter : tunables[i].getParameters()) {
+                    if (parameter.isTunable()) {
+                        startPoint[index++] = parameter.getValue();
+                    }
+                }
+            }
+
+            // repeat last cycle
+            final int parametersPerCycle = startPoint.length / rollingCycles;
+            System.arraycopy(startPoint, startPoint.length - 2 * parametersPerCycle,
+                             startPoint, startPoint.length - parametersPerCycle,
+                             parametersPerCycle);
 
         }
 
@@ -289,6 +321,87 @@ public class ControlLoop implements ScenarioComponent {
         propagator.propagate(endDate);
 
         return propagator.getGeneratedEphemeris();
+
+    }
+
+    /** Initial set up the station keeping maneuvers parameters.
+     * @param start cycle start date
+     * @param propagator maneuver adapter to use (the maneuvers will be added to it)
+     * @return maneuvers that were added to the propagator
+     * @exception OrekitException if spacecraft state cannot be determined at some
+     * maneuver date
+     */
+    private ScheduledManeuver[] setUpManeuvers(final AbsoluteDate start,
+                                               final ManeuverAdapterPropagator propagator)
+        throws OrekitException {
+
+        final ScheduledManeuver[] scheduled = new ScheduledManeuver[tunables.length];
+
+        int index = 0;
+        for (int i = 0; i < tunables.length; ++i) {
+            final TunableManeuver maneuver = tunables[i];
+            // the date of this maneuver is relative to the cycle start
+            final int maneuversPerCycle   = tunables.length / rollingCycles;
+            final int cycleIndex          = i / maneuversPerCycle;
+            final double offset           = cycleIndex * cycleDuration * Constants.JULIAN_DAY;
+            final AbsoluteDate cycleStart = start.shiftedBy(offset);
+            maneuver.setCycleStartDate(cycleStart);
+            for (final SKParameter parameter : maneuver.getParameters()) {
+                if (parameter.isTunable()) {
+                    parameter.setValue(startPoint[index++]);
+                }
+            }
+
+            scheduled[i] = maneuver.getManeuver(propagator, controls);
+            propagator.addManeuver(scheduled[i].getDate(), scheduled[i].getDeltaV(), scheduled[i].getIsp());
+
+        }
+
+        return scheduled;
+
+    }
+
+    /** Run one iteration of the cycle.
+     * @param maneuvers current value of the tuned maneuvers
+     * @param propagator propagator to use (already takes the maneuvers into account)
+     * @param start start of the simulation
+     * @param end end of the simulation
+     * @exception OrekitException if the propagation cannot be performed
+     */
+    public void runCycle(final ScheduledManeuver[] maneuvers, final Propagator propagator,
+                         final AbsoluteDate start, final AbsoluteDate end)
+        throws OrekitException {
+
+        // prepare run
+        for (final SKControl control : controls) {
+            control.initializeRun(maneuvers, propagator, start, end, rollingCycles);
+        }
+
+        // get the detectors associated with control laws
+        final Set<EventDetector> detectors = new HashSet<EventDetector>();
+        for (final SKControl control : controls) {
+            if (control.getEventDetector() != null) {
+                detectors.add(control.getEventDetector());
+            }
+        }
+
+        // get the step handlers associated with control laws
+        final OrekitStepHandlerMultiplexer multiplexer = new OrekitStepHandlerMultiplexer();
+        for (final SKControl control : controls) {
+            if (control.getStepHandler() != null) {
+                multiplexer.add(control.getStepHandler());
+            }
+        }
+        propagator.setMasterMode(multiplexer);
+
+        // set up the propagator with the station-keeping elements
+        // that are part of the optimization process in the control loop
+        for (final EventDetector detector : detectors) {
+            propagator.addEventDetector(detector);
+        }
+
+        // perform propagation
+        propagator.propagate(start.shiftedBy(rollingCycles * cycleDuration * Constants.JULIAN_DAY));
 
     }
 

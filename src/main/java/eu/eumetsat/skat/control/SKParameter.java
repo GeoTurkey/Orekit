@@ -68,7 +68,7 @@ public class SKParameter implements SKElement {
         guessingBase.add(max);
 
         setValue(value);
-        setTunable(tunable);
+        this.tunable = tunable;
 
     }
 
@@ -140,13 +140,6 @@ public class SKParameter implements SKElement {
      */
     public boolean isTunable() {
         return tunable;
-    }
-
-    /** Set the tunable flag.
-     * @param tunable if true, the parameter becomes tunable
-     */
-    public void setTunable(boolean tunable) {
-        this.tunable = tunable;
     }
 
 }

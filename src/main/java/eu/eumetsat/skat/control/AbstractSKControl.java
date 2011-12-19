@@ -13,9 +13,6 @@ public abstract class AbstractSKControl implements SKControl {
     /** Name of the control law. */
     private final String name;
 
-    /** Divisor for scaling the control law. */
-    private final double scalingDivisor;
-
     /** Name of the controlled spacecraft. */
     private final String controlledName;
 
@@ -42,7 +39,6 @@ public abstract class AbstractSKControl implements SKControl {
 
     /** Simple constructor.
      * @param name name of the control law
-     * @param scalingDivisor divisor to use for scaling the control law
      * @param controlledName name of the controlled spacecraft
      * @param controlledIndex index of the controlled spacecraft
      * @param referenceName name of the reference spacecraft
@@ -51,13 +47,11 @@ public abstract class AbstractSKControl implements SKControl {
      * @param min minimal value for the residual
      * @param max maximal value for the residual
      */
-    protected AbstractSKControl(final String name, final double scalingDivisor,
-                                final String controlledName, final int controlledIndex,
-                                final String referenceName, final int referenceIndex,
-                                final double target,
+    protected AbstractSKControl(final String name, final String controlledName,
+                                final int controlledIndex, final String referenceName,
+                                final int referenceIndex, final double target,
                                 final double min, final double max) {
         this.name            = name;
-        this.scalingDivisor  = scalingDivisor;
         this.controlledName  = controlledName;
         this.controlledIndex = controlledIndex;
         this.referenceName   = referenceName;
@@ -70,11 +64,6 @@ public abstract class AbstractSKControl implements SKControl {
     /** {@inheritDoc} */
     public String getName() {
         return name;
-    }
-
-    /** {@inheritDoc} */
-    public double getScalingDivisor() {
-        return scalingDivisor;
     }
 
     /** {@inheritDoc} */
@@ -99,7 +88,7 @@ public abstract class AbstractSKControl implements SKControl {
 
     /** Reset the limits checks.
      */
-    public void resetLimitsChecks() {
+    protected void resetLimitsChecks() {
         limitsExceeded = 0;
     }
 

@@ -23,6 +23,7 @@ import org.orekit.utils.PVCoordinates;
 
 import eu.eumetsat.skat.control.AbstractSKControl;
 import eu.eumetsat.skat.strategies.ScheduledManeuver;
+import eu.eumetsat.skat.strategies.TunableManeuver;
 import eu.eumetsat.skat.utils.OrekitWrapperException;
 import eu.eumetsat.skat.utils.SkatException;
 import eu.eumetsat.skat.utils.SkatMessages;
@@ -120,8 +121,8 @@ public class GroundTrackGrid extends AbstractSKControl {
                            final double maxDistance, final double ignoredStartDuration,
                            final int subSampling)
         throws SkatException {
-        super(name, scalingDivisor, controlledName, controlledIndex, null, -1,
-              0.0, -maxDistance, maxDistance);
+        super(name, controlledName, controlledIndex, null, -1, 0.0,
+              -maxDistance, maxDistance);
         if (ArithmeticUtils.gcd(orbitsPerPhasingCycle, daysPerPhasingCycle) != 1) {
             throw new SkatException(SkatMessages.PHASING_NUMBERS_NOT_MUTUALLY_PRIMES,
                                     orbitsPerPhasingCycle, daysPerPhasingCycle);
@@ -211,6 +212,13 @@ public class GroundTrackGrid extends AbstractSKControl {
     /** {@inheritDoc} */
     public double getAchievedValue() throws OrekitException {
         return achievedValue;
+    }
+
+    /** {@inheritDoc} */
+    public boolean tuneManeuvers(TunableManeuver[] tunables)
+        throws OrekitException {
+        // TODO
+        throw SkatException.createInternalError(null);
     }
 
     /** {@inheritDoc} */

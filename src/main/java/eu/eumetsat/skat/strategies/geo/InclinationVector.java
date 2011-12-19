@@ -17,6 +17,8 @@ import org.orekit.time.AbsoluteDate;
 
 import eu.eumetsat.skat.control.AbstractSKControl;
 import eu.eumetsat.skat.strategies.ScheduledManeuver;
+import eu.eumetsat.skat.strategies.TunableManeuver;
+import eu.eumetsat.skat.utils.SkatException;
 
 /**
  * Station-keeping control for inclination vector.
@@ -73,7 +75,7 @@ public class InclinationVector extends AbstractSKControl {
                              final String controlledName, final int controlledIndex,
                              final double targetHx, final double targetHy,
                              final double circleRadius, final double samplingStep) {
-        super(name, scalingDivisor, controlledName, controlledIndex, null, -1, 0.0, 0.0, circleRadius);
+        super(name, controlledName, controlledIndex, null, -1, 0.0, 0.0, circleRadius);
         this.stephandler  = new Handler();
         this.targetHx     = targetHx;
         this.targetHy     = targetHy;
@@ -115,6 +117,13 @@ public class InclinationVector extends AbstractSKControl {
             return 0;
         }
 
+    }
+
+    /** {@inheritDoc} */
+    public boolean tuneManeuvers(TunableManeuver[] tunables)
+        throws OrekitException {
+        // TODO
+        throw SkatException.createInternalError(null);
     }
 
     /** {@inheritDoc} */

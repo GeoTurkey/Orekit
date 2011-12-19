@@ -2,12 +2,10 @@
 package eu.eumetsat.skat.utils;
 
 import org.antlr.runtime.tree.Tree;
-import org.apache.commons.math.analysis.MultivariateFunction;
 import org.apache.commons.math.exception.DimensionMismatchException;
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math.linear.Array2DRowRealMatrix;
 import org.apache.commons.math.linear.RealMatrix;
-import org.apache.commons.math.optimization.BaseMultivariateOptimizer;
 import org.orekit.errors.OrekitException;
 import org.orekit.orbits.OrbitType;
 import org.orekit.orbits.PositionAngle;
@@ -177,16 +175,6 @@ public enum SupportedScenariocomponent {
                 }
             }
 
-            // optimizer
-            final double stopCriterion = parser.getDouble(node, ParameterKey.COMPONENT_CONTROL_LOOP_GLOBAL_STOP_CRITERION);
-
-            final Tree optimizerNode = parser.getValue(node, ParameterKey.COMPONENT_CONTROL_LOOP_OPTIMIZER);
-            final SupportedOptimizer so =
-                    (SupportedOptimizer) parser.getEnumerate(optimizerNode, ParameterKey.OPTIMIZER_METHOD,
-                                                             SupportedOptimizer.class);
-            final BaseMultivariateOptimizer<MultivariateFunction> optimizer =
-                    so.parse(parser, optimizerNode, maneuvers, stopCriterion, skat);
-
             // propagator
             final Tree propagatorNode = parser.getValue(node, ParameterKey.COMPONENT_CONTROL_LOOP_PROPAGATOR);
             final  SupportedPropagator sp =
@@ -197,15 +185,15 @@ public enum SupportedScenariocomponent {
 
 
             // set up control loop
-            final int maxEval = parser.getInt(node, ParameterKey.COMPONENT_CONTROL_LOOP_MAX_EVAL);
+            final int maxIter = parser.getInt(node, ParameterKey.COMPONENT_CONTROL_LOOP_MAX_ITER);
             final double inPlaneEliminationThreshold =
                     parser.getDouble(node, ParameterKey.COMPONENT_CONTROL_LOOP_IN_PLANE_ELIMINATION);
             final double outOfPlaneEliminationThreshold =
                     parser.getDouble(node, ParameterKey.COMPONENT_CONTROL_LOOP_OUT_OF_PLANE_ELIMINATION);
             final ControlLoop loop = new ControlLoop(spacecraftIndex, firstCycle, lastCycle,
-                                                     maneuvers, maxEval, optimizer, propagator,
-                                                     skat.getCycleDuration(), rollingCycles,
-                                                     inPlaneEliminationThreshold, outOfPlaneEliminationThreshold);
+                                                     maneuvers, maxIter, propagator, skat.getCycleDuration(),
+                                                     rollingCycles, inPlaneEliminationThreshold,
+                                                     outOfPlaneEliminationThreshold);
 
             // control laws
             final Tree controlsNode = parser.getValue(node, ParameterKey.COMPONENT_CONTROL_LOOP_CONTROLS);

@@ -20,6 +20,8 @@ import org.orekit.time.AbsoluteDate;
 
 import eu.eumetsat.skat.control.AbstractSKControl;
 import eu.eumetsat.skat.strategies.ScheduledManeuver;
+import eu.eumetsat.skat.strategies.TunableManeuver;
+import eu.eumetsat.skat.utils.SkatException;
 
 /**
  * Station-keeping control attempting to follow perigee solar pointing
@@ -85,8 +87,8 @@ public class EccentricityCircle extends AbstractSKControl {
                               final String controlledName, final int controlledIndex,
                               final double centerX, final double centerY, final double radius,
                               final CelestialBody sun, final double samplingStep) {
-        super(name, scalingDivisor, controlledName, controlledIndex, null, -1, 0.0,
-              Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY);
+        super(name, controlledName, controlledIndex, null, -1, 0.0, Double.NEGATIVE_INFINITY,
+              Double.POSITIVE_INFINITY);
         this.stephandler  = new Handler();
         this.centerX      = centerX;
         this.centerY      = centerY;
@@ -109,6 +111,13 @@ public class EccentricityCircle extends AbstractSKControl {
             data[i] = sample.get(i);
         }
         return new Median().evaluate(data);
+    }
+
+    /** {@inheritDoc} */
+    public boolean tuneManeuvers(TunableManeuver[] tunables)
+        throws OrekitException {
+        // TODO
+        throw SkatException.createInternalError(null);
     }
 
     /** {@inheritDoc} */

@@ -21,16 +21,16 @@ import org.orekit.frames.Frame;
 import org.orekit.frames.FramesFactory;
 import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
-import org.orekit.propagation.events.AbstractDetector;
 import org.orekit.propagation.events.EventDetector;
 import org.orekit.propagation.sampling.OrekitStepHandler;
 import org.orekit.time.AbsoluteDate;
-import org.orekit.time.TimeScale;
 import org.orekit.time.TimeScalesFactory;
 import org.orekit.utils.Constants;
 
 import eu.eumetsat.skat.control.AbstractSKControl;
 import eu.eumetsat.skat.strategies.ScheduledManeuver;
+import eu.eumetsat.skat.strategies.TunableManeuver;
+import eu.eumetsat.skat.utils.SkatException;
 
 /**
  * Station-keeping control attempting to get mean local solar time in a deadband.
@@ -103,8 +103,8 @@ public class MeanLocalSolarTime extends AbstractSKControl {
                               final double solarTime, final double minSolarTime, final double maxSolarTime,
                               final double checkInterval, final double ignoredStartDuration)
         throws OrekitException {
-        super(name, scalingDivisor, controlledName, controlledIndex, null, -1,
-              0., minSolarTime, maxSolarTime);
+        super(name, controlledName, controlledIndex, null, -1, 0.,
+              minSolarTime, maxSolarTime);
         this.sample               = new ArrayList<Double>();
         this.center               = solarTime;
         this.ignoredStartDuration = ignoredStartDuration;
@@ -179,6 +179,13 @@ public class MeanLocalSolarTime extends AbstractSKControl {
         final double l75 = p.evaluate(data, 75.0);
         final double l25 = p.evaluate(data, 25.0);
         return FastMath.max(FastMath.abs(l75 - center), FastMath.abs(center - l25));
+    }
+
+    /** {@inheritDoc} */
+    public boolean tuneManeuvers(TunableManeuver[] tunables)
+        throws OrekitException {
+        // TODO
+        throw SkatException.createInternalError(null);
     }
 
     /** {@inheritDoc} */

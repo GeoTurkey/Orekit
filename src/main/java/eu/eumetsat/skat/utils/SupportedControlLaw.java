@@ -6,7 +6,6 @@ import org.orekit.errors.OrekitException;
 
 import eu.eumetsat.skat.Skat;
 import eu.eumetsat.skat.control.SKControl;
-import eu.eumetsat.skat.strategies.MinimizedManeuvers;
 import eu.eumetsat.skat.strategies.geo.EccentricityCircle;
 import eu.eumetsat.skat.strategies.geo.CenteredLongitude;
 import eu.eumetsat.skat.strategies.geo.InclinationVector;
@@ -17,24 +16,6 @@ import eu.eumetsat.skat.strategies.leo.MeanLocalSolarTime;
 /** Enumerate for parsing the supported scenario components.
  */
 public enum SupportedControlLaw {
-
-    /** Constant for centered longitude control law. */
-    MINIMIZED_MANEUVERS() {
-
-        /** {@inheritDoc} */
-        public SKControl parse(final SkatFileParser parser, final Tree node,
-                               final String controlled, final Skat skat)
-            throws OrekitException, SkatException {
-            final String name           = parser.getString(node, ParameterKey.CONTROL_NAME);
-            final double scalingDivisor = parser.getDouble(node,  ParameterKey.CONTROL_SCALING_DIVISOR);
-            final boolean inPlane       = parser.getBoolean(node, ParameterKey.CONTROL_MINIMIZED_MANEUVERS_IN_PLANE);
-            final boolean outOfPlane    = parser.getBoolean(node, ParameterKey.CONTROL_MINIMIZED_MANEUVERS_OUT_OF_PLANE);
-            return new MinimizedManeuvers(name, scalingDivisor,
-                                          controlled, skat.getSpacecraftIndex(controlled),
-                                          inPlane, outOfPlane);
-        }
-
-    },
 
     /** Constant for centered longitude control law. */
     CENTERED_LONGITUDE() {

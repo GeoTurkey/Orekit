@@ -8,6 +8,7 @@ import org.orekit.propagation.sampling.OrekitStepHandler;
 import org.orekit.time.AbsoluteDate;
 
 import eu.eumetsat.skat.strategies.ScheduledManeuver;
+import eu.eumetsat.skat.strategies.TunableManeuver;
 
 
 /**
@@ -25,20 +26,6 @@ public interface SKControl extends SKElement {
      * @return name of the control
      */
     String getName();
-
-    /** Get the divisor for scaling of the control.
-     * <p>
-     * The divisor of the control law is a scalar parameter with the same physical unit
-     * as the control itself (radians, meters, seconds ...). It's purpose is to
-     * allow mixing controls in a global scalar objective function by computing<br>
-     *   J = &sum;(((control<sub>i</sub>.{@link SKControl#getAchievedValue() getAchievedValue()}
-     *             - control<sub>i</sub>.{@link SKControl#getTargetValue() getTargetValue()})
-     *             / scalingDivisor<sub>i</sub>)<sup>2</sup>)<br>
-     * the sum being computed across all scaled controls.
-     * </p>
-     * @return divisor for scaling the control law
-     */
-    double getScalingDivisor();
 
     /** Get the target value of the control.
      * @return target value of the control
@@ -74,7 +61,7 @@ public interface SKControl extends SKElement {
      * {@link #getTarget target} as possible.
      * </p>
      * @return achieved value of the control
-     * @exception OrekitException
+     * @exception OrekitException if value cannot be computed
      */
     double getAchievedValue() throws OrekitException;
 
@@ -82,6 +69,13 @@ public interface SKControl extends SKElement {
      * @return a positive value if limit is exceeded
      */
     double limitsExceeded();
+
+    /** Tune the maneuvers to improve control law fulfillment.
+     * @param tunables tunable maneuvers
+     * @return true if maneuver tuning has converged
+     * @exception OrekitException if maneuvers cannot be tuned
+     */
+    boolean tuneManeuvers(TunableManeuver[] tunables) throws OrekitException;
 
     /** Get the name of the controlled spacecraft.
      * @return name of the controlled spacecraft.

@@ -113,8 +113,7 @@ public class OneOrTwoBurnsSelector implements ScenarioComponent {
                             double sum = 0;
                             for (final SKControl s : singleBurn.getControlLaws()) {
                                 final double residual = s.getAchievedValue() - s.getTargetValue();
-                                final double scaledResidual = residual / s.getScalingDivisor();
-                                sum += scaledResidual * scaledResidual;
+                                sum += residual * residual;
                             }
 
                             return sum;

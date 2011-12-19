@@ -20,6 +20,7 @@ import org.orekit.time.AbsoluteDate;
 
 import eu.eumetsat.skat.control.AbstractSKControl;
 import eu.eumetsat.skat.strategies.ScheduledManeuver;
+import eu.eumetsat.skat.strategies.TunableManeuver;
 import eu.eumetsat.skat.utils.SkatException;
 import eu.eumetsat.skat.utils.SkatMessages;
 
@@ -82,8 +83,8 @@ public class CenteredLongitude extends AbstractSKControl {
                              final double lEast, final double lWest,
                              final double samplingStep, final BodyShape earth)
         throws SkatException {
-        super(name, scalingDivisor, controlledName, controlledIndex, null, -1, 0,
-              lWest, MathUtils.normalizeAngle(lEast, lWest));
+        super(name, controlledName, controlledIndex, null, -1, 0, lWest,
+              MathUtils.normalizeAngle(lEast, lWest));
         if (getMin() >= getMax()) {
             throw new SkatException(SkatMessages.UNSORTED_LONGITUDES,
                                     FastMath.toDegrees(getMin()), FastMath.toDegrees(getMax()));
@@ -111,6 +112,13 @@ public class CenteredLongitude extends AbstractSKControl {
         final double l75 = p.evaluate(data, 75.0);
         final double l25 = p.evaluate(data, 25.0);
         return FastMath.max(FastMath.abs(l75 - center), FastMath.abs(center - l25));
+    }
+
+    /** {@inheritDoc} */
+    public boolean tuneManeuvers(TunableManeuver[] tunables)
+        throws OrekitException {
+        // TODO
+        throw SkatException.createInternalError(null);
     }
 
     /** {@inheritDoc} */
