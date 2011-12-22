@@ -7,7 +7,6 @@ import org.orekit.errors.OrekitException;
 import eu.eumetsat.skat.Skat;
 import eu.eumetsat.skat.control.SKControl;
 import eu.eumetsat.skat.strategies.geo.EccentricityCircle;
-import eu.eumetsat.skat.strategies.geo.CenteredLongitude;
 import eu.eumetsat.skat.strategies.geo.InclinationVector;
 import eu.eumetsat.skat.strategies.geo.ParabolicLongitude;
 import eu.eumetsat.skat.strategies.leo.GroundTrackGrid;
@@ -17,25 +16,6 @@ import eu.eumetsat.skat.strategies.leo.MeanLocalSolarTime;
  */
 public enum SupportedControlLaw {
 
-    /** Constant for centered longitude control law. */
-    CENTERED_LONGITUDE() {
-
-        /** {@inheritDoc} */
-        public SKControl parse(final SkatFileParser parser, final Tree node,
-                               final String controlled, final Skat skat)
-            throws OrekitException, SkatException {
-            final String name           = parser.getString(node, ParameterKey.CONTROL_NAME);
-            final double scalingDivisor = parser.getAngle(node,  ParameterKey.CONTROL_SCALING_DIVISOR);
-            final double sampling       = parser.getDouble(node, ParameterKey.CONTROL_SAMPLING);
-            final double lEast          = parser.getAngle(node,  ParameterKey.CONTROL_CENTERED_LONGITUDE_EAST);
-            final double lWest          = parser.getAngle(node,  ParameterKey.CONTROL_CENTERED_LONGITUDE_WEST);
-            return new CenteredLongitude(name, scalingDivisor,
-                                         controlled, skat.getSpacecraftIndex(controlled),
-                                         lEast, lWest, sampling, skat.getEarth());
-        }
-
-    },
-
     /** Constant for parabolic longitude control law. */
     PARABOLIC_LONGITUDE() {
 
@@ -44,14 +24,11 @@ public enum SupportedControlLaw {
                                final String controlled, final Skat skat)
             throws OrekitException, SkatException {
             final String name                 = parser.getString(node, ParameterKey.CONTROL_NAME);
-            final double scalingDivisor       = parser.getAngle(node,  ParameterKey.CONTROL_SCALING_DIVISOR);
             final double sampling             = parser.getDouble(node, ParameterKey.CONTROL_SAMPLING);
-            final double ignoredStartDuration = parser.getDouble(node, ParameterKey.CONTROL_PARABOLIC_IGNORED_START_DURATION);
             final double lEast                = parser.getAngle(node,  ParameterKey.CONTROL_PARABOLIC_LONGITUDE_EAST);
             final double lWest                = parser.getAngle(node,  ParameterKey.CONTROL_PARABOLIC_LONGITUDE_WEST);
-            return new ParabolicLongitude(name, scalingDivisor,
-                                          controlled, skat.getSpacecraftIndex(controlled),
-                                          ignoredStartDuration,lEast, lWest, sampling, skat.getEarth());
+            return new ParabolicLongitude(name, controlled, skat.getSpacecraftIndex(controlled),
+                                          lEast, lWest, sampling, skat.getEarth());
         }
 
     },
@@ -65,12 +42,10 @@ public enum SupportedControlLaw {
             throws OrekitException, SkatException {
             final String name           = parser.getString(node, ParameterKey.CONTROL_NAME);
             final double sampling       = parser.getDouble(node, ParameterKey.CONTROL_SAMPLING);
-            final double scalingDivisor = parser.getDouble(node, ParameterKey.CONTROL_SCALING_DIVISOR);
             final double centerX        = parser.getDouble(node, ParameterKey.CONTROL_ECCENTRICITY_CIRCLE_CENTER_X);
             final double centerY        = parser.getDouble(node, ParameterKey.CONTROL_ECCENTRICITY_CIRCLE_CENTER_Y);
             final double radius         = parser.getDouble(node, ParameterKey.CONTROL_ECCENTRICITY_CIRCLE_RADIUS);
-            return new EccentricityCircle(name, scalingDivisor,
-                                          controlled, skat.getSpacecraftIndex(controlled),
+            return new EccentricityCircle(name, controlled, skat.getSpacecraftIndex(controlled),
                                           centerX, centerY, radius, skat.getSun(), sampling);
         }
 
@@ -85,12 +60,10 @@ public enum SupportedControlLaw {
             throws OrekitException, SkatException {
             final String name           = parser.getString(node, ParameterKey.CONTROL_NAME);
             final double sampling       = parser.getDouble(node, ParameterKey.CONTROL_SAMPLING);
-            final double scalingDivisor = parser.getDouble(node, ParameterKey.CONTROL_SCALING_DIVISOR);
             final double targetHx       = parser.getDouble(node, ParameterKey.CONTROL_INCLINATION_VECTOR_TARGET_X);
             final double targetHy       = parser.getDouble(node, ParameterKey.CONTROL_INCLINATION_VECTOR_TARGET_Y);
             final double circleRadius   = parser.getDouble(node, ParameterKey.CONTROL_INCLINATION_LIMIT_CIRCLE_RADIUS);
-            return new InclinationVector(name, scalingDivisor,
-                                         controlled, skat.getSpacecraftIndex(controlled),
+            return new InclinationVector(name, controlled, skat.getSpacecraftIndex(controlled),
                                          targetHx, targetHy, circleRadius, sampling);
         }
 
@@ -104,7 +77,6 @@ public enum SupportedControlLaw {
                                final String controlled, final Skat skat)
             throws OrekitException, SkatException {
             final String name                 = parser.getString(node, ParameterKey.CONTROL_NAME);
-            final double scalingDivisor       = parser.getDouble(node, ParameterKey.CONTROL_SCALING_DIVISOR);
             final double latitude             = parser.getAngle(node, ParameterKey.CONTROL_GROUND_TRACK_LATITUDE);
             final double longitude            = parser.getAngle(node, ParameterKey.CONTROL_GROUND_TRACK_LONGITUDE);
             final boolean ascending           = parser.getBoolean(node, ParameterKey.CONTROL_GROUND_TRACK_ASCENDING);
@@ -113,8 +85,7 @@ public enum SupportedControlLaw {
             final double maxDistance          = parser.getDouble(node, ParameterKey.CONTROL_GROUND_TRACK_MAX_CROSS_TRACK_DISTANCE);
             final double ignoredStartDuration = parser.getDouble(node, ParameterKey.CONTROL_GROUND_TRACK_IGNORED_START_DURATION);
             final int subSampling             = parser.getInt(node, ParameterKey.CONTROL_GROUND_TRACK_SUBSAMPLING);
-            return new GroundTrackGrid(name, scalingDivisor,
-                                       controlled, skat.getSpacecraftIndex(controlled), skat.getEarth(),
+            return new GroundTrackGrid(name, controlled, skat.getSpacecraftIndex(controlled), skat.getEarth(),
                                        latitude, longitude, ascending, orbitsPerPhasingCycle, daysPerPhasingCycle,
                                        maxDistance, ignoredStartDuration, subSampling);
         }
@@ -129,7 +100,6 @@ public enum SupportedControlLaw {
                                final String controlled, final Skat skat)
             throws OrekitException, SkatException {
             final String name                 = parser.getString(node, ParameterKey.CONTROL_NAME);
-            final double scalingDivisor       = parser.getDouble(node, ParameterKey.CONTROL_SCALING_DIVISOR);
             final double latitude             = parser.getAngle(node, ParameterKey.CONTROL_SOLAR_TIME_LATITUDE);
             final boolean ascending           = parser.getBoolean(node, ParameterKey.CONTROL_SOLAR_TIME_ASCENDING);
             final double solarTime            = parser.getDouble(node, ParameterKey.CONTROL_SOLAR_TIME_SOLAR_TIME);
@@ -137,8 +107,7 @@ public enum SupportedControlLaw {
             final double maxSolarTime         = parser.getDouble(node, ParameterKey.CONTROL_SOLAR_TIME_MAX_SOLAR_TIME);
             final double checkInterval        = parser.getDouble(node, ParameterKey.CONTROL_SOLAR_TIME_CHECK_INTERVAL);
             final double ignoredStartDuration = parser.getDouble(node, ParameterKey.CONTROL_SOLAR_TIME_IGNORED_START_DURATION);
-            return new MeanLocalSolarTime(name, scalingDivisor, 
-                                          controlled, skat.getSpacecraftIndex(controlled),
+            return new MeanLocalSolarTime(name, controlled, skat.getSpacecraftIndex(controlled),
                                           skat.getEarth(), latitude,
                                           ascending, solarTime, minSolarTime, maxSolarTime,
                                           checkInterval, ignoredStartDuration);

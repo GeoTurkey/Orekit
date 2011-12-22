@@ -203,7 +203,8 @@ public class ControlLoop implements ScenarioComponent {
             for (int i = 0; i < maxIter && !converged; ++i) {
 
                 // compute the control laws
-                runCycle(maneuvers, propagator, reference.getMinDate(), reference.getMaxDate());
+                runCycle(i, maneuvers, propagator, original.getManeuvers(),
+                         reference.getMinDate(), reference.getMaxDate());
 
                 // update the maneuvers
                 converged = true;
@@ -362,19 +363,23 @@ public class ControlLoop implements ScenarioComponent {
     }
 
     /** Run one iteration of the cycle.
+     * @param iteration iteration number
      * @param maneuvers current value of the tuned maneuvers
      * @param propagator propagator to use (already takes the maneuvers into account)
+     * @param fixedManeuvers list of maneuvers already fixed for the cycle
      * @param start start of the simulation
      * @param end end of the simulation
      * @exception OrekitException if the propagation cannot be performed
      */
-    public void runCycle(final ScheduledManeuver[] maneuvers, final Propagator propagator,
+    public void runCycle(final int iteration, final ScheduledManeuver[] maneuvers,
+                         final Propagator propagator, final List<ScheduledManeuver> fixedManeuvers,
                          final AbsoluteDate start, final AbsoluteDate end)
         throws OrekitException {
 
         // prepare run
         for (final SKControl control : controls) {
-            control.initializeRun(maneuvers, propagator, start, end, rollingCycles);
+            control.initializeRun(iteration, maneuvers, propagator, fixedManeuvers,
+                                  start, end, rollingCycles);
         }
 
         // get the detectors associated with control laws

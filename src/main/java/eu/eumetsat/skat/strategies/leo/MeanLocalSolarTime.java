@@ -83,7 +83,6 @@ public class MeanLocalSolarTime extends AbstractSKControl {
 
     /** Simple constructor.
      * @param name name of the control law
-     * @param scalingDivisor divisor to use for scaling the control law
      * @param controlledName name of the controlled spacecraft
      * @param controlledIndex index of the controlled spacecraft
      * @param earth Earth model
@@ -97,14 +96,12 @@ public class MeanLocalSolarTime extends AbstractSKControl {
      * @param ignoredStartDuration duration of the ignored start part of the cycle
      * @exception OrekitException if the UTC-TAI correction cannot be loaded
      */
-    public MeanLocalSolarTime(final String name, final double scalingDivisor,
-                              final String controlledName, final int controlledIndex,
+    public MeanLocalSolarTime(final String name, final String controlledName, final int controlledIndex,
                               final BodyShape earth, final double latitude, final boolean ascending,
                               final double solarTime, final double minSolarTime, final double maxSolarTime,
                               final double checkInterval, final double ignoredStartDuration)
         throws OrekitException {
-        super(name, controlledName, controlledIndex, null, -1, 0.,
-              minSolarTime, maxSolarTime);
+        super(name, controlledName, controlledIndex, null, -1, minSolarTime, maxSolarTime);
         this.sample               = new ArrayList<Double>();
         this.center               = solarTime;
         this.ignoredStartDuration = ignoredStartDuration;
@@ -115,11 +112,11 @@ public class MeanLocalSolarTime extends AbstractSKControl {
     }
 
     /** {@inheritDoc} */
-    public void initializeRun(final ScheduledManeuver[] maneuvers,
-                              final Propagator propagator, 
-                              final AbsoluteDate start,
-                              final AbsoluteDate end,
-                              int rollingCycles) throws OrekitException {
+    public void initializeRun(final int iteration, final ScheduledManeuver[] maneuvers,
+                              final Propagator propagator, final List<ScheduledManeuver> fixedManeuvers,
+                              final AbsoluteDate start, final AbsoluteDate end, final int rollingCycles)
+        throws OrekitException {
+
         searchStart = start.shiftedBy(ignoredStartDuration);
         sample.clear();
 
@@ -164,21 +161,9 @@ public class MeanLocalSolarTime extends AbstractSKControl {
             // convert the angle to solar time
             final double achievedSolarTime = 12.0 * (1.0 + dAlpha / FastMath.PI);
 
-            checkLimits(achievedSolarTime);
+            checkMargins(achievedSolarTime);
             sample.add(achievedSolarTime);
         }     
-    }
-
-    /** {@inheritDoc} */
-    public double getAchievedValue() {
-        final double[] data = new double[sample.size()];
-        for (int i = 0; i < data.length; ++i) {
-            data[i] = sample.get(i);
-        }
-        final Percentile p = new Percentile();
-        final double l75 = p.evaluate(data, 75.0);
-        final double l25 = p.evaluate(data, 25.0);
-        return FastMath.max(FastMath.abs(l75 - center), FastMath.abs(center - l25));
     }
 
     /** {@inheritDoc} */

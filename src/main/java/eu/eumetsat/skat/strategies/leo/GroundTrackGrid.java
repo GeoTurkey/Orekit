@@ -1,6 +1,8 @@
 /* Copyright 2011 Eumetsat */
 package eu.eumetsat.skat.strategies.leo;
 
+import java.util.List;
+
 import org.apache.commons.math.analysis.UnivariateFunction;
 import org.apache.commons.math.analysis.solvers.BracketingNthOrderBrentSolver;
 import org.apache.commons.math.analysis.solvers.UnivariateRealSolverUtils;
@@ -59,9 +61,6 @@ import eu.eumetsat.skat.utils.SkatMessages;
  */
 public class GroundTrackGrid extends AbstractSKControl {
 
-    /** Achieved value. */
-    private double achievedValue;
-
     /** Earth model. */
     private final BodyShape earth;
 
@@ -97,7 +96,6 @@ public class GroundTrackGrid extends AbstractSKControl {
      * i.e. it takes
      * </p>
      * @param name name of the control law
-     * @param scalingDivisor divisor to use for scaling the control law
      * @param controlledName name of the controlled spacecraft
      * @param controlledIndex index of the controlled spacecraft
      * @param earth Earth model
@@ -113,16 +111,14 @@ public class GroundTrackGrid extends AbstractSKControl {
      * @exception SkatException if orbits and days per phasing cycle are not
      * mutually prime numbers
      */
-    public GroundTrackGrid(final String name, final double scalingDivisor,
-                           final String controlledName, final int controlledIndex,
+    public GroundTrackGrid(final String name, final String controlledName, final int controlledIndex,
                            final BodyShape earth,
                            final double latitude, final double longitude, final boolean ascending,
                            final int orbitsPerPhasingCycle, final int daysPerPhasingCycle, 
                            final double maxDistance, final double ignoredStartDuration,
                            final int subSampling)
         throws SkatException {
-        super(name, controlledName, controlledIndex, null, -1, 0.0,
-              -maxDistance, maxDistance);
+        super(name, controlledName, controlledIndex, null, -1, -maxDistance, maxDistance);
         if (ArithmeticUtils.gcd(orbitsPerPhasingCycle, daysPerPhasingCycle) != 1) {
             throw new SkatException(SkatMessages.PHASING_NUMBERS_NOT_MUTUALLY_PRIMES,
                                     orbitsPerPhasingCycle, daysPerPhasingCycle);
@@ -142,17 +138,16 @@ public class GroundTrackGrid extends AbstractSKControl {
 
         this.ignoredStartDuration = ignoredStartDuration;
         this.subSampling          = subSampling;
-        this.achievedValue        = Double.NaN;
 
     }
 
     /** {@inheritDoc} */
-    public void initializeRun(final ScheduledManeuver[] maneuvers,
-                              final Propagator propagator,
-                              final AbsoluteDate start, final AbsoluteDate end, int rollingCycles)
+    public void initializeRun(final int iteration, final ScheduledManeuver[] maneuvers,
+                              final Propagator propagator, final List<ScheduledManeuver> fixedManeuvers,
+                              final AbsoluteDate start, final AbsoluteDate end, final int rollingCycles)
         throws OrekitException {
 
-        resetLimitsChecks();
+        resetMarginsChecks();
 
         // lazy evaluation of the sample
         try {
@@ -192,7 +187,7 @@ public class GroundTrackGrid extends AbstractSKControl {
                 if (Vector3D.dotProduct(point.subtract(closest.getPosition()), closest.getMomentum()) < 0) {
                     distance = -distance;
                 }
-                checkLimits(distance);
+                checkMargins(distance);
 
                 // add distance to sample
                 data[(i - 1) / subSampling] = distance;
@@ -202,16 +197,10 @@ public class GroundTrackGrid extends AbstractSKControl {
             final Percentile percentile = new Percentile();
             final double d25 = percentile.evaluate(data, 25.0);
             final double d75 = percentile.evaluate(data, 75.0);
-            achievedValue = 0.5 * (d25 + d75);
 
         } catch (OrekitWrapperException owe) {
             throw owe.getWrappedException();
         }
-    }
-
-    /** {@inheritDoc} */
-    public double getAchievedValue() throws OrekitException {
-        return achievedValue;
     }
 
     /** {@inheritDoc} */

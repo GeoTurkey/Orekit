@@ -74,7 +74,6 @@ public class EccentricityCircle extends AbstractSKControl {
 
     /** Simple constructor.
      * @param name name of the control law
-     * @param scalingDivisor divisor to use for scaling the control law
      * @param controlledName name of the controlled spacecraft
      * @param controlledIndex index of the controlled spacecraft
      * @param centerX abscissa of the circle center
@@ -83,12 +82,10 @@ public class EccentricityCircle extends AbstractSKControl {
      * @param sun Sun model
      * @param samplingStep step to use for sampling throughout propagation
      */
-    public EccentricityCircle(final String name, final double scalingDivisor,
-                              final String controlledName, final int controlledIndex,
+    public EccentricityCircle(final String name, final String controlledName, final int controlledIndex,
                               final double centerX, final double centerY, final double radius,
                               final CelestialBody sun, final double samplingStep) {
-        super(name, controlledName, controlledIndex, null, -1, 0.0, Double.NEGATIVE_INFINITY,
-              Double.POSITIVE_INFINITY);
+        super(name, controlledName, controlledIndex, null, -1, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY);
         this.stephandler  = new Handler();
         this.centerX      = centerX;
         this.centerY      = centerY;
@@ -99,18 +96,10 @@ public class EccentricityCircle extends AbstractSKControl {
     }
 
     /** {@inheritDoc} */
-    public void initializeRun(final ScheduledManeuver[] maneuvers,
-                              final Propagator propagator, AbsoluteDate start, AbsoluteDate end, int rollingCycles)
+    public void initializeRun(final int iteration, final ScheduledManeuver[] maneuvers,
+                              final Propagator propagator, final List<ScheduledManeuver> fixedManeuvers,
+                              final AbsoluteDate start, final AbsoluteDate end, final int rollingCycles)
         throws OrekitException {
-    }
-
-    /** {@inheritDoc} */
-    public double getAchievedValue() {
-        final double[] data = new double[sample.size()];
-        for (int i = 0; i < data.length; ++i) {
-            data[i] = sample.get(i);
-        }
-        return new Median().evaluate(data);
     }
 
     /** {@inheritDoc} */
@@ -138,7 +127,7 @@ public class EccentricityCircle extends AbstractSKControl {
 
         /** {@inheritDoc} */
         public void init(final SpacecraftState s0, final AbsoluteDate t) {
-            resetLimitsChecks();
+            resetMarginsChecks();
             sample.clear();
         }
 

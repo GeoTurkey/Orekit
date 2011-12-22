@@ -3,6 +3,8 @@ package eu.eumetsat.skat.strategies.geo;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import org.apache.commons.math.analysis.polynomials.PolynomialFunction;
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
@@ -56,9 +58,6 @@ public class ParabolicLongitude extends AbstractSKControl {
     /** Step to use for sampling throughout propagation. */
     private final double samplingStep;
 
-    /** Duration of the ignored start part of the cycle. */
-    private final double ignoredStartDuration;
-
     /** Earth model to use to compute longitudes. */
     private final BodyShape earth;
 
@@ -68,8 +67,8 @@ public class ParabolicLongitude extends AbstractSKControl {
     /** Cycle start. */
     private AbsoluteDate start;
 
-    /** First maneuver date. */
-    private AbsoluteDate firstManeuver;
+    /** Iteration number. */
+    private int iteration;
 
     /** Cycle duration. */
     private double cycleDuration;
@@ -80,57 +79,84 @@ public class ParabolicLongitude extends AbstractSKControl {
     /** Longitude sample during station keeping cycle. */
     private List<Double> longitudeSample;
 
+    /** Fitter for longitude parabola. */
+    private PolynomialFitter fitter;
+
+    /** Start date of the fitting. */
+    private AbsoluteDate fitStart;
+
+    /** End date of the fitting. */
+    private AbsoluteDate fitEnd;
+
     /** Simple constructor.
      * @param name name of the control law
-     * @param scalingDivisor divisor to use for scaling the control law
      * @param controlledName name of the controlled spacecraft
      * @param controlledIndex index of the controlled spacecraft
-     * @param referenceName name of the reference spacecraft
-     * @param referenceIndex index of the reference spacecraft
-     * @param ignoredStartDuration duration of the ignored start part of the cycle
      * @param lEast longitude slot Eastward boundary
      * @param lWest longitude slot Westward boundary
      * @param samplingStep step to use for sampling throughout propagation
      * @param earth Earth model to use to compute longitudes
      * @exception SkatException if longitudes limits are not sorted properly
      */
-    public ParabolicLongitude(final String name, final double scalingDivisor,
+    public ParabolicLongitude(final String name,
                               final String controlledName, final int controlledIndex,
-                              final double ignoredStartDuration,
                               final double lEast, final double lWest,
                               final double samplingStep, final BodyShape earth)
         throws SkatException {
-        super(name, controlledName, controlledIndex, null, -1, 0, lWest,
-              MathUtils.normalizeAngle(lEast, lWest));
+        super(name, controlledName, controlledIndex, null, -1,
+              FastMath.toDegrees(lWest), FastMath.toDegrees(MathUtils.normalizeAngle(lEast, lWest)));
         if (getMin() >= getMax()) {
             throw new SkatException(SkatMessages.UNSORTED_LONGITUDES,
                                     FastMath.toDegrees(getMin()), FastMath.toDegrees(getMax()));
         }
-        this.stephandler          = new Handler();
-        this.samplingStep         = samplingStep;
-        this.ignoredStartDuration = ignoredStartDuration;
-        this.earth                = earth;
-        this.center               = 0.5 * (getMin() + getMax());
-        this.dateSample           = new ArrayList<Double>();
-        this.longitudeSample      = new ArrayList<Double>();
+        this.stephandler     = new Handler();
+        this.samplingStep    = samplingStep;
+        this.earth           = earth;
+        this.center          = 0.5 * (getMin() + getMax());
+        this.dateSample      = new ArrayList<Double>();
+        this.longitudeSample = new ArrayList<Double>();
     }
 
     /** {@inheritDoc} */
-    public void initializeRun(final ScheduledManeuver[] maneuvers,
-                              final Propagator propagator,
-                              final AbsoluteDate start, final AbsoluteDate end,
-                              final int rollingCycles)
+    public void initializeRun(final int iteration, final ScheduledManeuver[] maneuvers,
+                              final Propagator propagator, final List<ScheduledManeuver> fixedManeuvers,
+                              final AbsoluteDate start, final AbsoluteDate end, final int rollingCycles)
         throws OrekitException {
+
         this.start         = start;
-        this.firstManeuver = (maneuvers.length > 0) ? maneuvers[0].getDate(): start;
+        this.iteration     = iteration;
         this.cycleDuration = end.durationFrom(start) / rollingCycles;
+
+        // prepare fitting in the longest interval between two maneuvers
+        this.fitter = new PolynomialFitter(2, new LevenbergMarquardtOptimizer());
+        SortedSet<AbsoluteDate> maneuverDates = new TreeSet<AbsoluteDate>();
+        for (final ScheduledManeuver maneuver : maneuvers) {
+            maneuverDates.add(maneuver.getDate());
+        }
+        for (final ScheduledManeuver maneuver : fixedManeuvers) {
+            maneuverDates.add(maneuver.getDate());
+        }
+        fitStart = null;
+        AbsoluteDate previous = null;
+        for (AbsoluteDate current : maneuverDates) {
+            if (previous != null) {
+                if ((fitStart == null)|| (current.durationFrom(previous) > fitEnd.durationFrom(fitStart))) {
+                    // up to now, this is the longest interval between two maneuvers, select it for fitting
+                    fitStart = previous;
+                    fitEnd   = current;
+                }
+            }
+            previous = current;
+        }
+
     }
 
     /** {@inheritDoc} */
-    public double getAchievedValue() {
+    public boolean tuneManeuvers(TunableManeuver[] tunables)
+        throws OrekitException {
+        // TODO
 
         // fit the longitude motion as a parabola
-        final PolynomialFitter fitter = new PolynomialFitter(2, new LevenbergMarquardtOptimizer());
         for (int i = 0; i < dateSample.size(); ++i) {
             final double date = dateSample.get(i);
             final double dateInCycle = date - cycleDuration * FastMath.floor(date / cycleDuration);
@@ -154,14 +180,8 @@ public class ParabolicLongitude extends AbstractSKControl {
             sum2 += residual * residual;
         }
 
-        return FastMath.sqrt(sum2) / dateSample.size();
+        double achieved = FastMath.sqrt(sum2) / dateSample.size();
 
-    }
-
-    /** {@inheritDoc} */
-    public boolean tuneManeuvers(TunableManeuver[] tunables)
-        throws OrekitException {
-        // TODO
         throw SkatException.createInternalError(null);
     }
 
@@ -183,7 +203,7 @@ public class ParabolicLongitude extends AbstractSKControl {
 
         /** {@inheritDoc} */
         public void init(final SpacecraftState s0, final AbsoluteDate t) {
-            resetLimitsChecks();
+            resetMarginsChecks();
             dateSample.clear();
             longitudeSample.clear();
         }
@@ -203,28 +223,32 @@ public class ParabolicLongitude extends AbstractSKControl {
                 // loop throughout step
                 for (AbsoluteDate date = minDate; date.compareTo(maxDate) < 0; date = date.shiftedBy(samplingStep)) {
 
-                    if (date.durationFrom(start) > ignoredStartDuration) {
-                        // compute mean longitude argument
-                        interpolator.setInterpolatedDate(date);
-                        final SpacecraftState state = interpolator.getInterpolatedState();
-                        final EquinoctialOrbit orbit = (EquinoctialOrbit) OrbitType.EQUINOCTIAL.convertType(state.getOrbit());
-                        final double lambdaV = orbit.getLv();
-                        final double lambdaM = orbit.getLM();
+                    // compute mean longitude argument
+                    interpolator.setInterpolatedDate(date);
+                    final SpacecraftState state = interpolator.getInterpolatedState();
+                    final EquinoctialOrbit orbit = (EquinoctialOrbit) OrbitType.EQUINOCTIAL.convertType(state.getOrbit());
+                    final double lambdaV = orbit.getLv();
+                    final double lambdaM = orbit.getLM();
 
-                        // compute sidereal time
-                        final Transform transform = earth.getBodyFrame().getTransformTo(state.getFrame(), date);
-                        final double theta = transform.transformVector(Vector3D.PLUS_I).getAlpha();
+                    // compute sidereal time
+                    final Transform transform = earth.getBodyFrame().getTransformTo(state.getFrame(), date);
+                    final double theta = transform.transformVector(Vector3D.PLUS_I).getAlpha();
 
-                        // compute mean longitude
-                        final double trueLongitude = MathUtils.normalizeAngle(lambdaV - theta, center);
-                        final double meanLongitude = MathUtils.normalizeAngle(lambdaM - theta, center);
+                    // compute mean longitude
+                    final double trueLongitude = MathUtils.normalizeAngle(lambdaV - theta, center);
+                    final double meanLongitude = MathUtils.normalizeAngle(lambdaM - theta, center);
 
-                        // check the limits
-                        checkLimits(trueLongitude);
+                    // check the limits
+                    checkMargins(FastMath.toDegrees(trueLongitude));
 
-                        // add point to sample
-                        dateSample.add(date.durationFrom(firstManeuver));
-                        longitudeSample.add(meanLongitude);
+                    // add point to sample
+                    final double dt = date.durationFrom(start);
+                    dateSample.add(dt);
+                    longitudeSample.add(meanLongitude);
+
+                    // fit mean longitude in the longest interval between maneuvers
+                    if (date.compareTo(fitStart) >= 0 && date.compareTo(fitEnd) <= 0) {
+                        fitter.addObservedPoint(dt, meanLongitude);
                     }
 
                 }

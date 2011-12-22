@@ -82,7 +82,6 @@ public enum ParameterKey {
     COMPONENT_CONTROL_LOOP_CONTROLS("controls"),
     COMPONENT_CONTROL_LOOP_MANEUVERS("maneuvers"),
 
-    CONTROL_SCALING_DIVISOR("scaling_divisor"),
     CONTROL_TYPE("type"),
     CONTROL_NAME("name"),
     CONTROL_SAMPLING("sampling"),
@@ -93,7 +92,6 @@ public enum ParameterKey {
     CONTROL_CENTERED_LONGITUDE_EAST("east_longitude"),
     CONTROL_CENTERED_LONGITUDE_WEST("west_longitude"),
     // Parabolic longitude
-    CONTROL_PARABOLIC_IGNORED_START_DURATION("ignored_start_duration"),
     CONTROL_PARABOLIC_LONGITUDE_EAST("east_longitude"),
     CONTROL_PARABOLIC_LONGITUDE_WEST("west_longitude"),
     // Eccentricity circle
