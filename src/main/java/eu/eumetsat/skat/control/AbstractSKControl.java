@@ -25,9 +25,6 @@ public abstract class AbstractSKControl implements SKControl {
     /** Index of the reference spacecraft (may be null). */
     private final int referenceIndex;
 
-    /** Control target used to compute residuals. */
-    private final double target;
-
     /** Minimal value for the residual. */
     private final double min;
 
@@ -35,7 +32,7 @@ public abstract class AbstractSKControl implements SKControl {
     private final double max;
 
     /** Indicator of constraint violation during the cycle. */
-    private double limitsExceeded;
+    private double margins;
 
     /** Simple constructor.
      * @param name name of the control law
@@ -43,20 +40,18 @@ public abstract class AbstractSKControl implements SKControl {
      * @param controlledIndex index of the controlled spacecraft
      * @param referenceName name of the reference spacecraft
      * @param referenceIndex index of the reference spacecraft
-     * @param target control target used to compute residuals
      * @param min minimal value for the residual
      * @param max maximal value for the residual
      */
-    protected AbstractSKControl(final String name, final String controlledName,
-                                final int controlledIndex, final String referenceName,
-                                final int referenceIndex, final double target,
+    protected AbstractSKControl(final String name,
+                                final String controlledName, final int controlledIndex,
+                                final String referenceName, final int referenceIndex,
                                 final double min, final double max) {
         this.name            = name;
         this.controlledName  = controlledName;
         this.controlledIndex = controlledIndex;
         this.referenceName   = referenceName;
         this.referenceIndex  = referenceIndex;
-        this.target          = target;
         this.min             = min;
         this.max             = max;
     }
@@ -86,15 +81,10 @@ public abstract class AbstractSKControl implements SKControl {
         return referenceIndex;
     }
 
-    /** Reset the limits checks.
+    /** Reset the margins checks.
      */
-    protected void resetLimitsChecks() {
-        limitsExceeded = 0;
-    }
-
-    /** {@inheritDoc} */
-    public double getTargetValue() {
-        return target;
+    protected void resetMarginsChecks() {
+        margins = Double.POSITIVE_INFINITY;
     }
 
     /** {@inheritDoc} */
@@ -113,18 +103,18 @@ public abstract class AbstractSKControl implements SKControl {
     }
 
     /** {@inheritDoc} */
-    public double limitsExceeded() {
-        return limitsExceeded;
+    public double getMargins() {
+        return margins;
     }
 
     /** Check if control limits are exceeded.
      * @param value current value of the control law
      */
-    protected void checkLimits(final double value) {
-        if (value < min) {
-            limitsExceeded = FastMath.max(limitsExceeded, min - value);
-        } else if (value > max) {
-            limitsExceeded = FastMath.max(limitsExceeded, value - max);
+    protected void checkMargins(final double value) {
+        if (isConstrained()) {
+            margins = FastMath.min(margins, FastMath.min(value - min, max - value));
+        } else {
+            margins = 0.0;
         }
     }
 

@@ -150,8 +150,8 @@ public class Skat {
     /** Duo-spacecrafts monitorables. */
     private List<MonitorableDuoSKData> monitorablesDuo;
 
-    /** Station-keeping control laws monitoring (residuals part). */
-    private final Map<SKControl, SimpleMonitorable> controlsResiduals;
+    /** Station-keeping control laws monitoring (margins part). */
+    private final Map<SKControl, SimpleMonitorable> controlsMargins;
 
     /** Station-keeping control laws monitoring (violations part). */
     private final Map<SKControl, SimpleMonitorable> controlsViolations;
@@ -387,7 +387,7 @@ public class Skat {
             }
         }
 
-        controlsResiduals  = new HashMap<SKControl, SimpleMonitorable>();
+        controlsMargins    = new HashMap<SKControl, SimpleMonitorable>();
         controlsViolations = new HashMap<SKControl, SimpleMonitorable>();
 
         // set up scenario components
@@ -547,8 +547,8 @@ public class Skat {
         throws SkatException {
 
         final SimpleMonitorable monitorableResidual =
-                new SimpleMonitorable(1, "control law residual: " + controlLaw.getName());
-        controlsResiduals.put(controlLaw, monitorableResidual);
+                new SimpleMonitorable(1, "control law margins: " + controlLaw.getName());
+        controlsMargins.put(controlLaw, monitorableResidual);
 
         final SimpleMonitorable monitorableViolation;
         if (controlLaw.isConstrained()) {
@@ -577,11 +577,11 @@ public class Skat {
 
     }
 
-    /** Get the control laws residuals monitoring map.
-     * @return control laws residuals monitoring map
+    /** Get the control laws margins monitoring map.
+     * @return control laws margins monitoring map
      */
-    public Map<SKControl, SimpleMonitorable> getControlLawsResidualsMap() {
-        return controlsResiduals;
+    public Map<SKControl, SimpleMonitorable> getControlLawsMarginsMap() {
+        return controlsMargins;
     }
 
     /** Get the control laws violations monitoring map.

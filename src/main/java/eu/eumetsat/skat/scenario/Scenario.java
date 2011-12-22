@@ -63,7 +63,7 @@ public class Scenario implements ScenarioComponent {
     private List<MonitorableDuoSKData> monitorablesDuo;
 
     /** Map for control laws residuals monitoring. */
-    private Map<SKControl, SimpleMonitorable> controlsResiduals;
+    private Map<SKControl, SimpleMonitorable> controlsMargins;
 
     /** Map for control laws violations monitoring. */
     private Map<SKControl, SimpleMonitorable> controlsViolations;
@@ -83,7 +83,7 @@ public class Scenario implements ScenarioComponent {
      * @param groundLocation reference ground location
      * @param monitorablesMono list of monitorables for mono-spacecraft
      * @param monitorablesDuo list of monitorables for duo-spacecrafts
-     * @param controlsResiduals map for control laws residuals monitoring
+     * @param controlsMargins map for control laws residuals monitoring
      * @param controlsViolations map for control laws violations monitoring
      * @param maneuversOutput maneuves output stream
      */
@@ -92,7 +92,7 @@ public class Scenario implements ScenarioComponent {
                     final TopocentricFrame groundLocation,
                     final List<MonitorableMonoSKData> monitorablesMono,
                     final List<MonitorableDuoSKData> monitorablesDuo,
-                    final Map<SKControl, SimpleMonitorable> controlsResiduals,
+                    final Map<SKControl, SimpleMonitorable> controlsMargins,
                     final Map<SKControl, SimpleMonitorable> controlsViolations,
                     final PrintStream maneuversOutput) {
         this.components         = new ArrayList<ScenarioComponent>();
@@ -102,7 +102,7 @@ public class Scenario implements ScenarioComponent {
         this.groundLocation     = groundLocation;
         this.monitorablesMono   = monitorablesMono;
         this.monitorablesDuo    = monitorablesDuo;
-        this.controlsResiduals  = controlsResiduals;
+        this.controlsMargins    = controlsMargins;
         this.controlsViolations = controlsViolations;
         this.maneuversOutput    = maneuversOutput;
     }
@@ -186,9 +186,9 @@ public class Scenario implements ScenarioComponent {
         AbsoluteDate tMin = states[0].getPerformedEphemeris().getMinDate();
         AbsoluteDate tMax = states[0].getPerformedEphemeris().getMaxDate();
 
-        // monitor control laws residuals and violations
+        // monitor control laws margins and violations
         Set<SKControl> controls = new HashSet<SKControl>();
-        controls.addAll(controlsResiduals.keySet());
+        controls.addAll(controlsMargins.keySet());
         controls.addAll(controlsViolations.keySet());
         for (int i = 0; i < states.length; ++i) {
 
@@ -198,11 +198,11 @@ public class Scenario implements ScenarioComponent {
             for (final SKControl controlLaw : controls) {
                 final List<ScheduledManeuver> maneuvers = states[i].getManeuvers();
                 if (maneuvers == null) {
-                    controlLaw.initializeRun(new ScheduledManeuver[0],
-                                             propagator, tMin, tMax, 1);
+                    controlLaw.initializeRun(0, new ScheduledManeuver[0], propagator,
+                                             new ArrayList<ScheduledManeuver>(), tMin, tMax, 1);
                 } else {
-                    controlLaw.initializeRun(maneuvers.toArray(new ScheduledManeuver[maneuvers.size()]),
-                                             propagator, tMin, tMax, 1);
+                    controlLaw.initializeRun(0, maneuvers.toArray(new ScheduledManeuver[maneuvers.size()]),
+                                             propagator, new ArrayList<ScheduledManeuver>(), tMin, tMax, 1);
                 }
             }
 
@@ -226,14 +226,14 @@ public class Scenario implements ScenarioComponent {
 
         }
 
-        for (final Map.Entry<SKControl, SimpleMonitorable> entry : controlsResiduals.entrySet()) {
-            final double value = entry.getKey().getAchievedValue();
+        for (final Map.Entry<SKControl, SimpleMonitorable> entry : controlsMargins.entrySet()) {
+            final double value = entry.getKey().getMargins();
             entry.getValue().setSampledValue(tMin, new double[] { value });
         }
 
         for (final Map.Entry<SKControl, SimpleMonitorable> entry : controlsViolations.entrySet()) {
             double[] v = entry.getValue().getValue(-1).clone();
-            if (entry.getKey().limitsExceeded() > 0) {
+            if (entry.getKey().getMargins() > 0) {
                 // this cycle has lead to constraints violations, increment counter
                 v[0] += 1;
             }
