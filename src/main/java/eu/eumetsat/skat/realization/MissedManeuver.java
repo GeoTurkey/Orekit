@@ -106,7 +106,7 @@ public class MissedManeuver implements ScenarioComponent {
                             // reschedule the missed maneuver
                             final SpacecraftState state = maneuver.getTrajectory().propagate(maneuver.getDate());
                             final double period         = state.getKeplerianPeriod();
-                            modified.add(new ScheduledManeuver(maneuver.getName(), maneuver.isInPlane(),
+                            modified.add(new ScheduledManeuver(maneuver.getModel(), maneuver.isInPlane(),
                                                                maneuver.getDate().shiftedBy(orbitsSeparation * period),
                                                                maneuver.getDeltaV(),
                                                                maneuver.getThrust(), maneuver.getIsp(),
@@ -114,7 +114,7 @@ public class MissedManeuver implements ScenarioComponent {
                                                                maneuver.getControlLaws(), true));
                         } else {
                             // the maneuver is really missed
-                            modified.add(new ScheduledManeuver(maneuver.getName(), maneuver.isInPlane(),
+                            modified.add(new ScheduledManeuver(maneuver.getModel(), maneuver.isInPlane(),
                                                                maneuver.getDate(),
                                                                Vector3D.ZERO,
                                                                maneuver.getThrust(), maneuver.getIsp(),

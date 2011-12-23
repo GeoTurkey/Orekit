@@ -95,7 +95,7 @@ public class ManeuverSplitter implements ScenarioComponent {
 
                     // add the various parts of the split maneuver
                     for (int j = 0; j < nbParts; ++j) {
-                        modified.add(new ScheduledManeuver(maneuver.getName(), maneuver.isInPlane(),
+                        modified.add(new ScheduledManeuver(maneuver.getModel(), maneuver.isInPlane(),
                                                            maneuver.getDate().shiftedBy(j * orbitsSeparation * period),
                                                            new Vector3D(1.0 / nbParts, maneuver.getDeltaV()),
                                                            maneuver.getThrust(), maneuver.getIsp(),

@@ -109,7 +109,7 @@ public class ManeuverCrossCoupling implements ScenarioComponent {
             for (final ScheduledManeuver maneuver : rawManeuvers) {
                 if ((inPlane && maneuver.isInPlane()) || (outOfPlane && !(maneuver.isInPlane()))) {
                     // the maneuver is affected by the coupling
-                    modified.add(new ScheduledManeuver(maneuver.getName(), maneuver.isInPlane(),
+                    modified.add(new ScheduledManeuver(maneuver.getModel(), maneuver.isInPlane(),
                                                        maneuver.getDate(),
                                                        coupling.applyTo(maneuver.getDeltaV()),
                                                        maneuver.getThrust(), maneuver.getIsp(),

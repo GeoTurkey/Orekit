@@ -20,8 +20,8 @@ import eu.eumetsat.skat.control.SKControl;
  */
 public class ScheduledManeuver {
 
-    /** Maneuver name. */
-    private String name;
+    /** Tunable maneuver model. */
+    private TunableManeuver model;
 
     /** Indicator for in-plane maneuvers. */
     private final boolean inPlane;
@@ -48,6 +48,7 @@ public class ScheduledManeuver {
     private final boolean replanned;
 
     /** Simple constructor.
+     * @param model tunable model of the maneuver
      * @param inPlane if true, the maneuver is considered to be in-plane
      * @param date maneuver date
      * @param deltaV velocity increment in spacecraft frame
@@ -57,11 +58,12 @@ public class ScheduledManeuver {
      * @param controls control laws that were used to build this maneuver
      * @param replanned if true, the maneuver was missed and has been replanned
      */
-    public ScheduledManeuver(final String name, final boolean inPlane, final AbsoluteDate date,
+    public ScheduledManeuver(final TunableManeuver model,
+                             final boolean inPlane, final AbsoluteDate date,
                              final Vector3D deltaV, final double thrust, final double isp,
                              final Propagator trajectory, final List<SKControl> controls,
                              final boolean replanned) {
-        this.name       = name;
+        this.model      = model;
         this.inPlane    = inPlane;
         this.date       = date;
         this.deltaV     = deltaV;
@@ -76,7 +78,14 @@ public class ScheduledManeuver {
      * @return maneuver name
      */
     public String getName() {
-        return name;
+        return model.getName();
+    }
+
+    /** Get the maneuver model.
+     * @return maneuver model
+     */
+    public TunableManeuver getModel() {
+        return model;
     }
 
     /** Check if the maneuver is in-plane.
@@ -144,6 +153,17 @@ public class ScheduledManeuver {
      */
     public boolean isReplanned() {
         return replanned;
+    }
+
+    /** Check if a maneuver is within convergence threshold of another maneuver.
+     * @param maneuver other maneuver to check instance against
+     * @return true if the two maneuvers share the same model and both their dates
+     * and velocity increment are within the model convergence thresholds
+     */
+    public boolean isWithinThreshold(final ScheduledManeuver maneuver) {
+        return (model == maneuver.model) &&
+               (date.durationFrom(maneuver.date) <= model.getDateConvergence()) &&
+               (deltaV.subtract(maneuver.deltaV).getNorm() <= model.getDVConvergence());
     }
 
 }

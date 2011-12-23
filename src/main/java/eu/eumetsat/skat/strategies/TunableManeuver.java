@@ -82,7 +82,7 @@ public class TunableManeuver {
      * @param dtNominal nominal offset with respect to reference date
      * @param minDateOffset offset for earliest allowed maneuver date
      * @param maxDateOffset offset for latest allowed maneuver date
-     * @param convergenceDateOffset convergence threshold for sate offset
+     * @param convergenceDateOffset convergence threshold for date offset
      * @exception SkatException if calibration curves are not ordered
      */
     public TunableManeuver(final String name, final boolean inPlane,
@@ -216,6 +216,48 @@ public class TunableManeuver {
 
     }
 
+    /** Get the convergence threshold for date offset.
+     * @return convergence threshold for date offset
+     */
+    public double getDateConvergence() {
+        return dateOffset.getConvergence();
+    }
+
+    /** Get the minimum allowed value for date offset.
+     * @return minimum allowed value for date offset
+     */
+    public double getDateOffsetMin() {
+        return dateOffset.getMin();
+    }
+
+    /** Get the maximum allowed value for date offset.
+     * @return maximum allowed value for date offset
+     */
+    public double getDateOffsetMax() {
+        return dateOffset.getMax();
+    }
+
+    /** Get the convergence threshold for velocity increment.
+     * @return convergence threshold for velocity increment
+     */
+    public double getDVConvergence() {
+        return velocityIncrement.getConvergence();
+    }
+
+    /** Get the minimum allowed value for velocity increment.
+     * @return minimum allowed value for velocity increment
+     */
+    public double getDVMin() {
+        return velocityIncrement.getMin();
+    }
+
+    /** Get the maximum allowed value for velocity increment.
+     * @return maximum allowed value for velocity increment
+     */
+    public double getDVMax() {
+        return velocityIncrement.getMax();
+    }
+
     /** Get the maneuver parameters.
      * @return list of maneuver parameters
      */
@@ -232,7 +274,7 @@ public class TunableManeuver {
      * @param controls control laws that were used to build this maneuver
      */
     public ScheduledManeuver getManeuver(final Propagator trajectory, final List<SKControl> controls) {
-        return new ScheduledManeuver(name, inPlane, getDate(),
+        return new ScheduledManeuver(this, inPlane, getDate(),
                                      new Vector3D(getDV(), direction),
                                      currentThrust, currentIsp, trajectory, controls, false);
     }
