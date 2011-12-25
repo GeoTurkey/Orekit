@@ -193,30 +193,41 @@ public class ControlLoop implements ScenarioComponent {
             // compute a reference ephemeris, on which tunable maneuvers will be added
             final BoundedPropagator reference =
                     computeReferenceEphemeris(original.getEstimatedState(), original.getManeuvers());
-
-            // initial setting for tunable maneuvers
-            ManeuverAdapterPropagator propagator = new ManeuverAdapterPropagator(reference);
-            ScheduledManeuver[] maneuvers = setUpManeuvers(reference.getMinDate(), propagator);
+            ScheduledManeuver[] maneuvers = new ScheduledManeuver[0];
 
             // find the optimal parameters that fulfill control laws
             boolean converged = false;
-            for (int i = 0; i < maxIter && !converged; ++i) {
+            for (int iter = 0; iter < maxIter && !converged; ++iter) {
 
                 // compute the control laws
-                runCycle(i, maneuvers, propagator, original.getManeuvers(),
+                final ManeuverAdapterPropagator propagator;
+                if (maneuvers.length == 0) {
+                    propagator = new ManeuverAdapterPropagator(reference);
+                } else {
+                    propagator = maneuvers[0].getTrajectory();
+                }
+                runCycle(iter, maneuvers, propagator, original.getManeuvers(),
                          reference.getMinDate(), reference.getMaxDate());
 
+                // prepare maneuver update
+                ScheduledManeuver[] tuned = maneuvers.clone();
+
                 // update the maneuvers
-                converged = true;
-                propagator = new ManeuverAdapterPropagator(reference);
                 for (final SKControl controlLaw : controls) {
-                    converged &= controlLaw.tuneManeuvers(tunables);
+                    tuned = controlLaw.tuneManeuvers(tuned, reference);
                 }
 
-                for (int j = 0; j < maneuvers.length; ++j) {
-                    maneuvers[j] = tunables[j].getManeuver(propagator, controls);
-                    propagator.addManeuver(maneuvers[j].getDate(), maneuvers[j].getDeltaV(), maneuvers[j].getIsp());
+                // check convergence
+                converged = true;
+                if (tuned.length != maneuvers.length) {
+                    converged = false;
+                } else {
+                    for (int i = 0; i < tuned.length; ++i) {
+                        converged &= tuned[i].isWithinThreshold(maneuvers[i]);
+                    }
                 }
+
+                maneuvers = tuned;
 
             }
 
@@ -322,43 +333,6 @@ public class ControlLoop implements ScenarioComponent {
         propagator.propagate(endDate);
 
         return propagator.getGeneratedEphemeris();
-
-    }
-
-    /** Initial set up the station keeping maneuvers parameters.
-     * @param start cycle start date
-     * @param propagator maneuver adapter to use (the maneuvers will be added to it)
-     * @return maneuvers that were added to the propagator
-     * @exception OrekitException if spacecraft state cannot be determined at some
-     * maneuver date
-     */
-    private ScheduledManeuver[] setUpManeuvers(final AbsoluteDate start,
-                                               final ManeuverAdapterPropagator propagator)
-        throws OrekitException {
-
-        final ScheduledManeuver[] scheduled = new ScheduledManeuver[tunables.length];
-
-        int index = 0;
-        for (int i = 0; i < tunables.length; ++i) {
-            final TunableManeuver maneuver = tunables[i];
-            // the date of this maneuver is relative to the cycle start
-            final int maneuversPerCycle   = tunables.length / rollingCycles;
-            final int cycleIndex          = i / maneuversPerCycle;
-            final double offset           = cycleIndex * cycleDuration * Constants.JULIAN_DAY;
-            final AbsoluteDate cycleStart = start.shiftedBy(offset);
-            maneuver.setCycleStartDate(cycleStart);
-            for (final SKParameter parameter : maneuver.getParameters()) {
-                if (parameter.isTunable()) {
-                    parameter.setValue(startPoint[index++]);
-                }
-            }
-
-            scheduled[i] = maneuver.getManeuver(propagator, controls);
-            propagator.addManeuver(scheduled[i].getDate(), scheduled[i].getDeltaV(), scheduled[i].getIsp());
-
-        }
-
-        return scheduled;
 
     }
 

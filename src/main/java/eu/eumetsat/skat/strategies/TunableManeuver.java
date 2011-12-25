@@ -6,10 +6,9 @@ import java.util.List;
 
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math.util.FastMath;
-import org.orekit.propagation.Propagator;
+import org.orekit.propagation.analytical.ManeuverAdapterPropagator;
 import org.orekit.time.AbsoluteDate;
 
-import eu.eumetsat.skat.control.SKControl;
 import eu.eumetsat.skat.control.SKParameter;
 import eu.eumetsat.skat.utils.SkatException;
 import eu.eumetsat.skat.utils.SkatMessages;
@@ -152,6 +151,13 @@ public class TunableManeuver {
         updateISP(consumedMass);
     }
 
+    /** Get the thrust direction in spacecraft frame.
+     * @return thrust direction in spacecraft frame
+     */
+    public Vector3D getDirection() {
+        return direction;
+    }
+
     /** Update the current thrust.
      * @param consumedMass reference consumed mass
      */
@@ -269,14 +275,15 @@ public class TunableManeuver {
     }
 
     /** Get the maneuver corresponding to the current value of the parameters.
+     * @param date maneuver date
+     * @param deltaV velocity increment along thrust direction
      * @param trajectory to which this maneuver belongs
      * @return maneuver corresponding to the current value of the parameters
-     * @param controls control laws that were used to build this maneuver
      */
-    public ScheduledManeuver getManeuver(final Propagator trajectory, final List<SKControl> controls) {
-        return new ScheduledManeuver(this, inPlane, getDate(),
-                                     new Vector3D(getDV(), direction),
-                                     currentThrust, currentIsp, trajectory, controls, false);
+    public ScheduledManeuver buildManeuver(final AbsoluteDate date, final double deltaV,
+                                           final ManeuverAdapterPropagator trajectory) {
+        return new ScheduledManeuver(this, inPlane, date, new Vector3D(deltaV, direction),
+                                     currentThrust, currentIsp, trajectory, false);
     }
 
     /** Get the maneuver velocity increment.

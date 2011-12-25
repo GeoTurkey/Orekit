@@ -1,15 +1,11 @@
 /* Copyright 2011 Eumetsat */
 package eu.eumetsat.skat.strategies;
 
-import java.util.List;
-
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math.util.FastMath;
-import org.orekit.propagation.Propagator;
+import org.orekit.propagation.analytical.ManeuverAdapterPropagator;
 import org.orekit.time.AbsoluteDate;
 import org.orekit.utils.Constants;
-
-import eu.eumetsat.skat.control.SKControl;
 
 /**
  * This class is a simple container for impulse maneuver that are completely defined.
@@ -39,10 +35,7 @@ public class ScheduledManeuver {
     private final double isp;
 
     /** Trajectory to which this maneuver belongs. */
-    private final Propagator trajectory;
-
-    /** Control laws that were used to build this maneuver. */
-    private final List<SKControl> controls;
+    private final ManeuverAdapterPropagator trajectory;
 
     /** Indicator for replanned maneuvers. */
     private final boolean replanned;
@@ -55,14 +48,12 @@ public class ScheduledManeuver {
      * @param thrust engine thrust
      * @param isp engine specific impulse (s)
      * @param trajectory trajectory to which this maneuver belongs
-     * @param controls control laws that were used to build this maneuver
      * @param replanned if true, the maneuver was missed and has been replanned
      */
     public ScheduledManeuver(final TunableManeuver model,
                              final boolean inPlane, final AbsoluteDate date,
                              final Vector3D deltaV, final double thrust, final double isp,
-                             final Propagator trajectory, final List<SKControl> controls,
-                             final boolean replanned) {
+                             final ManeuverAdapterPropagator trajectory, final boolean replanned) {
         this.model      = model;
         this.inPlane    = inPlane;
         this.date       = date;
@@ -70,7 +61,6 @@ public class ScheduledManeuver {
         this.thrust     = thrust;
         this.isp        = isp;
         this.trajectory = trajectory;
-        this.controls   = controls;
         this.replanned  = replanned;
     }
 
@@ -137,15 +127,8 @@ public class ScheduledManeuver {
     /** Get the trajectory to which this maneuver belongs.
      * @return trajectory
      */
-    public Propagator getTrajectory() {
+    public ManeuverAdapterPropagator getTrajectory() {
         return trajectory;
-    }
-
-    /** Get the control laws that were used to build this maneuver.
-     * @return control laws that were used to build this maneuver
-     */
-    public List<SKControl> getControlLaws() {
-        return controls;
     }
 
     /** Check if the maneuver has been replanned.
