@@ -4,13 +4,13 @@ package eu.eumetsat.skat.control;
 import java.util.List;
 
 import org.orekit.errors.OrekitException;
+import org.orekit.propagation.BoundedPropagator;
 import org.orekit.propagation.Propagator;
 import org.orekit.propagation.events.EventDetector;
 import org.orekit.propagation.sampling.OrekitStepHandler;
 import org.orekit.time.AbsoluteDate;
 
 import eu.eumetsat.skat.strategies.ScheduledManeuver;
-import eu.eumetsat.skat.strategies.TunableManeuver;
 
 
 /**
@@ -58,11 +58,14 @@ public interface SKControl extends SKElement {
     double getMargins();
 
     /** Tune the maneuvers to improve control law fulfillment.
-     * @param tunables tunable maneuvers
-     * @return true if maneuver tuning has converged
+     * @param maneuvers existing set of maneuvers
+     * @param reference reerence ephemeris to use (does not take maneuvers into account)
+     * @return tuned maneuvers
      * @exception OrekitException if maneuvers cannot be tuned
      */
-    boolean tuneManeuvers(TunableManeuver[] tunables) throws OrekitException;
+    ScheduledManeuver[] tuneManeuvers(ScheduledManeuver[] maneuvers,
+                                      BoundedPropagator reference)
+        throws OrekitException;
 
     /** Get the name of the controlled spacecraft.
      * @return name of the controlled spacecraft.

@@ -4,13 +4,13 @@ package eu.eumetsat.skat.strategies.geo;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.math.stat.descriptive.rank.Median;
 import org.apache.commons.math.util.FastMath;
 import org.orekit.bodies.CelestialBody;
 import org.orekit.errors.OrekitException;
 import org.orekit.errors.PropagationException;
 import org.orekit.orbits.EquinoctialOrbit;
 import org.orekit.orbits.OrbitType;
+import org.orekit.propagation.BoundedPropagator;
 import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
 import org.orekit.propagation.events.EventDetector;
@@ -20,7 +20,6 @@ import org.orekit.time.AbsoluteDate;
 
 import eu.eumetsat.skat.control.AbstractSKControl;
 import eu.eumetsat.skat.strategies.ScheduledManeuver;
-import eu.eumetsat.skat.strategies.TunableManeuver;
 import eu.eumetsat.skat.utils.SkatException;
 
 /**
@@ -103,7 +102,8 @@ public class EccentricityCircle extends AbstractSKControl {
     }
 
     /** {@inheritDoc} */
-    public boolean tuneManeuvers(TunableManeuver[] tunables)
+    public ScheduledManeuver[] tuneManeuvers(final ScheduledManeuver[] tunables,
+                                             final BoundedPropagator reference)
         throws OrekitException {
         // TODO
         throw SkatException.createInternalError(null);

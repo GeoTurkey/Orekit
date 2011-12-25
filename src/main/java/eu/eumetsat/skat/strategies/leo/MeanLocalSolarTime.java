@@ -10,7 +10,6 @@ import org.apache.commons.math.analysis.solvers.BrentSolver;
 import org.apache.commons.math.analysis.solvers.UnivariateRealSolverUtils;
 import org.apache.commons.math.exception.NoBracketingException;
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
-import org.apache.commons.math.stat.descriptive.rank.Percentile;
 import org.apache.commons.math.util.FastMath;
 import org.apache.commons.math.util.MathUtils;
 import org.orekit.bodies.BodyShape;
@@ -19,6 +18,7 @@ import org.orekit.errors.OrekitException;
 import org.orekit.errors.PropagationException;
 import org.orekit.frames.Frame;
 import org.orekit.frames.FramesFactory;
+import org.orekit.propagation.BoundedPropagator;
 import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
 import org.orekit.propagation.events.EventDetector;
@@ -29,7 +29,6 @@ import org.orekit.utils.Constants;
 
 import eu.eumetsat.skat.control.AbstractSKControl;
 import eu.eumetsat.skat.strategies.ScheduledManeuver;
-import eu.eumetsat.skat.strategies.TunableManeuver;
 import eu.eumetsat.skat.utils.SkatException;
 
 /**
@@ -167,7 +166,8 @@ public class MeanLocalSolarTime extends AbstractSKControl {
     }
 
     /** {@inheritDoc} */
-    public boolean tuneManeuvers(TunableManeuver[] tunables)
+    public ScheduledManeuver[] tuneManeuvers(final ScheduledManeuver[] tunables,
+                                             final BoundedPropagator reference)
         throws OrekitException {
         // TODO
         throw SkatException.createInternalError(null);

@@ -16,6 +16,7 @@ import org.orekit.bodies.BodyShape;
 import org.orekit.bodies.GeodeticPoint;
 import org.orekit.errors.OrekitException;
 import org.orekit.frames.Frame;
+import org.orekit.propagation.BoundedPropagator;
 import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
 import org.orekit.propagation.events.EventDetector;
@@ -25,7 +26,6 @@ import org.orekit.utils.PVCoordinates;
 
 import eu.eumetsat.skat.control.AbstractSKControl;
 import eu.eumetsat.skat.strategies.ScheduledManeuver;
-import eu.eumetsat.skat.strategies.TunableManeuver;
 import eu.eumetsat.skat.utils.OrekitWrapperException;
 import eu.eumetsat.skat.utils.SkatException;
 import eu.eumetsat.skat.utils.SkatMessages;
@@ -204,7 +204,8 @@ public class GroundTrackGrid extends AbstractSKControl {
     }
 
     /** {@inheritDoc} */
-    public boolean tuneManeuvers(TunableManeuver[] tunables)
+    public ScheduledManeuver[] tuneManeuvers(final ScheduledManeuver[] tunables,
+                                             final BoundedPropagator reference)
         throws OrekitException {
         // TODO
         throw SkatException.createInternalError(null);
