@@ -76,8 +76,6 @@ public enum ParameterKey {
     COMPONENT_CONTROL_LOOP_FIRST_CYCLE("first_cycle"),
     COMPONENT_CONTROL_LOOP_LAST_CYCLE("last_cycle"),
     COMPONENT_CONTROL_LOOP_MAX_ITER("max_iterations"),
-    COMPONENT_CONTROL_LOOP_IN_PLANE_ELIMINATION("in_plane_elimination"),
-    COMPONENT_CONTROL_LOOP_OUT_OF_PLANE_ELIMINATION("out_of_plane_elimination"),
     COMPONENT_CONTROL_LOOP_PROPAGATOR("propagator"),
     COMPONENT_CONTROL_LOOP_CONTROLS("controls"),
     COMPONENT_CONTROL_LOOP_MANEUVERS("maneuvers"),
@@ -136,6 +134,7 @@ public enum ParameterKey {
     MANEUVERS_DT_MIN("dt_min"),
     MANEUVERS_DT_MAX("dt_max"),
     MANEUVERS_DT_CONVERGENCE("dt_convergence"),
+    MANEUVERS_ELIMINATION_THRESHOLD("elimination_threshold"),
 
     COMPONENT_MANEUVER_DATE_ERROR_NAME("maneuver_name"),
     COMPONENT_MANEUVER_DATE_ERROR_STANDARD_DEVIATION("standard_deviation"),

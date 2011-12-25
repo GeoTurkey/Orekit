@@ -151,11 +151,12 @@ public enum SupportedScenariocomponent {
                 final double dtMin         = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DT_MIN);
                 final double dtMax         = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DT_MAX);
                 final double dtConvergence = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DT_CONVERGENCE);
+                final double elimination   = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_ELIMINATION_THRESHOLD);
                 for (int j = 0; j < rollingCycles; ++j) {
                     // set up the maneuver for several cycles that will be optimized together
                     final TunableManeuver m = new TunableManeuver(name, inPlane,
                                                                   dateReferenceManeuver, dVReferenceManeuver,
-                                                                  direction, thrust, isp,
+                                                                  direction, thrust, isp, elimination,
                                                                   dvNominal, dvMin, dvMax, dvConvergence,
                                                                   dtNominal, dtMin, dtMax, dtConvergence);
                     if (m.getEarliestDateOffset() < 0) {
@@ -185,14 +186,9 @@ public enum SupportedScenariocomponent {
 
             // set up control loop
             final int maxIter = parser.getInt(node, ParameterKey.COMPONENT_CONTROL_LOOP_MAX_ITER);
-            final double inPlaneEliminationThreshold =
-                    parser.getDouble(node, ParameterKey.COMPONENT_CONTROL_LOOP_IN_PLANE_ELIMINATION);
-            final double outOfPlaneEliminationThreshold =
-                    parser.getDouble(node, ParameterKey.COMPONENT_CONTROL_LOOP_OUT_OF_PLANE_ELIMINATION);
             final ControlLoop loop = new ControlLoop(spacecraftIndex, firstCycle, lastCycle,
                                                      maneuvers, maxIter, propagator, skat.getCycleDuration(),
-                                                     rollingCycles, inPlaneEliminationThreshold,
-                                                     outOfPlaneEliminationThreshold);
+                                                     rollingCycles);
 
             // control laws
             final Tree controlsNode = parser.getValue(node, ParameterKey.COMPONENT_CONTROL_LOOP_CONTROLS);

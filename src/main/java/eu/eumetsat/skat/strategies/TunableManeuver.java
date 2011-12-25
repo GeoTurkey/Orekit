@@ -45,6 +45,9 @@ public class TunableManeuver {
     /** Specific impulse calibration curve. */
     private final double[][] isp;
 
+    /** Elimination threshold. */
+    private final double elimination;
+
     /** Nominal offset with respect to reference dV. */
     private final double dVNominal;
 
@@ -74,6 +77,7 @@ public class TunableManeuver {
      * @param direction thrust direction in spacecraft frame
      * @param thrust engine thrust calibration curve (Newtons in row 0, consumed mass in row 1)
      * @param isp engine specific impulse calibration curve (seconds in row 0, consumed mass in row 1)
+     * @param elimination elimination threshold
      * @param dVNominal nominal offset with respect to reference dV
      * @param minIncrement minimal allowed value for velocity increment
      * @param maxIncrement maximal allowed value for velocity increment
@@ -89,6 +93,7 @@ public class TunableManeuver {
                            final TunableManeuver dVReferenceManeuver,
                            final Vector3D direction,
                            final double[][] thrust, final double[][] isp,
+                           final double elimination,
                            final double dVNominal, final double minIncrement, final double maxIncrement,
                            final double convergenceIncrement,
                            final double dtNominal, final double minDateOffset, final double maxDateOffset,
@@ -113,6 +118,7 @@ public class TunableManeuver {
                                         isp[i - 1][1], isp[i][1]);
             }
         }
+        this.elimination  = elimination;
         this.dVNominal    = dVNominal;
         this.dtNominal    = dtNominal;
         velocityIncrement = new SKParameter(name + " (dV)", minIncrement, maxIncrement,
@@ -220,6 +226,13 @@ public class TunableManeuver {
         // we consider remaining ISP is constant
         currentIsp = isp[isp.length - 1][0];
 
+    }
+
+    /** Get the elimination threshold.
+     * @return elimination threshold
+     */
+    public double getEliminationThreshold() {
+        return elimination;
     }
 
     /** Get the convergence threshold for date offset.
