@@ -92,15 +92,20 @@ public class ManeuverSplitter implements ScenarioComponent {
                     final SpacecraftState state = maneuver.getTrajectory().propagate(maneuver.getDate());
                     final double period         = state.getKeplerianPeriod();
                     final int nbParts           = (int) FastMath.ceil(maneuver.getDeltaV().getNorm() / maxDV);
+                    maneuver.getTrajectory().addManeuver(maneuver.getDate(),
+                                                         maneuver.getDeltaV().negate(),
+                                                         maneuver.getIsp());
 
                     // add the various parts of the split maneuver
                     for (int j = 0; j < nbParts; ++j) {
-                        modified.add(new ScheduledManeuver(maneuver.getModel(), maneuver.isInPlane(),
-                                                           maneuver.getDate().shiftedBy(j * orbitsSeparation * period),
-                                                           new Vector3D(1.0 / nbParts, maneuver.getDeltaV()),
-                                                           maneuver.getThrust(), maneuver.getIsp(),
-                                                           maneuver.getTrajectory(),
-                                                           maneuver.getControlLaws(), false));
+                        final ScheduledManeuver m = new ScheduledManeuver(maneuver.getModel(), maneuver.isInPlane(),
+                                                                          maneuver.getDate().shiftedBy(j * orbitsSeparation * period),
+                                                                          new Vector3D(1.0 / nbParts, maneuver.getDeltaV()),
+                                                                          maneuver.getThrust(), maneuver.getIsp(),
+                                                                          maneuver.getTrajectory(),
+                                                                          false);
+                        m.getTrajectory().addManeuver(m.getDate(), m.getDeltaV(), m.getIsp());
+                        modified.add(m);
                     }
 
                 } else {

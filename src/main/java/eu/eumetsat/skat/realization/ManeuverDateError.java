@@ -87,12 +87,17 @@ public class ManeuverDateError implements ScenarioComponent {
                 if ((inPlane && maneuver.isInPlane()) || (outOfPlane && !(maneuver.isInPlane()))) {
                     // the maneuver is affected by the error
                     final double offset = standardDeviation * generator.nextGaussian();
-                    modified.add(new ScheduledManeuver(maneuver.getModel(), maneuver.isInPlane(),
-                                                       maneuver.getDate().shiftedBy(offset),
-                                                       maneuver.getDeltaV(),
-                                                       maneuver.getThrust(), maneuver.getIsp(),
-                                                       maneuver.getTrajectory(),
-                                                       maneuver.getControlLaws(), false));
+                    final ScheduledManeuver m = new ScheduledManeuver(maneuver.getModel(), maneuver.isInPlane(),
+                                                                      maneuver.getDate().shiftedBy(offset),
+                                                                      maneuver.getDeltaV(),
+                                                                      maneuver.getThrust(), maneuver.getIsp(),
+                                                                      maneuver.getTrajectory(),
+                                                                      false);
+                    maneuver.getTrajectory().addManeuver(maneuver.getDate(),
+                                                         maneuver.getDeltaV().negate(),
+                                                         maneuver.getIsp());
+                    m.getTrajectory().addManeuver(m.getDate(), m.getDeltaV(), m.getIsp());
+                    modified.add(m);
                 } else {
                     // the maneuver is immune to the error
                     modified.add(maneuver);

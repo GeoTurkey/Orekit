@@ -101,26 +101,36 @@ public class MissedManeuver implements ScenarioComponent {
                     // the maneuver can be affected by the error
                     if (generator.nextDouble() < missThreshold) {
                         // the maneuver is missed
+
+                        // remove the original maneuver from the trajectory
+                        maneuver.getTrajectory().addManeuver(maneuver.getDate(),
+                                                             maneuver.getDeltaV().negate(),
+                                                             maneuver.getIsp());
+
                         // does it need to be replanned ?
+                        final ScheduledManeuver m;
                         if (orbitsSeparation > 0.) {
                             // reschedule the missed maneuver
                             final SpacecraftState state = maneuver.getTrajectory().propagate(maneuver.getDate());
                             final double period         = state.getKeplerianPeriod();
-                            modified.add(new ScheduledManeuver(maneuver.getModel(), maneuver.isInPlane(),
-                                                               maneuver.getDate().shiftedBy(orbitsSeparation * period),
-                                                               maneuver.getDeltaV(),
-                                                               maneuver.getThrust(), maneuver.getIsp(),
-                                                               maneuver.getTrajectory(),
-                                                               maneuver.getControlLaws(), true));
+                            m = new ScheduledManeuver(maneuver.getModel(), maneuver.isInPlane(),
+                                                      maneuver.getDate().shiftedBy(orbitsSeparation * period),
+                                                      maneuver.getDeltaV(),
+                                                      maneuver.getThrust(), maneuver.getIsp(),
+                                                      maneuver.getTrajectory(),
+                                                      true);
                         } else {
                             // the maneuver is really missed
-                            modified.add(new ScheduledManeuver(maneuver.getModel(), maneuver.isInPlane(),
-                                                               maneuver.getDate(),
-                                                               Vector3D.ZERO,
-                                                               maneuver.getThrust(), maneuver.getIsp(),
-                                                               maneuver.getTrajectory(),
-                                                               maneuver.getControlLaws(), true));
+                            m = new ScheduledManeuver(maneuver.getModel(), maneuver.isInPlane(),
+                                                      maneuver.getDate(),
+                                                      Vector3D.ZERO,
+                                                      maneuver.getThrust(), maneuver.getIsp(),
+                                                      maneuver.getTrajectory(),
+                                                      true);
                         }
+
+                        m.getTrajectory().addManeuver(m.getDate(), m.getDeltaV(), m.getIsp());
+                        modified.add(m);
 
                     } else {
                         // the maneuver is realized as scheduled

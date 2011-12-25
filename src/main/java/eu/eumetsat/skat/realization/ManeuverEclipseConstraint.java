@@ -157,14 +157,21 @@ public class ManeuverEclipseConstraint implements ScenarioComponent {
                     }
                     final AbsoluteDate firstPartDate = centralDate.shiftedBy(offset);
 
+                    // remove the original maneuver from the trajectory
+                    maneuver.getTrajectory().addManeuver(maneuver.getDate(),
+                                                         maneuver.getDeltaV().negate(),
+                                                         maneuver.getIsp());
+
                     // add the various parts of the split maneuver
                     for (int j = 0; j < nbParts; ++j) {
-                        modified.add(new ScheduledManeuver(maneuver.getModel(), maneuver.isInPlane(),
-                                                           firstPartDate.shiftedBy(j * nbOrbits * period),
-                                                           new Vector3D(partDuration / burnDuration, maneuver.getDeltaV()),
-                                                           maneuver.getThrust(), maneuver.getIsp(),
-                                                           maneuver.getTrajectory(),
-                                                           maneuver.getControlLaws(), false));
+                        final ScheduledManeuver m = new ScheduledManeuver(maneuver.getModel(), maneuver.isInPlane(),
+                                                                          firstPartDate.shiftedBy(j * nbOrbits * period),
+                                                                          new Vector3D(partDuration / burnDuration, maneuver.getDeltaV()),
+                                                                          maneuver.getThrust(), maneuver.getIsp(),
+                                                                          maneuver.getTrajectory(),
+                                                                          false);
+                        m.getTrajectory().addManeuver(m.getDate(), m.getDeltaV(), m.getIsp());
+                        modified.add(m);
                     }
 
                 } else {
