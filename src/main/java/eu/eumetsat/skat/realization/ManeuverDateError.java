@@ -28,32 +28,25 @@ public class ManeuverDateError implements ScenarioComponent {
     /** Indices of the spacecrafts managed by this component. */
     private final int[] spacecraftIndices;
 
-    /** Indicator for applying this error to in-plane maneuvers. */
-    private final boolean inPlane;
-
-    /** Indicator for applying this error to out-of-plane maneuvers. */
-    private final boolean outOfPlane;
-
     /** Standard deviation of the date offset. */
     private final double standardDeviation;
+
+    /** Name of maneuvers to which this component applies. */
+    private final String name;
 
     /** Random generator to use for evaluating the error factor. */
     private final RandomGenerator generator;
 
     /** Simple constructor.
      * @param spacecraftIndices indices of the spacecrafts managed by this component
-     * @param inPlane if true, the error applies to in-plane maneuvers
-     * @param outOfPlane if true, the error applies to out-of-plane maneuvers
+     * @param name name of maneuvers to which this component applies
      * @param standardDeviation standard deviation of date offset (s)
      * @param generator random generator to use for evaluating the error factor
      */
-    public ManeuverDateError(final int[] spacecraftIndices,
-                                  final boolean inPlane, final boolean outOfPlane,
-                                  final double standardDeviation,
-                                  final RandomGenerator generator) {
+    public ManeuverDateError(final int[] spacecraftIndices, final String name,
+                             final double standardDeviation, final RandomGenerator generator) {
         this.spacecraftIndices  = spacecraftIndices.clone();
-        this.inPlane            = inPlane;
-        this.outOfPlane         = outOfPlane;
+        this.name               = name;
         this.standardDeviation  = standardDeviation;
         this.generator          = generator;
     }
@@ -84,7 +77,7 @@ public class ManeuverDateError implements ScenarioComponent {
 
             // modify the maneuvers
             for (final ScheduledManeuver maneuver : rawManeuvers) {
-                if ((inPlane && maneuver.isInPlane()) || (outOfPlane && !(maneuver.isInPlane()))) {
+                if (maneuver.getName().equals(name)) {
                     // the maneuver is affected by the error
                     final double offset = standardDeviation * generator.nextGaussian();
                     final ScheduledManeuver m = new ScheduledManeuver(maneuver.getModel(), maneuver.isInPlane(),

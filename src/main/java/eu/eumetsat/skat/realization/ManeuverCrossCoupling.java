@@ -39,19 +39,15 @@ public class ManeuverCrossCoupling implements ScenarioComponent {
     /** Indices of the spacecrafts managed by this component. */
     private final int[] spacecraftIndices;
 
-    /** Indicator for applying this error to in-plane maneuvers. */
-    private final boolean inPlane;
-
-    /** Indicator for applying this error to out-of-plane maneuvers. */
-    private final boolean outOfPlane;
+    /** Name of maneuvers to which this component applies. */
+    private final String name;
 
     /** Coupling rotation. */
     private final Rotation coupling;
 
     /** Simple constructor.
      * @param spacecraftIndices indices of the spacecrafts managed by this component
-     * @param inPlane if true, the error applies to in-plane maneuvers
-     * @param outOfPlane if true, the error applies to out-of-plane maneuvers
+     * @param name name of maneuvers to which this component applies
      * @param nominalDirection nominal direction of the thrust in spacecraft frame
      * @param couplingDirection coupling direction in spacecraft frame
      * @param couplingRatio ratio of the coupling along coupling axis
@@ -59,14 +55,12 @@ public class ManeuverCrossCoupling implements ScenarioComponent {
      * @exception IllegalArgumentException if coupling ratio is not between -1 and 1
      * or if coupling direction is aligned with nominal thrust direction
      */
-    public ManeuverCrossCoupling(final int[] spacecraftIndices,
-                                 final boolean inPlane, final boolean outOfPlane,
+    public ManeuverCrossCoupling(final int[] spacecraftIndices, final String name,
                                  final Vector3D nominalDirection, final Vector3D couplingDirection,
                                  final double couplingRatio)
         throws IllegalArgumentException {
         this.spacecraftIndices  = spacecraftIndices.clone();
-        this.inPlane            = inPlane;
-        this.outOfPlane         = outOfPlane;
+        this.name               = name;
         if (couplingRatio < -1 || couplingRatio > 1) {
             throw SkatException.createIllegalArgumentException(SkatMessages.WRONG_COUPLING,
                                                                couplingRatio);
@@ -107,7 +101,7 @@ public class ManeuverCrossCoupling implements ScenarioComponent {
 
             // modify the maneuvers
             for (final ScheduledManeuver maneuver : rawManeuvers) {
-                if ((inPlane && maneuver.isInPlane()) || (outOfPlane && !(maneuver.isInPlane()))) {
+                if (maneuver.getName().equals(name)) {
                     // the maneuver is affected by the coupling
                     final ScheduledManeuver m = new ScheduledManeuver(maneuver.getModel(), maneuver.isInPlane(),
                                                                       maneuver.getDate(),

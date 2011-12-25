@@ -34,11 +34,8 @@ public class ManeuverEclipseConstraint implements ScenarioComponent {
     /** Indices of the spacecrafts managed by this component. */
     private final int[] spacecraftIndices;
 
-    /** Indicator for applying this error to in-plane maneuvers. */
-    private final boolean inPlane;
-
-    /** Indicator for applying this error to out-of-plane maneuvers. */
-    private final boolean outOfPlane;
+    /** Name of maneuvers to which this component applies. */
+    private final String name;
 
     /** Time margin after eclipse entry. */
     private final double entryDelay;
@@ -60,8 +57,7 @@ public class ManeuverEclipseConstraint implements ScenarioComponent {
 
     /** Simple constructor.
      * @param spacecraftIndices indices of the spacecrafts managed by this component
-     * @param inPlane if true, the error applies to in-plane maneuvers
-     * @param outOfPlane if true, the error applies to out-of-plane maneuvers
+     * @param name name of maneuvers to which this component applies
      * @param entryDelay time margin after eclipse entry
      * @param exitDelay time margin before eclipse exit
      * @param nbOrbits number of orbits between parts of a split maneuver
@@ -70,16 +66,14 @@ public class ManeuverEclipseConstraint implements ScenarioComponent {
      * @param sun Sun model
      * @param earth Earth model
      */
-    public ManeuverEclipseConstraint(final int[] spacecraftIndices,
-                                     final boolean inPlane, final boolean outOfPlane,
+    public ManeuverEclipseConstraint(final int[] spacecraftIndices, final String name,
                                      final double entryDelay, final double exitDelay,
                                      final int nbOrbits, final double minDurationRatio,
                                      final CelestialBody sun,
                                      final OneAxisEllipsoid earth)
         throws IllegalArgumentException {
         this.spacecraftIndices = spacecraftIndices.clone();
-        this.inPlane           = inPlane;
-        this.outOfPlane        = outOfPlane;
+        this.name              = name;
         this.entryDelay        = entryDelay;
         this.exitDelay         = exitDelay;
         this.nbOrbits          = nbOrbits;
@@ -114,7 +108,7 @@ public class ManeuverEclipseConstraint implements ScenarioComponent {
 
             // modify the maneuvers
             for (final ScheduledManeuver maneuver : rawManeuvers) {
-                if ((inPlane && maneuver.isInPlane()) || (outOfPlane && !maneuver.isInPlane())) {
+                if (maneuver.getName().equals(name)) {
 
                     // maneuvers limits
                     final AbsoluteDate centralDate = maneuver.getDate();

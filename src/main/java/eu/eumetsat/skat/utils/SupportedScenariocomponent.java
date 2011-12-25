@@ -216,15 +216,12 @@ public enum SupportedScenariocomponent {
         /** {@inheritDoc} */
         public ScenarioComponent parse(final SkatFileParser parser, final Tree node, final Skat skat)
             throws OrekitException, SkatException {
-            final boolean inPlane =
-                    parser.getBoolean(node, ParameterKey.COMPONENT_MANEUVER_DATE_ERROR_IN_PLANE);
-            final boolean outOfPlane =
-                    parser.getBoolean(node, ParameterKey.COMPONENT_MANEUVER_DATE_ERROR_OUT_OF_PLANE);
+            final String name =
+                    parser.getString(node, ParameterKey.COMPONENT_MANEUVER_DATE_ERROR_NAME);
             final double standardDeviation =
                     parser.getDouble(node, ParameterKey.COMPONENT_MANEUVER_DATE_ERROR_STANDARD_DEVIATION);
             return new ManeuverDateError(getIndices(parser, node, skat),
-                                         inPlane, outOfPlane, standardDeviation,
-                                         skat.getGenerator());
+                                         name, standardDeviation, skat.getGenerator());
         }
     },
 
@@ -233,15 +230,12 @@ public enum SupportedScenariocomponent {
         /** {@inheritDoc} */
         public ScenarioComponent parse(final SkatFileParser parser, final Tree node, final Skat skat)
             throws OrekitException, SkatException {
-            final boolean inPlane =
-                    parser.getBoolean(node, ParameterKey.COMPONENT_MANEUVER_MAGNITUDE_ERROR_IN_PLANE);
-            final boolean outOfPlane =
-                    parser.getBoolean(node, ParameterKey.COMPONENT_MANEUVER_MAGNITUDE_ERROR_OUT_OF_PLANE);
+            final String name =
+                    parser.getString(node, ParameterKey.COMPONENT_MANEUVER_MAGNITUDE_ERROR_NAME);
             final double standardDeviation =
                     parser.getDouble(node, ParameterKey.COMPONENT_MANEUVER_MAGNITUDE_ERROR_STANDARD_DEVIATION);
             return new ManeuverMagnitudeError(getIndices(parser, node, skat),
-                                              inPlane, outOfPlane, standardDeviation,
-                                              skat.getGenerator());
+                                              name, standardDeviation, skat.getGenerator());
         }
     },
 
@@ -250,15 +244,13 @@ public enum SupportedScenariocomponent {
         /** {@inheritDoc} */
         public ScenarioComponent parse(final SkatFileParser parser, final Tree node, final Skat skat)
             throws OrekitException, SkatException {
-            final boolean inPlane =
-                    parser.getBoolean(node, ParameterKey.COMPONENT_MISSED_MANEUVER_IN_PLANE);
-            final boolean outOfPlane =
-                    parser.getBoolean(node, ParameterKey.COMPONENT_MISSED_MANEUVER_OUT_OF_PLANE);
+            final String name =
+                    parser.getString(node, ParameterKey.COMPONENT_MISSED_MANEUVER_NAME);
             final double missThreshold =
                     parser.getDouble(node, ParameterKey.COMPONENT_MISSED_MANEUVER_THRESHOLD);
             final int orbitsSeparation =
                     parser.getInt(node, ParameterKey.COMPONENT_MISSED_MANEUVER_ORBITS_SEPARATION);
-            return new MissedManeuver(getIndices(parser, node, skat), inPlane, outOfPlane,
+            return new MissedManeuver(getIndices(parser, node, skat), name,
                                       missThreshold, orbitsSeparation, skat.getGenerator());
         }
     },
@@ -268,17 +260,15 @@ public enum SupportedScenariocomponent {
         /** {@inheritDoc} */
         public ScenarioComponent parse(final SkatFileParser parser, final Tree node, final Skat skat)
             throws OrekitException, SkatException {
-            final boolean inPlane =
-                    parser.getBoolean(node, ParameterKey.COMPONENT_CROSS_COUPLING_IN_PLANE);
-            final boolean outOfPlane =
-                    parser.getBoolean(node, ParameterKey.COMPONENT_CROSS_COUPLING_OUT_OF_PLANE);
+            final String name =
+                    parser.getString(node, ParameterKey.COMPONENT_CROSS_COUPLING_NAME);
             final Vector3D nominalDirection =
                     parser.getVector(node, ParameterKey.COMPONENT_CROSS_COUPLING_NOMINAL_DIRECTION);
             final Vector3D couplingDirection =
                     parser.getVector(node, ParameterKey.COMPONENT_CROSS_COUPLING_COUPLING_DIRECTION);
             final double couplingRatio =
                     parser.getDouble(node, ParameterKey.COMPONENT_CROSS_COUPLING_RATIO);
-            return new ManeuverCrossCoupling(getIndices(parser, node, skat), inPlane, outOfPlane,
+            return new ManeuverCrossCoupling(getIndices(parser, node, skat), name,
                                              nominalDirection, couplingDirection, couplingRatio);
         }
     },
@@ -288,15 +278,13 @@ public enum SupportedScenariocomponent {
         /** {@inheritDoc} */
         public ScenarioComponent parse(final SkatFileParser parser, final Tree node, final Skat skat)
             throws OrekitException, SkatException {
-            final boolean inPlane =
-                    parser.getBoolean(node, ParameterKey.COMPONENT_MANEUVER_SPLITTER_IN_PLANE);
-            final boolean outOfPlane =
-                    parser.getBoolean(node, ParameterKey.COMPONENT_MANEUVER_SPLITTER_OUT_OF_PLANE);
+            final String name =
+                    parser.getString(node, ParameterKey.COMPONENT_MANEUVER_SPLITTER_NAME);
             final double maxDV =
                     parser.getDouble(node, ParameterKey.COMPONENT_MANEUVER_SPLITTER_MAX_DV);
             final int orbitsSeparation =
                     parser.getInt(node, ParameterKey.COMPONENT_MANEUVER_SPLITTER_ORBITS_SEPARATION);
-            return new ManeuverSplitter(getIndices(parser, node, skat), inPlane, outOfPlane,
+            return new ManeuverSplitter(getIndices(parser, node, skat), name,
                                         maxDV, orbitsSeparation);
         }
     },
@@ -306,10 +294,8 @@ public enum SupportedScenariocomponent {
         /** {@inheritDoc} */
         public ScenarioComponent parse(final SkatFileParser parser, final Tree node, final Skat skat)
             throws OrekitException, SkatException {
-            final boolean inPlane =
-                    parser.getBoolean(node, ParameterKey.COMPONENT_MANEUVER_ECLIPSE_CONSTRAINT_IN_PLANE);
-            final boolean outOfPlane =
-                    parser.getBoolean(node, ParameterKey.COMPONENT_MANEUVER_ECLIPSE_CONSTRAINT_OUT_OF_PLANE);
+            final String name =
+                    parser.getString(node, ParameterKey.COMPONENT_MANEUVER_ECLIPSE_CONSTRAINT_NAME);
             final double entryDelay =
                     parser.getDouble(node, ParameterKey.COMPONENT_MANEUVER_ECLIPSE_CONSTRAINT_ENTRY_DELAY);
             final double exitDelay =
@@ -318,7 +304,7 @@ public enum SupportedScenariocomponent {
                     parser.getInt(node, ParameterKey.COMPONENT_MANEUVER_ECLIPSE_CONSTRAINT_ORBITS_SEPARATION);
             final double minDurationRatio =
                     parser.getDouble(node, ParameterKey.COMPONENT_MANEUVER_ECLIPSE_CONSTRAINT_MIN_DURATION_RATIO);
-            return new ManeuverEclipseConstraint(getIndices(parser, node, skat), inPlane, outOfPlane,
+            return new ManeuverEclipseConstraint(getIndices(parser, node, skat), name,
                                                  entryDelay, exitDelay, orbitsSeparation, minDurationRatio,
                                                  skat.getSun(), skat.getEarth());
         }

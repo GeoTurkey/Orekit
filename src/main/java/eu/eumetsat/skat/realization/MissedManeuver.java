@@ -29,11 +29,8 @@ public class MissedManeuver implements ScenarioComponent {
     /** Indices of the spacecrafts managed by this component. */
     private final int[] spacecraftIndices;
 
-    /** Indicator for applying this error to in-plane maneuvers. */
-    private final boolean inPlane;
-
-    /** Indicator for applying this error to out-of-plane maneuvers. */
-    private final boolean outOfPlane;
+    /** Name of maneuvers to which this component applies. */
+    private final String name;
 
     /** Miss threshold. */
     private final double missThreshold;
@@ -46,22 +43,19 @@ public class MissedManeuver implements ScenarioComponent {
 
     /** Simple constructor.
      * @param spacecraftIndices indices of the spacecrafts managed by this component
-     * @param inPlane if true, the error applies to in-plane maneuvers
-     * @param outOfPlane if true, the error applies to out-of-plane maneuvers
+     * @param name name of maneuvers to which this component applies
      * @param missThreshold miss threshold under which the maneuver is missed
      * (must be a value between 0.0 and 1.0)
      * @param orbitsSeparation minimum delay for missed maneuver rescheduling in number of orbits
      * @param generator random generator to use for evaluating the error factor
      * @exception IllegalArgumentException if miss threshold is not between 0 and 1
      */
-    public MissedManeuver(final int[] spacecraftIndices,
-                          final boolean inPlane, final boolean outOfPlane,
+    public MissedManeuver(final int[] spacecraftIndices, final String name,
                           final double missThreshold, final int orbitsSeparation,
                           final RandomGenerator generator)
         throws IllegalArgumentException {
         this.spacecraftIndices  = spacecraftIndices.clone();
-        this.inPlane            = inPlane;
-        this.outOfPlane         = outOfPlane;
+        this.name               = name;
         if (missThreshold < 0 || missThreshold > 1) {
             throw SkatException.createIllegalArgumentException(SkatMessages.WRONG_MISS_THRESHOLD,
                                                                missThreshold);
@@ -97,7 +91,7 @@ public class MissedManeuver implements ScenarioComponent {
 
             // modify the maneuvers
             for (final ScheduledManeuver maneuver : rawManeuvers) {
-                if ((inPlane && maneuver.isInPlane()) || (outOfPlane && !(maneuver.isInPlane()))) {
+                if (maneuver.getName().equals(name)) {
                     // the maneuver can be affected by the error
                     if (generator.nextDouble() < missThreshold) {
                         // the maneuver is missed
