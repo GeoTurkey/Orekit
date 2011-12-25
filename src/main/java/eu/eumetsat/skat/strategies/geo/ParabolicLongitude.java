@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-import org.apache.commons.math.analysis.polynomials.PolynomialFunction;
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math.optimization.fitting.PolynomialFitter;
 import org.apache.commons.math.optimization.general.LevenbergMarquardtOptimizer;
@@ -18,12 +17,16 @@ import org.orekit.errors.PropagationException;
 import org.orekit.frames.Transform;
 import org.orekit.orbits.EquinoctialOrbit;
 import org.orekit.orbits.OrbitType;
+import org.orekit.orbits.PositionAngle;
+import org.orekit.propagation.BoundedPropagator;
 import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
+import org.orekit.propagation.analytical.ManeuverAdapterPropagator;
 import org.orekit.propagation.events.EventDetector;
 import org.orekit.propagation.sampling.OrekitStepHandler;
 import org.orekit.propagation.sampling.OrekitStepInterpolator;
 import org.orekit.time.AbsoluteDate;
+import org.orekit.utils.Constants;
 
 import eu.eumetsat.skat.control.AbstractSKControl;
 import eu.eumetsat.skat.strategies.ScheduledManeuver;
@@ -64,8 +67,17 @@ public class ParabolicLongitude extends AbstractSKControl {
     /** Target longitude. */
     private final double center;
 
-    /** Cycle start. */
-    private AbsoluteDate start;
+    /** In-plane maneuver model. */
+    private final TunableManeuver model;
+
+    /** Maximum number of maneuvers to set up in one cycle. */
+    private final int maxManeuvers;
+
+    /** Minimum time between split parts in number of orbits. */
+    private final double dtMin;
+
+    /** Reference state at fitting start. */
+    private SpacecraftState fitStart;
 
     /** Iteration number. */
     private int iteration;
@@ -79,19 +91,25 @@ public class ParabolicLongitude extends AbstractSKControl {
     /** Longitude sample during station keeping cycle. */
     private List<Double> longitudeSample;
 
-    /** Fitter for longitude parabola. */
-    private PolynomialFitter fitter;
+    /** Fitted dlDot/da. */
+    private double dlDotDa;
 
-    /** Start date of the fitting. */
-    private AbsoluteDate fitStart;
+    /** Fitted initial offset with respect to synchronous semi major axis. */
+    private double a0Mas;
 
-    /** End date of the fitting. */
-    private AbsoluteDate fitEnd;
+    /** Fitted semi-major axis slope. */
+    private double aDot;
+
+    /** Fitted initial longitude. */
+    private double l0;
 
     /** Simple constructor.
      * @param name name of the control law
      * @param controlledName name of the controlled spacecraft
      * @param controlledIndex index of the controlled spacecraft
+     * @param model in-plane maneuver model
+     * @param maxManeuvers maximum number of maneuvers to set up in one cycle
+     * @param orbitsSeparation minimum time between split parts in number of orbits
      * @param lEast longitude slot Eastward boundary
      * @param lWest longitude slot Westward boundary
      * @param samplingStep step to use for sampling throughout propagation
@@ -100,6 +118,8 @@ public class ParabolicLongitude extends AbstractSKControl {
      */
     public ParabolicLongitude(final String name,
                               final String controlledName, final int controlledIndex,
+                              final TunableManeuver model, final int maxManeuvers,
+                              final int orbitsSeparation,
                               final double lEast, final double lWest,
                               final double samplingStep, final BodyShape earth)
         throws SkatException {
@@ -113,6 +133,9 @@ public class ParabolicLongitude extends AbstractSKControl {
         this.samplingStep    = samplingStep;
         this.earth           = earth;
         this.center          = 0.5 * (getMin() + getMax());
+        this.model           = model;
+        this.maxManeuvers    = maxManeuvers;
+        this.dtMin           = (orbitsSeparation + 0.5) * Constants.JULIAN_DAY;
         this.dateSample      = new ArrayList<Double>();
         this.longitudeSample = new ArrayList<Double>();
     }
@@ -123,66 +146,240 @@ public class ParabolicLongitude extends AbstractSKControl {
                               final AbsoluteDate start, final AbsoluteDate end, final int rollingCycles)
         throws OrekitException {
 
-        this.start         = start;
         this.iteration     = iteration;
         this.cycleDuration = end.durationFrom(start) / rollingCycles;
 
-        // prepare fitting in the longest interval between two maneuvers
-        this.fitter = new PolynomialFitter(2, new LevenbergMarquardtOptimizer());
-        SortedSet<AbsoluteDate> maneuverDates = new TreeSet<AbsoluteDate>();
+        // gather all special dates (start, end, maneuvers) in one chronologically sorted set
+        SortedSet<AbsoluteDate> sortedDates = new TreeSet<AbsoluteDate>();
+        sortedDates.add(start);
+        sortedDates.add(end);
+        AbsoluteDate lastInPlane = start;
         for (final ScheduledManeuver maneuver : maneuvers) {
-            maneuverDates.add(maneuver.getDate());
+            final AbsoluteDate date = maneuver.getDate();
+            if (maneuver.getName().equals(model.getName()) && date.compareTo(lastInPlane) >= 0) {
+                // this is the last in plane maneuver seen so far
+                lastInPlane = date;
+            }
+            sortedDates.add(date);
         }
         for (final ScheduledManeuver maneuver : fixedManeuvers) {
-            maneuverDates.add(maneuver.getDate());
-        }
-        fitStart = null;
-        AbsoluteDate previous = null;
-        for (AbsoluteDate current : maneuverDates) {
-            if (previous != null) {
-                if ((fitStart == null)|| (current.durationFrom(previous) > fitEnd.durationFrom(fitStart))) {
-                    // up to now, this is the longest interval between two maneuvers, select it for fitting
-                    fitStart = previous;
-                    fitEnd   = current;
-                }
+            final AbsoluteDate date = maneuver.getDate();
+            if (maneuver.getName().equals(model.getName()) && date.compareTo(lastInPlane) >= 0) {
+                // this is the last in plane maneuver seen so far
+                lastInPlane = date;
             }
-            previous = current;
+            sortedDates.add(date);
         }
+
+        // select the longest maneuver-free interval after last in plane maneuver for fitting
+        AbsoluteDate freeIntervalStart = lastInPlane;
+        AbsoluteDate freeIntervalEnd   = lastInPlane;
+        AbsoluteDate previousDate      = lastInPlane;
+        for (final AbsoluteDate currentDate : sortedDates) {
+            if (currentDate.durationFrom(previousDate) > freeIntervalEnd.durationFrom(freeIntervalStart)) {
+                freeIntervalStart = previousDate;
+                freeIntervalEnd   = currentDate;
+            }
+            previousDate = currentDate;
+        }
+
+        fitStart = propagator.propagate(freeIntervalStart);
+
+        // fit linear model to semi-major axis and quadratic model to mean longitude
+        PolynomialFitter aFitter = new PolynomialFitter(1, new LevenbergMarquardtOptimizer());
+        PolynomialFitter lFitter = new PolynomialFitter(2, new LevenbergMarquardtOptimizer());
+        for (AbsoluteDate date = freeIntervalStart; date.compareTo(freeIntervalEnd) < 0; date = date.shiftedBy(samplingStep)) {
+            final SpacecraftState  state = propagator.propagate(date);
+            final double meanLongitude = getLongitude(state, PositionAngle.MEAN);
+            final double dt = date.durationFrom(freeIntervalStart);
+            aFitter.addObservedPoint(dt, state.getA());
+            lFitter.addObservedPoint(dt, meanLongitude);
+        }
+
+        // polynomial models are:
+        // dl(t)/dt  = dlDotDa * [a(t) - as]
+        // a(t)      = a(t0) + aDot * (t - t0)
+        // l(t)      = l(t0) + dlDotDa * [a(t0) - as] * (t - t0) + dlDotDa/2 * aDot * (t - t0)^2
+        final double[] linear = aFitter.fit();
+        final double[] quadratic = lFitter.fit();
+        l0      = quadratic[0];
+        aDot    = linear[1];
+        dlDotDa = 2 * quadratic[2] / aDot;
+        a0Mas   = quadratic[1] / dlDotDa;
 
     }
 
     /** {@inheritDoc} */
-    public boolean tuneManeuvers(TunableManeuver[] tunables)
+    public ScheduledManeuver[] tuneManeuvers(final ScheduledManeuver[] tunables,
+                                             final BoundedPropagator reference)
         throws OrekitException {
-        // TODO
 
-        // fit the longitude motion as a parabola
-        for (int i = 0; i < dateSample.size(); ++i) {
-            final double date = dateSample.get(i);
-            final double dateInCycle = date - cycleDuration * FastMath.floor(date / cycleDuration);
-            fitter.addObservedPoint(dateInCycle, longitudeSample.get(i));
+        // longitude excursion when the cycle is balanced from tPeak - cycleDuration/2
+        // to tPeak + cycleDuration/2 where tPeak is the date at which peak longitude
+        // is achieved (i.e. dl/dt = 0)
+        final double longitudeExcursion = -dlDotDa * aDot * cycleDuration * cycleDuration / 8;
+        final double targetPeak         = center + 0.5 * longitudeExcursion;
+
+        final ScheduledManeuver[] tuned;
+        final ManeuverAdapterPropagator adapterPropagator = new ManeuverAdapterPropagator(reference);
+        if (iteration == 0) {
+            // we need to first define the number of maneuvers and their initial settings
+
+            final double deltaA;
+            final double lDotDot = dlDotDa * aDot;
+            if ((l0 > targetPeak) ^ (lDotDot > 0)) {
+                // we are on the wrong side, already "above" target peak (considering curvature direction)
+
+                // TODO
+                throw SkatException.createInternalError(null);
+
+            } else {
+                // we are on the right side, "below" target peak (considering curvature direction)
+
+                // use the quadratic longitude model to compute the initial semi-major axis offset
+                // needed to achieve a peak longitude exactly at target peak
+                final double aMas = FastMath.sqrt(2 * aDot * (l0 - targetPeak) / dlDotDa);
+
+                // compute the in plane maneuver required to get this initial semi-major axis offset
+                deltaA = aMas - a0Mas;
+            }
+
+            final double mu     = fitStart.getMu();
+            final double a      = fitStart.getA();
+            double totalDeltaV  = FastMath.sqrt(mu * (2 / a - 1 / (a + deltaA))) - FastMath.sqrt(mu / a);
+
+            // fix sign according to thruster direction
+            Vector3D thrustDirection =
+                    fitStart.getAttitude().getRotation().applyInverseTo(model.getDirection());
+            Vector3D velocity = fitStart.getPVCoordinates().getVelocity();
+            if (Vector3D.dotProduct(thrustDirection, velocity) < 0) {
+                totalDeltaV = -totalDeltaV;
+            }
+
+            // compute the number of maneuvers required
+            final double limitDV = (totalDeltaV < 0) ? model.getDVMin() : model.getDVMax();
+            final int nMan = FastMath.min(maxManeuvers,
+                                          (int) FastMath.ceil(FastMath.abs(totalDeltaV / limitDV)));
+            final double deltaV = FastMath.max(model.getDVMin(),
+                                               FastMath.min(model.getDVMax(), totalDeltaV / nMan));
+
+            tuned = new ScheduledManeuver[tunables.length + nMan];
+
+            // copy existing maneuvers, changing only the trajectory
+            for (int i = 0; i < tunables.length; ++i) {
+                final ScheduledManeuver maneuver =
+                        new ScheduledManeuver(tunables[i].getModel(), tunables[i].isInPlane(),
+                                              tunables[i].getDate(), tunables[i].getDeltaV(),
+                                              tunables[i].getThrust(), tunables[i].getIsp(),
+                                              adapterPropagator, tunables[i].isReplanned());
+                tuned[i] = maneuver;
+                adapterPropagator.addManeuver(maneuver.getDate(), maneuver.getDeltaV(), maneuver.getIsp());
+            }
+
+            // add the new maneuvers
+            for (int i = 0; i < nMan; ++i) {
+                final ScheduledManeuver maneuver =
+                        model.buildManeuver(fitStart.getDate().shiftedBy(i * dtMin), deltaV, adapterPropagator);
+                tuned[tunables.length + i] = maneuver;
+                adapterPropagator.addManeuver(maneuver.getDate(), maneuver.getDeltaV(), maneuver.getIsp());
+            }
+
+        } else {
+
+            // adjust the existing maneuvers
+
+            final double lDotDot = dlDotDa * aDot;
+            if ((l0 > targetPeak) ^ (lDotDot > 0)) {
+                // we are on the wrong side, already "above" target peak (considering curvature direction)
+
+                // TODO
+                throw SkatException.createInternalError(null);
+
+            } else {
+                // we are on the right side, "below" target peak (considering curvature direction)
+
+                // compute achieved longitude peak
+                final double achievedPeak = l0 - dlDotDa * a0Mas * a0Mas / (2 * aDot);
+
+                // compute initial semi major axis offset needed to reach target longitude peak
+                final double deltaL = targetPeak - achievedPeak;
+                final double deltaSquares = 2 * aDot * deltaL / dlDotDa;
+                final double aMas = FastMath.copySign(FastMath.sqrt(a0Mas * a0Mas - deltaSquares), a0Mas);
+
+                // compute the in plane maneuver required to get this initial semi-major axis offset
+                final double deltaA = aMas - a0Mas;
+                final double mu     = fitStart.getMu();
+                final double a      = fitStart.getA();
+                double deltaVChange = FastMath.sqrt(mu * (2 / a - 1 / (a + deltaA))) - FastMath.sqrt(mu / a);
+
+                // fix sign according to thruster direction
+                Vector3D thrustDirection =
+                        fitStart.getAttitude().getRotation().applyInverseTo(model.getDirection());
+                Vector3D velocity = fitStart.getPVCoordinates().getVelocity();
+                if (Vector3D.dotProduct(thrustDirection, velocity) < 0) {
+                    deltaVChange = -deltaVChange;
+                }
+
+                // distribute the change over all maneuvers
+                int nbMan = 0;
+                for (final ScheduledManeuver maneuver : tunables) {
+                    if (maneuver.getName().equals(model.getName())) {
+                        nbMan++;
+                    }
+                }
+
+                // apply the changes
+                tuned = new ScheduledManeuver[tunables.length];
+                for (int i = 0; i < tunables.length; ++i) {
+                    final ScheduledManeuver maneuver;
+                    if (tunables[i].getName().equals(model.getName())) {
+                        // change the maneuver velovity increment
+                        double original = Vector3D.dotProduct(tunables[i].getDeltaV(), model.getDirection());
+                        maneuver = new ScheduledManeuver(tunables[i].getModel(), tunables[i].isInPlane(),
+                                                         tunables[i].getDate(),
+                                                         new Vector3D(original + deltaVChange / nbMan,
+                                                                      model.getDirection()),
+                                                         tunables[i].getThrust(), tunables[i].getIsp(),
+                                                         adapterPropagator, tunables[i].isReplanned());
+                    } else {
+                        // copy the maneuver, changing only the trajectory
+                        maneuver = new ScheduledManeuver(tunables[i].getModel(), tunables[i].isInPlane(),
+                                                         tunables[i].getDate(), tunables[i].getDeltaV(),
+                                                         tunables[i].getThrust(), tunables[i].getIsp(),
+                                                         adapterPropagator, tunables[i].isReplanned());
+                    }
+
+                    tuned[i] = maneuver;
+                    adapterPropagator.addManeuver(maneuver.getDate(), maneuver.getDeltaV(), maneuver.getIsp());
+
+                }
+
+            }
+
         }
-        double[] coefficients = fitter.fit();
 
-        // change the polynomials coefficients so the parabola performed
-        // from start to end of cycle is centered around center longitude
-        // and its vertex is reached at cycle center date
-        coefficients[0] = center + coefficients[2] * cycleDuration * cycleDuration / 8;
-        coefficients[1] = - coefficients[2] * cycleDuration;
-        PolynomialFunction reference = new PolynomialFunction(coefficients);
+        return tuned;
 
-        // compute residuals with respect to reference parabola
-        double sum2 = 0;
-        for (int i = 0; i < dateSample.size(); ++i) {
-            final double date = dateSample.get(i);
-            final double dateInCycle = date - cycleDuration * FastMath.floor(date / cycleDuration);
-            final double residual = longitudeSample.get(i) - reference.value(dateInCycle);
-            sum2 += residual * residual;
-        }
+    }
 
-        double achieved = FastMath.sqrt(sum2) / dateSample.size();
+    /** Get Earth based longitude.
+     * @param state current state
+     * @param type type of the angle
+     * @return Earth-based longitude
+     * @exception OrekitException if frames conversion cannot be computed
+     */
+    private double getLongitude(final SpacecraftState state, final PositionAngle type)
+        throws OrekitException {
 
-        throw SkatException.createInternalError(null);
+        // get equinoctial orbit
+        final EquinoctialOrbit orbit = (EquinoctialOrbit) OrbitType.EQUINOCTIAL.convertType(state.getOrbit());
+
+        // compute sidereal time
+        final Transform transform = earth.getBodyFrame().getTransformTo(state.getFrame(), state.getDate());
+        final double theta = transform.transformVector(Vector3D.PLUS_I).getAlpha();
+
+        return MathUtils.normalizeAngle(orbit.getL(type) - theta, center);
+
     }
 
     /** {@inheritDoc} */
@@ -223,33 +420,19 @@ public class ParabolicLongitude extends AbstractSKControl {
                 // loop throughout step
                 for (AbsoluteDate date = minDate; date.compareTo(maxDate) < 0; date = date.shiftedBy(samplingStep)) {
 
-                    // compute mean longitude argument
+                    // compute longitudes
                     interpolator.setInterpolatedDate(date);
                     final SpacecraftState state = interpolator.getInterpolatedState();
-                    final EquinoctialOrbit orbit = (EquinoctialOrbit) OrbitType.EQUINOCTIAL.convertType(state.getOrbit());
-                    final double lambdaV = orbit.getLv();
-                    final double lambdaM = orbit.getLM();
-
-                    // compute sidereal time
-                    final Transform transform = earth.getBodyFrame().getTransformTo(state.getFrame(), date);
-                    final double theta = transform.transformVector(Vector3D.PLUS_I).getAlpha();
-
-                    // compute mean longitude
-                    final double trueLongitude = MathUtils.normalizeAngle(lambdaV - theta, center);
-                    final double meanLongitude = MathUtils.normalizeAngle(lambdaM - theta, center);
+                    final double trueLongitude = getLongitude(state, PositionAngle.TRUE);
+                    final double meanLongitude = getLongitude(state, PositionAngle.MEAN);
 
                     // check the limits
                     checkMargins(FastMath.toDegrees(trueLongitude));
 
                     // add point to sample
-                    final double dt = date.durationFrom(start);
+                    final double dt = date.durationFrom(fitStart.getDate());
                     dateSample.add(dt);
                     longitudeSample.add(meanLongitude);
-
-                    // fit mean longitude in the longest interval between maneuvers
-                    if (date.compareTo(fitStart) >= 0 && date.compareTo(fitEnd) <= 0) {
-                        fitter.addObservedPoint(dt, meanLongitude);
-                    }
 
                 }
 

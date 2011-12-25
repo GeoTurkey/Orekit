@@ -6,6 +6,7 @@ import org.orekit.errors.OrekitException;
 
 import eu.eumetsat.skat.Skat;
 import eu.eumetsat.skat.control.SKControl;
+import eu.eumetsat.skat.strategies.TunableManeuver;
 import eu.eumetsat.skat.strategies.geo.EccentricityCircle;
 import eu.eumetsat.skat.strategies.geo.InclinationVector;
 import eu.eumetsat.skat.strategies.geo.ParabolicLongitude;
@@ -23,11 +24,18 @@ public enum SupportedControlLaw {
         public SKControl parse(final SkatFileParser parser, final Tree node,
                                final String controlled, final Skat skat)
             throws OrekitException, SkatException {
-            final String name                 = parser.getString(node, ParameterKey.CONTROL_NAME);
-            final double sampling             = parser.getDouble(node, ParameterKey.CONTROL_SAMPLING);
-            final double lEast                = parser.getAngle(node,  ParameterKey.CONTROL_PARABOLIC_LONGITUDE_EAST);
-            final double lWest                = parser.getAngle(node,  ParameterKey.CONTROL_PARABOLIC_LONGITUDE_WEST);
+            final String name           = parser.getString(node, ParameterKey.CONTROL_NAME);
+            final double sampling       = parser.getDouble(node, ParameterKey.CONTROL_SAMPLING);
+            final double lEast          = parser.getAngle(node,  ParameterKey.CONTROL_PARABOLIC_LONGITUDE_EAST);
+            final double lWest          = parser.getAngle(node,  ParameterKey.CONTROL_PARABOLIC_LONGITUDE_WEST);
+
+            // TODO read parameters
+            final TunableManeuver model = null;
+            final int maxManeuvers      = 0;
+            final int orbitsSeparation  = 0;
+
             return new ParabolicLongitude(name, controlled, skat.getSpacecraftIndex(controlled),
+                                          model, maxManeuvers, orbitsSeparation,
                                           lEast, lWest, sampling, skat.getEarth());
         }
 
