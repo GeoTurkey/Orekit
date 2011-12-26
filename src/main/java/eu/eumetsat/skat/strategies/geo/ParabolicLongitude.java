@@ -35,21 +35,59 @@ import eu.eumetsat.skat.utils.SkatException;
 import eu.eumetsat.skat.utils.SkatMessages;
 
 /**
- * Station-keeping control attempting to center et parabolique longitude
+ * Station-keeping control attempting to center a parabolic longitude
  * excursion around a specified center target throughout a cycle.
  * <p>
- * This control value is:
+ * The longitude drift &zeta; (i.e. time derivative of the mean longitude) depends
+ * linearly on semi major axis, and is null at geosynchronous semi major axis:
  * <pre>
- *   &sum;(l(t)-l<sub>p</sub>(y))<sup>2</sup>
+ *  dl(t)/dt  = &zeta; = &part;&zeta;/&part;a &times; [a(t) - a<sub>s</sub>]
  * </pre>
- * where l(t) is the spacecraft longitude and l<sub>p</sub>(t) is a centered
- * parabolic longitude motion with the same acceleration as the observed motion.
+ * where a<sub>s</sub> is the synchronous semi major axis and &part;&zeta;/&part;a
+ * is a negative coefficient depending only on the gravity field with a theoretical
+ * value for Keplerian motion &part;&zeta;/&part;a = -(3/2)&radic;(&mu;/a<sub>s</sub>).
  * </p>
  * <p>
- * The previous definition implies that setting the target of this control
- * to 0 attempts to have most of the points longitudes covered by the
- * satellite centered around the l<sub>c</sub> longitude during the
- * station-keeping.
+ * The model for semi major axis drift is limited to secular terms only here:
+ * <pre>
+ * a(t) = a(t<sub>0</sub>) + &aring; &times; (t - t<sub>0</sub>)
+ * </pre>
+ * where &aring; is the secular time derivative of the semi major axis
+ * <p>
+ * This implies the model for mean longitude is quadratic:
+ * <pre>
+ * l(t) = l(t<sub>0</sub>) + &part;&zeta;/&part;a &times; [a(t<sub>0</sub>) - a<sub>s</sub>] &times; (t - t<sub>0</sub>) + &frac12; &part;&zeta;/&part;a &times; &aring; &times; (t - t<sub>0</sub>)<sup>2</sup>
+ * </pre>
+ * </p>
+ * <p>
+ * The initial longitude l(t<sub>0</sub>) is inherited from the previous
+ * cycle motion. The curvature comes from &aring; which depends on the station-keeping
+ * longitude slot. So the only control parameter left is the initial drift, which is
+ * adjusted by changing the offset [a(t<sub>0</sub>) - a<sub>s</sub>] at initial time
+ * t<sub>0</sub> thanks to in-plane maneuvers. The aim of the control law is to achieve
+ * a parabolic motion that is centered in the station-keeping window during one cycle
+ * duration, i.e. with a peak (depending on acceleration direction, of cource) longitude
+ * at cycle middle time.
+ * </p>
+ * <p>
+ * The model parameters &part;&zeta;/&part;a, a<sub>s</sub> and &aring; are not
+ * computed from Keplerian motion, but rather fitted to the real evolution of the
+ * parameters against the polynomial models above. The fitting is performed on the
+ * longest maneuver-free interval of the cycle after the last in-plane maneuver.
+ * </p>
+ * <p>
+ * There are two cases to manage. The first one occurs when the initial mean longitude
+ * l(t<sub>0</sub>) is on the expected side with respect to the peak longitude of the
+ * perfectly centered motion. In this case, we try to adjust the peak longitude. The
+ * second one occurs when the initial mean longitude l(t<sub>0</sub>) is on the opposite
+ * side with respect to the peak longitude of the perfectly centered motion. In this
+ * case we are already too far and cannot get a perfect motion for this cycle, so we try
+ * to put the end of cycle longitude on the right side, so nect cycle will perform normally.
+ * </p>
+ * <p>
+ * In all cases, if we are too far from the station keeping longitude slot, we set up
+ * several maneuvers to reach the slot faster, up to the maximal number of allowed
+ * maneuvers par cycle and fulfilling the constraints on velocity increment sizes.
  * </p>
  * @author Luc Maisonobe
  */
