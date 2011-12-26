@@ -120,8 +120,11 @@ public class ParabolicLongitude extends AbstractSKControl {
     /** Iteration number. */
     private int iteration;
 
-    /** Cycle duration. */
-    private double cycleDuration;
+    /** Cycle start. */
+    private AbsoluteDate start;
+
+    /** Cycle end. */
+    private AbsoluteDate end;
 
     /** Date sample during station keeping cycle. */
     private List<Double> dateSample;
@@ -184,8 +187,9 @@ public class ParabolicLongitude extends AbstractSKControl {
                               final AbsoluteDate start, final AbsoluteDate end)
         throws OrekitException {
 
-        this.iteration     = iteration;
-        this.cycleDuration = end.durationFrom(start);
+        this.iteration = iteration;
+        this.start     = start;
+        this.end       = end;
 
         // gather all special dates (start, end, maneuvers) in one chronologically sorted set
         SortedSet<AbsoluteDate> sortedDates = new TreeSet<AbsoluteDate>();
@@ -255,6 +259,7 @@ public class ParabolicLongitude extends AbstractSKControl {
         // longitude excursion when the cycle is balanced from tPeak - cycleDuration/2
         // to tPeak + cycleDuration/2 where tPeak is the date at which peak longitude
         // is achieved (i.e. dl/dt = 0)
+        final double cycleDuration      = end.durationFrom(start);
         final double longitudeExcursion = -dlDotDa * aDot * cycleDuration * cycleDuration / 8;
         final double targetPeak         = center + 0.5 * longitudeExcursion;
 
@@ -263,25 +268,29 @@ public class ParabolicLongitude extends AbstractSKControl {
         if (iteration == 0) {
             // we need to first define the number of maneuvers and their initial settings
 
-            final double deltaA;
+            final double aMas;
             final double lDotDot = dlDotDa * aDot;
             if ((l0 > targetPeak) ^ (lDotDot > 0)) {
-                // we are on the wrong side, already "above" target peak (considering curvature direction)
+                // we are on the wrong side, "above" target peak (considering curvature direction)
 
-                // TODO
-                throw SkatException.createInternalError(null);
+                // use the quadratic longitude model to compute the initial semi-major axis offset
+                // needed to achieve an end of cycle longitude symetrical with respect to target peak
+                final double lEnd    = targetPeak - longitudeExcursion;
+                final double tEndMt0 = end.durationFrom(fitStart.getDate());
+                aMas                 = (lEnd - l0) / (dlDotDa * tEndMt0) - 0.5 * aDot * tEndMt0;
+
 
             } else {
                 // we are on the right side, "below" target peak (considering curvature direction)
 
                 // use the quadratic longitude model to compute the initial semi-major axis offset
                 // needed to achieve a peak longitude exactly at target peak
-                final double aMas = FastMath.sqrt(2 * aDot * (l0 - targetPeak) / dlDotDa);
+                aMas = FastMath.sqrt(2 * aDot * (l0 - targetPeak) / dlDotDa);
 
-                // compute the in plane maneuver required to get this initial semi-major axis offset
-                deltaA = aMas - a0Mas;
             }
 
+            // compute the in plane maneuver required to get this initial semi-major axis offset
+            final double deltaA = aMas - a0Mas;
             final double mu     = fitStart.getMu();
             final double a      = fitStart.getA();
             double totalDeltaV  = FastMath.sqrt(mu * (2 / a - 1 / (a + deltaA))) - FastMath.sqrt(mu / a);
@@ -327,11 +336,18 @@ public class ParabolicLongitude extends AbstractSKControl {
             // adjust the existing maneuvers
 
             final double lDotDot = dlDotDa * aDot;
+            final double deltaA;
             if ((l0 > targetPeak) ^ (lDotDot > 0)) {
-                // we are on the wrong side, already "above" target peak (considering curvature direction)
+                // we are on the wrong side, "above" target peak (considering curvature direction)
 
-                // TODO
-                throw SkatException.createInternalError(null);
+                // compute the achieved longitude at cycle end
+                final double lEnd        = targetPeak - longitudeExcursion;
+                final double tEndMt0     = end.durationFrom(fitStart.getDate());
+                final double achievedEnd = l0 + dlDotDa * (a0Mas + 0.5 * aDot * tEndMt0) * tEndMt0;
+
+                // compute initial semi major axis offset needed to reach target longitude end
+                final double deltaL = lEnd - achievedEnd;
+                deltaA = deltaL / (dlDotDa * tEndMt0);
 
             } else {
                 // we are on the right side, "below" target peak (considering curvature direction)
@@ -340,57 +356,58 @@ public class ParabolicLongitude extends AbstractSKControl {
                 final double achievedPeak = l0 - dlDotDa * a0Mas * a0Mas / (2 * aDot);
 
                 // compute initial semi major axis offset needed to reach target longitude peak
-                final double deltaL = targetPeak - achievedPeak;
+                final double deltaL       = targetPeak - achievedPeak;
                 final double deltaSquares = 2 * aDot * deltaL / dlDotDa;
-                final double aMas = FastMath.copySign(FastMath.sqrt(a0Mas * a0Mas - deltaSquares), a0Mas);
+                final double aMas         = FastMath.copySign(FastMath.sqrt(a0Mas * a0Mas - deltaSquares),
+                                                              a0Mas);
+                deltaA                    = aMas - a0Mas;
 
-                // compute the in plane maneuver required to get this initial semi-major axis offset
-                final double deltaA = aMas - a0Mas;
-                final double mu     = fitStart.getMu();
-                final double a      = fitStart.getA();
-                double deltaVChange = FastMath.sqrt(mu * (2 / a - 1 / (a + deltaA))) - FastMath.sqrt(mu / a);
+            }
 
-                // fix sign according to thruster direction
-                Vector3D thrustDirection =
-                        fitStart.getAttitude().getRotation().applyInverseTo(model.getDirection());
-                Vector3D velocity = fitStart.getPVCoordinates().getVelocity();
-                if (Vector3D.dotProduct(thrustDirection, velocity) < 0) {
-                    deltaVChange = -deltaVChange;
+            // compute the in plane maneuver required to get this initial semi-major axis offset
+            final double mu     = fitStart.getMu();
+            final double a      = fitStart.getA();
+            double deltaVChange = FastMath.sqrt(mu * (2 / a - 1 / (a + deltaA))) - FastMath.sqrt(mu / a);
+
+            // fix sign according to thruster direction
+            Vector3D thrustDirection =
+                    fitStart.getAttitude().getRotation().applyInverseTo(model.getDirection());
+            Vector3D velocity = fitStart.getPVCoordinates().getVelocity();
+            if (Vector3D.dotProduct(thrustDirection, velocity) < 0) {
+                deltaVChange = -deltaVChange;
+            }
+
+            // distribute the change over all maneuvers
+            int nbMan = 0;
+            for (final ScheduledManeuver maneuver : tunables) {
+                if (maneuver.getName().equals(model.getName())) {
+                    nbMan++;
+                }
+            }
+
+            // apply the changes
+            tuned = new ScheduledManeuver[tunables.length];
+            for (int i = 0; i < tunables.length; ++i) {
+                final ScheduledManeuver maneuver;
+                if (tunables[i].getName().equals(model.getName())) {
+                    // change the maneuver velovity increment
+                    double original = Vector3D.dotProduct(tunables[i].getDeltaV(), model.getDirection());
+                    maneuver = new ScheduledManeuver(tunables[i].getModel(), tunables[i].getDate(),
+                                                     new Vector3D(original + deltaVChange / nbMan,
+                                                                  model.getDirection()),
+                                                                  tunables[i].getThrust(),
+                                                                  tunables[i].getIsp(), adapterPropagator,
+                                                                  tunables[i].isReplanned());
+                } else {
+                    // copy the maneuver, changing only the trajectory
+                    maneuver = new ScheduledManeuver(tunables[i].getModel(), tunables[i].getDate(),
+                                                     tunables[i].getDeltaV(), tunables[i].getThrust(),
+                                                     tunables[i].getIsp(), adapterPropagator,
+                                                     tunables[i].isReplanned());
                 }
 
-                // distribute the change over all maneuvers
-                int nbMan = 0;
-                for (final ScheduledManeuver maneuver : tunables) {
-                    if (maneuver.getName().equals(model.getName())) {
-                        nbMan++;
-                    }
-                }
-
-                // apply the changes
-                tuned = new ScheduledManeuver[tunables.length];
-                for (int i = 0; i < tunables.length; ++i) {
-                    final ScheduledManeuver maneuver;
-                    if (tunables[i].getName().equals(model.getName())) {
-                        // change the maneuver velovity increment
-                        double original = Vector3D.dotProduct(tunables[i].getDeltaV(), model.getDirection());
-                        maneuver = new ScheduledManeuver(tunables[i].getModel(), tunables[i].getDate(),
-                                                         new Vector3D(original + deltaVChange / nbMan,
-                                                                      model.getDirection()),
-                                                         tunables[i].getThrust(),
-                                                         tunables[i].getIsp(), adapterPropagator,
-                                                         tunables[i].isReplanned());
-                    } else {
-                        // copy the maneuver, changing only the trajectory
-                        maneuver = new ScheduledManeuver(tunables[i].getModel(), tunables[i].getDate(),
-                                                         tunables[i].getDeltaV(), tunables[i].getThrust(),
-                                                         tunables[i].getIsp(), adapterPropagator,
-                                                         tunables[i].isReplanned());
-                    }
-
-                    tuned[i] = maneuver;
-                    adapterPropagator.addManeuver(maneuver.getDate(), maneuver.getDeltaV(), maneuver.getIsp());
-
-                }
+                tuned[i] = maneuver;
+                adapterPropagator.addManeuver(maneuver.getDate(), maneuver.getDeltaV(), maneuver.getIsp());
 
             }
 
