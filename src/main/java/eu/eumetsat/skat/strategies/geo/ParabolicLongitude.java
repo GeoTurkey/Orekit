@@ -204,13 +204,15 @@ public class ParabolicLongitude extends AbstractSKControl {
             }
             sortedDates.add(date);
         }
-        for (final ScheduledManeuver maneuver : fixedManeuvers) {
-            final AbsoluteDate date = maneuver.getDate();
-            if (maneuver.getName().equals(model.getName()) && date.compareTo(lastInPlane) >= 0) {
-                // this is the last in plane maneuver seen so far
-                lastInPlane = date;
+        if (fixedManeuvers != null) {
+            for (final ScheduledManeuver maneuver : fixedManeuvers) {
+                final AbsoluteDate date = maneuver.getDate();
+                if (maneuver.getName().equals(model.getName()) && date.compareTo(lastInPlane) >= 0) {
+                    // this is the last in plane maneuver seen so far
+                    lastInPlane = date;
+                }
+                sortedDates.add(date);
             }
-            sortedDates.add(date);
         }
 
         // select the longest maneuver-free interval after last in plane maneuver for fitting
