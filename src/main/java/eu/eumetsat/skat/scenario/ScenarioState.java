@@ -190,17 +190,17 @@ public class ScenarioState {
      * <p>
      * The instance is not changed, a new instance is created
      * </p>
-     * @param name name of the maneuver
+     * @param maneuverName name of the maneuver
      * @param number number of in-plane maneuvers
      * @param cycleDV cycle DV for in-plane maneuvers
      * @param totalDV total DV for in-plane maneuvers
      * @return updated state
      */
-    public ScenarioState updateManeuverStats(final String name, final int number,
+    public ScenarioState updateManeuverStats(final String maneuverName, final int number,
                                              final double cycleDV, final double totalDV) {
         final HashMap<String, ManeuverStats> updatedMap =
                 new HashMap<String, ScenarioState.ManeuverStats>(maneuversStats);
-        updatedMap.put(name, new ManeuverStats(number, cycleDV, totalDV));
+        updatedMap.put(maneuverName, new ManeuverStats(number, cycleDV, totalDV));
         return new ScenarioState(name, inertialFrame, earth, bolMass, cyclesNumber,
                                  realState, estimatedState, performedEphemeris,
                                  maneuvers, updatedMap);
