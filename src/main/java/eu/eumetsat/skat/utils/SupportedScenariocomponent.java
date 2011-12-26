@@ -92,7 +92,6 @@ public enum SupportedScenariocomponent {
             // loop
             final String controlled   = parser.getString(node, ParameterKey.COMPONENT_CONTROL_LOOP_CONTROLLED_SPACECRAFT);
             final int spacecraftIndex = skat.getSpacecraftIndex(controlled);
-            final int rollingCycles   = skat.getRollingCycles();
 
             final int firstCycle    = parser.getInt(node, ParameterKey.COMPONENT_CONTROL_LOOP_FIRST_CYCLE);
             final int lastCycle     = parser.getInt(node, ParameterKey.COMPONENT_CONTROL_LOOP_LAST_CYCLE);
@@ -110,7 +109,7 @@ public enum SupportedScenariocomponent {
             final int maxIter = parser.getInt(node, ParameterKey.COMPONENT_CONTROL_LOOP_MAX_ITER);
             final ControlLoop loop = new ControlLoop(spacecraftIndex, firstCycle, lastCycle,
                                                      skat.getManeuversModelsPool(), maxIter, propagator,
-                                                     skat.getCycleDuration(), rollingCycles);
+                                                     skat.getCycleDuration());
 
             // control laws
             final Tree controlsNode = parser.getValue(node, ParameterKey.COMPONENT_CONTROL_LOOP_CONTROLS);

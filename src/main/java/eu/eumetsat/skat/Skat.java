@@ -136,9 +136,6 @@ public class Skat {
     /** Output step. */
     private final double outputStep;
 
-    /** Number of cycles to use for rolling optimization. */
-    private final int rollingCycles;
-
     /** Mono-spacecraft monitors. */
     private MonitorMono[] monitorsMono;
 
@@ -294,7 +291,6 @@ public class Skat {
         generator     = new Well19937a(parser.getInt(simulationNode, ParameterKey.SIMULATION_RANDOM_SEED));
         cycleDuration = parser.getDouble(simulationNode, ParameterKey.SIMULATION_CYCLE_DURATION);
         outputStep    = parser.getDouble(simulationNode, ParameterKey.SIMULATION_OUTPUT_STEP);
-        rollingCycles = parser.getInt(simulationNode, ParameterKey.SIMULATION_ROLLING_CYCLES);
 
         final Tree locationNode = parser.getValue(simulationNode, ParameterKey.SIMULATION_GROUND_LOCATION);
         groundLocation = new TopocentricFrame(earth,
@@ -605,13 +601,6 @@ public class Skat {
      */
     public double getOutputStep() {
         return outputStep;
-    }
-
-    /** Get the number of cycles to use for rolling optimization.
-     * @return number of cycles to use for rolling optimization
-     */
-    public int getRollingCycles() {
-        return rollingCycles;
     }
 
     /** Get the spacecraft name corresponding to a specified index.

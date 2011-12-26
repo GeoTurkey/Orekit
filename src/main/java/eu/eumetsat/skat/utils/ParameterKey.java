@@ -14,7 +14,6 @@ public enum ParameterKey {
     SIMULATION_START_DATE("start_date"),
     SIMULATION_END_DATE("end_date"),
     SIMULATION_CYCLE_DURATION("cycle_duration"),
-    SIMULATION_ROLLING_CYCLES("rolling_cycles"),
     SIMULATION_GROUND_LOCATION("ground_location"),
     SIMULATION_GROUND_LOCATION_LATITUDE("latitude"),
     SIMULATION_GROUND_LOCATION_LONGITUDE("longitude"),

@@ -205,10 +205,10 @@ public class Scenario implements ScenarioComponent {
                 final List<ScheduledManeuver> maneuvers = states[i].getManeuvers();
                 if (maneuvers == null) {
                     controlLaw.initializeRun(0, new ScheduledManeuver[0], propagator,
-                                             new ArrayList<ScheduledManeuver>(), tMin, tMax, 1);
+                                             new ArrayList<ScheduledManeuver>(), tMin, tMax);
                 } else {
                     controlLaw.initializeRun(0, maneuvers.toArray(new ScheduledManeuver[maneuvers.size()]),
-                                             propagator, new ArrayList<ScheduledManeuver>(), tMin, tMax, 1);
+                                             propagator, new ArrayList<ScheduledManeuver>(), tMin, tMax);
                 }
             }
 

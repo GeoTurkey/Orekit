@@ -143,11 +143,11 @@ public class ParabolicLongitude extends AbstractSKControl {
     /** {@inheritDoc} */
     public void initializeRun(final int iteration, final ScheduledManeuver[] maneuvers,
                               final Propagator propagator, final List<ScheduledManeuver> fixedManeuvers,
-                              final AbsoluteDate start, final AbsoluteDate end, final int rollingCycles)
+                              final AbsoluteDate start, final AbsoluteDate end)
         throws OrekitException {
 
         this.iteration     = iteration;
-        this.cycleDuration = end.durationFrom(start) / rollingCycles;
+        this.cycleDuration = end.durationFrom(start);
 
         // gather all special dates (start, end, maneuvers) in one chronologically sorted set
         SortedSet<AbsoluteDate> sortedDates = new TreeSet<AbsoluteDate>();

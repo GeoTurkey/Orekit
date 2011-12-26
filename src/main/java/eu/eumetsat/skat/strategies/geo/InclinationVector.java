@@ -84,7 +84,7 @@ public class InclinationVector extends AbstractSKControl {
     /** {@inheritDoc} */
     public void initializeRun(final int iteration, final ScheduledManeuver[] maneuvers,
                               final Propagator propagator, final List<ScheduledManeuver> fixedManeuvers,
-                              final AbsoluteDate start, final AbsoluteDate end, final int rollingCycles) {
+                              final AbsoluteDate start, final AbsoluteDate end) {
     }
 
     /** {@inheritDoc} */

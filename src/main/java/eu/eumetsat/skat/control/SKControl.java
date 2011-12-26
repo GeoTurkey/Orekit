@@ -43,12 +43,11 @@ public interface SKControl extends SKElement {
      * @param fixedManeuvers list of maneuvers already fixed for the cycle
      * @param start start date of the propagation
      * @param end end date of the propagation
-     * @param rollingCycles number of rolling cycles
      * @exception OrekitException if something weird occurs with the propagator
      */
     void initializeRun(int iteration, ScheduledManeuver[] maneuvers,
                        Propagator propagator, List<ScheduledManeuver> fixedManeuvers,
-                       AbsoluteDate start, AbsoluteDate end, int rollingCycles)
+                       AbsoluteDate start, AbsoluteDate end)
         throws OrekitException;
 
     /** Check if the control limits have been exceeded.

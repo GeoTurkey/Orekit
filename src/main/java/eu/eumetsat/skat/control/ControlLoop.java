@@ -59,9 +59,6 @@ public class ControlLoop implements ScenarioComponent {
     /** Cycle duration. */
     private final double cycleDuration;
 
-    /** Number of cycles to use for rolling optimization. */
-    private final int rollingCycles;
-
     /** First cycle this loop should control. */
     private final int firstCycle;
 
@@ -73,9 +70,6 @@ public class ControlLoop implements ScenarioComponent {
 
     /** Parameters boundaries. */
     private final double[][] boundaries;
-
-    /** Start point. */
-    private final double[] startPoint;
 
     /** Station-keeping control laws. */
     private final List<SKControl> controls;
@@ -93,21 +87,19 @@ public class ControlLoop implements ScenarioComponent {
      * @param maxIter maximal number of iterations
      * @param randomizer orbit propagator randomizer
      * @param cycleDuration Cycle duration
-     * @param rollingCycles number of cycles to use for rolling optimization
      */
     public ControlLoop(final int spacecraftIndex, final int firstCycle, final int lastCycle,
                        final TunableManeuver[] tunables, final int maxIter,
                        final PropagatorRandomizer randomizer,
-                       final double cycleDuration, final int rollingCycles) {
-        this.spacecraftIndex                = spacecraftIndex;
-        this.firstCycle                     = firstCycle;
-        this.lastCycle                      = lastCycle;
-        this.maxIter                        = maxIter;
-        this.randomizer                     = randomizer;
-        this.tunables                       = tunables.clone();
-        this.controls                       = new ArrayList<SKControl>();
-        this.cycleDuration                  = cycleDuration;
-        this.rollingCycles                  = rollingCycles;
+                       final double cycleDuration) {
+        this.spacecraftIndex = spacecraftIndex;
+        this.firstCycle      = firstCycle;
+        this.lastCycle       = lastCycle;
+        this.maxIter         = maxIter;
+        this.randomizer      = randomizer;
+        this.tunables        = tunables.clone();
+        this.controls        = new ArrayList<SKControl>();
+        this.cycleDuration   = cycleDuration;
 
         // set the parameters boundaries and start point
         int nbParameters = 0;
@@ -120,7 +112,6 @@ public class ControlLoop implements ScenarioComponent {
         }
 
         this.boundaries = new double[2][nbParameters];
-        this.startPoint = new double[nbParameters];
 
         int index = 0;
         for (int i = 0; i < tunables.length; ++i) {
@@ -128,7 +119,6 @@ public class ControlLoop implements ScenarioComponent {
                 if (parameter.isTunable()) {
                     boundaries[0][index] = parameter.getMin();
                     boundaries[1][index] = parameter.getMax();
-                    startPoint[index]    = 0.5 * (parameter.getMin() + parameter.getMax());
                     ++index;
                 }
             }
@@ -236,37 +226,15 @@ public class ControlLoop implements ScenarioComponent {
             if (original.getManeuvers() != null) {
                 theoreticalManeuvers.addAll(original.getManeuvers());
             }
-            for (int i = 0; i < tunables.length / rollingCycles; ++i) {
+            for (final ScheduledManeuver maneuver : maneuvers) {
                 // extract the optimized maneuver for the next cycle only
-                if (maneuvers[i].getDeltaV().getNorm() >= maneuvers[i].getModel().getEliminationThreshold()) {
-                    theoreticalManeuvers.add(maneuvers[i]);
+                if (maneuver.getDeltaV().getNorm() >= maneuver.getModel().getEliminationThreshold()) {
+                    theoreticalManeuvers.add(maneuver);
                 }
             }
 
             // build the updated scenario state
             updated[spacecraftIndex] = original.updateManeuvers(theoreticalManeuvers);
-
-        }
-
-        // prepare start point for next cycle
-        if (rollingCycles > 1) {
-
-            // shift already optimized maneuvers one cycle ahead
-            int index = 0;
-            final int maneuversPerCycle  = tunables.length   / rollingCycles;
-            for (int i = maneuversPerCycle; i < tunables.length - 1; ++i) {
-                for (final SKParameter parameter : tunables[i].getParameters()) {
-                    if (parameter.isTunable()) {
-                        startPoint[index++] = parameter.getValue();
-                    }
-                }
-            }
-
-            // repeat last cycle
-            final int parametersPerCycle = startPoint.length / rollingCycles;
-            System.arraycopy(startPoint, startPoint.length - 2 * parametersPerCycle,
-                             startPoint, startPoint.length - parametersPerCycle,
-                             parametersPerCycle);
 
         }
 
@@ -311,7 +279,7 @@ public class ControlLoop implements ScenarioComponent {
         }
 
         // perform propagation
-        final double propagationDuration = rollingCycles * cycleDuration * Constants.JULIAN_DAY;
+        final double propagationDuration = cycleDuration * Constants.JULIAN_DAY;
         final AbsoluteDate endDate = initialState.getDate().shiftedBy(propagationDuration);
         propagator.propagate(endDate);
 
@@ -335,8 +303,7 @@ public class ControlLoop implements ScenarioComponent {
 
         // prepare run
         for (final SKControl control : controls) {
-            control.initializeRun(iteration, maneuvers, propagator, fixedManeuvers,
-                                  start, end, rollingCycles);
+            control.initializeRun(iteration, maneuvers, propagator, fixedManeuvers, start, end);
         }
 
         // get the detectors associated with control laws
@@ -363,7 +330,7 @@ public class ControlLoop implements ScenarioComponent {
         }
 
         // perform propagation
-        propagator.propagate(start.shiftedBy(rollingCycles * cycleDuration * Constants.JULIAN_DAY));
+        propagator.propagate(start.shiftedBy(cycleDuration * Constants.JULIAN_DAY));
 
     }
 
