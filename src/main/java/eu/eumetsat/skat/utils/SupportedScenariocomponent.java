@@ -24,7 +24,6 @@ import eu.eumetsat.skat.realization.OrbitDetermination;
 import eu.eumetsat.skat.realization.Propagation;
 import eu.eumetsat.skat.scenario.Scenario;
 import eu.eumetsat.skat.scenario.ScenarioComponent;
-import eu.eumetsat.skat.strategies.TunableManeuver;
 import eu.eumetsat.skat.utils.SupportedPropagator.PropagatorRandomizer;
 
 /** Enumerate for parsing the supported scenario components.
@@ -97,84 +96,6 @@ public enum SupportedScenariocomponent {
             final int firstCycle    = parser.getInt(node, ParameterKey.COMPONENT_CONTROL_LOOP_FIRST_CYCLE);
             final int lastCycle     = parser.getInt(node, ParameterKey.COMPONENT_CONTROL_LOOP_LAST_CYCLE);
 
-            // tunable maneuvers
-            final Tree maneuversNode = parser.getValue(node, ParameterKey.COMPONENT_CONTROL_LOOP_MANEUVERS);
-            final int maneuversPerCycle = parser.getElementsNumber(maneuversNode);
-            TunableManeuver[] maneuvers = new TunableManeuver[rollingCycles * maneuversPerCycle];
-            for (int i = 0; i < maneuversPerCycle; ++i) {
-                final Tree maneuver      = parser.getElement(maneuversNode, i);
-                final boolean inPlane    = parser.getBoolean(maneuver, ParameterKey.MANEUVERS_IN_PLANE);
-
-                TunableManeuver dateReferenceManeuver = null;
-                if (parser.containsKey(maneuver, ParameterKey.MANEUVERS_DATE_RELATIVE_TO_MANEUVER)) {
-                    final String dateReferenceName =
-                            parser.getString(maneuver, ParameterKey.MANEUVERS_DATE_RELATIVE_TO_MANEUVER);
-                    for (int j = 0; j < i; ++j) {
-                        if (maneuvers[j].getName().equals(dateReferenceName)) {
-                            dateReferenceManeuver = maneuvers[j];
-                        }
-                    }
-                    if (dateReferenceManeuver == null) {
-                        throw new SkatException(SkatMessages.REFERENCE_MANEUVER_NOT_FOUND,
-                                                dateReferenceName,
-                                                parser.getValue(maneuver, ParameterKey.MANEUVERS_DATE_RELATIVE_TO_MANEUVER).getLine(),
-                                                parser.getInputName());
-                    }
-                }
-
-                TunableManeuver dVReferenceManeuver = null;
-                if (parser.containsKey(maneuver, ParameterKey.MANEUVERS_DV_RELATIVE_TO_MANEUVER)) {
-                    final String dVReferenceName =
-                            parser.getString(maneuver, ParameterKey.MANEUVERS_DV_RELATIVE_TO_MANEUVER);
-                    for (int j = 0; j < i; ++j) {
-                        if (maneuvers[j].getName().equals(dVReferenceName)) {
-                            dVReferenceManeuver = maneuvers[j];
-                        }
-                    }
-                    if (dVReferenceManeuver == null) {
-                        throw new SkatException(SkatMessages.REFERENCE_MANEUVER_NOT_FOUND,
-                                                dVReferenceName,
-                                                parser.getValue(maneuver, ParameterKey.MANEUVERS_DV_RELATIVE_TO_MANEUVER).getLine(),
-                                                parser.getInputName());
-                    }
-                }
-
-                final String name          = parser.getString(maneuver,  ParameterKey.MANEUVERS_NAME);
-                final Vector3D direction   = parser.getVector(maneuver,  ParameterKey.MANEUVERS_DIRECTION).normalize();
-                final double[][] thrust    = parser.getDoubleArray2(maneuver,  ParameterKey.MANEUVERS_THRUST);
-                final double[][] isp       = parser.getDoubleArray2(maneuver,  ParameterKey.MANEUVERS_ISP_CURVE);
-                final double dvNominal     = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_NOMINAL_DV);
-                final double dvMin         = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DV_MIN);
-                final double dvMax         = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DV_MAX);
-                final double dvConvergence = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DV_CONVERGENCE);
-                final double dtNominal     = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_NOMINAL_DATE);
-                final double dtMin         = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DT_MIN);
-                final double dtMax         = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DT_MAX);
-                final double dtConvergence = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DT_CONVERGENCE);
-                final double elimination   = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_ELIMINATION_THRESHOLD);
-                for (int j = 0; j < rollingCycles; ++j) {
-                    // set up the maneuver for several cycles that will be optimized together
-                    final TunableManeuver m = new TunableManeuver(name, inPlane,
-                                                                  dateReferenceManeuver, dVReferenceManeuver,
-                                                                  direction, thrust, isp, elimination,
-                                                                  dvNominal, dvMin, dvMax, dvConvergence,
-                                                                  dtNominal, dtMin, dtMax, dtConvergence);
-                    if (m.getEarliestDateOffset() < 0) {
-                        throw new SkatException(SkatMessages.MANEUVER_MAY_OCCUR_BEFORE_CYCLE,
-                                                name, -m.getEarliestDateOffset(),
-                                                parser.getValue(maneuver,  ParameterKey.MANEUVERS_DT_MIN).getLine(),
-                                                parser.getInputName());
-                    }
-                    if (m.getLatestDateOffset() > skat.getCycleDuration() * Constants.JULIAN_DAY) {
-                        throw new SkatException(SkatMessages.MANEUVER_MAY_OCCUR_AFTER_CYCLE,
-                                                name, m.getLatestDateOffset() - skat.getCycleDuration() * Constants.JULIAN_DAY,
-                                                parser.getValue(maneuver,  ParameterKey.MANEUVERS_DT_MAX).getLine(),
-                                                parser.getInputName());
-                    }
-                    maneuvers[j * maneuversPerCycle + i] = m;
-                }
-            }
-
             // propagator
             final Tree propagatorNode = parser.getValue(node, ParameterKey.COMPONENT_CONTROL_LOOP_PROPAGATOR);
             final  SupportedPropagator sp =
@@ -187,8 +108,8 @@ public enum SupportedScenariocomponent {
             // set up control loop
             final int maxIter = parser.getInt(node, ParameterKey.COMPONENT_CONTROL_LOOP_MAX_ITER);
             final ControlLoop loop = new ControlLoop(spacecraftIndex, firstCycle, lastCycle,
-                                                     maneuvers, maxIter, propagator, skat.getCycleDuration(),
-                                                     rollingCycles);
+                                                     skat.getManeuversModelsPool(), maxIter, propagator,
+                                                     skat.getCycleDuration(), rollingCycles);
 
             // control laws
             final Tree controlsNode = parser.getValue(node, ParameterKey.COMPONENT_CONTROL_LOOP_CONTROLS);

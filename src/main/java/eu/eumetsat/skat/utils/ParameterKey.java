@@ -19,6 +19,7 @@ public enum ParameterKey {
     SIMULATION_GROUND_LOCATION_LATITUDE("latitude"),
     SIMULATION_GROUND_LOCATION_LONGITUDE("longitude"),
     SIMULATION_GROUND_LOCATION_ALTITUDE("altitude"),
+    SIMULATION_MANEUVERS("maneuvers"),
     SIMULATION_OUTPUT_STEP("output_step"),
     SIMULATION_RANDOM_SEED("random_seed"),
 
@@ -78,7 +79,6 @@ public enum ParameterKey {
     COMPONENT_CONTROL_LOOP_MAX_ITER("max_iterations"),
     COMPONENT_CONTROL_LOOP_PROPAGATOR("propagator"),
     COMPONENT_CONTROL_LOOP_CONTROLS("controls"),
-    COMPONENT_CONTROL_LOOP_MANEUVERS("maneuvers"),
 
     CONTROL_TYPE("type"),
     CONTROL_NAME("name"),

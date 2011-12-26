@@ -63,6 +63,7 @@ import eu.eumetsat.skat.realization.Propagation;
 import eu.eumetsat.skat.scenario.Scenario;
 import eu.eumetsat.skat.scenario.ScenarioState;
 import eu.eumetsat.skat.strategies.ScheduledManeuver;
+import eu.eumetsat.skat.strategies.TunableManeuver;
 import eu.eumetsat.skat.utils.CsvFileMonitor;
 import eu.eumetsat.skat.utils.MonitorDuo;
 import eu.eumetsat.skat.utils.MonitorMono;
@@ -156,6 +157,9 @@ public class Skat {
     /** Station-keeping control laws monitoring (violations part). */
     private final Map<SKControl, SimpleMonitorable> controlsViolations;
 
+    /** Pool of maneuvers models. */
+    private final TunableManeuver[] maneuversModelsPool;
+
     /** Program entry point.
      * @param args program arguments (unused here)
      */
@@ -186,7 +190,6 @@ public class Skat {
             System.out.println("simulation computing time: " + ((endTime - startTime) / 1000) + " seconds");
 
         } catch (Exception e) {
-            e.printStackTrace(System.err); // TODO remove this statement after validation
             System.err.println(e.getLocalizedMessage());
         } finally {
 
@@ -274,6 +277,7 @@ public class Skat {
         moon          = CelestialBodyFactory.getMoon();
         gravityField  = GravityFieldFactory.getPotentialProvider();
 
+        // atmospheric model
         final String supportedNames = "(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\\p{Digit}\\p{Digit}\\p{Digit}\\p{Digit}F10\\.(?:txt|TXT)";
         final StrengthLevel strengthLevel = (StrengthLevel) parser.getEnumerate(simulationNode,
                                                                                 ParameterKey.SIMULATION_SOLAR_ACTIVITY_STRENGTH,
@@ -298,6 +302,59 @@ public class Skat {
 
         // load gravity field
         final double mu = GravityFieldFactory.getPotentialProvider().getMu();
+
+        // maneuvers models pool
+        final Tree maneuversNode = parser.getValue(simulationNode, ParameterKey.SIMULATION_MANEUVERS);
+        final int nbManeuvers = parser.getElementsNumber(maneuversNode);
+        maneuversModelsPool = new TunableManeuver[nbManeuvers];
+        for (int i = 0; i < nbManeuvers; ++i) {
+            final Tree maneuver      = parser.getElement(maneuversNode, i);
+            final boolean inPlane    = parser.getBoolean(maneuver, ParameterKey.MANEUVERS_IN_PLANE);
+
+            TunableManeuver dateReferenceManeuver = null;
+            if (parser.containsKey(maneuver, ParameterKey.MANEUVERS_DATE_RELATIVE_TO_MANEUVER)) {
+                dateReferenceManeuver =
+                        getManeuver(parser.getString(maneuver, ParameterKey.MANEUVERS_DATE_RELATIVE_TO_MANEUVER));
+            }
+
+            TunableManeuver dVReferenceManeuver = null;
+            if (parser.containsKey(maneuver, ParameterKey.MANEUVERS_DV_RELATIVE_TO_MANEUVER)) {
+                dVReferenceManeuver = getManeuver(parser.getString(maneuver, ParameterKey.MANEUVERS_DV_RELATIVE_TO_MANEUVER));
+            }
+
+            final String name          = parser.getString(maneuver,  ParameterKey.MANEUVERS_NAME);
+            final Vector3D direction   = parser.getVector(maneuver,  ParameterKey.MANEUVERS_DIRECTION).normalize();
+            final double[][] thrust    = parser.getDoubleArray2(maneuver,  ParameterKey.MANEUVERS_THRUST);
+            final double[][] isp       = parser.getDoubleArray2(maneuver,  ParameterKey.MANEUVERS_ISP_CURVE);
+            final double dvNominal     = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_NOMINAL_DV);
+            final double dvMin         = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DV_MIN);
+            final double dvMax         = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DV_MAX);
+            final double dvConvergence = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DV_CONVERGENCE);
+            final double dtNominal     = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_NOMINAL_DATE);
+            final double dtMin         = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DT_MIN);
+            final double dtMax         = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DT_MAX);
+            final double dtConvergence = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DT_CONVERGENCE);
+            final double elimination   = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_ELIMINATION_THRESHOLD);
+            final TunableManeuver m = new TunableManeuver(name, inPlane,
+                                                          dateReferenceManeuver, dVReferenceManeuver,
+                                                          direction, thrust, isp, elimination,
+                                                          dvNominal, dvMin, dvMax, dvConvergence,
+                                                          dtNominal, dtMin, dtMax, dtConvergence);
+            if (m.getEarliestDateOffset() < 0) {
+                throw new SkatException(SkatMessages.MANEUVER_MAY_OCCUR_BEFORE_CYCLE,
+                                        name, -m.getEarliestDateOffset(),
+                                        parser.getValue(maneuver,  ParameterKey.MANEUVERS_DT_MIN).getLine(),
+                                        parser.getInputName());
+            }
+            if (m.getLatestDateOffset() > cycleDuration * Constants.JULIAN_DAY) {
+                throw new SkatException(SkatMessages.MANEUVER_MAY_OCCUR_AFTER_CYCLE,
+                                        name, m.getLatestDateOffset() - cycleDuration * Constants.JULIAN_DAY,
+                                        parser.getValue(maneuver,  ParameterKey.MANEUVERS_DT_MAX).getLine(),
+                                        parser.getInputName());
+            }
+            maneuversModelsPool[i] = m;
+
+        }
 
         // set up configured states
         final Tree initialStatesArrayNode = parser.getValue(root, ParameterKey.INITIAL_STATES);
@@ -457,6 +514,28 @@ public class Skat {
      */
     public TopocentricFrame getGroundLocation() {
         return groundLocation;
+    }
+
+    /** Get the pool of maneuvers models.
+     * @return pool of maneuvers models
+     */
+    public TunableManeuver[] getManeuversModelsPool() {
+        return maneuversModelsPool.clone();
+    }
+
+    /** Get a maneuver model.
+     * @param name name of the maneuver
+     * @return maneuver model
+     * @exception SkatException if maneuver cannot be found
+     */
+    public TunableManeuver getManeuver(final String name)
+        throws SkatException {
+        for (final TunableManeuver maneuver : maneuversModelsPool) {
+            if (maneuver.getName().equals(name)) {
+                return maneuver;
+            }
+        }
+        throw new SkatException(SkatMessages.MANEUVER_NOT_FOUND, name);
     }
 
     /** Get the list of mono-spacecraft monitorables.
