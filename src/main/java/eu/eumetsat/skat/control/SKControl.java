@@ -22,12 +22,35 @@ import eu.eumetsat.skat.strategies.ScheduledManeuver;
  * @see SKParameter
  * @author Luc Maisonobe
  */
-public interface SKControl extends SKElement {
+public interface SKControl {
 
     /** Get the name of the control.
      * @return name of the control
      */
     String getName();
+
+    /** Check if a constraint is enabled.
+     * @return true if a constraint is enabled.
+     */
+    boolean isConstrained();
+
+    /** Get the minimal allowed value for the element.
+     * <p>
+     * If no constraint is enabled (i.e. if {@link #isConstrained()}
+     * returns false, this method should return {@code Double.NEGATIVE_INFINITY}.
+     * </p>
+     * @return minimal allowed value
+     */
+    double getMin();
+
+    /** Get the maximal allowed value for the element.
+     * <p>
+     * If no constraint is enabled (i.e. if {@link #isConstrained()}
+     * returns false, this method should return {@code Double.POSITIVE_INFINITY}.
+     * </p>
+     * @return maximal allowed value
+     */
+    double getMax();
 
     /** Initialize one run of the control law.
      * <p>

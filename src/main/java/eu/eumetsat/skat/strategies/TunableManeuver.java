@@ -1,15 +1,10 @@
 /* Copyright 2011 Eumetsat */
 package eu.eumetsat.skat.strategies;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
-import org.apache.commons.math.util.FastMath;
 import org.orekit.propagation.analytical.ManeuverAdapterPropagator;
 import org.orekit.time.AbsoluteDate;
 
-import eu.eumetsat.skat.control.SKParameter;
 import eu.eumetsat.skat.utils.SkatException;
 import eu.eumetsat.skat.utils.SkatMessages;
 
@@ -27,12 +22,6 @@ public class TunableManeuver {
     /** Name of the maneuver.*/
     private final String name;
 
-    /** Reference maneuver for date (may be null). */
-    private final TunableManeuver dateReferenceManeuver;
-
-    /** Reference maneuver for dv (may be null). */
-    private final TunableManeuver dVReferenceManeuver;
-
     /** Thrust direction in spacecraft frame. */
     private final Vector3D direction;
 
@@ -42,20 +31,20 @@ public class TunableManeuver {
     /** Specific impulse calibration curve. */
     private final double[][] isp;
 
+    /** Lower bound for velocity increment. */
+    private final double dVInf;
+
+    /** Upper bound for velocity increment. */
+    private final double dVSup;
+
+    /** Convergence threshold for velocity increment. */
+    private final double dVConvergence;
+
+    /** Convergence threshold for date. */
+    private final double dTConvergence;
+
     /** Elimination threshold. */
     private final double elimination;
-
-    /** Nominal offset with respect to reference dV. */
-    private final double dVNominal;
-
-    /** Tunable velocity increment. */
-    private final SKParameter velocityIncrement;
-
-    /** Nominal offset with respect to reference date. */
-    private final double dtNominal;
-
-    /** Cycle start date. */
-    private AbsoluteDate cycleStart;
 
     /** Current thrust. */
     private double currentThrust;
@@ -63,40 +52,24 @@ public class TunableManeuver {
     /** Current ISP. */
     private double currentIsp;
 
-    /** Tunable date offset. */
-    private final SKParameter dateOffset;
-
     /** Simple constructor.
      * @param name name of the maneuver
-     * @param dateReferenceManeuver reference maneuver for date (may be null)
-     * @param dVReferenceManeuver reference maneuver for date (may be null)
      * @param direction thrust direction in spacecraft frame
      * @param thrust engine thrust calibration curve (Newtons in row 0, consumed mass in row 1)
      * @param isp engine specific impulse calibration curve (seconds in row 0, consumed mass in row 1)
      * @param elimination elimination threshold
-     * @param dVNominal nominal offset with respect to reference dV
-     * @param minIncrement minimal allowed value for velocity increment
-     * @param maxIncrement maximal allowed value for velocity increment
-     * @param convergenceIncrement convergence threshold for velocity increment
-     * @param dtNominal nominal offset with respect to reference date
-     * @param minDateOffset offset for earliest allowed maneuver date
-     * @param maxDateOffset offset for latest allowed maneuver date
-     * @param convergenceDateOffset convergence threshold for date offset
+     * @param dVInf lower bound for velocity increment
+     * @param dVSup upper bound for velocity increment
+     * @param dVConvergence convergence threshold for velocity increment
+     * @param dTConvergence convergence threshold for date offset
      * @exception SkatException if calibration curves are not ordered
      */
-    public TunableManeuver(final String name, final TunableManeuver dateReferenceManeuver,
-                           final TunableManeuver dVReferenceManeuver,
-                           final Vector3D direction,
-                           final double[][] thrust,
-                           final double[][] isp, final double elimination,
-                           final double dVNominal,
-                           final double minIncrement, final double maxIncrement, final double convergenceIncrement,
-                           final double dtNominal,
-                           final double minDateOffset, final double maxDateOffset, final double convergenceDateOffset)
+    public TunableManeuver(final String name, final Vector3D direction,
+                           final double[][] thrust, final double[][] isp, final double elimination,
+                           final double dVInf, final double dVSup,
+                           final double dVConvergence, final double dTConvergence)
         throws SkatException {
         this.name                  = name;
-        this.dateReferenceManeuver = dateReferenceManeuver;
-        this.dVReferenceManeuver   = dVReferenceManeuver;
         this.direction             = direction.normalize();
         this.thrust                = thrust.clone();
         for (int i = 1; i < thrust.length; ++i) {
@@ -112,17 +85,13 @@ public class TunableManeuver {
                                         isp[i - 1][1], isp[i][1]);
             }
         }
-        this.elimination  = elimination;
-        this.dVNominal    = dVNominal;
-        this.dtNominal    = dtNominal;
-        velocityIncrement = new SKParameter(name + " (dV)", minIncrement, maxIncrement,
-                                            convergenceIncrement,
-                                            0.5 * (minIncrement + maxIncrement),
-                                            FastMath.abs(maxIncrement - minIncrement) > 1.0e-6);
-        dateOffset        = new SKParameter(name + " (date)", minDateOffset, maxDateOffset,
-                                            convergenceDateOffset,
-                                            0.5 * (minDateOffset + maxDateOffset),
-                                            FastMath.abs(maxDateOffset - minDateOffset) > 1.0e-6);
+
+        this.elimination   = elimination;
+        this.dVInf         = dVInf;
+        this.dVSup         = dVSup;
+        this.dVConvergence = dVConvergence;
+        this.dTConvergence = dTConvergence;
+
     }
 
     /** Get the name of the maneuver.
@@ -130,13 +99,6 @@ public class TunableManeuver {
      */
     public String getName() {
         return name;
-    }
-
-    /** Set the cycle start date.
-     * @param cycleStart cycle start date
-     */
-    public void setCycleStartDate(final AbsoluteDate cycleStart) {
-        this.cycleStart = cycleStart;
     }
 
     /** Set the reference consumed mass.
@@ -232,53 +194,29 @@ public class TunableManeuver {
     /** Get the convergence threshold for date offset.
      * @return convergence threshold for date offset
      */
-    public double getDateConvergence() {
-        return dateOffset.getConvergence();
-    }
-
-    /** Get the minimum allowed value for date offset.
-     * @return minimum allowed value for date offset
-     */
-    public double getDateOffsetMin() {
-        return dateOffset.getMin();
-    }
-
-    /** Get the maximum allowed value for date offset.
-     * @return maximum allowed value for date offset
-     */
-    public double getDateOffsetMax() {
-        return dateOffset.getMax();
+    public double getDTConvergence() {
+        return dTConvergence;
     }
 
     /** Get the convergence threshold for velocity increment.
      * @return convergence threshold for velocity increment
      */
     public double getDVConvergence() {
-        return velocityIncrement.getConvergence();
+        return dVConvergence;
     }
 
-    /** Get the minimum allowed value for velocity increment.
-     * @return minimum allowed value for velocity increment
+    /** Get the lower bound for velocity increment.
+     * @return lower bound for velocity increment
      */
-    public double getDVMin() {
-        return velocityIncrement.getMin();
+    public double getDVInf() {
+        return dVInf;
     }
 
-    /** Get the maximum allowed value for velocity increment.
-     * @return maximum allowed value for velocity increment
+    /** Get the upper bound for velocity increment.
+     * @return upper bound for velocity increment
      */
-    public double getDVMax() {
-        return velocityIncrement.getMax();
-    }
-
-    /** Get the maneuver parameters.
-     * @return list of maneuver parameters
-     */
-    public List<SKParameter> getParameters() {
-        final List<SKParameter> list = new ArrayList<SKParameter>(2);
-        list.add(velocityIncrement);
-        list.add(dateOffset);
-        return list;
+    public double getDVSup() {
+        return dVSup;
     }
 
     /** Get the maneuver corresponding to the current value of the parameters.
@@ -289,42 +227,9 @@ public class TunableManeuver {
      */
     public ScheduledManeuver buildManeuver(final AbsoluteDate date, final double deltaV,
                                            final ManeuverAdapterPropagator trajectory) {
-        return new ScheduledManeuver(this, date, new Vector3D(deltaV, direction), currentThrust,
+        return new ScheduledManeuver(this, date,
+                                     new Vector3D(deltaV, direction), currentThrust,
                                      currentIsp, trajectory, false);
-    }
-
-    /** Get the maneuver velocity increment.
-     * @return maneuver velocity increment
-     */
-    public double getDV() {
-        final double referenceDV = dVNominal +
-                                   ((dVReferenceManeuver == null) ? 0 : dVReferenceManeuver.getDV());
-        return referenceDV + velocityIncrement.getValue();
-    }
-
-    /** Get the maneuver date.
-     * @return maneuver date
-     */
-    public AbsoluteDate getDate() {
-        final AbsoluteDate reference = (dateReferenceManeuver == null) ?
-                                       cycleStart : dateReferenceManeuver.getDate();
-        return reference.shiftedBy(dtNominal + dateOffset.getValue());
-    }
-
-    /** Get earliest date offset from cycle start.
-     * @return earliest date offset from cycle start
-     */
-    public double getEarliestDateOffset() {
-        return dateOffset.getMin() + dtNominal +
-               ((dateReferenceManeuver == null) ? 0 : dateReferenceManeuver.getEarliestDateOffset());
-    }
-
-    /** Get latest date offset from cycle start.
-     * @return latest date offset from cycle start
-     */
-    public double getLatestDateOffset() {
-        return dateOffset.getMax() + dtNominal +
-               ((dateReferenceManeuver == null) ? 0 : dateReferenceManeuver.getLatestDateOffset());
     }
 
 }

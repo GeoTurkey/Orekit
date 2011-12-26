@@ -112,19 +112,13 @@ public enum ParameterKey {
     CONTROL_GROUND_TRACK_IGNORED_START_DURATION("ignored_start_duration"),
 
     // Maneuvers 
-    MANEUVERS_DATE_RELATIVE_TO_MANEUVER("date_relative_to_maneuver"),
-    MANEUVERS_DV_RELATIVE_TO_MANEUVER("dv_relative_to_maneuver"),
     MANEUVERS_NAME("name"),
     MANEUVERS_DIRECTION("direction"),
     MANEUVERS_THRUST("thrust"),
     MANEUVERS_ISP_CURVE("isp_curve"),
-    MANEUVERS_NOMINAL_DV("nominal_dv"),
-    MANEUVERS_DV_MIN("dv_min"),
-    MANEUVERS_DV_MAX("dv_max"),
+    MANEUVERS_DV_INF("dv_inf"),
+    MANEUVERS_DV_SUP("dv_sup"),
     MANEUVERS_DV_CONVERGENCE("dv_convergence"),
-    MANEUVERS_NOMINAL_DATE("nominal_date"),
-    MANEUVERS_DT_MIN("dt_min"),
-    MANEUVERS_DT_MAX("dt_max"),
     MANEUVERS_DT_CONVERGENCE("dt_convergence"),
     MANEUVERS_ELIMINATION_THRESHOLD("elimination_threshold"),
 

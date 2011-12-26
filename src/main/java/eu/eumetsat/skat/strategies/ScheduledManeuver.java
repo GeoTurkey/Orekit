@@ -133,7 +133,7 @@ public class ScheduledManeuver {
      */
     public boolean isWithinThreshold(final ScheduledManeuver maneuver) {
         return (model == maneuver.model) &&
-               (date.durationFrom(maneuver.date) <= model.getDateConvergence()) &&
+               (date.durationFrom(maneuver.date) <= model.getDTConvergence()) &&
                (deltaV.subtract(maneuver.deltaV).getNorm() <= model.getDVConvergence());
     }
 

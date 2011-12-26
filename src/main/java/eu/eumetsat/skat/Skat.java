@@ -309,48 +309,17 @@ public class Skat {
         for (int i = 0; i < nbManeuvers; ++i) {
             final Tree maneuver = parser.getElement(maneuversNode, i);
 
-            TunableManeuver dateReferenceManeuver = null;
-            if (parser.containsKey(maneuver, ParameterKey.MANEUVERS_DATE_RELATIVE_TO_MANEUVER)) {
-                dateReferenceManeuver =
-                        getManeuver(parser.getString(maneuver, ParameterKey.MANEUVERS_DATE_RELATIVE_TO_MANEUVER));
-            }
-
-            TunableManeuver dVReferenceManeuver = null;
-            if (parser.containsKey(maneuver, ParameterKey.MANEUVERS_DV_RELATIVE_TO_MANEUVER)) {
-                dVReferenceManeuver = getManeuver(parser.getString(maneuver, ParameterKey.MANEUVERS_DV_RELATIVE_TO_MANEUVER));
-            }
-
             final String name          = parser.getString(maneuver,  ParameterKey.MANEUVERS_NAME);
             final Vector3D direction   = parser.getVector(maneuver,  ParameterKey.MANEUVERS_DIRECTION).normalize();
             final double[][] thrust    = parser.getDoubleArray2(maneuver,  ParameterKey.MANEUVERS_THRUST);
             final double[][] isp       = parser.getDoubleArray2(maneuver,  ParameterKey.MANEUVERS_ISP_CURVE);
-            final double dvNominal     = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_NOMINAL_DV);
-            final double dvMin         = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DV_MIN);
-            final double dvMax         = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DV_MAX);
+            final double dvInf         = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DV_INF);
+            final double dvSup         = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DV_SUP);
             final double dvConvergence = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DV_CONVERGENCE);
-            final double dtNominal     = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_NOMINAL_DATE);
-            final double dtMin         = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DT_MIN);
-            final double dtMax         = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DT_MAX);
             final double dtConvergence = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DT_CONVERGENCE);
             final double elimination   = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_ELIMINATION_THRESHOLD);
-            final TunableManeuver m = new TunableManeuver(name, dateReferenceManeuver,
-                                                          dVReferenceManeuver, direction,
-                                                          thrust, isp, elimination, dvNominal,
-                                                          dvMin, dvMax, dvConvergence, dtNominal,
-                                                          dtMin, dtMax, dtConvergence);
-            if (m.getEarliestDateOffset() < 0) {
-                throw new SkatException(SkatMessages.MANEUVER_MAY_OCCUR_BEFORE_CYCLE,
-                                        name, -m.getEarliestDateOffset(),
-                                        parser.getValue(maneuver,  ParameterKey.MANEUVERS_DT_MIN).getLine(),
-                                        parser.getInputName());
-            }
-            if (m.getLatestDateOffset() > cycleDuration * Constants.JULIAN_DAY) {
-                throw new SkatException(SkatMessages.MANEUVER_MAY_OCCUR_AFTER_CYCLE,
-                                        name, m.getLatestDateOffset() - cycleDuration * Constants.JULIAN_DAY,
-                                        parser.getValue(maneuver,  ParameterKey.MANEUVERS_DT_MAX).getLine(),
-                                        parser.getInputName());
-            }
-            maneuversModelsPool[i] = m;
+            maneuversModelsPool[i]     = new TunableManeuver(name, direction, thrust, isp, elimination,
+                                                             dvInf, dvSup, dvConvergence, dtConvergence);
 
         }
 

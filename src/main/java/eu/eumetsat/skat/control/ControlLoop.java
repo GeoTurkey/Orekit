@@ -68,9 +68,6 @@ public class ControlLoop implements ScenarioComponent {
     /** Tunable maneuvers. */
     private final TunableManeuver[] tunables;
 
-    /** Parameters boundaries. */
-    private final double[][] boundaries;
-
     /** Station-keeping control laws. */
     private final List<SKControl> controls;
 
@@ -100,30 +97,6 @@ public class ControlLoop implements ScenarioComponent {
         this.tunables        = tunables.clone();
         this.controls        = new ArrayList<SKControl>();
         this.cycleDuration   = cycleDuration;
-
-        // set the parameters boundaries and start point
-        int nbParameters = 0;
-        for (int i = 0; i < tunables.length; ++i) {
-            for (final SKParameter parameter : tunables[i].getParameters()) {
-                if (parameter.isTunable()) {
-                    ++nbParameters;
-                }
-            }
-        }
-
-        this.boundaries = new double[2][nbParameters];
-
-        int index = 0;
-        for (int i = 0; i < tunables.length; ++i) {
-            for (final SKParameter parameter : tunables[i].getParameters()) {
-                if (parameter.isTunable()) {
-                    boundaries[0][index] = parameter.getMin();
-                    boundaries[1][index] = parameter.getMax();
-                    ++index;
-                }
-            }
-        }
-
     }
 
     /** Add a control law .
