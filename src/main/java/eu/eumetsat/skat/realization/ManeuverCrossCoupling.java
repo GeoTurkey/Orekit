@@ -103,11 +103,10 @@ public class ManeuverCrossCoupling implements ScenarioComponent {
             for (final ScheduledManeuver maneuver : rawManeuvers) {
                 if (maneuver.getName().equals(name)) {
                     // the maneuver is affected by the coupling
-                    final ScheduledManeuver m = new ScheduledManeuver(maneuver.getModel(), maneuver.isInPlane(),
-                                                                      maneuver.getDate(),
+                    final ScheduledManeuver m = new ScheduledManeuver(maneuver.getModel(), maneuver.getDate(),
                                                                       coupling.applyTo(maneuver.getDeltaV()),
-                                                                      maneuver.getThrust(), maneuver.getIsp(),
-                                                                      maneuver.getTrajectory(),
+                                                                      maneuver.getThrust(),
+                                                                      maneuver.getIsp(), maneuver.getTrajectory(),
                                                                       false);
                     maneuver.getTrajectory().addManeuver(maneuver.getDate(),
                                                          maneuver.getDeltaV().negate(),

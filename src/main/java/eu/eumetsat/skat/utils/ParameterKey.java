@@ -83,12 +83,6 @@ public enum ParameterKey {
     CONTROL_TYPE("type"),
     CONTROL_NAME("name"),
     CONTROL_SAMPLING("sampling"),
-    // Minimized maneuvers
-    CONTROL_MINIMIZED_MANEUVERS_IN_PLANE("in_plane"),
-    CONTROL_MINIMIZED_MANEUVERS_OUT_OF_PLANE("out_of_plane"),
-    // Centered longitude
-    CONTROL_CENTERED_LONGITUDE_EAST("east_longitude"),
-    CONTROL_CENTERED_LONGITUDE_WEST("west_longitude"),
     // Parabolic longitude
     CONTROL_PARABOLIC_LONGITUDE_EAST("east_longitude"),
     CONTROL_PARABOLIC_LONGITUDE_WEST("west_longitude"),
@@ -119,7 +113,6 @@ public enum ParameterKey {
     CONTROL_GROUND_TRACK_IGNORED_START_DURATION("ignored_start_duration"),
 
     // Maneuvers 
-    MANEUVERS_IN_PLANE("in_plane"),
     MANEUVERS_DATE_RELATIVE_TO_MANEUVER("date_relative_to_maneuver"),
     MANEUVERS_DV_RELATIVE_TO_MANEUVER("dv_relative_to_maneuver"),
     MANEUVERS_NAME("name"),

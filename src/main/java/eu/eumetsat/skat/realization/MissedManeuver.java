@@ -107,19 +107,17 @@ public class MissedManeuver implements ScenarioComponent {
                             // reschedule the missed maneuver
                             final SpacecraftState state = maneuver.getTrajectory().propagate(maneuver.getDate());
                             final double period         = state.getKeplerianPeriod();
-                            m = new ScheduledManeuver(maneuver.getModel(), maneuver.isInPlane(),
-                                                      maneuver.getDate().shiftedBy(orbitsSeparation * period),
+                            m = new ScheduledManeuver(maneuver.getModel(), maneuver.getDate().shiftedBy(orbitsSeparation * period),
                                                       maneuver.getDeltaV(),
-                                                      maneuver.getThrust(), maneuver.getIsp(),
-                                                      maneuver.getTrajectory(),
+                                                      maneuver.getThrust(),
+                                                      maneuver.getIsp(), maneuver.getTrajectory(),
                                                       true);
                         } else {
                             // the maneuver is really missed
-                            m = new ScheduledManeuver(maneuver.getModel(), maneuver.isInPlane(),
-                                                      maneuver.getDate(),
+                            m = new ScheduledManeuver(maneuver.getModel(), maneuver.getDate(),
                                                       Vector3D.ZERO,
-                                                      maneuver.getThrust(), maneuver.getIsp(),
-                                                      maneuver.getTrajectory(),
+                                                      maneuver.getThrust(),
+                                                      maneuver.getIsp(), maneuver.getTrajectory(),
                                                       true);
                         }
 

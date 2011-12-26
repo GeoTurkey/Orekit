@@ -105,11 +105,10 @@ public class ManeuverMagnitudeError implements ScenarioComponent {
                 if (maneuver.getName().equals(name)) {
                     // the maneuver is affected by the error
                     final double errorFactor = 1.0 + standardDeviation * generator.nextGaussian();
-                    final ScheduledManeuver m = new ScheduledManeuver(maneuver.getModel(), maneuver.isInPlane(),
-                                                                      maneuver.getDate(),
+                    final ScheduledManeuver m = new ScheduledManeuver(maneuver.getModel(), maneuver.getDate(),
                                                                       new Vector3D(errorFactor, maneuver.getDeltaV()),
-                                                                      maneuver.getThrust(), maneuver.getIsp(),
-                                                                      maneuver.getTrajectory(),
+                                                                      maneuver.getThrust(),
+                                                                      maneuver.getIsp(), maneuver.getTrajectory(),
                                                                       false);
                     maneuver.getTrajectory().addManeuver(maneuver.getDate(),
                                                          maneuver.getDeltaV().negate(),

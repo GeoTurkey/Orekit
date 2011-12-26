@@ -27,9 +27,6 @@ public class TunableManeuver {
     /** Name of the maneuver.*/
     private final String name;
 
-    /** Indicator for in-plane maneuvers. */
-    private final boolean inPlane;
-
     /** Reference maneuver for date (may be null). */
     private final TunableManeuver dateReferenceManeuver;
 
@@ -71,7 +68,6 @@ public class TunableManeuver {
 
     /** Simple constructor.
      * @param name name of the maneuver
-     * @param inPlane if true, the maneuver is considered to be in-plane
      * @param dateReferenceManeuver reference maneuver for date (may be null)
      * @param dVReferenceManeuver reference maneuver for date (may be null)
      * @param direction thrust direction in spacecraft frame
@@ -88,19 +84,17 @@ public class TunableManeuver {
      * @param convergenceDateOffset convergence threshold for date offset
      * @exception SkatException if calibration curves are not ordered
      */
-    public TunableManeuver(final String name, final boolean inPlane,
-                           final TunableManeuver dateReferenceManeuver,
+    public TunableManeuver(final String name, final TunableManeuver dateReferenceManeuver,
                            final TunableManeuver dVReferenceManeuver,
                            final Vector3D direction,
-                           final double[][] thrust, final double[][] isp,
-                           final double elimination,
-                           final double dVNominal, final double minIncrement, final double maxIncrement,
-                           final double convergenceIncrement,
-                           final double dtNominal, final double minDateOffset, final double maxDateOffset,
-                           final double convergenceDateOffset)
+                           final double[][] thrust,
+                           final double[][] isp, final double elimination,
+                           final double dVNominal,
+                           final double minIncrement, final double maxIncrement, final double convergenceIncrement,
+                           final double dtNominal,
+                           final double minDateOffset, final double maxDateOffset, final double convergenceDateOffset)
         throws SkatException {
         this.name                  = name;
-        this.inPlane               = inPlane;
         this.dateReferenceManeuver = dateReferenceManeuver;
         this.dVReferenceManeuver   = dVReferenceManeuver;
         this.direction             = direction.normalize();
@@ -295,8 +289,8 @@ public class TunableManeuver {
      */
     public ScheduledManeuver buildManeuver(final AbsoluteDate date, final double deltaV,
                                            final ManeuverAdapterPropagator trajectory) {
-        return new ScheduledManeuver(this, inPlane, date, new Vector3D(deltaV, direction),
-                                     currentThrust, currentIsp, trajectory, false);
+        return new ScheduledManeuver(this, date, new Vector3D(deltaV, direction), currentThrust,
+                                     currentIsp, trajectory, false);
     }
 
     /** Get the maneuver velocity increment.

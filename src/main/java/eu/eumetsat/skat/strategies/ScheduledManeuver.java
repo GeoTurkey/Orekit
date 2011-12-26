@@ -19,9 +19,6 @@ public class ScheduledManeuver {
     /** Tunable maneuver model. */
     private TunableManeuver model;
 
-    /** Indicator for in-plane maneuvers. */
-    private final boolean inPlane;
-
     /** Maneuver date. */
     private final AbsoluteDate date;
 
@@ -42,7 +39,6 @@ public class ScheduledManeuver {
 
     /** Simple constructor.
      * @param model tunable model of the maneuver
-     * @param inPlane if true, the maneuver is considered to be in-plane
      * @param date maneuver date
      * @param deltaV velocity increment in spacecraft frame
      * @param thrust engine thrust
@@ -51,11 +47,10 @@ public class ScheduledManeuver {
      * @param replanned if true, the maneuver was missed and has been replanned
      */
     public ScheduledManeuver(final TunableManeuver model,
-                             final boolean inPlane, final AbsoluteDate date,
-                             final Vector3D deltaV, final double thrust, final double isp,
-                             final ManeuverAdapterPropagator trajectory, final boolean replanned) {
+                             final AbsoluteDate date, final Vector3D deltaV,
+                             final double thrust, final double isp, final ManeuverAdapterPropagator trajectory,
+                             final boolean replanned) {
         this.model      = model;
-        this.inPlane    = inPlane;
         this.date       = date;
         this.deltaV     = deltaV;
         this.thrust     = thrust;
@@ -76,13 +71,6 @@ public class ScheduledManeuver {
      */
     public TunableManeuver getModel() {
         return model;
-    }
-
-    /** Check if the maneuver is in-plane.
-     * @return true is the maneuver is in-plane
-     */
-    public boolean isInPlane() {
-        return inPlane;
     }
 
     /** Get the maneuver date.

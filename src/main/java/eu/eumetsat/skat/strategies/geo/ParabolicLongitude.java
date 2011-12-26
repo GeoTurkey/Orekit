@@ -268,10 +268,10 @@ public class ParabolicLongitude extends AbstractSKControl {
             // copy existing maneuvers, changing only the trajectory
             for (int i = 0; i < tunables.length; ++i) {
                 final ScheduledManeuver maneuver =
-                        new ScheduledManeuver(tunables[i].getModel(), tunables[i].isInPlane(),
-                                              tunables[i].getDate(), tunables[i].getDeltaV(),
-                                              tunables[i].getThrust(), tunables[i].getIsp(),
-                                              adapterPropagator, tunables[i].isReplanned());
+                        new ScheduledManeuver(tunables[i].getModel(), tunables[i].getDate(),
+                                              tunables[i].getDeltaV(), tunables[i].getThrust(),
+                                              tunables[i].getIsp(), adapterPropagator,
+                                              tunables[i].isReplanned());
                 tuned[i] = maneuver;
                 adapterPropagator.addManeuver(maneuver.getDate(), maneuver.getDeltaV(), maneuver.getIsp());
             }
@@ -335,18 +335,18 @@ public class ParabolicLongitude extends AbstractSKControl {
                     if (tunables[i].getName().equals(model.getName())) {
                         // change the maneuver velovity increment
                         double original = Vector3D.dotProduct(tunables[i].getDeltaV(), model.getDirection());
-                        maneuver = new ScheduledManeuver(tunables[i].getModel(), tunables[i].isInPlane(),
-                                                         tunables[i].getDate(),
+                        maneuver = new ScheduledManeuver(tunables[i].getModel(), tunables[i].getDate(),
                                                          new Vector3D(original + deltaVChange / nbMan,
                                                                       model.getDirection()),
-                                                         tunables[i].getThrust(), tunables[i].getIsp(),
-                                                         adapterPropagator, tunables[i].isReplanned());
+                                                         tunables[i].getThrust(),
+                                                         tunables[i].getIsp(), adapterPropagator,
+                                                         tunables[i].isReplanned());
                     } else {
                         // copy the maneuver, changing only the trajectory
-                        maneuver = new ScheduledManeuver(tunables[i].getModel(), tunables[i].isInPlane(),
-                                                         tunables[i].getDate(), tunables[i].getDeltaV(),
-                                                         tunables[i].getThrust(), tunables[i].getIsp(),
-                                                         adapterPropagator, tunables[i].isReplanned());
+                        maneuver = new ScheduledManeuver(tunables[i].getModel(), tunables[i].getDate(),
+                                                         tunables[i].getDeltaV(), tunables[i].getThrust(),
+                                                         tunables[i].getIsp(), adapterPropagator,
+                                                         tunables[i].isReplanned());
                     }
 
                     tuned[i] = maneuver;

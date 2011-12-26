@@ -158,11 +158,10 @@ public class ManeuverEclipseConstraint implements ScenarioComponent {
 
                     // add the various parts of the split maneuver
                     for (int j = 0; j < nbParts; ++j) {
-                        final ScheduledManeuver m = new ScheduledManeuver(maneuver.getModel(), maneuver.isInPlane(),
-                                                                          firstPartDate.shiftedBy(j * nbOrbits * period),
+                        final ScheduledManeuver m = new ScheduledManeuver(maneuver.getModel(), firstPartDate.shiftedBy(j * nbOrbits * period),
                                                                           new Vector3D(partDuration / burnDuration, maneuver.getDeltaV()),
-                                                                          maneuver.getThrust(), maneuver.getIsp(),
-                                                                          maneuver.getTrajectory(),
+                                                                          maneuver.getThrust(),
+                                                                          maneuver.getIsp(), maneuver.getTrajectory(),
                                                                           false);
                         m.getTrajectory().addManeuver(m.getDate(), m.getDeltaV(), m.getIsp());
                         modified.add(m);

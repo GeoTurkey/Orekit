@@ -119,7 +119,7 @@ public class Propagation implements ScenarioComponent {
                     final Propagator p = maneuver.getTrajectory();
                     final double nominalDuration = maneuver.getDuration(p.propagate(maneuver.getDate()).getMass());
                     final double inefficiency;
-                    if (compensateLongBurn && (!maneuver.isInPlane())) {
+                    if (compensateLongBurn) {
                         // this is a long out of plane maneuver, we adapt Isp to reflect
                         // the fact more mass will be consumed to achieve the same velocity increment
 

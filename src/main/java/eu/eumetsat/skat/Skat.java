@@ -311,8 +311,7 @@ public class Skat {
         final int nbManeuvers = parser.getElementsNumber(maneuversNode);
         maneuversModelsPool = new TunableManeuver[nbManeuvers];
         for (int i = 0; i < nbManeuvers; ++i) {
-            final Tree maneuver      = parser.getElement(maneuversNode, i);
-            final boolean inPlane    = parser.getBoolean(maneuver, ParameterKey.MANEUVERS_IN_PLANE);
+            final Tree maneuver = parser.getElement(maneuversNode, i);
 
             TunableManeuver dateReferenceManeuver = null;
             if (parser.containsKey(maneuver, ParameterKey.MANEUVERS_DATE_RELATIVE_TO_MANEUVER)) {
@@ -338,11 +337,11 @@ public class Skat {
             final double dtMax         = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DT_MAX);
             final double dtConvergence = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DT_CONVERGENCE);
             final double elimination   = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_ELIMINATION_THRESHOLD);
-            final TunableManeuver m = new TunableManeuver(name, inPlane,
-                                                          dateReferenceManeuver, dVReferenceManeuver,
-                                                          direction, thrust, isp, elimination,
-                                                          dvNominal, dvMin, dvMax, dvConvergence,
-                                                          dtNominal, dtMin, dtMax, dtConvergence);
+            final TunableManeuver m = new TunableManeuver(name, dateReferenceManeuver,
+                                                          dVReferenceManeuver, direction,
+                                                          thrust, isp, elimination, dvNominal,
+                                                          dvMin, dvMax, dvConvergence, dtNominal,
+                                                          dtMin, dtMax, dtConvergence);
             if (m.getEarliestDateOffset() < 0) {
                 throw new SkatException(SkatMessages.MANEUVER_MAY_OCCUR_BEFORE_CYCLE,
                                         name, -m.getEarliestDateOffset(),
