@@ -1,7 +1,10 @@
 /* Copyright 2011 Eumetsat */
 package eu.eumetsat.skat.scenario;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.orekit.bodies.BodyShape;
 import org.orekit.frames.Frame;
@@ -42,24 +45,6 @@ public class ScenarioState {
     /** Cycles number. */
     private final int cyclesNumber;
 
-    /** Number of performed in-plane maneuvers. */
-    private final int inPlaneManeuvers;
-
-    /** cycle dV in-plane maneuvers. */
-    private final double inPlaneCycleDV;
-
-    /** Total dV in-plane maneuvers. */
-    private final double inPlaneTotalDV;
-
-    /** Number of performed out-of-plane maneuvers. */
-    private final int outOfPlaneManeuvers;
-
-    /** Cycle dV out-of-plane maneuvers. */
-    private final double outOfPlaneCycleDV;
-
-    /** Total dV out-of-plane maneuvers. */
-    private final double outOfPlaneTotalDV;
-
     /** Real state. */
     private final SpacecraftState realState;
 
@@ -72,15 +57,16 @@ public class ScenarioState {
     /** Maneuvers. */
     private final List<ScheduledManeuver> maneuvers;
 
+    /** Maneuvers statistics. */
+    private final Map<String, ManeuverStats> maneuversStats;
+
     /** complete constructor.
      * @param name spacecraft name
      * @param inertialFrame inertial frame
      * @param earth Earth model
      * @param bolMass spacecraft mass at Begin Of Life
      * @param cyclesNumber cycle number
-     * @param inPlaneTotalDV total dV in-plane maneuvers
-     * @param outOfPlane number of performed out-of-plane maneuvers
-     * @param outOfPlaneTotalDV total dV out-of-plane maneuvers
+     * @param maneuversStats maneuvers statistics
      * @param realState real state at cycle start
      * @param estimatedState estimated state at cycle start
      * @param performedEphemeris performed ephemeris throughout cycle
@@ -89,27 +75,21 @@ public class ScenarioState {
      */
     private ScenarioState(final String name, final Frame inertialFrame, BodyShape earth,
                           final double bolMass, final int cyclesNumber,
-                          final int inPlane, final double inPlaneCycleDV, final double inPlaneTotalDV,
-                          final int outOfPlane, final double outOfPlaneCycleDV, final double outOfPlaneTotalDV,
                           final SpacecraftState realState,
                           final SpacecraftState estimatedState,
                           final BoundedPropagator performedEphemeris,
-                          final List<ScheduledManeuver> maneuvers) {
-        this.name                     = name;
-        this.inertialFrame            = inertialFrame;
-        this.earth                    = earth;
-        this.bolMass                  = bolMass;
-        this.cyclesNumber             = cyclesNumber;
-        this.inPlaneManeuvers         = inPlane;
-        this.inPlaneCycleDV           = inPlaneCycleDV;
-        this.inPlaneTotalDV           = inPlaneTotalDV;
-        this.outOfPlaneManeuvers      = outOfPlane;
-        this.outOfPlaneCycleDV        = outOfPlaneCycleDV;
-        this.outOfPlaneTotalDV        = outOfPlaneTotalDV;
-        this.realState                = realState;
-        this.estimatedState           = estimatedState;
-        this.performedEphemeris       = performedEphemeris;
-        this.maneuvers                = maneuvers;
+                          final List<ScheduledManeuver> maneuvers,
+                          final Map<String, ManeuverStats> maneuversStats) {
+        this.name               = name;
+        this.inertialFrame      = inertialFrame;
+        this.earth              = earth;
+        this.bolMass            = bolMass;
+        this.cyclesNumber       = cyclesNumber;
+        this.realState          = realState;
+        this.estimatedState     = estimatedState;
+        this.performedEphemeris = performedEphemeris;
+        this.maneuvers          = maneuvers;
+        this.maneuversStats     = maneuversStats;
     }
 
     /** Simple constructor.
@@ -121,11 +101,10 @@ public class ScenarioState {
      * @param realState real state
      */
     public ScenarioState(final String name, final Frame inertialFrame, BodyShape earth,
-                         final double bolMass,
-                         final int cyclesNumber, final SpacecraftState realState) {
+                         final double bolMass, final int cyclesNumber,
+                         final SpacecraftState realState) {
         this(name, inertialFrame, earth, bolMass, cyclesNumber,
-             0, 0.0, 0.0, 0, 0.0, 0.0,
-             realState, null, null, null);
+             realState, null, null, null, new HashMap<String, ManeuverStats>());
     }
 
     /** Get the spacecraft name.
@@ -172,86 +151,59 @@ public class ScenarioState {
      */
     public ScenarioState updateCyclesNumber(final int cyclesNumber) {
         return new ScenarioState(name, inertialFrame, earth, bolMass, cyclesNumber,
-                                 inPlaneManeuvers, inPlaneCycleDV, inPlaneTotalDV,
-                                 outOfPlaneManeuvers, outOfPlaneCycleDV, outOfPlaneTotalDV,
                                  realState, estimatedState, performedEphemeris,
-                                 maneuvers);
+                                 maneuvers, maneuversStats);
     }
 
-    /** Get the number of performed in-plane maneuvers.
-     * @return number of performed in-plane maneuvers
+    /** Get the name of all maneuvers.
+     * @return names of all maneuvers
      */
-    public int getInPlaneManeuvers() {
-        return inPlaneManeuvers;
+    public Set<String> getManeuversNames() {
+        return maneuversStats.keySet();
     }
 
-    /** Get the cycle dV in-plane maneuvers.
-     * @return cycle dV in-plane maneuvers
+    /** Get the number of performed maneuvers.
+     * @param name name of the selected maneuver
+     * @return number of performed maneuvers
      */
-    public double getInPlaneCycleDV() {
-        return inPlaneCycleDV;
+    public int getManeuversNumber(final String name) {
+        return maneuversStats.get(name).getNumber();
     }
 
-    /** Get the total dV in-plane maneuvers.
-     * @return total dV in-plane maneuvers
+    /** Get the cycle dV maneuvers.
+     * @param name name of the selected maneuver
+     * @return cycle dV maneuvers
      */
-    public double getInPlaneTotalDV() {
-        return inPlaneTotalDV;
+    public double getManeuversCycleDV(final String name) {
+        return maneuversStats.get(name).getCycleDV();
     }
 
-    /** Update the in-plane maneuvers.
+    /** Get the total dV maneuvers.
+     * @param name name of the selected maneuver
+     * @return total dV maneuvers
+     */
+    public double getManeuversTotalDV(final String name) {
+        return maneuversStats.get(name).getTotalDV();
+    }
+
+    /** Update a maneuver statistics.
      * <p>
      * The instance is not changed, a new instance is created
      * </p>
+     * @param name name of the maneuver
      * @param number number of in-plane maneuvers
      * @param cycleDV cycle DV for in-plane maneuvers
      * @param totalDV total DV for in-plane maneuvers
      * @return updated state
      */
-    public ScenarioState updateInPlaneManeuvers(final int number, final double cycleDV, final double totalDV) {
+    public ScenarioState updateManeuverStats(final String name, final int number,
+                                             final double cycleDV, final double totalDV) {
+        final HashMap<String, ManeuverStats> updatedMap =
+                new HashMap<String, ScenarioState.ManeuverStats>(maneuversStats);
+        updatedMap.put(name, new ManeuverStats(number, cycleDV, totalDV));
         return new ScenarioState(name, inertialFrame, earth, bolMass, cyclesNumber,
-                                 number, cycleDV, totalDV,
-                                 outOfPlaneManeuvers, outOfPlaneCycleDV, outOfPlaneTotalDV,
                                  realState, estimatedState, performedEphemeris,
-                                 maneuvers);
-    }
-
-    /** Get the number of performed out-of-plane maneuvers.
-     * @return number of performed out-of-plane maneuvers
-     */
-    public int getOutOfPlaneManeuvers() {
-        return outOfPlaneManeuvers;
-    }
-
-    /** Get the cycle dV out-of-plane maneuvers.
-     * @return cycle dV out-of-plane maneuvers
-     */
-    public double getOutOfPlaneCycleDV() {
-        return outOfPlaneCycleDV;
-    }
-
-    /** Get the total dV out-of-plane maneuvers.
-     * @return total dV out-of-plane maneuvers
-     */
-    public double getOutOfPlaneTotalDV() {
-        return outOfPlaneTotalDV;
-    }
-
-    /** Update the out-of-plane maneuvers.
-     * <p>
-     * The instance is not changed, a new instance is created
-     * </p>
-     * @param number number of out-of-plane maneuvers
-     * @param cycleDV cycle DV for out-of-plane maneuvers
-     * @param totalDV total DV for out-of-plane maneuvers
-     * @return updated state
-     */
-    public ScenarioState updateOutOfPlaneManeuvers(final int number, final double cycleDV, final double totalDV) {
-        return new ScenarioState(name, inertialFrame, earth, bolMass, cyclesNumber,
-                                 inPlaneManeuvers, inPlaneCycleDV, inPlaneTotalDV,
-                                 number, cycleDV, totalDV,
-                                 realState, estimatedState, performedEphemeris,
-                                 maneuvers);
+                                 maneuvers, updatedMap);
     }
 
     /** Get the real state.
@@ -270,10 +222,8 @@ public class ScenarioState {
      */
     public ScenarioState updateRealState(final SpacecraftState state) {
         return new ScenarioState(name, inertialFrame, earth, bolMass, cyclesNumber,
-                                 inPlaneManeuvers, inPlaneCycleDV, inPlaneTotalDV,
-                                 outOfPlaneManeuvers, outOfPlaneCycleDV, outOfPlaneTotalDV,
                                  state, estimatedState, performedEphemeris,
-                                 maneuvers);
+                                 maneuvers, maneuversStats);
     }
 
     /** Get the estimated state.
@@ -292,10 +242,8 @@ public class ScenarioState {
      */
     public ScenarioState updateEstimatedState(final SpacecraftState state) {
         return new ScenarioState(name, inertialFrame, earth, bolMass, cyclesNumber,
-                                 inPlaneManeuvers, inPlaneCycleDV, inPlaneTotalDV,
-                                 outOfPlaneManeuvers, outOfPlaneCycleDV, outOfPlaneTotalDV,
                                  realState, state, performedEphemeris,
-                                 maneuvers);
+                                 maneuvers, maneuversStats);
     }
 
     /** Get the performed ephemeris throughout cycle.
@@ -314,10 +262,8 @@ public class ScenarioState {
      */
     public ScenarioState updatePerformedEphemeris(final BoundedPropagator ephemeris) {
         return new ScenarioState(name, inertialFrame, earth, bolMass, cyclesNumber,
-                                 inPlaneManeuvers, inPlaneCycleDV, inPlaneTotalDV,
-                                 outOfPlaneManeuvers, outOfPlaneCycleDV, outOfPlaneTotalDV,
                                  realState, estimatedState, ephemeris,
-                                 maneuvers);
+                                 maneuvers, maneuversStats);
     }
 
     /** Get the scheduled maneuvers.
@@ -336,10 +282,54 @@ public class ScenarioState {
      */
     public ScenarioState updateManeuvers(final List<ScheduledManeuver> maneuvers) {
         return new ScenarioState(name, inertialFrame, earth, bolMass, cyclesNumber,
-                                 inPlaneManeuvers, inPlaneCycleDV, inPlaneTotalDV,
-                                 outOfPlaneManeuvers, outOfPlaneCycleDV, outOfPlaneTotalDV,
                                  realState, estimatedState, performedEphemeris,
-                                 maneuvers);
+                                 maneuvers, maneuversStats);
+    }
+
+    /** Inner class for maneuvers statistics. */
+    private static class ManeuverStats {
+
+        /** Number of maneuvers performed. */
+        private final int number;
+
+        /** Velocity increment for the current cycle. */
+        private final double cycleDV;
+
+        /** Velocity increment since simulation start. */
+        private final double totalDV;
+
+        /** Simple constructor.
+         * @param number number of maneuvers performed
+         * @param cycleDV velocity increment for the current cycle
+         * @param totalDV velocity increment since simulation start
+         */
+        public ManeuverStats(final int number, final double cycleDV, final double totalDV) {
+            this.number  = number;
+            this.cycleDV = cycleDV;
+            this.totalDV = totalDV;
+        }
+
+        /** Get the number of maneuvers performed.
+         * @return number of maneuvers performed
+         */
+        public int getNumber() {
+            return number;
+        }
+
+        /** Get the velocity increment for the current cycle.
+         * @return velocity increment for the current cycle
+         */
+        public double getCycleDV() {
+            return cycleDV;
+        }
+
+        /** Get the velocity increment since simulation start.
+         * @return velocity increment since simulation start
+         */
+        public double getTotalDV() {
+            return totalDV;
+        }
+
     }
 
 }

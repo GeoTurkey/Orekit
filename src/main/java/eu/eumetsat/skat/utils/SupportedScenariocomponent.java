@@ -40,6 +40,7 @@ public enum SupportedScenariocomponent {
                                                    skat.getOutputStep(), skat.getEarth(), skat.getSun(),
                                                    skat.getGroundLocation(),
                                                    skat.getMonitorablesMono(), skat.getMonitorablesDuo(),
+                                                   skat.getManeuversMonitorables(),
                                                    skat.getControlLawsMarginsMap(),
                                                    skat.getControlLawsViolationsMap(),
                                                    skat.getManeuversOutput());

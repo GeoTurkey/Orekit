@@ -151,6 +151,9 @@ public class Skat {
     /** Duo-spacecrafts monitorables. */
     private List<MonitorableDuoSKData> monitorablesDuo;
 
+    /** Maneuvers monitorables. */
+    private final Map<String, SimpleMonitorable> maneuversMonitorables;
+
     /** Station-keeping control laws monitoring (margins part). */
     private final Map<SKControl, SimpleMonitorable> controlsMargins;
 
@@ -380,12 +383,26 @@ public class Skat {
                                       inertialFrame, earth, bolMass,
                                       parser.getInt(stateNode,    ParameterKey.INITIAL_STATE_CYCLE_NUMBER),
                                       spacecraftState);
-            scenarioState = scenarioState.updateInPlaneManeuvers(parser.getInt(stateNode, ParameterKey.INITIAL_STATE_IN_PLANE_MANEUVERS),
-                                                                 0.0,
-                                                                 parser.getDouble(stateNode, ParameterKey.INITIAL_STATE_IN_PLANE_TOTAL_DV));
-            scenarioState = scenarioState.updateOutOfPlaneManeuvers(parser.getInt(stateNode, ParameterKey.INITIAL_STATE_OUT_OF_PLANE_MANEUVERS),
-                                                                    0.0,
-                                                                    parser.getDouble(stateNode, ParameterKey.INITIAL_STATE_OUT_OF_PLANE_TOTAL_DV));
+            for (TunableManeuver m : maneuversModelsPool) {
+                // default setting: all maneuvers stats set to 0
+                scenarioState = scenarioState.updateManeuverStats(m.getName(), 0, 0.0, 0.0);
+            }
+            if (parser.containsKey(stateNode, ParameterKey.INITIAL_STATE_MANEUVERS)) {
+                // specific setting: the input file contains initial statistics
+                // we overwrite the default values for the provided maneuvers
+                final Tree manStatsArrayNode = parser.getValue(stateNode, ParameterKey.INITIAL_STATE_MANEUVERS);
+                final int nbProvided = parser.getElementsNumber(maneuversNode);
+                for (int j = 0; j < nbProvided; ++j) {
+                    final Tree maneuverNode = parser.getElement(manStatsArrayNode, j);
+                    scenarioState = scenarioState.updateManeuverStats(parser.getString(maneuverNode,
+                                                                                       ParameterKey.INITIAL_STATE_MANEUVER_NAME),
+                                                                      parser.getInt(maneuverNode,
+                                                                                    ParameterKey.INITIAL_STATE_MANEUVER_NUMBER),
+                                                                      0.0,
+                                                                      parser.getDouble(maneuverNode,
+                                                                                       ParameterKey.INITIAL_STATE_MANEUVER_TOTAL_DV));
+                }
+            }
             configuredStates[i] = scenarioState;
         }
 
@@ -441,6 +458,16 @@ public class Skat {
                     }
                 }
                 monitorablesDuo.add(monitorable);
+            }
+        }
+
+        // add maneuvers monitoring
+        maneuversMonitorables = new HashMap<String, SimpleMonitorable>();
+        for (final TunableManeuver maneuver : maneuversModelsPool) {
+            SimpleMonitorable monitorable  = new SimpleMonitorable(3, maneuver.getName());
+            maneuversMonitorables.put(maneuver.getName(), monitorable);
+            for (final MonitorMono monitor : monitorsMono) {
+                monitorable.register(configuredStates.length, monitor);
             }
         }
 
@@ -536,6 +563,13 @@ public class Skat {
             }
         }
         throw new SkatException(SkatMessages.MANEUVER_NOT_FOUND, name);
+    }
+
+    /** Get the maneuvers monitoring map.
+     * @return maneuvers monitoring map
+     */
+    public Map<String, SimpleMonitorable> getManeuversMonitorables() {
+        return maneuversMonitorables;
     }
 
     /** Get the list of mono-spacecraft monitorables.
@@ -748,23 +782,30 @@ public class Skat {
                            formatKey(keysWidth, ParameterKey.INITIAL_STATE_CYCLE_NUMBER) +
                            "= " + state.getCyclesNumber() + ";");
             finalOutput.println(formatIndent(2 * baseIndent) +
-                           formatKey(keysWidth, ParameterKey.INITIAL_STATE_IN_PLANE_MANEUVERS) +
-                           "= " + state.getInPlaneManeuvers() + ";");
-            finalOutput.println(formatIndent(2 * baseIndent) +
-                           formatKey(keysWidth, ParameterKey.INITIAL_STATE_IN_PLANE_TOTAL_DV) +
-                           "= " + state.getInPlaneTotalDV() + ";");
-            finalOutput.println(formatIndent(2 * baseIndent) +
-                           formatKey(keysWidth, ParameterKey.INITIAL_STATE_OUT_OF_PLANE_MANEUVERS) +
-                           "= " + state.getOutOfPlaneManeuvers() + ";");
-            finalOutput.println(formatIndent(2 * baseIndent) +
-                           formatKey(keysWidth, ParameterKey.INITIAL_STATE_OUT_OF_PLANE_TOTAL_DV) +
-                           "= " + state.getOutOfPlaneTotalDV() + ";");
-            finalOutput.println(formatIndent(2 * baseIndent) +
                                 formatKey(keysWidth, ParameterKey.INITIAL_STATE_BOL_MASS) +
                                 "= " + state.getBOLMass() + ";");
             finalOutput.println(formatIndent(2 * baseIndent) +
                                 formatKey(keysWidth, ParameterKey.INITIAL_STATE_MASS) +
                                 "= " + state.getRealState().getMass() + ";");
+
+            finalOutput.println(formatIndent(2 * baseIndent) +
+                                formatKey(keysWidth, ParameterKey.INITIAL_STATE_MANEUVERS) +
+                                "= [");
+            for (int j = 0; j < maneuversModelsPool.length; ++j) {
+                final String name = maneuversModelsPool[i].getName();
+                finalOutput.println(formatIndent(3 * baseIndent) + "{");
+                finalOutput.println(formatIndent(4 * baseIndent) +
+                                    formatKey(keysWidth, ParameterKey.INITIAL_STATE_MANEUVER_NAME) +
+                                    "= " + name + ";");
+                finalOutput.println(formatIndent(4 * baseIndent) +
+                                    formatKey(keysWidth, ParameterKey.INITIAL_STATE_MANEUVER_NUMBER) +
+                                    "= " + state.getManeuversNumber(name) + ";");
+                finalOutput.println(formatIndent(4 * baseIndent) +
+                                    formatKey(keysWidth, ParameterKey.INITIAL_STATE_MANEUVER_TOTAL_DV) +
+                                    "= " + state.getManeuversTotalDV(name) + ";");
+                finalOutput.println(formatIndent(3 * baseIndent) + ((j < maneuversModelsPool.length - 1) ? "}," : "}"));
+            }
+            finalOutput.println(formatIndent(2 * baseIndent) + "];");
 
             finalOutput.println(formatIndent(2 * baseIndent) +
                            formatKey(keysWidth, ParameterKey.INITIAL_STATE_ORBIT) +

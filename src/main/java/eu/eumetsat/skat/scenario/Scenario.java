@@ -62,6 +62,9 @@ public class Scenario implements ScenarioComponent {
     /** Duo-spacecrafts monitorables. */
     private List<MonitorableDuoSKData> monitorablesDuo;
 
+    /** Maneuvers monitorables. */
+    private final Map<String, SimpleMonitorable> maneuversMonitorables;
+
     /** Map for control laws residuals monitoring. */
     private Map<SKControl, SimpleMonitorable> controlsMargins;
 
@@ -83,6 +86,7 @@ public class Scenario implements ScenarioComponent {
      * @param groundLocation reference ground location
      * @param monitorablesMono list of monitorables for mono-spacecraft
      * @param monitorablesDuo list of monitorables for duo-spacecrafts
+     * @param maneuversMonitorables maneuvers monitorables
      * @param controlsMargins map for control laws residuals monitoring
      * @param controlsViolations map for control laws violations monitoring
      * @param maneuversOutput maneuves output stream
@@ -92,19 +96,21 @@ public class Scenario implements ScenarioComponent {
                     final TopocentricFrame groundLocation,
                     final List<MonitorableMonoSKData> monitorablesMono,
                     final List<MonitorableDuoSKData> monitorablesDuo,
+                    final Map<String, SimpleMonitorable> maneuversMonitorables,
                     final Map<SKControl, SimpleMonitorable> controlsMargins,
                     final Map<SKControl, SimpleMonitorable> controlsViolations,
                     final PrintStream maneuversOutput) {
-        this.components         = new ArrayList<ScenarioComponent>();
-        this.cycleDuration      = cycleDuration;
-        this.outputstep         = outputStep;
-        this.earth              = earth;
-        this.groundLocation     = groundLocation;
-        this.monitorablesMono   = monitorablesMono;
-        this.monitorablesDuo    = monitorablesDuo;
-        this.controlsMargins    = controlsMargins;
-        this.controlsViolations = controlsViolations;
-        this.maneuversOutput    = maneuversOutput;
+        this.components            = new ArrayList<ScenarioComponent>();
+        this.cycleDuration         = cycleDuration;
+        this.outputstep            = outputStep;
+        this.earth                 = earth;
+        this.groundLocation        = groundLocation;
+        this.monitorablesMono      = monitorablesMono;
+        this.monitorablesDuo       = monitorablesDuo;
+        this.maneuversMonitorables = maneuversMonitorables;
+        this.controlsMargins       = controlsMargins;
+        this.controlsViolations    = controlsViolations;
+        this.maneuversOutput       = maneuversOutput;
     }
 
     /** Add a cycle component.
@@ -159,12 +165,12 @@ public class Scenario implements ScenarioComponent {
             // prepare next cycle
             for (int i = 0; i < states.length; ++i) {
                 states[i] = states[i].updateCyclesNumber(states[i].getCyclesNumber() + 1);
-                states[i] = states[i].updateInPlaneManeuvers(states[i].getInPlaneManeuvers(),
-                                                             0.0,
-                                                             states[i].getInPlaneTotalDV());
-                states[i] = states[i].updateOutOfPlaneManeuvers(states[i].getOutOfPlaneManeuvers(),
-                                                                0.0,
-                                                                states[i].getOutOfPlaneTotalDV());
+                for (final String name : states[i].getManeuversNames()) {
+                    states[i] = states[i].updateManeuverStats(name,
+                                                              states[i].getManeuversNumber(name),
+                                                              0.0,
+                                                              states[i].getManeuversTotalDV(name));
+                }
                 states[i] = states[i].updateEstimatedState(null);
                 states[i] = states[i].updateManeuvers(null);
             }
@@ -283,20 +289,27 @@ public class Scenario implements ScenarioComponent {
         for (int i = 0; i < states.length; ++i) {
             if (states[i].getManeuvers() != null) {
                 for (final ScheduledManeuver maneuver : states[i].getManeuvers()) {
-                    if ((maneuver.getDate().compareTo(previous) > 0) &&
-                            (maneuver.getDate().compareTo(date) <= 0)) {
+
+                    final AbsoluteDate maneuverDate = maneuver.getDate();
+
+                    if ((maneuverDate.compareTo(previous) > 0) && (maneuverDate.compareTo(date) <= 0)) {
 
                         // the maneuver occurred during last step, take it into account
-                        final double dv = maneuver.getDeltaV().getNorm();
-                        if (maneuver.isInPlane()) {
-                            states[i] = states[i].updateInPlaneManeuvers(states[i].getInPlaneManeuvers() + 1,
-                                                                         states[i].getInPlaneCycleDV() + dv,
-                                                                         states[i].getInPlaneTotalDV() + dv);
-                        } else {
-                            states[i] = states[i].updateOutOfPlaneManeuvers(states[i].getOutOfPlaneManeuvers() + 1,
-                                                                            states[i].getOutOfPlaneCycleDV() + dv,
-                                                                            states[i].getOutOfPlaneTotalDV() + dv);
-                        }
+                        final double dv      = maneuver.getDeltaV().getNorm();
+                        final int    number  = states[i].getManeuversNumber(maneuver.getName())  + 1;
+                        final double cycleDV = states[i].getManeuversCycleDV(maneuver.getName()) + dv;
+                        final double totalDV = states[i].getManeuversTotalDV(maneuver.getName()) + dv;
+
+                        // update the state
+                        states[i] = states[i].updateManeuverStats(maneuver.getName(),
+                                                                  number, cycleDV, totalDV);
+
+                        // monitor maneuver
+                        SimpleMonitorable monitorable = maneuversMonitorables.get(maneuver.getName());
+                        monitorable.setSampledValue(maneuverDate,
+                                                    new double[] {
+                                                      number, cycleDV, totalDV
+                                                    });
 
                         // print the maneuver
                         maneuversOutput.println(maneuver.getDate()          + " " +

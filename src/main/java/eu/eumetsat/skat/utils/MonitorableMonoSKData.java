@@ -33,66 +33,6 @@ import eu.eumetsat.skat.scenario.ScenarioState;
  */
 public enum MonitorableMonoSKData implements MonitorableMono {
 
-    IN_PLANE_MANEUVER_NUMBER(1) {
-
-        /** {@inheritDoc} */
-        @Override
-        protected void extractData(final ScenarioState state, double[] data) {
-            data[0] = state.getInPlaneManeuvers();
-        }
-
-    },
-
-    IN_PLANE_MANEUVER_CYCLE_DV(1) {
-
-        /** {@inheritDoc} */
-        @Override
-        protected void extractData(final ScenarioState state, double[] data) {
-            data[0] = state.getInPlaneCycleDV();
-        }
-
-    },
-
-    IN_PLANE_MANEUVER_TOTAL_DV(1) {
-
-        /** {@inheritDoc} */
-        @Override
-        protected void extractData(final ScenarioState state, double[] data) {
-            data[0] = state.getInPlaneTotalDV();
-        }
-
-    },
-
-    OUT_OF_PLANE_MANEUVER_NUMBER(1) {
-
-        /** {@inheritDoc} */
-        @Override
-        protected void extractData(final ScenarioState state, double[] data) {
-            data[0] = state.getOutOfPlaneManeuvers();
-        }
-
-    },
-
-    OUT_OF_PLANE_MANEUVER_CYCLE_DV(1) {
-
-        /** {@inheritDoc} */
-        @Override
-        protected void extractData(final ScenarioState state, double[] data) {
-            data[0] = state.getOutOfPlaneCycleDV();
-        }
-
-    },
-
-    OUT_OF_PLANE_MANEUVER_TOTAL_DV(1) {
-
-        /** {@inheritDoc} */
-        @Override
-        protected void extractData(final ScenarioState state, double[] data) {
-            data[0] = state.getOutOfPlaneTotalDV();
-        }
-
-    },
-
     SPACECRAFT_MASS(1) {
 
         /** {@inheritDoc} */
