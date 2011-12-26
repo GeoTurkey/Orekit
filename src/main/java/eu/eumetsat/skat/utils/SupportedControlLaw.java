@@ -26,14 +26,11 @@ public enum SupportedControlLaw {
             throws OrekitException, SkatException {
             final String name           = parser.getString(node, ParameterKey.CONTROL_NAME);
             final double sampling       = parser.getDouble(node, ParameterKey.CONTROL_SAMPLING);
+            final TunableManeuver model = skat.getManeuver(parser.getString(node, ParameterKey.CONTROL_MANEUVER_NAME));
+            final int maxManeuvers      = parser.getInt(node,    ParameterKey.CONTROL_MAX_MANEUVERS);
+            final int orbitsSeparation  = parser.getInt(node,    ParameterKey.CONTROL_MANEUVERS_ORBITS_SEPARATION);
             final double lEast          = parser.getAngle(node,  ParameterKey.CONTROL_PARABOLIC_LONGITUDE_EAST);
             final double lWest          = parser.getAngle(node,  ParameterKey.CONTROL_PARABOLIC_LONGITUDE_WEST);
-
-            // TODO read parameters
-            final TunableManeuver model = null;
-            final int maxManeuvers      = 0;
-            final int orbitsSeparation  = 0;
-
             return new ParabolicLongitude(name, controlled, skat.getSpacecraftIndex(controlled),
                                           model, maxManeuvers, orbitsSeparation,
                                           lEast, lWest, sampling, skat.getEarth());

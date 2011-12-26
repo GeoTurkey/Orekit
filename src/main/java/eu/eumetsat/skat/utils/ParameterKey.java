@@ -2,6 +2,7 @@
 package eu.eumetsat.skat.utils;
 
 
+
 /** Input parameter keys for SKAT.
  */
 public enum ParameterKey {
@@ -82,6 +83,9 @@ public enum ParameterKey {
     CONTROL_TYPE("type"),
     CONTROL_NAME("name"),
     CONTROL_SAMPLING("sampling"),
+    CONTROL_MANEUVER_NAME("maneuver_name"),
+    CONTROL_MAX_MANEUVERS("max_maneuvers"),
+    CONTROL_MANEUVERS_ORBITS_SEPARATION("maneuvers_orbits_separation"),
     // Parabolic longitude
     CONTROL_PARABOLIC_LONGITUDE_EAST("east_longitude"),
     CONTROL_PARABOLIC_LONGITUDE_WEST("west_longitude"),
