@@ -327,7 +327,8 @@ public class ParabolicLongitude extends AbstractSKControl {
             // add the new maneuvers
             for (int i = 0; i < nMan; ++i) {
                 final ScheduledManeuver maneuver =
-                        model.buildManeuver(fitStart.getDate().shiftedBy(i * dtMin), deltaV, adapterPropagator);
+                        model.buildManeuver(fitStart.getDate().shiftedBy((i + 1) * dtMin),
+                                            deltaV, adapterPropagator);
                 tuned[tunables.length + i] = maneuver;
                 adapterPropagator.addManeuver(maneuver.getDate(), maneuver.getDeltaV(), maneuver.getIsp());
             }
