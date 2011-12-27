@@ -5,7 +5,6 @@
   <groupId>int.eumetsat</groupId>
   <artifactId>skat</artifactId>
   <packaging>jar</packaging>
-  <version>1.1</version>
   <name>Station Keeping Analysis Tool</name>
 
   <inceptionYear>2011</inceptionYear>
@@ -248,4 +247,5 @@
     </profile>
   </profiles>
 
+  <version>2.0-SNAPSHOT</version>
 </project>
