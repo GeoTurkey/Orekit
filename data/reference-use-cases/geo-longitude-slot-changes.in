@@ -1,9 +1,9 @@
 #
 # This example shows longitude slots can be changed smoothly
 # There are three one year long control loops. The first one
-# from cycles 1 to 26 targets a longitude at -57 degrees, the
-# second one from cycles 27 to 52 targets a longitude at -56
-# degrees, and the third one from cycles 53 onwards targets
+# from cycles 1 to 13 targets a longitude at -57 degrees, the
+# second one from cycles 14 to 26 targets a longitude at -56
+# degrees, and the third one from cycles 27 onwards targets
 # a longitude at -58 degrees.
 
 # General simulation parameters
@@ -14,7 +14,7 @@ simulation       = {
     solar_activity_strength = AVERAGE;
     start_date              = 2011-10-23T00:00:00.000;
     end_date                = 2015-01-01T00:00:00.000;
-    cycle_duration          = 14.0;
+    cycle_duration          = 28.0;
     output_step             = 10800.0;
     random_seed             = 156325253;
     ground_location         = {
@@ -95,7 +95,7 @@ scenario         = [
         # note: control loop components control only ONE spacecraft each
         controlled_spacecraft    = "Meteosat 7";
         first_cycle              = 1;
-        last_cycle               = 26;
+        last_cycle               = 13;
         max_iterations           = 1000;
        propagator  = {
             method                 = NUMERICAL;
@@ -114,6 +114,7 @@ scenario         = [
                 type                        = PARABOLIC_LONGITUDE;
                 name                        = "longitude-57";
                 maneuver_name               = "E/W";
+                offset_first_maneuver       = 172800;
                 max_maneuvers               = 3;
                 maneuvers_orbits_separation = 1;
                 east_longitude              = -56.9;
@@ -126,8 +127,8 @@ scenario         = [
         component                = CONTROL_LOOP;
         # note: control loop components control only ONE spacecraft each
         controlled_spacecraft    = "Meteosat 7";
-        first_cycle              = 27;
-        last_cycle               = 52;
+        first_cycle              = 14;
+        last_cycle               = 26;
         max_iterations           = 1000;
        propagator  = {
             method                 = NUMERICAL;
@@ -146,6 +147,7 @@ scenario         = [
                 type                        = PARABOLIC_LONGITUDE;
                 name                        = "longitude-56";
                 maneuver_name               = "E/W";
+                offset_first_maneuver       = 172800;
                 max_maneuvers               = 3;
                 maneuvers_orbits_separation = 1;
                 east_longitude              = -55.9;
@@ -158,7 +160,7 @@ scenario         = [
         component                = CONTROL_LOOP;
         # note: control loop components control only ONE spacecraft each
         controlled_spacecraft    = "Meteosat 7";
-        first_cycle              = 53;
+        first_cycle              = 27;
         last_cycle               = 999;
         max_iterations           = 1000;
        propagator  = {
@@ -178,6 +180,7 @@ scenario         = [
                 type                        = PARABOLIC_LONGITUDE;
                 name                        = "longitude-58";
                 maneuver_name               = "E/W";
+                offset_first_maneuver       = 172800;
                 max_maneuvers               = 3;
                 maneuvers_orbits_separation = 1;
                 east_longitude              = -57.9;
@@ -219,11 +222,7 @@ scenario         = [
 ];
 
 monitoring_mono = [
-    CYCLES_NUMBER,
-    SPACECRAFT_MASS,
     SEMI_MAJOR_AXIS,
     EQUINOCTIAL_ECCENTRICITY_VECTOR,
-    EQUINOCTIAL_INCLINATION_VECTOR,
-    LATITUDE,
     LONGITUDE
 ]

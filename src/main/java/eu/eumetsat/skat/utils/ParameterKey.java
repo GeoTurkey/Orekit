@@ -87,6 +87,7 @@ public enum ParameterKey {
     CONTROL_MAX_MANEUVERS("max_maneuvers"),
     CONTROL_MANEUVERS_ORBITS_SEPARATION("maneuvers_orbits_separation"),
     // Parabolic longitude
+    CONTROL_PARABOLIC_FIRST_OFFSET("offset_first_maneuver"),
     CONTROL_PARABOLIC_LONGITUDE_EAST("east_longitude"),
     CONTROL_PARABOLIC_LONGITUDE_WEST("west_longitude"),
     // Eccentricity circle

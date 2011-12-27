@@ -29,10 +29,11 @@ public enum SupportedControlLaw {
             final TunableManeuver model = skat.getManeuver(parser.getString(node, ParameterKey.CONTROL_MANEUVER_NAME));
             final int maxManeuvers      = parser.getInt(node,    ParameterKey.CONTROL_MAX_MANEUVERS);
             final int orbitsSeparation  = parser.getInt(node,    ParameterKey.CONTROL_MANEUVERS_ORBITS_SEPARATION);
+            final double firstOffset    = parser.getDouble(node,  ParameterKey.CONTROL_PARABOLIC_FIRST_OFFSET);
             final double lEast          = parser.getAngle(node,  ParameterKey.CONTROL_PARABOLIC_LONGITUDE_EAST);
             final double lWest          = parser.getAngle(node,  ParameterKey.CONTROL_PARABOLIC_LONGITUDE_WEST);
             return new ParabolicLongitude(name, controlled, skat.getSpacecraftIndex(controlled),
-                                          model, maxManeuvers, orbitsSeparation,
+                                          model, firstOffset, maxManeuvers, orbitsSeparation,
                                           lEast, lWest, sampling, skat.getEarth());
         }
 

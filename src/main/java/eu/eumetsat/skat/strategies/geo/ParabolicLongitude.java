@@ -26,7 +26,6 @@ import org.orekit.propagation.events.EventDetector;
 import org.orekit.propagation.sampling.OrekitStepHandler;
 import org.orekit.propagation.sampling.OrekitStepInterpolator;
 import org.orekit.time.AbsoluteDate;
-import org.orekit.utils.Constants;
 
 import eu.eumetsat.skat.control.AbstractSKControl;
 import eu.eumetsat.skat.strategies.ScheduledManeuver;
@@ -82,7 +81,7 @@ import eu.eumetsat.skat.utils.SkatMessages;
  * second one occurs when the initial mean longitude l(t<sub>0</sub>) is on the opposite
  * side with respect to the peak longitude of the perfectly centered motion. In this
  * case we are already too far and cannot get a perfect motion for this cycle, so we try
- * to put the end of cycle longitude on the right side, so nect cycle will perform normally.
+ * to put the end of cycle longitude on the right side, so next cycle will perform normally.
  * </p>
  * <p>
  * In all cases, if we are too far from the station keeping longitude slot, we set up
@@ -111,8 +110,11 @@ public class ParabolicLongitude extends AbstractSKControl {
     /** Maximum number of maneuvers to set up in one cycle. */
     private final int maxManeuvers;
 
+    /** Time offset of the first maneuver with respect to cycle start. */
+    private final double firstOffset;
+
     /** Minimum time between split parts in number of orbits. */
-    private final double dtMin;
+    private final int orbitsSeparation;
 
     /** Reference state at fitting start. */
     private SpacecraftState fitStart;
@@ -149,6 +151,7 @@ public class ParabolicLongitude extends AbstractSKControl {
      * @param controlledName name of the controlled spacecraft
      * @param controlledIndex index of the controlled spacecraft
      * @param model in-plane maneuver model
+     * @param firstOffset time offset of the first maneuver with respect to cycle start
      * @param maxManeuvers maximum number of maneuvers to set up in one cycle
      * @param orbitsSeparation minimum time between split parts in number of orbits
      * @param lEast longitude slot Eastward boundary
@@ -159,8 +162,8 @@ public class ParabolicLongitude extends AbstractSKControl {
      */
     public ParabolicLongitude(final String name,
                               final String controlledName, final int controlledIndex,
-                              final TunableManeuver model, final int maxManeuvers,
-                              final int orbitsSeparation,
+                              final TunableManeuver model, final double firstOffset,
+                              final int maxManeuvers, final int orbitsSeparation,
                               final double lEast, final double lWest,
                               final double samplingStep, final BodyShape earth)
         throws SkatException {
@@ -170,15 +173,16 @@ public class ParabolicLongitude extends AbstractSKControl {
             throw new SkatException(SkatMessages.UNSORTED_LONGITUDES,
                                     FastMath.toDegrees(getMin()), FastMath.toDegrees(getMax()));
         }
-        this.stephandler     = new Handler();
-        this.samplingStep    = samplingStep;
-        this.earth           = earth;
-        this.center          = 0.5 * (lWest + MathUtils.normalizeAngle(lEast, lWest));
-        this.model           = model;
-        this.maxManeuvers    = maxManeuvers;
-        this.dtMin           = (orbitsSeparation + 0.5) * Constants.JULIAN_DAY;
-        this.dateSample      = new ArrayList<Double>();
-        this.longitudeSample = new ArrayList<Double>();
+        this.stephandler      = new Handler();
+        this.samplingStep     = samplingStep;
+        this.earth            = earth;
+        this.center           = 0.5 * (lWest + MathUtils.normalizeAngle(lEast, lWest));
+        this.model            = model;
+        this.firstOffset      = firstOffset;
+        this.maxManeuvers     = maxManeuvers;
+        this.orbitsSeparation = orbitsSeparation;
+        this.dateSample       = new ArrayList<Double>();
+        this.longitudeSample  = new ArrayList<Double>();
     }
 
     /** {@inheritDoc} */
@@ -324,10 +328,14 @@ public class ParabolicLongitude extends AbstractSKControl {
                 adapterPropagator.addManeuver(maneuver.getDate(), maneuver.getDeltaV(), maneuver.getIsp());
             }
 
+            // in order to avoid tempering eccentricity too much,
+            // we use a (n+1/2) orbits between maneuvers, where n is an integer
+            final double separation = (orbitsSeparation + 0.5) * fitStart.getKeplerianPeriod();
+
             // add the new maneuvers
             for (int i = 0; i < nMan; ++i) {
                 final ScheduledManeuver maneuver =
-                        model.buildManeuver(fitStart.getDate().shiftedBy((i + 1) * dtMin),
+                        model.buildManeuver(fitStart.getDate().shiftedBy(firstOffset + i * separation),
                                             deltaV, adapterPropagator);
                 tuned[tunables.length + i] = maneuver;
                 adapterPropagator.addManeuver(maneuver.getDate(), maneuver.getDeltaV(), maneuver.getIsp());
