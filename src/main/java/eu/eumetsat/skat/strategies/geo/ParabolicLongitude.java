@@ -173,7 +173,7 @@ public class ParabolicLongitude extends AbstractSKControl {
         this.stephandler     = new Handler();
         this.samplingStep    = samplingStep;
         this.earth           = earth;
-        this.center          = 0.5 * (getMin() + getMax());
+        this.center          = 0.5 * FastMath.toRadians((getMin() + getMax()));
         this.model           = model;
         this.maxManeuvers    = maxManeuvers;
         this.dtMin           = (orbitsSeparation + 0.5) * Constants.JULIAN_DAY;
@@ -287,7 +287,8 @@ public class ParabolicLongitude extends AbstractSKControl {
 
                 // use the quadratic longitude model to compute the initial semi-major axis offset
                 // needed to achieve a peak longitude exactly at target peak
-                aMas = FastMath.sqrt(2 * aDot * (l0 - targetPeak) / dlDotDa);
+                aMas = FastMath.copySign(FastMath.sqrt(2 * aDot * (l0 - targetPeak) / dlDotDa),
+                                         l0 - targetPeak);
 
             }
 
@@ -361,7 +362,7 @@ public class ParabolicLongitude extends AbstractSKControl {
                 final double deltaL       = targetPeak - achievedPeak;
                 final double deltaSquares = 2 * aDot * deltaL / dlDotDa;
                 final double aMas         = FastMath.copySign(FastMath.sqrt(a0Mas * a0Mas - deltaSquares),
-                                                              a0Mas);
+                                                              l0 - targetPeak);
                 deltaA                    = aMas - a0Mas;
 
             }
