@@ -195,10 +195,8 @@ public class ControlLoop implements ScenarioComponent {
             }
 
             // update the scheduled maneuvers, adding the newly optimized set
-            final List<ScheduledManeuver> theoreticalManeuvers = new ArrayList<ScheduledManeuver>();
-            if (original.getManeuvers() != null) {
-                theoreticalManeuvers.addAll(original.getManeuvers());
-            }
+            final List<ScheduledManeuver> theoreticalManeuvers =
+                    new ArrayList<ScheduledManeuver>(original.getManeuvers());
             for (final ScheduledManeuver maneuver : maneuvers) {
                 // extract the optimized maneuver for the next cycle only
                 if (maneuver.getDeltaV().getNorm() >= maneuver.getModel().getEliminationThreshold()) {

@@ -172,7 +172,7 @@ public class Scenario implements ScenarioComponent {
                                                               states[i].getManeuversTotalDV(name));
                 }
                 states[i] = states[i].updateEstimatedState(null);
-                states[i] = states[i].updateManeuvers(null);
+                states[i] = states[i].updateManeuvers(new ArrayList<ScheduledManeuver>());
             }
 
         } while (cycleEnd.durationFrom(iterationTarget) > 1.0);
