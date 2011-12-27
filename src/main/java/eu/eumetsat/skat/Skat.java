@@ -190,6 +190,7 @@ public class Skat {
             System.out.println("simulation computing time: " + ((endTime - startTime) / 1000) + " seconds");
 
         } catch (Exception e) {
+            e.printStackTrace(System.err); // TODO remove once validated
             System.err.println(e.getLocalizedMessage());
         } finally {
 
