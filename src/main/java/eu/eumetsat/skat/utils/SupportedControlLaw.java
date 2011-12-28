@@ -48,11 +48,12 @@ public enum SupportedControlLaw {
             throws OrekitException, SkatException {
             final String name           = parser.getString(node, ParameterKey.CONTROL_NAME);
             final double sampling       = parser.getDouble(node, ParameterKey.CONTROL_SAMPLING);
+            final TunableManeuver model = skat.getManeuver(parser.getString(node, ParameterKey.CONTROL_MANEUVER_NAME));
             final double centerX        = parser.getDouble(node, ParameterKey.CONTROL_ECCENTRICITY_CIRCLE_CENTER_X);
             final double centerY        = parser.getDouble(node, ParameterKey.CONTROL_ECCENTRICITY_CIRCLE_CENTER_Y);
             final double radius         = parser.getDouble(node, ParameterKey.CONTROL_ECCENTRICITY_CIRCLE_RADIUS);
             return new EccentricityCircle(name, controlled, skat.getSpacecraftIndex(controlled),
-                                          centerX, centerY, radius, skat.getSun(), sampling);
+                                          model, centerX, centerY, radius, skat.getSun(), sampling);
         }
 
     },
