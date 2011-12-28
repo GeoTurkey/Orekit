@@ -116,18 +116,17 @@ public class Propagation implements ScenarioComponent {
 
             for (final ScheduledManeuver maneuver : performed) {
                 if (maneuver.getDeltaV().getNorm() > 1.0e-10) {
-                    final Propagator p = maneuver.getTrajectory();
-                    final double nominalDuration = maneuver.getDuration(p.propagate(maneuver.getDate()).getMass());
+                    final double nominalDuration = maneuver.getDuration(maneuver.getStateBefore().getMass());
                     final double inefficiency;
                     if (compensateLongBurn) {
                         // this is a long out of plane maneuver, we adapt Isp to reflect
                         // the fact more mass will be consumed to achieve the same velocity increment
 
-                        final SpacecraftState startState = p.propagate(maneuver.getDate().shiftedBy(-0.5 * nominalDuration));
+                        final SpacecraftState startState = maneuver.getState(-0.5 * nominalDuration);
                         final CircularOrbit startOrbit   = (CircularOrbit) (OrbitType.CIRCULAR.convertType(startState.getOrbit()));
                         final double alphaS              = startOrbit.getAlphaV();
 
-                        final SpacecraftState endState   = p.propagate(maneuver.getDate().shiftedBy(0.5 * nominalDuration));
+                        final SpacecraftState endState   = maneuver.getState(+0.5 * nominalDuration);
                         final CircularOrbit endOrbit     = (CircularOrbit) (OrbitType.CIRCULAR.convertType(endState.getOrbit()));
                         final double alphaE              = endOrbit.getAlphaV();
 

@@ -112,7 +112,7 @@ public class ManeuverEclipseConstraint implements ScenarioComponent {
 
                     // maneuvers limits
                     final AbsoluteDate centralDate = maneuver.getDate();
-                    final SpacecraftState state    = maneuver.getTrajectory().propagate(centralDate);
+                    final SpacecraftState state    = maneuver.getStateBefore();
                     final double burnDuration      = maneuver.getDuration(state.getMass());
                     final AbsoluteDate burnStart   = centralDate.shiftedBy(-0.5 * burnDuration);
                     final AbsoluteDate burnEnd     = centralDate.shiftedBy( 0.5 * burnDuration);

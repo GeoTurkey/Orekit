@@ -82,7 +82,7 @@ public class ManeuverSplitter implements ScenarioComponent {
                 if (maneuver.getName().equals(name) && (maneuver.getDeltaV().getNorm() > maxDV)) {
 
                     // the maneuver should be split
-                    final SpacecraftState state = maneuver.getTrajectory().propagate(maneuver.getDate());
+                    final SpacecraftState state = maneuver.getStateBefore();
                     final double period         = state.getKeplerianPeriod();
                     final int nbParts           = (int) FastMath.ceil(maneuver.getDeltaV().getNorm() / maxDV);
                     maneuver.getTrajectory().addManeuver(maneuver.getDate(),

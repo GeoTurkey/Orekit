@@ -3,6 +3,8 @@ package eu.eumetsat.skat.strategies;
 
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math.util.FastMath;
+import org.orekit.errors.PropagationException;
+import org.orekit.propagation.SpacecraftState;
 import org.orekit.propagation.analytical.ManeuverAdapterPropagator;
 import org.orekit.time.AbsoluteDate;
 import org.orekit.utils.Constants;
@@ -117,6 +119,47 @@ public class ScheduledManeuver {
      */
     public ManeuverAdapterPropagator getTrajectory() {
         return trajectory;
+    }
+
+    /** Get the state a small time before or after maneuver.
+     * <p>
+     * The time offset should be used to ensure either the
+     * state before or after the maneuver is retrieved. If an
+     * offset of 0 is used, the result may be either the one
+     * before or after due to numerical uncertainties and the
+     * discontinuous nature of state around a maneuver. Hence
+     * using a dt of 0 is not recommended, but the {@link
+     * #getStateBefore()} or {@link #getStateAfter()} methods
+     * should be used.
+     * </p>
+     * @param dt time offset with respect to the maneuver
+     * @return state at maneuver time + dt
+     * @exception PropagationException if state cannot be propagated
+     * to the specified date
+     */
+    public SpacecraftState getState(final double dt)
+        throws PropagationException {
+        return trajectory.propagate(date.shiftedBy(dt));
+    }
+
+    /** Get the state just before the maneuver.
+     * @return state at maneuver time, before maneuver is applied
+     * @exception PropagationException if state cannot be propagated
+     * to the specified date
+     */
+    public SpacecraftState getStateBefore()
+        throws PropagationException {
+        return getState(-0.001).shiftedBy(+0.001);
+    }
+
+    /** Get the state just after the maneuver.
+     * @return state at maneuver time, after maneuver is applied
+     * @exception PropagationException if state cannot be propagated
+     * to the specified date
+     */
+    public SpacecraftState getStateAfter()
+        throws PropagationException {
+        return getState(+0.001).shiftedBy(-0.001);
     }
 
     /** Check if the maneuver has been replanned.

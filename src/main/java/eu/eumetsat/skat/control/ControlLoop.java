@@ -233,8 +233,7 @@ public class ControlLoop implements ScenarioComponent {
             // set up the scheduled maneuvers that are not optimized
             for (final ScheduledManeuver maneuver : scheduledManeuvers) {
                 if (propagator instanceof NumericalPropagator) {
-                    final Propagator p = maneuver.getTrajectory();
-                    final double duration = maneuver.getDuration(p.propagate(maneuver.getDate()).getMass());
+                    final double duration = maneuver.getDuration(maneuver.getStateBefore().getMass());
                     final AbsoluteDate startMan = maneuver.getDate().shiftedBy(-0.5 * duration);
                     final ConstantThrustManeuver ctm =
                             new ConstantThrustManeuver(startMan, duration,
