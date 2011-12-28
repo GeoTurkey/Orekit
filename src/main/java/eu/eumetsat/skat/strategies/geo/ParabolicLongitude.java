@@ -280,18 +280,11 @@ public class ParabolicLongitude extends AbstractSKControl {
             final double aMas   = (lEnd - l0) / (dlDotDa * tEndMt0) - 0.5 * aDot * tEndMt0;
 
             // compute the in plane maneuver required to get this initial semi-major axis offset
-            final double deltaA = aMas - a0Mas;
-            final double mu     = fitStart.getMu();
-            final double a      = fitStart.getA();
-            double totalDeltaV  = FastMath.sqrt(mu * (2 / a - 1 / (a + deltaA))) - FastMath.sqrt(mu / a);
-
-            // fix sign according to thruster direction
-            Vector3D thrustDirection =
-                    fitStart.getAttitude().getRotation().applyInverseTo(model.getDirection());
-            Vector3D velocity = fitStart.getPVCoordinates().getVelocity();
-            if (Vector3D.dotProduct(thrustDirection, velocity) < 0) {
-                totalDeltaV = -totalDeltaV;
-            }
+            final double deltaA       = aMas - a0Mas;
+            final double mu           = fitStart.getMu();
+            final double a            = fitStart.getA();
+            final double totalDeltaV  = thrustSign() *
+                                        FastMath.sqrt(mu * (2 / a - 1 / (a + deltaA))) - FastMath.sqrt(mu / a);
 
             // compute the number of maneuvers required
             final double limitDV = (totalDeltaV < 0) ? model.getDVInf() : model.getDVSup();
@@ -301,17 +294,8 @@ public class ParabolicLongitude extends AbstractSKControl {
                                                 FastMath.min(model.getDVSup(), totalDeltaV / nMan));
 
             tuned = new ScheduledManeuver[tunables.length + nMan];
-
-            // copy existing maneuvers, changing only the trajectory
-            for (int i = 0; i < tunables.length; ++i) {
-                final ScheduledManeuver maneuver =
-                        new ScheduledManeuver(tunables[i].getModel(), tunables[i].getDate(),
-                                              tunables[i].getDeltaV(), tunables[i].getThrust(),
-                                              tunables[i].getIsp(), adapterPropagator,
-                                              tunables[i].isReplanned());
-                tuned[i] = maneuver;
-                adapterPropagator.addManeuver(maneuver.getDate(), maneuver.getDeltaV(), maneuver.getIsp());
-            }
+            System.arraycopy(tunables, 0, tuned, 0, tunables.length);
+            changeTrajectory(tuned, 0, tunables.length, adapterPropagator);
 
             // in order to avoid tempering eccentricity too much,
             // we use a (n+1/2) orbits between maneuvers, where n is an integer
@@ -319,13 +303,11 @@ public class ParabolicLongitude extends AbstractSKControl {
 
             // add the new maneuvers
             for (int i = 0; i < nMan; ++i) {
-                final ScheduledManeuver maneuver =
+                tuned[tunables.length + i] =
                         new ScheduledManeuver(model, fitStart.getDate().shiftedBy(firstOffset + i * separation),
                                               new Vector3D(deltaV, model.getDirection()),
                                               model.getCurrentThrust(), model.getCurrentISP(),
                                               adapterPropagator, false);
-                tuned[tunables.length + i] = maneuver;
-                adapterPropagator.addManeuver(maneuver.getDate(), maneuver.getDeltaV(), maneuver.getIsp());
             }
 
         } else {
@@ -341,56 +323,99 @@ public class ParabolicLongitude extends AbstractSKControl {
 
 
             // compute the in plane maneuver required to get this initial semi-major axis offset
-            final double mu     = fitStart.getMu();
-            final double a      = fitStart.getA();
-            double deltaVChange = FastMath.sqrt(mu * (2 / a - 1 / (a + deltaA))) - FastMath.sqrt(mu / a);
-
-            // fix sign according to thruster direction
-            Vector3D thrustDirection =
-                    fitStart.getAttitude().getRotation().applyInverseTo(model.getDirection());
-            Vector3D velocity = fitStart.getPVCoordinates().getVelocity();
-            if (Vector3D.dotProduct(thrustDirection, velocity) < 0) {
-                deltaVChange = -deltaVChange;
-            }
+            final double mu           = fitStart.getMu();
+            final double a            = fitStart.getA();
+            final double deltaVChange = thrustSign() *
+                                        FastMath.sqrt(mu * (2 / a - 1 / (a + deltaA))) - FastMath.sqrt(mu / a);
 
             // distribute the change over all maneuvers
-            int nbMan = 0;
-            for (final ScheduledManeuver maneuver : tunables) {
-                if (maneuver.getName().equals(model.getName())) {
-                    nbMan++;
-                }
-            }
+            tuned = tunables.clone();
+            changeTrajectory(tuned, 0, tuned.length, adapterPropagator);
+            distributeDV(deltaVChange, tuned, adapterPropagator);
 
-            // apply the changes
-            tuned = new ScheduledManeuver[tunables.length];
-            for (int i = 0; i < tunables.length; ++i) {
-                final ScheduledManeuver maneuver;
-                if (tunables[i].getName().equals(model.getName())) {
-                    // change the maneuver velovity increment
-                    double original = Vector3D.dotProduct(tunables[i].getDeltaV(), model.getDirection());
-                    maneuver = new ScheduledManeuver(tunables[i].getModel(), tunables[i].getDate(),
-                                                     new Vector3D(original + deltaVChange / nbMan,
-                                                                  model.getDirection()),
-                                                                  tunables[i].getThrust(),
-                                                                  tunables[i].getIsp(), adapterPropagator,
-                                                                  tunables[i].isReplanned());
-                } else {
-                    // copy the maneuver, changing only the trajectory
-                    maneuver = new ScheduledManeuver(tunables[i].getModel(), tunables[i].getDate(),
-                                                     tunables[i].getDeltaV(), tunables[i].getThrust(),
-                                                     tunables[i].getIsp(), adapterPropagator,
-                                                     tunables[i].isReplanned());
-                }
+        }
 
-                tuned[i] = maneuver;
-                adapterPropagator.addManeuver(maneuver.getDate(), maneuver.getDeltaV(), maneuver.getIsp());
-
-            }
-
+        // finalize propagator
+        for (final ScheduledManeuver maneuver : tuned) {
+            adapterPropagator.addManeuver(maneuver.getDate(), maneuver.getDeltaV(), maneuver.getIsp());
         }
 
         return tuned;
 
+    }
+
+    /** Change the trajectory of some maneuvers.
+     * @param maneuvers maneuvers array
+     * @param from index of the first maneuver to update (included)
+     * @param to index of the last maneuver to update (excluded)
+     * @param trajectory trajectory to use for maneuvers
+     */
+    private void changeTrajectory(final ScheduledManeuver[] maneuvers,
+                                  final int from, final int to,
+                                  final ManeuverAdapterPropagator adapterPropagator) {
+        for (int i = from; i < to; ++i) {
+            maneuvers[i] = new ScheduledManeuver(maneuvers[i].getModel(), maneuvers[i].getDate(),
+                                                 maneuvers[i].getDeltaV(), maneuvers[i].getThrust(),
+                                                 maneuvers[i].getIsp(), adapterPropagator,
+                                                 maneuvers[i].isReplanned());
+        }
+    }
+
+    /** Distribute a velocity increment change over non-saturated maneuvers.
+     * @param dV velocity increment change to distribute
+     * @param maneuvers array of maneuvers to change
+     * @param adapterPropagator propagator to use for maneuvers
+     */
+    private void distributeDV(double dV, final ScheduledManeuver[] maneuvers,
+                              final ManeuverAdapterPropagator adapterPropagator) {
+
+        final double inf = model.getDVInf();
+        final double sup = model.getDVSup();
+
+        while (FastMath.abs(dV) > model.getEliminationThreshold()) {
+
+            // identify the maneuvers that can be changed
+            final List<Integer> nonSaturated = new ArrayList<Integer>(maneuvers.length);
+            for (int i = 0; i < maneuvers.length; ++i) {
+                if (maneuvers[i].getName().equals(model.getName()) &&
+                    ((dV < 0 && maneuvers[i].getSignedDeltaV() > inf) ||
+                     (dV > 0 && maneuvers[i].getSignedDeltaV() < sup))) {
+                    nonSaturated.add(i);
+                }
+            }
+
+            if (nonSaturated.isEmpty()) {
+                // we cannot do anything more
+                return;
+            }
+
+            // distribute the remaining dV evenly
+            final double dVPart = dV / nonSaturated.size();
+            for (final int i : nonSaturated) {
+                final double original = maneuvers[i].getSignedDeltaV();
+                final double changed  = FastMath.max(inf, FastMath.min(sup, original + dVPart));
+                dV -= changed - original;
+                maneuvers[i] = new ScheduledManeuver(maneuvers[i].getModel(),
+                                                     maneuvers[i].getDate(),
+                                                     new Vector3D(changed, model.getDirection()),
+                                                     maneuvers[i].getThrust(),
+                                                     maneuvers[i].getIsp(),
+                                                     adapterPropagator,
+                                                     maneuvers[i].isReplanned());
+            }
+
+        }
+
+    }
+
+    /** Get the sign of the maneuver model with respect to velocity.
+     * @return +1 if model thrust is along velocity direction, -1 otherwise
+     */
+    private double thrustSign() {
+        final Vector3D thrustDirection =
+                fitStart.getAttitude().getRotation().applyInverseTo(model.getDirection());
+        Vector3D velocity = fitStart.getPVCoordinates().getVelocity();
+        return FastMath.signum(Vector3D.dotProduct(thrustDirection, velocity));
     }
 
     /** Get Earth based longitude.
