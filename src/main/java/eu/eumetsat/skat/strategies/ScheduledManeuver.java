@@ -89,6 +89,13 @@ public class ScheduledManeuver {
         return deltaV;
     }
 
+    /** Get the signed scalar velocity increment along thrust direction.
+    * @return signed scalar velocity increment along thrust direction
+    */
+    public double getSignedDeltaV() {
+        return Vector3D.dotProduct(deltaV, model.getDirection());
+    }
+
     /** Get the engine thrust.
     * @return engine thrust
     */
