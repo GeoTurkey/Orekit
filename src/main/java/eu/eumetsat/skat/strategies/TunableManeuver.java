@@ -2,8 +2,6 @@
 package eu.eumetsat.skat.strategies;
 
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
-import org.orekit.propagation.analytical.ManeuverAdapterPropagator;
-import org.orekit.time.AbsoluteDate;
 
 import eu.eumetsat.skat.utils.SkatException;
 import eu.eumetsat.skat.utils.SkatMessages;
@@ -184,6 +182,22 @@ public class TunableManeuver {
 
     }
 
+    /** Get the current value of the thrust.
+     * @return current value of the thrust
+     * @see #updateThrust(double)
+     */
+    public double getCurrentThrust() {
+        return currentThrust;
+    }
+
+    /** Get the current value of the specific impulse.
+     * @return current value of the specific impulse
+     * @see #updateISP(double)
+     */
+    public double getCurrentISP() {
+        return currentIsp;
+    }
+
     /** Get the elimination threshold.
      * @return elimination threshold
      */
@@ -217,19 +231,6 @@ public class TunableManeuver {
      */
     public double getDVSup() {
         return dVSup;
-    }
-
-    /** Get the maneuver corresponding to the current value of the parameters.
-     * @param date maneuver date
-     * @param deltaV velocity increment along thrust direction
-     * @param trajectory to which this maneuver belongs
-     * @return maneuver corresponding to the current value of the parameters
-     */
-    public ScheduledManeuver buildManeuver(final AbsoluteDate date, final double deltaV,
-                                           final ManeuverAdapterPropagator trajectory) {
-        return new ScheduledManeuver(this, date,
-                                     new Vector3D(deltaV, direction), currentThrust,
-                                     currentIsp, trajectory, false);
     }
 
 }
