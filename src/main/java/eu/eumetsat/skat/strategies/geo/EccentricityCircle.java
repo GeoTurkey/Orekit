@@ -45,7 +45,7 @@ import eu.eumetsat.skat.strategies.TunableManeuver;
  * overlapping parts. This is normal behavior.
  * </p>
  * <p>
- * The control law simply computed for each observed point the theoretical
+ * The control law simply computes for each observed point the theoretical
  * circle center by subtracting the natural offset (r cos &alpha;<sub>s</sub>,
  * r sin &alpha;<sub>s</sub>) where &alpha;<sub>s</sub> is the Sun right
  * ascension and r is the prescribed radius. This has the effect of computing
