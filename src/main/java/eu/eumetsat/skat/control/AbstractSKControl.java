@@ -1,7 +1,15 @@
 /* Copyright 2011 Eumetsat */
 package eu.eumetsat.skat.control;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math.util.FastMath;
+import org.orekit.propagation.analytical.ManeuverAdapterPropagator;
+
+import eu.eumetsat.skat.strategies.ScheduledManeuver;
+import eu.eumetsat.skat.strategies.TunableManeuver;
 
 
 
@@ -116,6 +124,73 @@ public abstract class AbstractSKControl implements SKControl {
         } else {
             margins = 0.0;
         }
+    }
+
+    /** Change the trajectory of some maneuvers.
+     * @param maneuvers maneuvers array
+     * @param from index of the first maneuver to update (included)
+     * @param to index of the last maneuver to update (excluded)
+     * @param trajectory trajectory to use for maneuvers
+     */
+    protected void changeTrajectory(final ScheduledManeuver[] maneuvers,
+                                    final int from, final int to,
+                                    final ManeuverAdapterPropagator adapterPropagator) {
+        for (int i = from; i < to; ++i) {
+            maneuvers[i] = new ScheduledManeuver(maneuvers[i].getModel(), maneuvers[i].getDate(),
+                                                 maneuvers[i].getDeltaV(), maneuvers[i].getThrust(),
+                                                 maneuvers[i].getIsp(), adapterPropagator,
+                                                 maneuvers[i].isReplanned());
+        }
+    }
+
+    /** Distribute a velocity increment change over non-saturated maneuvers.
+     * @param dV velocity increment change to distribute
+     * @param model model of the maneuvers to change
+     * @param maneuvers array of maneuvers to change
+     * @param adapterPropagator propagator to use for maneuvers
+     */
+    protected void distributeDV(final double dV, final TunableManeuver model,
+                                final ScheduledManeuver[] maneuvers,
+                                final ManeuverAdapterPropagator adapterPropagator) {
+
+        final double inf = model.getDVInf();
+        final double sup = model.getDVSup();
+
+        while (FastMath.abs(dV) > model.getEliminationThreshold()) {
+
+            // identify the maneuvers that can be changed
+            final List<Integer> nonSaturated = new ArrayList<Integer>(maneuvers.length);
+            for (int i = 0; i < maneuvers.length; ++i) {
+                if (maneuvers[i].getName().equals(model.getName()) &&
+                    ((dV < 0 && maneuvers[i].getSignedDeltaV() > inf) ||
+                     (dV > 0 && maneuvers[i].getSignedDeltaV() < sup))) {
+                    nonSaturated.add(i);
+                }
+            }
+
+            if (nonSaturated.isEmpty()) {
+                // we cannot do anything more
+                return;
+            }
+
+            // distribute the remaining dV evenly
+            double remaining = dV;
+            final double dVPart = remaining / nonSaturated.size();
+            for (final int i : nonSaturated) {
+                final double original = maneuvers[i].getSignedDeltaV();
+                final double changed  = FastMath.max(inf, FastMath.min(sup, original + dVPart));
+                remaining   -= changed - original;
+                maneuvers[i] = new ScheduledManeuver(maneuvers[i].getModel(),
+                                                     maneuvers[i].getDate(),
+                                                     new Vector3D(changed, model.getDirection()),
+                                                     maneuvers[i].getThrust(),
+                                                     maneuvers[i].getIsp(),
+                                                     adapterPropagator,
+                                                     maneuvers[i].isReplanned());
+            }
+
+        }
+
     }
 
 }

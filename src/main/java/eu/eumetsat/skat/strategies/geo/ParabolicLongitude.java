@@ -331,7 +331,7 @@ public class ParabolicLongitude extends AbstractSKControl {
             // distribute the change over all maneuvers
             tuned = tunables.clone();
             changeTrajectory(tuned, 0, tuned.length, adapterPropagator);
-            distributeDV(deltaVChange, tuned, adapterPropagator);
+            distributeDV(deltaVChange, model, tuned, adapterPropagator);
 
         }
 
@@ -341,70 +341,6 @@ public class ParabolicLongitude extends AbstractSKControl {
         }
 
         return tuned;
-
-    }
-
-    /** Change the trajectory of some maneuvers.
-     * @param maneuvers maneuvers array
-     * @param from index of the first maneuver to update (included)
-     * @param to index of the last maneuver to update (excluded)
-     * @param trajectory trajectory to use for maneuvers
-     */
-    private void changeTrajectory(final ScheduledManeuver[] maneuvers,
-                                  final int from, final int to,
-                                  final ManeuverAdapterPropagator adapterPropagator) {
-        for (int i = from; i < to; ++i) {
-            maneuvers[i] = new ScheduledManeuver(maneuvers[i].getModel(), maneuvers[i].getDate(),
-                                                 maneuvers[i].getDeltaV(), maneuvers[i].getThrust(),
-                                                 maneuvers[i].getIsp(), adapterPropagator,
-                                                 maneuvers[i].isReplanned());
-        }
-    }
-
-    /** Distribute a velocity increment change over non-saturated maneuvers.
-     * @param dV velocity increment change to distribute
-     * @param maneuvers array of maneuvers to change
-     * @param adapterPropagator propagator to use for maneuvers
-     */
-    private void distributeDV(double dV, final ScheduledManeuver[] maneuvers,
-                              final ManeuverAdapterPropagator adapterPropagator) {
-
-        final double inf = model.getDVInf();
-        final double sup = model.getDVSup();
-
-        while (FastMath.abs(dV) > model.getEliminationThreshold()) {
-
-            // identify the maneuvers that can be changed
-            final List<Integer> nonSaturated = new ArrayList<Integer>(maneuvers.length);
-            for (int i = 0; i < maneuvers.length; ++i) {
-                if (maneuvers[i].getName().equals(model.getName()) &&
-                    ((dV < 0 && maneuvers[i].getSignedDeltaV() > inf) ||
-                     (dV > 0 && maneuvers[i].getSignedDeltaV() < sup))) {
-                    nonSaturated.add(i);
-                }
-            }
-
-            if (nonSaturated.isEmpty()) {
-                // we cannot do anything more
-                return;
-            }
-
-            // distribute the remaining dV evenly
-            final double dVPart = dV / nonSaturated.size();
-            for (final int i : nonSaturated) {
-                final double original = maneuvers[i].getSignedDeltaV();
-                final double changed  = FastMath.max(inf, FastMath.min(sup, original + dVPart));
-                dV -= changed - original;
-                maneuvers[i] = new ScheduledManeuver(maneuvers[i].getModel(),
-                                                     maneuvers[i].getDate(),
-                                                     new Vector3D(changed, model.getDirection()),
-                                                     maneuvers[i].getThrust(),
-                                                     maneuvers[i].getIsp(),
-                                                     adapterPropagator,
-                                                     maneuvers[i].isReplanned());
-            }
-
-        }
 
     }
 
