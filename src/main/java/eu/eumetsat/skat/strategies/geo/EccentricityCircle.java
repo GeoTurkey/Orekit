@@ -30,25 +30,40 @@ import eu.eumetsat.skat.strategies.TunableManeuver;
  * Station-keeping control attempting to follow perigee solar pointing
  * with respect to a specified eccentricity circle.
  * <p>
- * This control value is:
- * <pre>
- *   median(&delta;(t))
- * </pre>
- * where &delta;(t) = &radic; [(e<sub>x</sub> - p<sub>x</sub>)<sup>2</sup> +
- * (e<sub>y</sub> - p<sub>y</sub>)<sup>2</sup>] is the distance between the
- * current eccentricity vector (e<sub>x</sub>, e<sub>y</sub>) and a solar
- * pointing eccentricity vector for eccentricity circle centered at
- * (c<sub>x</sub>, c<sub>y</sub>) and radius r.
+ * The mean eccentricity vector moves along a circle mainly due to radiation
+ * pressure. In addition to this mean motion, third body attraction adds
+ * a lot of short period variations.
  * </p>
  * <p>
- * The previous definition implies that setting the target of this control
- * to 0 attempts to have the eccentricity vector motion as close as
- * possible to the perfect solar pointing (p<sub>x</sub>, p<sub>y</sub>)
- * for the specified circle.
+ * This control law attempts to control only the mean motion along a
+ * user prescribed circle with center (c<sub>x</sub>, c<sub>y</sub>)
+ * and radius r. If the radius is different from the natural radius
+ * induces by radiation pressure, the control should split the natural
+ * motion in different pieces and spread these pieces on the prescribed
+ * circle. However, due to short periods, this piecewise reconstruction
+ * is not very clear and appears as a circular points clouds with many
+ * overlapping parts. This is normal behavior.
  * </p>
  * <p>
- * Using a median instead of a mean improves robustness with respect to
- * outliers, which occur when starting far from the desired window.
+ * The control law simply computed for each observed point the theoretical
+ * circle center by subtracting the natural offset (r cos &alpha;<sub>s</sub>,
+ * r sin &alpha;<sub>s</sub>) where &alpha;<sub>s</sub> is the Sun right
+ * ascension and r is the prescribed radius. This has the effect of computing
+ * a reference point which is independent of the date. Maneuvers are then
+ * computed so this reconstructed center is put at the user specified location.
+ * </p>
+ * <p>
+ * This control law tunes maneuvers by selecting the last pair of in-plane
+ * maneuvers from the current maneuver set, and changing their relative
+ * size and date to change eccentricity, but <em>without</em> changing the
+ * overall &Delta;V (i.e. the algebraic sum of the existing maneuvers. The
+ * rationale is the the overall &Delta;V should be tuned by the longitude
+ * control law (see for example {@link ParabolicLongitude}), and only changes
+ * that do not change drastically the longitude are allowed. If there is only
+ * one maneuver available (which is the case for example on the first iteration,
+ * since longitude control often generates only one maneuver), then the maneuver
+ * is split in two. If there are no maneuvers at all, a pair of maneuvers with
+ * a zero algebraic sum is created.
  * </p>
  * @author Luc Maisonobe
  */
