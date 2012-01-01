@@ -1,7 +1,6 @@
 /* Copyright 2011 Eumetsat */
 package eu.eumetsat.skat.strategies.geo;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -105,12 +104,6 @@ public class InclinationVector extends AbstractSKControl {
     /** Radius of the inner circle (internally osculating the limit inclination angle circle). */
     private final double innerRadius;
 
-    /** Sample of inclination x component during station keeping cycle. */
-    private List<Double> sampleX;
-
-    /** Sample of inclination y component during station keeping cycle. */
-    private List<Double> sampleY;
-
     /** Step to use for sampling throughout propagation. */
     private final double samplingStep;
 
@@ -152,8 +145,6 @@ public class InclinationVector extends AbstractSKControl {
         this.referenceHx      = referenceHx;
         this.referenceHy      = referenceHy;
         this.samplingStep     = samplingStep;
-        this.sampleX          = new ArrayList<Double>();
-        this.sampleY          = new ArrayList<Double>();
 
         // find the inner circle centered on (targetHx, targetHy)
         // and osculating the circle corresponding to limit inclination angle
@@ -397,8 +388,6 @@ public class InclinationVector extends AbstractSKControl {
         /** {@inheritDoc} */
         public void init(final SpacecraftState s0, final AbsoluteDate t) {
             resetMarginsChecks();
-            sampleX.clear();
-            sampleY.clear();
         }
 
         /** {@inheritDoc} */
@@ -419,10 +408,6 @@ public class InclinationVector extends AbstractSKControl {
                     // compute position in Earth frame
                     interpolator.setInterpolatedDate(date);
                     final SpacecraftState state = interpolator.getInterpolatedState();
-
-                    // add inclination vector to sample
-                    sampleX.add(state.getHx());
-                    sampleY.add(state.getHy());
 
                     // check limit circle violations
                     final double inclination = 2 * FastMath.atan(FastMath.hypot(state.getHx(), state.getHy()));
