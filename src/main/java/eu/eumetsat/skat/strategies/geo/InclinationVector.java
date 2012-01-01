@@ -245,7 +245,7 @@ public class InclinationVector extends AbstractSKControl {
             }
 
             // we need to first define the number of maneuvers and their initial settings
-            final double dt     = fitStart.getDate().durationFrom(start.shiftedBy(firstOffset));
+            final double dt     = start.shiftedBy(firstOffset).durationFrom(fitStart.getDate());
             final double sunC   = FastMath.cos(SUN_PULSATION  * dt);
             final double sunS   = FastMath.sin(SUN_PULSATION  * dt);
             final double moonC  = FastMath.cos(MOON_PULSATION * dt);
