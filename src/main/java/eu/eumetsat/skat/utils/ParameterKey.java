@@ -96,8 +96,8 @@ public enum ParameterKey {
     CONTROL_ECCENTRICITY_CIRCLE_RADIUS("radius"),
     // Inclination vector
     CONTROL_INCLINATION_VECTOR_FIRST_OFFSET("offset_first_maneuver"),
-    CONTROL_INCLINATION_VECTOR_TARGET_X("target_x"),
-    CONTROL_INCLINATION_VECTOR_TARGET_Y("target_y"),
+    CONTROL_INCLINATION_VECTOR_REFERENCE_HX("reference_hx"),
+    CONTROL_INCLINATION_VECTOR_REFERENCE_HY("reference_hy"),
     CONTROL_INCLINATION_LIMIT_INCLINATION_ANGLE("limit_inclination_angle"),
     // Local solar time
     CONTROL_SOLAR_TIME_LATITUDE("latitude"),

@@ -331,7 +331,7 @@ public class ParabolicLongitude extends AbstractSKControl {
             // distribute the change over all maneuvers
             tuned = tunables.clone();
             changeTrajectory(tuned, 0, tuned.length, adapterPropagator);
-            distributeDV(deltaVChange, model, tuned, adapterPropagator);
+            distributeDV(deltaVChange, 0.0, model, tuned, adapterPropagator);
 
         }
 

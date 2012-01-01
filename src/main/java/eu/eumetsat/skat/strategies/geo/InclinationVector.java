@@ -81,11 +81,26 @@ public class InclinationVector extends AbstractSKControl {
     /** Iteration number. */
     private int iteration;
 
-    /** Abscissa of target inclination vector. */
-    private final double targetHx;
+    /** Abscissa of reference inclination vector. */
+    private final double referenceHx;
 
     /** Ordinate of target inclination vector. */
-    private final double targetHy;
+    private final double referenceHy;
+
+    /** Number of maneuvers to perform. */
+    private int nbMan;
+
+    /** Abscissa of start inclination vector before maneuver. */
+    private double startHx;
+
+    /** Ordinate of start inclination vector before maneuver. */
+    private double startHy;
+
+    /** Abscissa of target inclination vector. */
+    private double targetHx;
+
+    /** Ordinate of target inclination vector. */
+    private double targetHy;
 
     /** Radius of the inner circle (internally osculating the limit inclination angle circle). */
     private final double innerRadius;
@@ -116,15 +131,15 @@ public class InclinationVector extends AbstractSKControl {
      * @param firstOffset time offset of the first maneuver with respect to cycle start
      * @param maxManeuvers maximum number of maneuvers to set up in one cycle
      * @param orbitsSeparation minimum time between split parts in number of orbits
-     * @param targetHx abscissa of target inclination vector
-     * @param targetHy ordinate of target inclination vector
+     * @param referenceHx abscissa of reference inclination vector
+     * @param referenceHy ordinate of reference inclination vector
      * @param limitInclination limit circle radius
      * @param samplingStep step to use for sampling throughout propagation
      */
     public InclinationVector(final String name, final String controlledName, final int controlledIndex,
                              final TunableManeuver model, final double firstOffset,
                              final int maxManeuvers, final int orbitsSeparation,
-                             final double targetHx, final double targetHy,
+                             final double referenceHx, final double referenceHy,
                              final double limitInclination, final double samplingStep) {
 
         super(name, controlledName, controlledIndex, null, -1, 0.0, FastMath.toDegrees(limitInclination));
@@ -134,8 +149,8 @@ public class InclinationVector extends AbstractSKControl {
         this.firstOffset      = firstOffset;
         this.maxManeuvers     = maxManeuvers;
         this.orbitsSeparation = orbitsSeparation;
-        this.targetHx         = targetHx;
-        this.targetHy         = targetHy;
+        this.referenceHx      = referenceHx;
+        this.referenceHy      = referenceHy;
         this.samplingStep     = samplingStep;
         this.sampleX          = new ArrayList<Double>();
         this.sampleY          = new ArrayList<Double>();
@@ -143,15 +158,17 @@ public class InclinationVector extends AbstractSKControl {
         // find the inner circle centered on (targetHx, targetHy)
         // and osculating the circle corresponding to limit inclination angle
         final double ratio        = FastMath.tan(limitInclination / 2) /
-                                    FastMath.hypot(targetHx, targetHy);
-        final double osculatingHx = ratio * targetHx;
-        final double osculatingHy = ratio * targetHy;
-        innerRadius               = FastMath.hypot(osculatingHx - targetHx, osculatingHy - targetHy);
+                                    FastMath.hypot(referenceHx, referenceHy);
+        final double osculatingHx = ratio * referenceHx;
+        final double osculatingHy = ratio * referenceHy;
+        innerRadius               = FastMath.hypot(osculatingHx - referenceHx, osculatingHy - referenceHy);
 
+        // rough order of magnitudes values for initialization purposes
         fitted = new double[][] {
-            { 0.0, 0.0,     1.0e-3, 1.0e-3, 1.0e-3, 1.0e-4 },
-            { 0.0, 1.0e-10, 1.0e-3, 1.0e-3, 1.0e-3, 1.0e-4 }
+            { referenceHx, 0.0,     1.0e-4, 1.0e-4, 1.0e-5, 1.0e-5 },
+            { referenceHy, 1.0e-10, 1.0e-4, 1.0e-4, 1.0e-5, 1.0e-5 }
         };
+
     }
 
     /** {@inheritDoc} */
@@ -163,55 +180,60 @@ public class InclinationVector extends AbstractSKControl {
         this.iteration = iteration;
         this.start     = start;
 
-        // gather all special dates (start, end, maneuvers) in one chronologically sorted set
-        SortedSet<AbsoluteDate> sortedDates = new TreeSet<AbsoluteDate>();
-        sortedDates.add(start);
-        sortedDates.add(end);
-        AbsoluteDate lastOutOfPlane = start;
-        for (final ScheduledManeuver maneuver : maneuvers) {
-            final AbsoluteDate date = maneuver.getDate();
-            if (maneuver.getName().equals(model.getName()) && date.compareTo(lastOutOfPlane) >= 0) {
-                // this is the last out of plane maneuver seen so far
-                lastOutOfPlane = date;
+        if (iteration == 0) {
+            // reconstruct inclination motion model only on first iteration
+
+            // gather all special dates (start, end, maneuvers) in one chronologically sorted set
+            SortedSet<AbsoluteDate> sortedDates = new TreeSet<AbsoluteDate>();
+            sortedDates.add(start);
+            sortedDates.add(end);
+            AbsoluteDate lastOutOfPlane = start;
+            for (final ScheduledManeuver maneuver : maneuvers) {
+                final AbsoluteDate date = maneuver.getDate();
+                if (maneuver.getName().equals(model.getName()) && date.compareTo(lastOutOfPlane) >= 0) {
+                    // this is the last out of plane maneuver seen so far
+                    lastOutOfPlane = date;
+                }
+                sortedDates.add(date);
             }
-            sortedDates.add(date);
-        }
-        for (final ScheduledManeuver maneuver : fixedManeuvers) {
-            final AbsoluteDate date = maneuver.getDate();
-            if (maneuver.getName().equals(model.getName()) && date.compareTo(lastOutOfPlane) >= 0) {
-                // this is the last out of plane maneuver seen so far
-                lastOutOfPlane = date;
+            for (final ScheduledManeuver maneuver : fixedManeuvers) {
+                final AbsoluteDate date = maneuver.getDate();
+                if (maneuver.getName().equals(model.getName()) && date.compareTo(lastOutOfPlane) >= 0) {
+                    // this is the last out of plane maneuver seen so far
+                    lastOutOfPlane = date;
+                }
+                sortedDates.add(date);
             }
-            sortedDates.add(date);
-        }
 
-        // select the longest maneuver-free interval after last out of plane maneuver for fitting
-        AbsoluteDate freeIntervalStart = lastOutOfPlane;
-        AbsoluteDate freeIntervalEnd   = lastOutOfPlane;
-        AbsoluteDate previousDate      = lastOutOfPlane;
-        for (final AbsoluteDate currentDate : sortedDates) {
-            if (currentDate.durationFrom(previousDate) > freeIntervalEnd.durationFrom(freeIntervalStart)) {
-                freeIntervalStart = previousDate;
-                freeIntervalEnd   = currentDate;
+            // select the longest maneuver-free interval after last out of plane maneuver for fitting
+            AbsoluteDate freeIntervalStart = lastOutOfPlane;
+            AbsoluteDate freeIntervalEnd   = lastOutOfPlane;
+            AbsoluteDate previousDate      = lastOutOfPlane;
+            for (final AbsoluteDate currentDate : sortedDates) {
+                if (currentDate.durationFrom(previousDate) > freeIntervalEnd.durationFrom(freeIntervalStart)) {
+                    freeIntervalStart = previousDate;
+                    freeIntervalEnd   = currentDate;
+                }
+                previousDate = currentDate;
             }
-            previousDate = currentDate;
+
+            fitStart = propagator.propagate(freeIntervalStart);
+
+            // fit secular plus long periods model to inclination
+            CurveFitter xFitter = new CurveFitter(new LevenbergMarquardtOptimizer());
+            CurveFitter yFitter = new CurveFitter(new LevenbergMarquardtOptimizer());
+            for (AbsoluteDate date = freeIntervalStart; date.compareTo(freeIntervalEnd) < 0; date = date.shiftedBy(samplingStep)) {
+                final EquinoctialOrbit orbit =
+                        (EquinoctialOrbit) OrbitType.EQUINOCTIAL.convertType(propagator.propagate(date).getOrbit());
+                final double dt = date.durationFrom(freeIntervalStart);
+                xFitter.addObservedPoint(dt, orbit.getHx());
+                yFitter.addObservedPoint(dt, orbit.getHy());
+            }
+
+            fitted[0] = xFitter.fit(new SecularAndLongPeriod(), fitted[0]);
+            fitted[1] = yFitter.fit(new SecularAndLongPeriod(), fitted[1]);
+
         }
-
-        fitStart = propagator.propagate(freeIntervalStart);
-
-        // fit secular plus long periods model to inclination
-        CurveFitter xFitter = new CurveFitter(new LevenbergMarquardtOptimizer());
-        CurveFitter yFitter = new CurveFitter(new LevenbergMarquardtOptimizer());
-        for (AbsoluteDate date = freeIntervalStart; date.compareTo(freeIntervalEnd) < 0; date = date.shiftedBy(samplingStep)) {
-            final EquinoctialOrbit orbit =
-                    (EquinoctialOrbit) OrbitType.EQUINOCTIAL.convertType(propagator.propagate(date).getOrbit());
-            final double dt = date.durationFrom(freeIntervalStart);
-            xFitter.addObservedPoint(dt, orbit.getHx());
-            yFitter.addObservedPoint(dt, orbit.getHy());
-        }
-
-        fitted[0] = xFitter.fit(new SecularAndLongPeriod(), fitted[0]);
-        fitted[1] = xFitter.fit(new SecularAndLongPeriod(), fitted[1]);
 
     }
 
@@ -220,57 +242,55 @@ public class InclinationVector extends AbstractSKControl {
                                              final BoundedPropagator reference)
         throws OrekitException {
 
-        if (getMargins() >= 0) {
-            // there are no constraints violations, don't change any maneuvers
-            return tunables;
-        }
-
         final ScheduledManeuver[] tuned;
         final ManeuverAdapterPropagator adapterPropagator = new ManeuverAdapterPropagator(reference);
 
         if (iteration == 0) {
-            // we need to first define the number of maneuvers and their initial settings
 
-            final double dt     = fitStart.getDate().durationFrom(fitStart.getDate());
+            if (getMargins() >= 0) {
+                // no constraints violations, we don't perform any maneuvers
+                nbMan = 0;
+                return tunables;
+            }
+
+            // we need to first define the number of maneuvers and their initial settings
+            final double dt     = fitStart.getDate().durationFrom(start.shiftedBy(firstOffset));
             final double sunC   = FastMath.cos(SUN_PULSATION  * dt);
             final double sunS   = FastMath.sin(SUN_PULSATION  * dt);
             final double moonC  = FastMath.cos(MOON_PULSATION * dt);
             final double moonS  = FastMath.sin(MOON_PULSATION * dt);
 
             // inclination vector at maneuver time
-            final double startHx = fitted[0][0]         + fitted[0][1] * dt +
-                                   fitted[0][2] * sunC  + fitted[0][3] * sunS +
-                                   fitted[0][4] * moonC + fitted[0][5] * moonS;
-            final double startHy = fitted[1][0]         + fitted[1][1] * dt +
-                                   fitted[1][2] * sunC  + fitted[1][3] * sunS +
-                                   fitted[1][4] * moonC + fitted[1][5] * moonS;
+            startHx = fitted[0][0]         + fitted[0][1] * dt +
+                      fitted[0][2] * sunC  + fitted[0][3] * sunS +
+                      fitted[0][4] * moonC + fitted[0][5] * moonS;
+            startHy = fitted[1][0]         + fitted[1][1] * dt +
+                      fitted[1][2] * sunC  + fitted[1][3] * sunS +
+                      fitted[1][4] * moonC + fitted[1][5] * moonS;
 
-            // inclination vector evolution direction considering only secular and Sun effects
-            // (we ignore Moon effects here because they are too short period)
-            final double dHXdT = fitted[0][1] +
-                                 SUN_PULSATION * (fitted[0][3] * sunC - fitted[0][2] * sunS);
-            final double dHYdT = fitted[1][1] +
-                                 SUN_PULSATION * (fitted[1][3] * sunC - fitted[1][2] * sunS);
+            // inclination vector evolution direction, considering only secular and Sun effects
+            // we ignore Moon effects here since they have a too short period
+            final double dHXdT = fitted[0][1] + SUN_PULSATION  * (fitted[0][3] * sunC  - fitted[0][2] * sunS);
+            final double dHYdT = fitted[1][1] + SUN_PULSATION  * (fitted[1][3] * sunC  - fitted[1][2] * sunS);
 
             // select a target a point on the limit circle
             // such that trajectory enters the circle inner part radially at that point
-            final double selectedHx = targetHx - innerRadius * dHXdT / FastMath.hypot(dHXdT, dHYdT);
-            final double selectedHy = targetHy - innerRadius * dHYdT / FastMath.hypot(dHXdT, dHYdT);
+            targetHx = referenceHx - innerRadius * dHXdT / FastMath.hypot(dHXdT, dHYdT);
+            targetHy = referenceHy - innerRadius * dHYdT / FastMath.hypot(dHXdT, dHYdT);
 
             // compute the out of plane maneuver required to get this inclination offset
-            final double deltaHx     = selectedHx - startHx;
-            final double deltaHy     = selectedHy - startHy;
+            final double deltaHx     = targetHx - startHx;
+            final double deltaHy     = targetHy - startHy;
             final double vs          = fitStart.getPVCoordinates().getVelocity().getNorm();
             final double totalDeltaV = thrustSign() * 2 * FastMath.hypot(deltaHx, deltaHy) * vs;
 
             // compute the number of maneuvers required
             final double limitDV = (totalDeltaV < 0) ? model.getDVInf() : model.getDVSup();
-            final int nMan       = FastMath.min(maxManeuvers,
-                                                (int) FastMath.ceil(FastMath.abs(totalDeltaV / limitDV)));
+            nbMan = FastMath.min(maxManeuvers, (int) FastMath.ceil(FastMath.abs(totalDeltaV / limitDV)));
             final double deltaV  = FastMath.max(model.getDVInf(),
-                                                FastMath.min(model.getDVSup(), totalDeltaV / nMan));
+                                                FastMath.min(model.getDVSup(), totalDeltaV / nbMan));
 
-            tuned = new ScheduledManeuver[tunables.length + nMan];
+            tuned = new ScheduledManeuver[tunables.length + nbMan];
             System.arraycopy(tunables, 0, tuned, 0, tunables.length);
             changeTrajectory(tuned, 0, tunables.length, adapterPropagator);
 
@@ -287,7 +307,7 @@ public class InclinationVector extends AbstractSKControl {
             }
 
             // add the new maneuvers
-            for (int i = 0; i < nMan; ++i) {
+            for (int i = 0; i < nbMan; ++i) {
                 tuned[tunables.length + i] =
                         new ScheduledManeuver(model, t0.shiftedBy(i * separation),
                                               new Vector3D(deltaV, model.getDirection()),
@@ -296,6 +316,12 @@ public class InclinationVector extends AbstractSKControl {
             }
 
         } else {
+
+            if (nbMan == 0) {
+                // no maneuvers are needed
+                return tunables;
+            }
+
             // adjust the existing maneuvers
 
             // find the date of the last adjusted maneuver
@@ -308,35 +334,36 @@ public class InclinationVector extends AbstractSKControl {
                 }
             }
 
-            // achieved inclination (relative to target) after the last maneuver
+            // achieved inclination after the last maneuver
             final EquinoctialOrbit orbit =
                     (EquinoctialOrbit) OrbitType.EQUINOCTIAL.convertType(last.getStateAfter().getOrbit());
-            final double deltaHx = orbit.getHx() - targetHx;
-            final double deltaHy = orbit.getHy() - targetHy;
+            final double achievedHx = orbit.getHx();
+            final double achievedHy = orbit.getHy();
 
-            // offset with respect to the inner circle in the maneuver direction
-            // the inner circle point coordinates relative to target are
-            // (deltaHx + offset * dx, deltaHy + offset * dy)
-            // offset is therefore the positive solution of quadratic equation
-            // a * offset^2 + 2 * b * offset + c = 0 with a = dx^2 + dy^2 = 1
-            final double alphaMan = orbit.getLv();
-            final double sign     = thrustSign();
-            final double dx       = sign * FastMath.cos(alphaMan);
-            final double dy       = sign * FastMath.sin(alphaMan);
-            final double b        = dx * deltaHx + dy * deltaHy;
-            final double c        = deltaHx * deltaHx + deltaHy * deltaHy - innerRadius * innerRadius;
-            final double offset   = FastMath.sqrt(b * b - c) - b;
+            // velocity increment correction needed to reach target
+            final double ratio  = FastMath.hypot(targetHx   - startHx, targetHy   - startHy) /
+                                  FastMath.hypot(achievedHx - startHx, achievedHy - startHy);
+            final double deltaV = nbMan * last.getSignedDeltaV() * (ratio - 1.0);
 
-            // velocity increment corresponding to the offset
-            final double deltaVChange = 2 * offset * orbit.getPVCoordinates().getVelocity().getNorm();
+            // time offset needed to reach target
+            final double deltaAlpha =
+                    MathUtils.normalizeAngle(FastMath.atan2(targetHy   - startHy, targetHx   - startHx) -
+                                             FastMath.atan2(achievedHy - startHy, achievedHx - startHx),
+                                             0.0);
+            final double deltaT = deltaAlpha / orbit.getKeplerianMeanMotion();
 
             // distribute the change over all maneuvers
             tuned = tunables.clone();
             changeTrajectory(tuned, 0, tuned.length, adapterPropagator);
-            distributeDV(deltaVChange, model, tuned, adapterPropagator);
+            distributeDV(deltaV, deltaT, model, tuned, adapterPropagator);
 
         }
-        
+
+        // finalize propagator
+        for (final ScheduledManeuver maneuver : tuned) {
+            adapterPropagator.addManeuver(maneuver.getDate(), maneuver.getDeltaV(), maneuver.getIsp());
+        }
+
         return tuned;
 
     }

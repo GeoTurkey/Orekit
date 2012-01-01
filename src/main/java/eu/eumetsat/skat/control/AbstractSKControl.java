@@ -145,18 +145,20 @@ public abstract class AbstractSKControl implements SKControl {
 
     /** Distribute a velocity increment change over non-saturated maneuvers.
      * @param dV velocity increment change to distribute
+     * @param dT date change to apply to all maneuvers
      * @param model model of the maneuvers to change
      * @param maneuvers array of maneuvers to change
      * @param adapterPropagator propagator to use for maneuvers
      */
-    protected void distributeDV(final double dV, final TunableManeuver model,
-                                final ScheduledManeuver[] maneuvers,
+    protected void distributeDV(final double dV, final double dT,
+                                final TunableManeuver model, final ScheduledManeuver[] maneuvers,
                                 final ManeuverAdapterPropagator adapterPropagator) {
 
         final double inf = model.getDVInf();
         final double sup = model.getDVSup();
 
-        while (FastMath.abs(dV) > model.getEliminationThreshold()) {
+        double remaining = dV;
+        while (FastMath.abs(remaining) > model.getEliminationThreshold()) {
 
             // identify the maneuvers that can be changed
             final List<Integer> nonSaturated = new ArrayList<Integer>(maneuvers.length);
@@ -174,14 +176,13 @@ public abstract class AbstractSKControl implements SKControl {
             }
 
             // distribute the remaining dV evenly
-            double remaining = dV;
             final double dVPart = remaining / nonSaturated.size();
             for (final int i : nonSaturated) {
                 final double original = maneuvers[i].getSignedDeltaV();
                 final double changed  = FastMath.max(inf, FastMath.min(sup, original + dVPart));
                 remaining   -= changed - original;
                 maneuvers[i] = new ScheduledManeuver(maneuvers[i].getModel(),
-                                                     maneuvers[i].getDate(),
+                                                     maneuvers[i].getDate().shiftedBy(dT),
                                                      new Vector3D(changed, model.getDirection()),
                                                      maneuvers[i].getThrust(),
                                                      maneuvers[i].getIsp(),

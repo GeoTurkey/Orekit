@@ -71,12 +71,12 @@ public enum SupportedControlLaw {
             final int maxManeuvers        = parser.getInt(node,    ParameterKey.CONTROL_MAX_MANEUVERS);
             final int orbitsSeparation    = parser.getInt(node,    ParameterKey.CONTROL_MANEUVERS_ORBITS_SEPARATION);
             final double firstOffset      = parser.getDouble(node, ParameterKey.CONTROL_INCLINATION_VECTOR_FIRST_OFFSET);
-            final double targetHx         = parser.getDouble(node, ParameterKey.CONTROL_INCLINATION_VECTOR_TARGET_X);
-            final double targetHy         = parser.getDouble(node, ParameterKey.CONTROL_INCLINATION_VECTOR_TARGET_Y);
+            final double referenceHx      = parser.getDouble(node, ParameterKey.CONTROL_INCLINATION_VECTOR_REFERENCE_HX);
+            final double referenceHy      = parser.getDouble(node, ParameterKey.CONTROL_INCLINATION_VECTOR_REFERENCE_HY);
             final double limitInclination = parser.getAngle(node, ParameterKey.CONTROL_INCLINATION_LIMIT_INCLINATION_ANGLE);
             return new InclinationVector(name, controlled, skat.getSpacecraftIndex(controlled),
                                          model, firstOffset, maxManeuvers, orbitsSeparation,
-                                         targetHx, targetHy, limitInclination, sampling);
+                                         referenceHx, referenceHy, limitInclination, sampling);
         }
 
     },
