@@ -65,13 +65,18 @@ public enum SupportedControlLaw {
         public SKControl parse(final SkatFileParser parser, final Tree node,
                                final String controlled, final Skat skat)
             throws OrekitException, SkatException {
-            final String name           = parser.getString(node, ParameterKey.CONTROL_NAME);
-            final double sampling       = parser.getDouble(node, ParameterKey.CONTROL_SAMPLING);
-            final double targetHx       = parser.getDouble(node, ParameterKey.CONTROL_INCLINATION_VECTOR_TARGET_X);
-            final double targetHy       = parser.getDouble(node, ParameterKey.CONTROL_INCLINATION_VECTOR_TARGET_Y);
-            final double circleRadius   = parser.getDouble(node, ParameterKey.CONTROL_INCLINATION_LIMIT_CIRCLE_RADIUS);
+            final String name             = parser.getString(node, ParameterKey.CONTROL_NAME);
+            final double sampling         = parser.getDouble(node, ParameterKey.CONTROL_SAMPLING);
+            final TunableManeuver model   = skat.getManeuver(parser.getString(node, ParameterKey.CONTROL_MANEUVER_NAME));
+            final int maxManeuvers        = parser.getInt(node,    ParameterKey.CONTROL_MAX_MANEUVERS);
+            final int orbitsSeparation    = parser.getInt(node,    ParameterKey.CONTROL_MANEUVERS_ORBITS_SEPARATION);
+            final double firstOffset      = parser.getDouble(node, ParameterKey.CONTROL_INCLINATION_VECTOR_FIRST_OFFSET);
+            final double targetHx         = parser.getDouble(node, ParameterKey.CONTROL_INCLINATION_VECTOR_TARGET_X);
+            final double targetHy         = parser.getDouble(node, ParameterKey.CONTROL_INCLINATION_VECTOR_TARGET_Y);
+            final double limitInclination = parser.getAngle(node, ParameterKey.CONTROL_INCLINATION_LIMIT_INCLINATION_ANGLE);
             return new InclinationVector(name, controlled, skat.getSpacecraftIndex(controlled),
-                                         targetHx, targetHy, circleRadius, sampling);
+                                         model, firstOffset, maxManeuvers, orbitsSeparation,
+                                         targetHx, targetHy, limitInclination, sampling);
         }
 
     },
