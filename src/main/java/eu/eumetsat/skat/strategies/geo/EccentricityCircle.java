@@ -146,6 +146,9 @@ public class EccentricityCircle extends AbstractSKControl {
             }
         }
 
+        if (date.compareTo(end) > 0) {
+            date = end;
+        }
         samplingStart = propagator.propagate(date);
         cycleStart    = start;
 
