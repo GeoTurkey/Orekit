@@ -405,13 +405,15 @@ public class InclinationVector extends AbstractSKControl {
                 // loop throughout step
                 for (AbsoluteDate date = minDate; date.compareTo(maxDate) < 0; date = date.shiftedBy(samplingStep)) {
 
-                    // compute position in Earth frame
-                    interpolator.setInterpolatedDate(date);
-                    final SpacecraftState state = interpolator.getInterpolatedState();
+                    if (date.compareTo(fitStart.getDate()) > 0) {
+                        // compute position in Earth frame
+                        interpolator.setInterpolatedDate(date);
+                        final SpacecraftState state = interpolator.getInterpolatedState();
 
-                    // check limit circle violations
-                    final double inclination = 2 * FastMath.atan(FastMath.hypot(state.getHx(), state.getHy()));
-                    checkMargins(FastMath.toDegrees(inclination));
+                        // check limit circle violations
+                        final double inclination = 2 * FastMath.atan(FastMath.hypot(state.getHx(), state.getHy()));
+                        checkMargins(FastMath.toDegrees(inclination));
+                    }
 
                 }
 
