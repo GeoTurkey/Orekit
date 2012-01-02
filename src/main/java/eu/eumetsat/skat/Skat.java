@@ -31,6 +31,7 @@ import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math.random.RandomGenerator;
 import org.apache.commons.math.random.Well19937a;
 import org.apache.commons.math.util.FastMath;
+import org.apache.commons.math.util.MathUtils;
 import org.orekit.bodies.CelestialBody;
 import org.orekit.bodies.CelestialBodyFactory;
 import org.orekit.bodies.GeodeticPoint;
@@ -750,7 +751,7 @@ public class Skat {
                                 formatKey(keysWidth, ParameterKey.INITIAL_STATE_MANEUVERS) +
                                 "= [");
             for (int j = 0; j < maneuversModelsPool.length; ++j) {
-                final String name = maneuversModelsPool[i].getName();
+                final String name = maneuversModelsPool[j].getName();
                 finalOutput.println(formatIndent(3 * baseIndent) + "{");
                 finalOutput.println(formatIndent(4 * baseIndent) +
                                     formatKey(keysWidth, ParameterKey.INITIAL_STATE_MANEUVER_NAME) +
@@ -809,7 +810,7 @@ public class Skat {
                                "= " + FastMath.toDegrees(kep.getRightAscensionOfAscendingNode()) + ";");
                 finalOutput.println(formatIndent(3 * baseIndent) +
                                formatKey(keysWidth - baseIndent, ParameterKey.ORBIT_KEPLERIAN_ANOMALY) +
-                               "= " + FastMath.toDegrees(kep.getMeanAnomaly()) + ";");
+                               "= " + FastMath.toDegrees(MathUtils.normalizeAngle(kep.getMeanAnomaly(), FastMath.PI)) + ";");
                 finalOutput.println(formatIndent(3 * baseIndent) +
                                formatKey(keysWidth - baseIndent, ParameterKey.ANGLE_TYPE) +
                                "= " + PositionAngle.MEAN + ";");
@@ -836,7 +837,7 @@ public class Skat {
                                "= " + FastMath.toDegrees(cir.getRightAscensionOfAscendingNode()) + ";");
                 finalOutput.println(formatIndent(3 * baseIndent) +
                                formatKey(keysWidth - baseIndent, ParameterKey.ORBIT_CIRCULAR_LATITUDE_ARGUMENT) +
-                               "= " + FastMath.toDegrees(cir.getAlphaM()) + ";");
+                               "= " + FastMath.toDegrees(MathUtils.normalizeAngle(cir.getAlphaM(), FastMath.PI)) + ";");
                 finalOutput.println(formatIndent(3 * baseIndent) +
                                formatKey(keysWidth - baseIndent, ParameterKey.ANGLE_TYPE) +
                                "= " + PositionAngle.MEAN + ";");
@@ -863,7 +864,7 @@ public class Skat {
                                "= " + equ.getHy() + ";");
                 finalOutput.println(formatIndent(3 * baseIndent) +
                                formatKey(keysWidth - baseIndent, ParameterKey.ORBIT_EQUINOCTIAL_LONGITUDE_ARGUMENT) +
-                               "= " + FastMath.toDegrees(equ.getLM()) + ";");
+                               "= " + FastMath.toDegrees(MathUtils.normalizeAngle(equ.getLM(), FastMath.PI)) + ";");
                 finalOutput.println(formatIndent(3 * baseIndent) +
                                formatKey(keysWidth - baseIndent, ParameterKey.ANGLE_TYPE) +
                                "= " + PositionAngle.MEAN + ";");
