@@ -265,11 +265,12 @@ public class ControlLoop implements ScenarioComponent {
      * @param start start of the simulation
      * @param end end of the simulation
      * @exception OrekitException if the propagation cannot be performed
+     * @exception SkatException if run cannot be initialized
      */
     public void runCycle(final int iteration, final ScheduledManeuver[] maneuvers,
                          final Propagator propagator, final List<ScheduledManeuver> fixedManeuvers,
                          final AbsoluteDate start, final AbsoluteDate end)
-        throws OrekitException {
+        throws OrekitException, SkatException {
 
         // prepare run
         for (final SKControl control : controls) {

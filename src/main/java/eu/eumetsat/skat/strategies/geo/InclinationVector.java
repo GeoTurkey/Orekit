@@ -114,7 +114,7 @@ public class InclinationVector extends AbstractSKControl {
     private double[][] fitted;
 
     /** Cycle start. */
-    private AbsoluteDate start;
+    private AbsoluteDate cycleStart;
 
     /** Simple constructor.
      * @param name name of the control law
@@ -169,46 +169,49 @@ public class InclinationVector extends AbstractSKControl {
         throws PropagationException {
 
         this.iteration = iteration;
-        this.start     = start;
+
+        // gather all special dates (start, end, maneuvers) in one chronologically sorted set
+        SortedSet<AbsoluteDate> sortedDates = new TreeSet<AbsoluteDate>();
+        sortedDates.add(start);
+        sortedDates.add(end);
+        AbsoluteDate lastOutOfPlane = start;
+        for (final ScheduledManeuver maneuver : maneuvers) {
+            final AbsoluteDate date = maneuver.getDate();
+            if (maneuver.getName().equals(model.getName()) && date.compareTo(lastOutOfPlane) >= 0) {
+                // this is the last out of plane maneuver seen so far
+                lastOutOfPlane = date;
+            }
+            sortedDates.add(date);
+        }
+        for (final ScheduledManeuver maneuver : fixedManeuvers) {
+            final AbsoluteDate date = maneuver.getDate();
+            if (maneuver.getName().equals(model.getName()) && date.compareTo(lastOutOfPlane) >= 0) {
+                // this is the last out of plane maneuver seen so far
+                lastOutOfPlane = date;
+            }
+            sortedDates.add(date);
+        }
+
+        // select the longest maneuver-free interval after last out of plane maneuver for fitting
+        AbsoluteDate freeIntervalStart = lastOutOfPlane;
+        AbsoluteDate freeIntervalEnd   = lastOutOfPlane;
+        AbsoluteDate previousDate      = lastOutOfPlane;
+        for (final AbsoluteDate currentDate : sortedDates) {
+            if (currentDate.durationFrom(previousDate) > freeIntervalEnd.durationFrom(freeIntervalStart)) {
+                freeIntervalStart = previousDate;
+                freeIntervalEnd   = currentDate;
+            }
+            previousDate = currentDate;
+        }
+
+        if (freeIntervalStart.compareTo(end) > 0) {
+            freeIntervalStart = end;
+        }
+        fitStart = propagator.propagate(freeIntervalStart);
+        this.cycleStart = start;
 
         if (iteration == 0) {
             // reconstruct inclination motion model only on first iteration
-
-            // gather all special dates (start, end, maneuvers) in one chronologically sorted set
-            SortedSet<AbsoluteDate> sortedDates = new TreeSet<AbsoluteDate>();
-            sortedDates.add(start);
-            sortedDates.add(end);
-            AbsoluteDate lastOutOfPlane = start;
-            for (final ScheduledManeuver maneuver : maneuvers) {
-                final AbsoluteDate date = maneuver.getDate();
-                if (maneuver.getName().equals(model.getName()) && date.compareTo(lastOutOfPlane) >= 0) {
-                    // this is the last out of plane maneuver seen so far
-                    lastOutOfPlane = date;
-                }
-                sortedDates.add(date);
-            }
-            for (final ScheduledManeuver maneuver : fixedManeuvers) {
-                final AbsoluteDate date = maneuver.getDate();
-                if (maneuver.getName().equals(model.getName()) && date.compareTo(lastOutOfPlane) >= 0) {
-                    // this is the last out of plane maneuver seen so far
-                    lastOutOfPlane = date;
-                }
-                sortedDates.add(date);
-            }
-
-            // select the longest maneuver-free interval after last out of plane maneuver for fitting
-            AbsoluteDate freeIntervalStart = lastOutOfPlane;
-            AbsoluteDate freeIntervalEnd   = lastOutOfPlane;
-            AbsoluteDate previousDate      = lastOutOfPlane;
-            for (final AbsoluteDate currentDate : sortedDates) {
-                if (currentDate.durationFrom(previousDate) > freeIntervalEnd.durationFrom(freeIntervalStart)) {
-                    freeIntervalStart = previousDate;
-                    freeIntervalEnd   = currentDate;
-                }
-                previousDate = currentDate;
-            }
-
-            fitStart = propagator.propagate(freeIntervalStart);
 
             // fit secular plus long periods model to inclination
             CurveFitter xFitter = new CurveFitter(new LevenbergMarquardtOptimizer());
@@ -245,7 +248,7 @@ public class InclinationVector extends AbstractSKControl {
             }
 
             // we need to first define the number of maneuvers and their initial settings
-            final double dt     = start.shiftedBy(firstOffset).durationFrom(fitStart.getDate());
+            final double dt     = cycleStart.shiftedBy(firstOffset).durationFrom(fitStart.getDate());
             final double sunC   = FastMath.cos(SUN_PULSATION  * dt);
             final double sunS   = FastMath.sin(SUN_PULSATION  * dt);
             final double moonC  = FastMath.cos(MOON_PULSATION * dt);
@@ -293,7 +296,7 @@ public class InclinationVector extends AbstractSKControl {
             final double n          = fitStart.getKeplerianMeanMotion();
             final double separation = orbitsSeparation * 2 * FastMath.PI / n;
             AbsoluteDate t0         = fitStart.getDate().shiftedBy(dAlpha / n);
-            while (t0.durationFrom(start) < firstOffset) {
+            while (t0.durationFrom(cycleStart) < firstOffset) {
                 t0 = t0.shiftedBy(separation);
             }
 

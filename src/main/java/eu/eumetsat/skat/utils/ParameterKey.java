@@ -100,13 +100,12 @@ public enum ParameterKey {
     CONTROL_INCLINATION_VECTOR_REFERENCE_HY("reference_hy"),
     CONTROL_INCLINATION_LIMIT_INCLINATION_ANGLE("limit_inclination_angle"),
     // Local solar time
+    CONTROL_SOLAR_TIME_FIRST_OFFSET("offset_first_maneuver"),
     CONTROL_SOLAR_TIME_LATITUDE("latitude"),
     CONTROL_SOLAR_TIME_ASCENDING("ascending"),
     CONTROL_SOLAR_TIME_SOLAR_TIME("solar_time"),
     CONTROL_SOLAR_TIME_MIN_SOLAR_TIME("min_solar_time"),
     CONTROL_SOLAR_TIME_MAX_SOLAR_TIME("max_solar_time"),
-    CONTROL_SOLAR_TIME_CHECK_INTERVAL("check_interval"),
-    CONTROL_SOLAR_TIME_IGNORED_START_DURATION("ignored_start_duration"),
     // Ground track grid
     CONTROL_GROUND_TRACK_LATITUDE("latitude"),
     CONTROL_GROUND_TRACK_LONGITUDE("longitude"),

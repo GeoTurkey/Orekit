@@ -11,6 +11,7 @@ import org.orekit.propagation.sampling.OrekitStepHandler;
 import org.orekit.time.AbsoluteDate;
 
 import eu.eumetsat.skat.strategies.ScheduledManeuver;
+import eu.eumetsat.skat.utils.SkatException;
 
 
 /**
@@ -67,11 +68,12 @@ public interface SKControl {
      * @param start start date of the propagation
      * @param end end date of the propagation
      * @exception OrekitException if something weird occurs with the propagator
+     * @exception SkatException if initialization fails
      */
     void initializeRun(int iteration, ScheduledManeuver[] maneuvers,
                        Propagator propagator, List<ScheduledManeuver> fixedManeuvers,
                        AbsoluteDate start, AbsoluteDate end)
-        throws OrekitException;
+        throws OrekitException, SkatException;
 
     /** Check if the control limits have been exceeded.
      * @return a positive value if there are some margins, a negative value if
