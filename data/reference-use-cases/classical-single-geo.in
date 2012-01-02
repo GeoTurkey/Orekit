@@ -7,7 +7,6 @@ simulation       = {
     start_date              = 2011-10-23T00:00:00.000;
     end_date                = 2013-01-01T00:00:00.000;
     cycle_duration          = 14.0;
-    rolling_cycles          = 2;
     output_step             = 43200.0;
     random_seed             = 156325253;
     ground_location         = {
@@ -44,7 +43,7 @@ simulation       = {
 # there must be exactly one element for each spacecraft
 initial_states   = [
     {
-        name                   = "Meteosat 7";
+        name                   = "Meteosat_7";
         bol_mass               = 1800;
         cycle_number           = 1;
         in_plane_maneuvers     = 0;
@@ -74,7 +73,7 @@ initial_states   = [
 scenario         = [
     {
         component           = ORBIT_DETERMINATION;
-        managed_spacecrafts = [ "Meteosat 7" ];
+        managed_spacecrafts = [ "Meteosat_7" ];
         orbit_type          = EQUINOCTIAL;
         angle_type          = MEAN;
         small               = 1.0e-12;
@@ -91,7 +90,7 @@ scenario         = [
     {
         component                = CONTROL_LOOP;
         # note: control loop components control only ONE spacecraft each
-        controlled_spacecraft    = "Meteosat 7";
+        controlled_spacecraft    = "Meteosat_7";
         first_cycle              = 1;
         last_cycle               = 999;
         max_iterations           = 100;
@@ -116,7 +115,7 @@ scenario         = [
                 maneuvers_orbits_separation = 1;
                 offset_first_maneuver       = 86400;
                 reference_hx                =  0.0;
-                reference_hy                =  -1.5e-5;
+                reference_hy                = -1.5e-5;
                 limit_inclination_angle     =  0.2;  # this is an angle in degrees
                 sampling                    = 3600;
                 
@@ -125,7 +124,7 @@ scenario         = [
     },
     {
         component           = MANEUVER_CROSS_COUPLING;
-        managed_spacecrafts = [ "Meteosat 7" ];
+        managed_spacecrafts = [ "Meteosat_7" ];
         maneuver_name       = "N/S";
         nominal_direction   = [ 0.0, 1.0, 0.0 ];
         coupling_direction  = [ 1.0, 0.0, 0.0 ];
@@ -133,14 +132,14 @@ scenario         = [
     },
     {
         component           = MANEUVER_MAGNITUDE_ERROR;
-        managed_spacecrafts = [ "Meteosat 7" ];
+        managed_spacecrafts = [ "Meteosat_7" ];
         maneuver_name       = "N/S";
         standard_deviation  = 0.001;
     },
     {
         component                = CONTROL_LOOP;
         # note: control loop components control only ONE spacecraft each
-        controlled_spacecraft    = "Meteosat 7";
+        controlled_spacecraft    = "Meteosat_7";
         first_cycle              = 1;
         last_cycle               = 999;
         max_iterations           = 100;
@@ -182,26 +181,26 @@ scenario         = [
     },
     {
         component           = MANEUVER_DATE_ERROR;
-        managed_spacecrafts = [ "Meteosat 7" ];
+        managed_spacecrafts = [ "Meteosat_7" ];
         maneuver_name       = "E/W";
         standard_deviation  = 10.0;
     },
     {
         component           = MANEUVER_MAGNITUDE_ERROR;
-        managed_spacecrafts = [ "Meteosat 7" ];
+        managed_spacecrafts = [ "Meteosat_7" ];
         maneuver_name       = "E/W";
         standard_deviation  = 0.02;
     },
     {
         component           = MISSED_MANEUVER;
-        managed_spacecrafts = [ "Meteosat 7" ];
+        managed_spacecrafts = [ "Meteosat_7" ];
         maneuver_name       = "E/W";
         miss_threshold      = 0.01;
         orbits_separation   = 1;
     },
     {
         component              = PROPAGATION;
-        managed_spacecrafts    = [ "Meteosat 7" ];
+        managed_spacecrafts    = [ "Meteosat_7" ];
         long_burn_compensation = false;
         propagator             = {
             method                 = NUMERICAL;

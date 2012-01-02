@@ -253,9 +253,9 @@ public class CsvFileMonitor implements MonitorMono, MonitorDuo {
 
         if (currentDate == null) {
             // this is the first time this method is called,
-            // we initialize the fields array with dummy values
+            // we initialize the fields array with zero values
             currentFields = new String[columns];
-            Arrays.fill(currentFields, format.format(Double.NaN));
+            Arrays.fill(currentFields, format.format(0.0));
             currentDate = date;
         } else if (FastMath.abs(date.durationFrom(currentDate)) > dateTolerance) {
             // the change date is far from the previous line,
