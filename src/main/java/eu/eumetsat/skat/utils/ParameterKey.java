@@ -104,8 +104,7 @@ public enum ParameterKey {
     CONTROL_SOLAR_TIME_LATITUDE("latitude"),
     CONTROL_SOLAR_TIME_ASCENDING("ascending"),
     CONTROL_SOLAR_TIME_SOLAR_TIME("solar_time"),
-    CONTROL_SOLAR_TIME_MIN_SOLAR_TIME("min_solar_time"),
-    CONTROL_SOLAR_TIME_MAX_SOLAR_TIME("max_solar_time"),
+    CONTROL_SOLAR_TIME_SOLAR_TIME_TOLERANCE("solar_time_tolerance"),
     // Ground track grid
     CONTROL_GROUND_TRACK_LATITUDE("latitude"),
     CONTROL_GROUND_TRACK_LONGITUDE("longitude"),

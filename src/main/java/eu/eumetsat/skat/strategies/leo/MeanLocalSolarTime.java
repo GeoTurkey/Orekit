@@ -67,9 +67,6 @@ public class MeanLocalSolarTime extends AbstractSKControl {
     /** Medium period model pulsation. */
     private static final double BASE_PULSATION = 2.0 * FastMath.PI / Constants.JULIAN_DAY;
 
-    /** Solar time target */
-    private final double center;
-
     /** In-plane maneuver model. */
     private final TunableManeuver model;
 
@@ -87,9 +84,6 @@ public class MeanLocalSolarTime extends AbstractSKControl {
 
     /** Iteration number. */
     private int iteration;
-
-    /** Cycle start. */
-    private AbsoluteDate start;
 
     /** Cycle end. */
     private AbsoluteDate end;
@@ -124,27 +118,26 @@ public class MeanLocalSolarTime extends AbstractSKControl {
      * @param latitude latitude at which solar time should be computed
      * @param ascending if true, solar time is computed when crossing the
      * specified latitude from south to north
-     * @param solarTime target solar time ((in fractional hour, i.e 9h30 = 9.5)
-     * @param minSolarTime minimum accepted solar time (in fractional hour)
-     * @param maxSolarTime maximum accepted solar time (in fractional hour)
+     * @param solarTime target solar time (in fractional hour, i.e 9h30 = 9.5)
+     * @param solarTimetolerance solar time tolerance (in hours)
      * @exception OrekitException if the UTC-TAI correction cannot be loaded
      */
     public MeanLocalSolarTime(final String name, final String controlledName, final int controlledIndex,
                               final TunableManeuver model, final double firstOffset,
                               final int maxManeuvers, final int orbitsSeparation,
                               final BodyShape earth, final double latitude, final boolean ascending,
-                              final double solarTime, final double minSolarTime, final double maxSolarTime)
+                              final double solarTime, final double solarTimetolerance)
         throws OrekitException {
-        super(name, controlledName, controlledIndex, null, -1, minSolarTime, maxSolarTime);
-        this.center               = solarTime;
-        this.model                = model;
-        this.firstOffset          = firstOffset;
-        this.maxManeuvers         = maxManeuvers;
-        this.orbitsSeparation     = orbitsSeparation;
-        this.latitude             = latitude;
-        this.earth                = earth;
-        this.ascending            = ascending;
-        this.gmod                 = new GMODFrame();
+        super(name, controlledName, controlledIndex, null, -1,
+              solarTime - solarTimetolerance, solarTime + solarTimetolerance);
+        this.model            = model;
+        this.firstOffset      = firstOffset;
+        this.maxManeuvers     = maxManeuvers;
+        this.orbitsSeparation = orbitsSeparation;
+        this.latitude         = latitude;
+        this.earth            = earth;
+        this.ascending        = ascending;
+        this.gmod             = new GMODFrame();
 
         // rough order of magnitudes values for initialization purposes
         fittedH = new double[] {
@@ -163,7 +156,6 @@ public class MeanLocalSolarTime extends AbstractSKControl {
         throws OrekitException, SkatException {
 
         this.iteration = iteration;
-        this.start     = start;
         this.end       = end;
 
         // gather all special dates (start, end, maneuvers) in one chronologically sorted set
@@ -241,11 +233,6 @@ public class MeanLocalSolarTime extends AbstractSKControl {
 
         fittedH = mstFitter.fit(new ParabolicAndMediumPeriod(), fittedH);
         fittedA = aFitter.fit(new ParabolicAndMediumPeriod(), fittedA);
-        System.out.println("# " + fittedA[0] + " + $t * " + fittedA[1] + " + $t * $t * " + fittedA[2] +
-                           " + cos(" + BASE_PULSATION + " * $t) * " + fittedA[3] +
-                           " + sin(" + BASE_PULSATION + " * $t) * " + fittedA[4] +
-                           " + cos(" + (2*BASE_PULSATION) + " * $t) * " + fittedA[5] +
-                           " + sin(" + (2*BASE_PULSATION) + " * $t) * " + fittedA[6]);
 
     }
 
@@ -275,39 +262,59 @@ public class MeanLocalSolarTime extends AbstractSKControl {
         throws OrekitException {
 
         // upper bound of mean solar time allocation due to medium period effects
-        final double periodicAllocation = 2 * (FastMath.abs(fittedH[3]) + FastMath.abs(fittedH[4]) +
-                                               FastMath.abs(fittedH[5]) + FastMath.abs(fittedH[6]));
+        final double harmonicAllocation =
+                2 * (FastMath.max(FastMath.abs(fittedH[3]), FastMath.abs(fittedH[4])) +
+                     FastMath.max(FastMath.abs(fittedH[5]), FastMath.abs(fittedH[6])));
 
         // remaining part of the mean local time window for parabolic motion
-        final double parabolicAllocation = (getMax() - getMin()) - periodicAllocation;
+        final double hMax = getMax() - 0.5 * harmonicAllocation;
+        final double hMin = getMin() + 0.5 * harmonicAllocation;
 
-        // reference semi-major axis corresponding to mean solar time peak
-        final double dtPeak = -2 * fittedH[1] / fittedH[2];
-        final double aRef   = fittedA[0] + dtPeak * (fittedA[1] + 0.5 * dtPeak * fittedA[2]);
+        // linearized relationship between hDot and a around reference semi-major axis.
+        // We consider the time tPeak at which h(tPeak) = hPeak is at parabola peak.
+        // We define aRef = a(tPeak), which therefore corresponds to the semi-major axis
+        // for which mean solar time does not evolve anymore. In other words, hDot(t) crosses 0
+        // when a(t) crosses aRef, and this occurs at t = tPeak. hDot(t) is always linear
+        // (because h(t) is quadratic) and in the neighborhood of the crossing, we assume a(t)
+        // is locally linear. So given two linear models, we get dhDot/da = hDotDot(tPeak)/aDot(tPeak)
+        final double tPeak   = -2 * fittedH[1] / fittedH[2];
+        final double hPeak   = fittedH[0] + 0.25 * fittedH[1] * tPeak;
+        final double dhDotDa = fittedH[2] / (fittedA[1] + tPeak * fittedA[2]);
 
-        // maximum cycle duration to fill up the parabolic allocation
-        final double maxCycle = FastMath.sqrt(8 * parabolicAllocation / FastMath.abs(fittedH[2]));
-
-        // achieved peak mean local solar time
-        final double peakH = fittedH[0] - 0.5 * fittedH[1] * fittedH[1] / fittedH[2];
-
-        if ((fittedH[2] < 0 && peakH < getMin()) || (fittedH[2] > 0 && peakH > getMax())) {
-            // the parabolic motion doesn't even enter the window
-
-            // TODO
-
-        } else if ((fittedH[2] < 0 && peakH < getMax()) || (fittedH[2] > 0 && peakH > getMin())) {
-            // the parabolic motion peak is within the window (it's the nominal case)
-
-            // TODO
+        // which depends on current state
+        final double newHdot;
+        if ((fittedH[2] < 0 && fittedH[0] > hMax) || (fittedH[2] > 0 && fittedH[0] < hMin)) {
+            // the start point is already on the wrong side of the window
+            // the current cycle is already bad, we set up a target to start a new cycle
+            // at time horizon with good initial conditions, and reach this target by changing hDot(t0)
+            final double targetT = end.durationFrom(fitStart.getDate()) + firstOffset;
+            final double targetH = (fittedH[2] < 0) ? hMin : hMax;
+            newHdot = (targetH - fittedH[0]) / targetT - 0.5 * fittedH[2] * targetT;
 
         } else {
-            // the parabolic motion goes all the way through the window
-            // entering on one side and leaving on the other side, then coming back later
+            // the start point is on the right side of the window
 
-            // TODO
+            final double finalT = end.durationFrom(fitStart.getDate()) + firstOffset;
+            final double finalH = fittedH[0] + finalT * (fittedH[1] + 0.5 * finalT * fittedH[2]);
+            if (finalH <= hMax &&
+                finalH >= hMin &&
+                (tPeak < 0 || tPeak > finalT || (hPeak <= hMax && hPeak >= hMin))) {
+                // mean solar time stays within bounds up to next cycle,
+                // we don't change anything on the maneuvers
+                return tunables;
+            }
+
+            // mean solar time exits the window limit before next cycle (either at some
+            // intermediate time due to peak being past limit, or near cycle end)
+
+            // we target a mean solar time peak osculating window boundary
+            final double targetH = (fittedH[2] < 0) ? hMax : hMin;
+            newHdot = FastMath.sqrt(2 * fittedH[2] * (fittedH[0] - targetH));
 
         }
+
+        // compute semi-major axis offset needed to achieve station-keeping target
+        final double deltaA = (newHdot - fittedH[1]) / dhDotDa;
 
         final ScheduledManeuver[] tuned;
         final ManeuverAdapterPropagator adapterPropagator = new ManeuverAdapterPropagator(reference);
@@ -315,8 +322,6 @@ public class MeanLocalSolarTime extends AbstractSKControl {
             // we need to first define the number of maneuvers and their initial settings
 
             // compute the in plane maneuver required to get the initial semi-major axis offset
-            // TODO compute the semi major axis offset
-            final double deltaA       = Double.NaN;
             final double mu           = fitStart.getMu();
             final double a            = fitStart.getA();
             final double totalDeltaV  = thrustSign() *
@@ -351,8 +356,6 @@ public class MeanLocalSolarTime extends AbstractSKControl {
             // adjust the existing maneuvers
 
             // compute the in plane maneuver required to get the initial semi-major axis offset
-            // TODO compute the semi major axis offset
-            final double deltaA       = Double.NaN;
             final double mu           = fitStart.getMu();
             final double a            = fitStart.getA();
             final double deltaVChange = thrustSign() *
