@@ -1,33 +1,56 @@
 # General simulation parameters
 simulation       = {
     output_base_name        = "geo-cross-coupling";
-    inertial_frame          = "EME2000";
+    inertial_frame          = "GCRF";
     earth_frame             = "GMOD";
     solar_activity_strength = AVERAGE;
     start_date              = 2011-10-23T00:00:00.000;
-    end_date                = 2011-12-01T00:00:00.000;
+    end_date                = 2012-10-21T00:00:00.000;
     cycle_duration          = 14.0;
-    rolling_cycles          = 2;
-    output_step             = 21600.0;
+    output_step             = 43200.0;
     random_seed             = 156325253;
     ground_location         = {
         latitude     = 49.85;
         longitude    =  8.65;
         altitude     =  0.0
     };
+    maneuvers               = [
+        {
+            name                  = "E/W";
+            direction             = [ 1.0, 0.0, 0.0 ];
+            thrust                = [ [  40, 0.0 ], [  30, 600.0 ] ];
+            isp_curve             = [ [ 315, 0.0 ], [ 300, 600.0 ] ];
+            dv_inf                = -0.3;
+            dv_sup                =  0.3;
+            dv_convergence        =  0.0001;
+            dt_convergence        =  300.0;
+            elimination_threshold =  0.01;
+        },
+        {
+            name                  = "N/S";
+            direction             = [ 0.0, 1.0, 0.0 ];
+            thrust                = [ [  40, 0.0 ], [  30, 600.0 ] ];
+            isp_curve             = [ [ 315, 0.0 ], [ 300, 600.0 ] ];
+            dv_inf                = -15.0;
+            dv_sup                =  15.0;
+            dv_convergence        =  0.0001;
+            dt_convergence        =  300.0;
+            elimination_threshold =  0.1;
+        }
+    ];
+    ground_location         = {
+        latitude     = 49.85;
+        longitude    =  8.65;
+        altitude     =  0.0
+    }
 };
 # Array of initial states
-# there must be exactly one element for each spacecraft
 initial_states   = [
     {
-        name                   = "Meteosat 7";
+        name                   = "Meteosat7";
         bol_mass               = 1800;
+        mass                   = 1800;
         cycle_number           = 1;
-        in_plane_maneuvers     = 0;
-        in_plane_total_dV      = 0.0;
-        out_of_plane_maneuvers = 0;
-        out_of_plane_total_dV  = 0.0;
-        mass                   = 1200.0;
         orbit                  = {
             date               = 2011-10-23T01:47:06.165;
             orbit_type         = EQUINOCTIAL;
@@ -42,11 +65,10 @@ initial_states   = [
     }
 ];
 # Array of scenario components
-# each scenario component specifies to which spacecrafts it applies
 scenario         = [
     {
         component           = ORBIT_DETERMINATION;
-        managed_spacecrafts = [ "Meteosat 7" ];
+        managed_spacecrafts = [ "Meteosat7" ];
         orbit_type          = EQUINOCTIAL;
         angle_type          = MEAN;
         small               = 1.0e-12;
@@ -61,20 +83,12 @@ scenario         = [
         standard_deviation  = [ 5.0, 1.0e-7, 1.0e-7, 1.0e-6, 1.0e-6, 1.0e-6 ];
     },
     {
-        component                = CONTROL_LOOP;
-        controlled_spacecraft    = "Meteosat 7";
-        first_cycle              = 1;
-        last_cycle               = 999;
-        max_eval                 = 1000;
-        global_stop_criterion    = 0.001;
-        in_plane_elimination     = 0.001;
-        out_of_plane_elimination = 0.01;
-        optimizer             = {
-            method                     = NELDER_MEAD;
-            convergence_span           = 1;
-            initial_simplex_size_ratio = 0.01
-        };
-        propagator  = {
+        component             = CONTROL_LOOP;
+        controlled_spacecraft = "Meteosat7";
+        first_cycle           = 1;
+        last_cycle            = 999;
+        max_iterations        = 100;
+        propagator            = {
             method                 = NUMERICAL;
             min_step               = 1.0;
             max_step               = 900.0;
@@ -86,183 +100,85 @@ scenario         = [
             reflection_coefficient = 2.0;
             third_bodies           = [ SUN, MOON ];
         };
-        controls    = [
+        controls              = [
             {
-                scaling_divisor     = 1.0e-4;
-                type                = INCLINATION_VECTOR;
-                name                = "inclination vector";
-                target_x            =  9.0e-4;
-                target_y            =  0.0;
-                limit_circle_radius =  8.45e-4;
-                sampling            = 7200.0;
+                type                        = INCLINATION_VECTOR;
+                name                        = "inclination vector";
+                maneuver_name               = "N/S";
+                max_maneuvers               = 2;
+                maneuvers_orbits_separation = 1;
+                offset_first_maneuver       = 86400;
+                reference_hx                =  0.0;
+                reference_hy                = -1.5e-5;
+                limit_inclination_angle     =  0.2;
+                sampling                    = 3600;
+                
             }
-        ];
-        maneuvers   = [
-            {
-                in_plane             = false;
-                relative_to_previous = false;
-                name                 = "N/S";
-                direction            = [ 0.0, 1.0, 0.0 ];
-                thrust               = [ [  40, 0.0 ], [  30, 600.0 ] ];
-                isp_curve            = [ [ 315, 0.0 ], [ 300, 600.0 ] ];
-                nominal_dv           =  0.0;
-                dv_min               = -3.0;
-                dv_max               =  3.0;
-                dv_convergence       =  0.01;
-                nominal_date         = 172800;
-                dt_min               = -43200;
-                dt_max               =  43200;
-                dt_convergence       =  60.0;
-            }
-        ];
-    },
-    {
-        component                = CONTROL_LOOP;
-        controlled_spacecraft    = "Meteosat 7";
-        first_cycle              = 1;
-        last_cycle               = 999;
-        max_eval                 = 1000;
-        global_stop_criterion    = 0.001;
-        in_plane_elimination     = 0.001;
-        out_of_plane_elimination = 0.01;
-        optimizer             = {
-            method                     = NELDER_MEAD;
-            convergence_span           = 1;
-            initial_simplex_size_ratio = 0.01
-        };
-        propagator  = {
-            method                 = NUMERICAL;
-            min_step               = 1.0;
-            max_step               = 900.0;
-            position_tolerance     = 100.0;
-            gravity_field_degree   = 6;
-            gravity_field_order    = 6;
-            srp_cross_section      = 20.0;
-            absorption_coefficient = 1.5;
-            reflection_coefficient = 2.0;
-            third_bodies           = [ SUN, MOON ];
-        };
-        controls    = [
-            {
-                scaling_divisor        = 0.1;
-                type                   = PARABOLIC_LONGITUDE;
-                name                   = "parabolic longitude";
-                ignored_start_duration = 345600.0;
-                west_longitude         =  -57.3;
-                east_longitude         =  -56.7;
-                sampling               = 10800.0;
-            },
-            {
-                scaling_divisor  = 1.0e-4;
-                type             = ECCENTRICITY_CIRCLE;
-                name             = "eccentricity circle";
-                center_x         = -1.5e-4;
-                center_y         =  0.0;
-                radius           = 2.0e-4;
-                sampling         = 7200.0;
-            }
-        ];
-        maneuvers   = [
-            {
-                in_plane       = true;
-                name           = "E/W-1";
-                direction      = [ 1.0, 0.0, 0.0 ];
-                thrust         = [ [  40, 0.0 ], [  30, 600.0 ] ];
-                isp_curve      = [ [ 315, 0.0 ], [ 300, 600.0 ] ];
-                nominal_dv     =  0.0;
-                dv_min         = -0.3;
-                dv_max         =  0.3;
-                dv_convergence =  0.01;
-                nominal_date   = 345600;
-                dt_min         = -43200;
-                dt_max         =  43200;
-                dt_convergence =  60.0;
-            },
-            {
-                in_plane                  = true;
-                name                      = "E/W-2";
-                direction                 = [ 1.0, 0.0, 0.0 ];
-                thrust                    = [ [  40, 0.0 ], [  30, 600.0 ] ];
-                isp_curve                 = [ [ 315, 0.0 ], [ 300, 600.0 ] ];
-                nominal_dv                =  0.0;
-                dv_min                    = -0.3;
-                dv_max                    =  0.3;
-                dv_convergence            =  0.01;
-                date_relative_to_maneuver = "E/W-1";
-                nominal_date              = 43200;
-                dt_min                    =   0.0;
-                dt_max                    =   0.0;
-                dt_convergence            =  60.0;
-            }
-        ];
-    },
-    {
-        component           = MANEUVER_DATE_ERROR;
-        managed_spacecrafts = [ "Meteosat 7" ];
-        in_plane            = true;
-        out_of_plane        = true;
-        standard_deviation  = 10.0;
-    },
-    {
-        component           = MANEUVER_MAGNITUDE_ERROR;
-        managed_spacecrafts = [ "Meteosat 7" ];
-        in_plane            = false;
-        out_of_plane        = true;
-        standard_deviation  = 0.01;
-    },
-    {
-        component           = MANEUVER_MAGNITUDE_ERROR;
-        managed_spacecrafts = [ "Meteosat 7" ];
-        in_plane            = true;
-        out_of_plane        = false;
-        standard_deviation  = 0.02;
-    },
-    {
-        component           = MISSED_MANEUVER;
-        managed_spacecrafts = [ "Meteosat 7" ];
-        in_plane            = true;
-        out_of_plane        = true;
-        miss_threshold      = 0.1;
-        orbits_separation   = 1;
+        ]
     },
     {
         component           = MANEUVER_CROSS_COUPLING;
-        managed_spacecrafts = [ "Meteosat 7" ];
-        in_plane            = true;
-        out_of_plane        = false;
-        nominal_direction   = [ 1.0, 0.0, 0.0 ];
-        coupling_direction  = [ 0.0, 0.0, 1.0 ];
-        coupling_ratio      = @cross_coupling_EW@;
-    },
-    {
-        component           = MANEUVER_CROSS_COUPLING;
-        managed_spacecrafts = [ "Meteosat 7" ];
-        in_plane            = false;
-        out_of_plane        = true;
+        managed_spacecrafts = [ "Meteosat7" ];
+        maneuver_name       = "N/S";
         nominal_direction   = [ 0.0, 1.0, 0.0 ];
         coupling_direction  = [ 1.0, 0.0, 0.0 ];
         coupling_ratio      = @cross_coupling_NS@;
     },
     {
+        component                = CONTROL_LOOP;
+        controlled_spacecraft    = "Meteosat7";
+        first_cycle              = 1;
+        last_cycle               = 999;
+        max_iterations           = 100;
+        propagator  = {
+            method                 = NUMERICAL;
+            min_step               = 1.0;
+            max_step               = 900.0;
+            position_tolerance     = 100.0;
+            gravity_field_degree   = 6;
+            gravity_field_order    = 6;
+            srp_cross_section      = 20.0;
+            absorption_coefficient = 1.5;
+            reflection_coefficient = 2.0;
+            third_bodies           = [ SUN, MOON ];
+        };
+        controls    = [
+            {
+                type                        = PARABOLIC_LONGITUDE;
+                name                        = "parabolic longitude";
+                maneuver_name               = "E/W";
+                offset_first_maneuver       = 172800;
+                max_maneuvers               = 3;
+                maneuvers_orbits_separation = 1;
+                east_longitude              = -56.9;
+                west_longitude              = -57.1;
+                sampling                    = 10800.0;
+            }
+        ]
+    },
+    {
+        component           = MANEUVER_CROSS_COUPLING;
+        managed_spacecrafts = [ "Meteosat7" ];
+        maneuver_name       = "E/W";
+        nominal_direction   = [ 1.0, 0.0, 0.0 ];
+        coupling_direction  = [ 0.0, 0.0, 1.0 ];
+        coupling_ratio      = @cross_coupling_EW@;
+    },
+    {
         component              = PROPAGATION;
-        managed_spacecrafts    = [ "Meteosat 7" ];
+        managed_spacecrafts    = [ "Meteosat7" ];
         long_burn_compensation = false;
         propagator             = {
             method                 = NUMERICAL;
             min_step               = 10.0;
             max_step               = 900.0;
             position_tolerance     = 50.0;
-            gravity_field_degree   = 10;
-            gravity_field_order    = 10;
+            gravity_field_degree   = 6;
+            gravity_field_order    = 6;
             srp_cross_section      = 20.0;
             absorption_coefficient = 1.5;
             reflection_coefficient = 2.0;
             third_bodies           = [ SUN, MOON ];
         }
     }
-];
-
-monitoring_mono = [
-    IN_PLANE_MANEUVER_TOTAL_DV,
-    OUT_OF_PLANE_MANEUVER_TOTAL_DV,
 ]
