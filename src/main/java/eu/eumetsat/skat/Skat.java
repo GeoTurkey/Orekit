@@ -754,13 +754,13 @@ public class Skat {
                 final String name = maneuversModelsPool[j].getName();
                 finalOutput.println(formatIndent(3 * baseIndent) + "{");
                 finalOutput.println(formatIndent(4 * baseIndent) +
-                                    formatKey(keysWidth, ParameterKey.INITIAL_STATE_MANEUVER_NAME) +
+                                    formatKey(keysWidth - 2 * baseIndent, ParameterKey.INITIAL_STATE_MANEUVER_NAME) +
                                     "= " + name + ";");
                 finalOutput.println(formatIndent(4 * baseIndent) +
-                                    formatKey(keysWidth, ParameterKey.INITIAL_STATE_MANEUVER_NUMBER) +
+                                    formatKey(keysWidth - 2 * baseIndent, ParameterKey.INITIAL_STATE_MANEUVER_NUMBER) +
                                     "= " + state.getManeuversNumber(name) + ";");
                 finalOutput.println(formatIndent(4 * baseIndent) +
-                                    formatKey(keysWidth, ParameterKey.INITIAL_STATE_MANEUVER_TOTAL_DV) +
+                                    formatKey(keysWidth - 2 * baseIndent, ParameterKey.INITIAL_STATE_MANEUVER_TOTAL_DV) +
                                     "= " + state.getManeuversTotalDV(name) + ";");
                 finalOutput.println(formatIndent(3 * baseIndent) + ((j < maneuversModelsPool.length - 1) ? "}," : "}"));
             }
