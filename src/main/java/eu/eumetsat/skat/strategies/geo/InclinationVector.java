@@ -130,7 +130,8 @@ public class InclinationVector extends AbstractSKControl {
                              final double referenceHx, final double referenceHy,
                              final double limitInclination, final double samplingStep) {
 
-        super(name, model, controlledName, controlledIndex, null, -1, 0.0, FastMath.toDegrees(limitInclination));
+        super(name, model, controlledName, controlledIndex, null, -1,
+              0.0, innerRadius(referenceHx, referenceHy, limitInclination));
 
         this.stephandler      = new Handler();
         this.firstOffset      = firstOffset;
