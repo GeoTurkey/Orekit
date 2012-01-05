@@ -126,7 +126,7 @@ public class InclinationVector extends AbstractSKControl {
      * @param orbitsSeparation minimum time between split parts in number of orbits
      * @param referenceHx abscissa of reference inclination vector
      * @param referenceHy ordinate of reference inclination vector
-     * @param limitInclination limit circle radius
+     * @param limitInclination limit inclination angle
      * @param samplingStep step to use for sampling throughout propagation
      */
     public InclinationVector(final String name, final String controlledName, final int controlledIndex,
@@ -135,7 +135,7 @@ public class InclinationVector extends AbstractSKControl {
                              final double referenceHx, final double referenceHy,
                              final double limitInclination, final double samplingStep) {
 
-        super(name, controlledName, controlledIndex, null, -1, 0.0, FastMath.toDegrees(limitInclination));
+        super(name, controlledName, controlledIndex, null, -1, 0.0, innerRadius(referenceHx, referenceHy, limitInclination));
 
         this.stephandler      = new Handler();
         this.model            = model;
@@ -145,14 +145,7 @@ public class InclinationVector extends AbstractSKControl {
         this.referenceHx      = referenceHx;
         this.referenceHy      = referenceHy;
         this.samplingStep     = samplingStep;
-
-        // find the inner circle centered on (targetHx, targetHy)
-        // and osculating the circle corresponding to limit inclination angle
-        final double ratio        = FastMath.tan(limitInclination / 2) /
-                                    FastMath.hypot(referenceHx, referenceHy);
-        final double osculatingHx = ratio * referenceHx;
-        final double osculatingHy = ratio * referenceHy;
-        innerRadius               = FastMath.hypot(osculatingHx - referenceHx, osculatingHy - referenceHy);
+        this.innerRadius      = innerRadius(referenceHx, referenceHy, limitInclination);
 
         // rough order of magnitudes values for initialization purposes
         fitted = new double[][] {
@@ -160,6 +153,21 @@ public class InclinationVector extends AbstractSKControl {
             { referenceHy, 1.0e-10, 1.0e-4, 1.0e-4, 1.0e-5, 1.0e-5 }
         };
 
+    }
+    
+    /** Find the inner circle radius.
+     *  The inner circle is centered on (referenceHx, referenceHy) and osculating
+     *  the circle corresponding to limit inclination angle.
+     *  @param refHx abscissa of reference inclination vector
+     *  @param refHy ordinate of reference inclination vector
+     *  @param limitInclination limit circle radius
+     *  @return inner circle radius
+     */
+    private static double innerRadius(final double refHx, final double refHy, final double limitInclination) {
+        final double ratio = FastMath.tan(limitInclination / 2.) / FastMath.hypot(refHx, refHy);
+        final double oscHx = ratio * refHx;
+        final double oscHy = ratio * refHy;
+        return FastMath.hypot(oscHx - refHx, oscHy - refHy);
     }
 
     /** {@inheritDoc} */
@@ -409,13 +417,12 @@ public class InclinationVector extends AbstractSKControl {
                 for (AbsoluteDate date = minDate; date.compareTo(maxDate) < 0; date = date.shiftedBy(samplingStep)) {
 
                     if (date.compareTo(fitStart.getDate()) > 0) {
-                        // compute position in Earth frame
                         interpolator.setInterpolatedDate(date);
                         final SpacecraftState state = interpolator.getInterpolatedState();
 
                         // check limit circle violations
-                        final double inclination = 2 * FastMath.atan(FastMath.hypot(state.getHx(), state.getHy()));
-                        checkMargins(FastMath.toDegrees(inclination));
+                        final double radius = FastMath.hypot(state.getHx() - referenceHx, state.getHy() - referenceHy);
+                        checkMargins(radius);
                     }
 
                 }
