@@ -111,7 +111,7 @@ scenario         = [
                 maneuvers_orbits_separation = 1;
                 offset_first_maneuver       = 86400;
                 reference_hx                =  0.0;
-                reference_hy                = -1.5e-5;
+                reference_hy                = -1.0e-3;
                 limit_inclination_angle     =  0.2;  # this is an angle in degrees
                 sampling                    = 3600;
                 
@@ -162,16 +162,15 @@ scenario         = [
                 east_longitude              = -56.9;
                 west_longitude              = -57.1;
                 sampling                    = 10800.0;
-            },
-            {
-                type                        = ECCENTRICITY_CIRCLE;
-                name                        = "eccentricity circle";
-                maneuver_name               = "E/W";
-                center_x                    = -1.5e-4;
-                center_y                    =  0.0;
-                radius                      =  2.0e-4;
-                sampling                    = 3600;
-                
+#            },
+#            {
+#                type                        = ECCENTRICITY_CIRCLE;
+#                name                        = "eccentricity circle";
+#                maneuver_name               = "E/W";
+#                center_x                    = -1.5e-4;
+#                center_y                    =  0.0;
+#                radius                      =  2.0e-4;
+#                sampling                    = 3600;
             }
         ]
     },

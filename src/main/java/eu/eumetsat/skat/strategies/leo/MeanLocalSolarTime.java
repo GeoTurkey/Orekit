@@ -2,22 +2,14 @@
 package eu.eumetsat.skat.strategies.leo;
 
 import java.util.List;
-import java.util.SortedSet;
-import java.util.TreeSet;
 
 import org.apache.commons.math.analysis.ParametricUnivariateFunction;
-import org.apache.commons.math.analysis.UnivariateFunction;
-import org.apache.commons.math.analysis.solvers.BaseUnivariateRealSolver;
-import org.apache.commons.math.analysis.solvers.BracketingNthOrderBrentSolver;
-import org.apache.commons.math.analysis.solvers.UnivariateRealSolverUtils;
-import org.apache.commons.math.exception.NoBracketingException;
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math.optimization.fitting.CurveFitter;
 import org.apache.commons.math.optimization.general.LevenbergMarquardtOptimizer;
 import org.apache.commons.math.util.FastMath;
 import org.apache.commons.math.util.MathUtils;
 import org.orekit.bodies.BodyShape;
-import org.orekit.bodies.GeodeticPoint;
 import org.orekit.errors.OrekitException;
 import org.orekit.propagation.BoundedPropagator;
 import org.orekit.propagation.Propagator;
@@ -28,47 +20,54 @@ import org.orekit.propagation.sampling.OrekitStepHandler;
 import org.orekit.time.AbsoluteDate;
 import org.orekit.time.TimeScalesFactory;
 import org.orekit.utils.Constants;
-import org.orekit.utils.PVCoordinates;
 
 import eu.eumetsat.skat.control.AbstractSKControl;
 import eu.eumetsat.skat.strategies.ScheduledManeuver;
 import eu.eumetsat.skat.strategies.TunableManeuver;
-import eu.eumetsat.skat.utils.OrekitWrapperException;
 import eu.eumetsat.skat.utils.SkatException;
-import eu.eumetsat.skat.utils.SkatMessages;
 
 /**
- * Station-keeping control attempting to get mean local solar time in a deadband.
- * The deadband is located around a main value {@link #center}. A tolerance margin
- * can be define through the minSolarTime and maxSolarTime parameters, defined by
- * construction. If a violation occurs by getting out of the [minSolarTime, maxSolarTime] 
- * interval, a notifier will be triggered and this information will be monitored.
- *  <p>
- * This control value is:
- * <pre> max(|MLST<sub>75</sub> - MLST<sub>c</sub>|,|MLST<sub>c</sub> - MLST<sub>25</sub>|)</pre>
- * where MLST<sub>75</sub> and MLST<sub>25</sub> are the spacecraft mean local solar time 1st and 3rd
- * quartiles evaluated for the complete cycle duration and MLST<sub>c</sub> is the target mean local
- * solar time.
+ * Station-keeping control for mean solar time in sun synchronous Low Earth Orbits.
+ * <p>
+ * The mean solar time at a specific latitude crossinf evolves as a quadratic model
+ * of time with medium periods at one day and one half day. The coefficients of this
+ * model depend on semi major axis and inclination, since the main effect of
+ * J<sub>2</sub> is a secular drift of ascending node with short periodic effects
+ * at twice the spacecraft pulsation.
  * </p>
  * <p>
- * The previous definition implies that setting the target of this control
- * to MLST<sub>c</sub> attempts to have most of the points mean local solar time
- * for the satellite centered around the target mean local solar time during the
- * station-keeping. 
+ * The evolution of mean solar time is very slow, it takes several months to exceeds
+ * a few minutes offset from central assigned mean solar time. The aim of the control
+ * law is to achieve a parabolic motion that stays within the assigned deadband, by
+ * having the peak of the parabola (once medium periodic terms have been removed)
+ * that osculates the deadband limit.
  * </p>
  * <p>
- * Using quantiles instead of min/max improves robustness with respect to
- * outliers, which occur when starting far from the desired window. Here, we ignore 25%
- * outliers on both sides.
+ * The model parameters are not computed from Keplerian motion, but rather fitted to
+ * the real evolution of the parameters against the polynomial and periodic models
+ * above. The fitting is performed on the longest maneuver-free interval of the
+ * cycle after the last out-of-plane maneuver.
  * </p>
+ * <p>
+ * The maneuvers which target a parabola osculating the deadband are out-or-plane
+ * maneuvers performed at a node (nodes in eclipse are selected) which change
+ * inclination and hence change ascending node drift rate, which is directly the
+ * slope of the parabola.
+ * </p>
+ * <p>
+ * If the deadband limits are not crossed before next cycle, no maneuvers at all
+ * are performed, even if the parabola does not perfectly osculates the deadband but
+ * is well inside it. Maneuvers are triggered only when deadband limits will be
+ * exceeded before next cycle. If the maneuvers are too large, they will be split
+ * into several maneuvers, up to the maximal number of allowed maneuvers par cycle
+ * and fulfilling the constraints on velocity increment sizes.
+ * </p>
+ * @author Luc Maisonobe
  */
 public class MeanLocalSolarTime extends AbstractSKControl {
 
     /** Medium period model pulsation. */
     private static final double BASE_PULSATION = 2.0 * FastMath.PI / Constants.JULIAN_DAY;
-
-    /** In-plane maneuver model. */
-    private final TunableManeuver model;
 
     /** Maximum number of maneuvers to set up in one cycle. */
     private final int maxManeuvers;
@@ -107,7 +106,7 @@ public class MeanLocalSolarTime extends AbstractSKControl {
      * @param name name of the control law
      * @param controlledName name of the controlled spacecraft
      * @param controlledIndex index of the controlled spacecraft
-     * @param model in-plane maneuver model
+     * @param model out-of-plane maneuver model
      * @param firstOffset time offset of the first maneuver with respect to cycle start
      * @param maxManeuvers maximum number of maneuvers to set up in one cycle
      * @param orbitsSeparation minimum time between split parts in number of orbits
@@ -125,9 +124,8 @@ public class MeanLocalSolarTime extends AbstractSKControl {
                               final BodyShape earth, final double latitude, final boolean ascending,
                               final double solarTime, final double solarTimetolerance)
         throws OrekitException {
-        super(name, controlledName, controlledIndex, null, -1,
+        super(name, model, controlledName, controlledIndex, null, -1,
               solarTime - solarTimetolerance, solarTime + solarTimetolerance);
-        this.model            = model;
         this.firstOffset      = firstOffset;
         this.maxManeuvers     = maxManeuvers;
         this.orbitsSeparation = orbitsSeparation;
@@ -151,52 +149,22 @@ public class MeanLocalSolarTime extends AbstractSKControl {
 
         this.iteration = iteration;
         this.end       = end;
+        resetMarginsChecks();
 
         if (iteration == 0) {
 
-            // gather all special dates (start, end, maneuvers) in one chronologically sorted set
-            SortedSet<AbsoluteDate> sortedDates = new TreeSet<AbsoluteDate>();
-            sortedDates.add(start);
-            sortedDates.add(end);
-            AbsoluteDate lastInPlane = start;
-            for (final ScheduledManeuver maneuver : maneuvers) {
-                final AbsoluteDate date = maneuver.getDate();
-                if (maneuver.getName().equals(model.getName()) && date.compareTo(lastInPlane) >= 0) {
-                    // this is the last in plane maneuver seen so far
-                    lastInPlane = date;
-                }
-                sortedDates.add(date);
-            }
-            for (final ScheduledManeuver maneuver : fixedManeuvers) {
-                final AbsoluteDate date = maneuver.getDate();
-                if (maneuver.getName().equals(model.getName()) && date.compareTo(lastInPlane) >= 0) {
-                    // this is the last in plane maneuver seen so far
-                    lastInPlane = date;
-                }
-                sortedDates.add(date);
-            }
-
-            // select the longest maneuver-free interval after last in plane maneuver for fitting
-            AbsoluteDate freeIntervalStart = lastInPlane;
-            AbsoluteDate freeIntervalEnd   = lastInPlane;
-            AbsoluteDate previousDate      = lastInPlane;
-            for (final AbsoluteDate currentDate : sortedDates) {
-                if (currentDate.durationFrom(previousDate) > freeIntervalEnd.durationFrom(freeIntervalStart)) {
-                    freeIntervalStart = previousDate;
-                    freeIntervalEnd   = currentDate;
-                }
-                previousDate = currentDate;
-            }
+            // select a long maneuver-free interval for fitting
+            final AbsoluteDate[] freeInterval = getManeuverFreeInterval(maneuvers, fixedManeuvers, start, end);
 
             // find the first following node that is in eclipse
             final double period = propagator.getInitialState().getKeplerianPeriod();
             final double stepSize = period / 100;
-            nodeState = findFirstCrossing(0.0, true, freeIntervalStart.shiftedBy(firstOffset),
+            nodeState = findFirstCrossing(0.0, true, earth, freeInterval[0].shiftedBy(firstOffset),
                                           end, stepSize, propagator);
             double mst = meanSolarTime(nodeState);
             if (mst >= 6.0 && mst <= 18.0) {
                 // wrong node, it is under Sun light, select the next one
-                nodeState = findLatitudeCrossing(latitude, nodeState.getDate().shiftedBy(0.5 * period),
+                nodeState = findLatitudeCrossing(latitude, earth, nodeState.getDate().shiftedBy(0.5 * period),
                                                  end, stepSize, period / 8, propagator);
             }
 
@@ -209,7 +177,7 @@ public class MeanLocalSolarTime extends AbstractSKControl {
         double period   = nodeState.getKeplerianPeriod();
         double stepSize = period / 100;
         SpacecraftState crossing =
-                findFirstCrossing(latitude, ascending, nodeState.getDate(), end, stepSize, propagator);
+                findFirstCrossing(latitude, ascending, earth, nodeState.getDate(), end, stepSize, propagator);
         double mst = meanSolarTime(crossing);
         checkMargins(mst);
         double dt = crossing.getDate().durationFrom(start);
@@ -219,7 +187,7 @@ public class MeanLocalSolarTime extends AbstractSKControl {
         while (crossing != null && crossing.getDate().shiftedBy(period).compareTo(end) < 0) {
 
             final AbsoluteDate previous = crossing.getDate();
-            crossing = findLatitudeCrossing(latitude, previous.shiftedBy(period),
+            crossing = findLatitudeCrossing(latitude, earth, previous.shiftedBy(period),
                                             end, stepSize, period / 8, propagator);
             if (crossing != null) {
 
@@ -330,9 +298,10 @@ public class MeanLocalSolarTime extends AbstractSKControl {
 
             // compute the out of plane maneuver required to get the initial inclination offset
             final Vector3D v          = nodeState.getPVCoordinates().getVelocity();
-            final double totalDeltaV  = thrustSign() * FastMath.signum(v.getZ()) * 2 * v.getNorm() * deltaI;
+            final double totalDeltaV  = thrustSignMomentum(nodeState) * FastMath.signum(v.getZ()) * 2 * v.getNorm() * deltaI;
 
             // compute the number of maneuvers required
+            final TunableManeuver model = getModel();
             final double limitDV = (totalDeltaV < 0) ? model.getDVInf() : model.getDVSup();
             final int    nMan    = FastMath.min(maxManeuvers,
                                                 (int) FastMath.ceil(FastMath.abs(totalDeltaV / limitDV)));
@@ -360,12 +329,12 @@ public class MeanLocalSolarTime extends AbstractSKControl {
 
             // compute the out of plane maneuver required to get the initial inclination offset
             final double v            = nodeState.getPVCoordinates().getVelocity().getNorm();
-            final double deltaVChange = thrustSign() * 2 * v * deltaI;
+            final double deltaVChange = thrustSignMomentum(nodeState) * 2 * v * deltaI;
 
             // distribute the change over all maneuvers
             tuned = tunables.clone();
             changeTrajectory(tuned, 0, tuned.length, adapterPropagator);
-            distributeDV(deltaVChange, 0.0, model, tuned, adapterPropagator);
+            distributeDV(deltaVChange, 0.0, tuned, adapterPropagator);
 
         }
 
@@ -378,16 +347,6 @@ public class MeanLocalSolarTime extends AbstractSKControl {
 
     }
 
-    /** Get the sign of the maneuver model with respect to orbital momentum.
-     * @return +1 if model thrust is along momentum direction, -1 otherwise
-     */
-    private double thrustSign() {
-        final Vector3D thrustDirection =
-                nodeState.getAttitude().getRotation().applyInverseTo(model.getDirection());
-        Vector3D momentum = nodeState.getPVCoordinates().getMomentum();
-        return FastMath.signum(Vector3D.dotProduct(thrustDirection, momentum));
-    }
-
     /** {@inheritDoc} */
     public EventDetector getEventDetector() {
         return null;
@@ -398,111 +357,6 @@ public class MeanLocalSolarTime extends AbstractSKControl {
         return null;
     }
 
-    /** 
-     * Find the first crossing of the reference latitude.
-     * @param latitude latitude to search for
-     * @param ascending indicator for desired crossing direction
-     * @param searchStart search start
-     * @param end maximal date not to overtake
-     * @param stepSize step size to use
-     * @param propagator propagator
-     * @return first crossing
-     * @throws OrekitException if state cannot be propagated
-     */
-    private SpacecraftState findFirstCrossing(final double latitude, final boolean ascending,
-                                              final AbsoluteDate searchStart, final AbsoluteDate end,
-                                              final double stepSize, final Propagator propagator)
-        throws OrekitException, SkatException {
-
-        double previousLatitude = Double.NaN;
-        for (AbsoluteDate date = searchStart; date.compareTo(end) < 0; date = date.shiftedBy(stepSize)) {
-            final PVCoordinates pv       = propagator.propagate(date).getPVCoordinates(earth.getBodyFrame());
-            final double currentLatitude = earth.transform(pv.getPosition(), earth.getBodyFrame(), date).getLatitude();
-            if (((previousLatitude <= latitude) && (currentLatitude >= latitude) &&  ascending) ||
-                ((previousLatitude >= latitude) && (currentLatitude <= latitude) && !ascending)) {
-                return findLatitudeCrossing(latitude, date.shiftedBy(-0.5 * stepSize), end,
-                                            0.5 * stepSize, 2 * stepSize, propagator);
-            }
-            previousLatitude = currentLatitude;
-        }
-
-        throw new SkatException(SkatMessages.LATITUDE_NEVER_CROSSED,
-                                FastMath.toDegrees(latitude), searchStart, end);
-
-    }
-    
-    
-    /**
-     * Find the state at which the reference latitude is crossed.
-     * @param latitude latitude to search for
-     * @param guessDate guess date for the crossing
-     * @param endDate maximal date not to overtake
-     * @param shift shift value used to evaluate the latitude function bracketing around the guess date  
-     * @param maxShift maximum value that the shift value can take
-     * @param propagator propagator used
-     * @return state at latitude crossing time
-     * @throws OrekitException if state cannot be propagated
-     * @throws NoBracketingException if latitude cannot be bracketed in the search interval
-     */
-    private SpacecraftState findLatitudeCrossing(final double latitude,
-                                                 final AbsoluteDate guessDate, final AbsoluteDate endDate,
-                                                 final double shift, final double maxShift,
-                                                 final Propagator propagator)
-        throws OrekitException, NoBracketingException {
-
-        try {
-
-            // function evaluating to 0 at latitude crossings
-            final UnivariateFunction latitudeFunction = new UnivariateFunction() {
-                /** {@inheritDoc} */
-                public double value(double x) throws OrekitWrapperException {
-                    try {
-                        final SpacecraftState state = propagator.propagate(guessDate.shiftedBy(x));
-                        final Vector3D position = state.getPVCoordinates(earth.getBodyFrame()).getPosition();
-                        final GeodeticPoint point = earth.transform(position, earth.getBodyFrame(), state.getDate());
-                        return point.getLatitude() - latitude;
-                    } catch (OrekitException oe) {
-                        throw new OrekitWrapperException(oe);
-                    }
-                }
-            };
-
-            // try to bracket the encounter
-            double span;
-            if (guessDate.shiftedBy(shift).compareTo(endDate) > 0) {
-                // Take a 1e-3 security margin
-                span = endDate.durationFrom(guessDate) - 1e-3;
-            } else {
-                span = shift;
-            }
-
-            while (!UnivariateRealSolverUtils.isBracketing(latitudeFunction, -span, span)) {
-
-                if (2 * span > maxShift) {
-                    // let the Apache Commons Math exception be thrown
-                    UnivariateRealSolverUtils.verifyBracketing(latitudeFunction, -span, span);
-                } else if (guessDate.shiftedBy(2 * span).compareTo(endDate) > 0) {
-                    // Out of range :
-                    return null;
-                }
-
-                // expand the search interval
-                span *= 2;
-
-            }
-
-            // find the encounter in the bracketed interval
-            final BaseUnivariateRealSolver<UnivariateFunction> solver =
-                    new BracketingNthOrderBrentSolver(0.1, 5);
-            final double dt = solver.solve(1000, latitudeFunction,-span, span);
-            return propagator.propagate(guessDate.shiftedBy(dt));
-
-        } catch (OrekitWrapperException owe) {
-            throw owe.getWrappedException();
-        }
-
-    }
-    
     /** Inner class for parabolic plus medium period motion.
      * <p>
      * This function has 5 parameters, three for the parabolic part

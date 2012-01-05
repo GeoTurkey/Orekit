@@ -3,13 +3,30 @@ package eu.eumetsat.skat.control;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
+import org.apache.commons.math.analysis.UnivariateFunction;
+import org.apache.commons.math.analysis.solvers.BaseUnivariateRealSolver;
+import org.apache.commons.math.analysis.solvers.BracketingNthOrderBrentSolver;
+import org.apache.commons.math.analysis.solvers.UnivariateRealSolverUtils;
+import org.apache.commons.math.exception.NoBracketingException;
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math.util.FastMath;
+import org.orekit.bodies.BodyShape;
+import org.orekit.bodies.GeodeticPoint;
+import org.orekit.errors.OrekitException;
+import org.orekit.propagation.Propagator;
+import org.orekit.propagation.SpacecraftState;
 import org.orekit.propagation.analytical.ManeuverAdapterPropagator;
+import org.orekit.time.AbsoluteDate;
+import org.orekit.utils.PVCoordinates;
 
 import eu.eumetsat.skat.strategies.ScheduledManeuver;
 import eu.eumetsat.skat.strategies.TunableManeuver;
+import eu.eumetsat.skat.utils.OrekitWrapperException;
+import eu.eumetsat.skat.utils.SkatException;
+import eu.eumetsat.skat.utils.SkatMessages;
 
 
 
@@ -20,6 +37,9 @@ public abstract class AbstractSKControl implements SKControl {
 
     /** Name of the control law. */
     private final String name;
+
+    /** Maneuver model. */
+    private final TunableManeuver model;
 
     /** Name of the controlled spacecraft. */
     private final String controlledName;
@@ -44,6 +64,7 @@ public abstract class AbstractSKControl implements SKControl {
 
     /** Simple constructor.
      * @param name name of the control law
+     * @param model in-plane maneuver model
      * @param controlledName name of the controlled spacecraft
      * @param controlledIndex index of the controlled spacecraft
      * @param referenceName name of the reference spacecraft
@@ -51,11 +72,12 @@ public abstract class AbstractSKControl implements SKControl {
      * @param min minimal value for the residual
      * @param max maximal value for the residual
      */
-    protected AbstractSKControl(final String name,
+    protected AbstractSKControl(final String name, final TunableManeuver model,
                                 final String controlledName, final int controlledIndex,
                                 final String referenceName, final int referenceIndex,
                                 final double min, final double max) {
         this.name            = name;
+        this.model           = model;
         this.controlledName  = controlledName;
         this.controlledIndex = controlledIndex;
         this.referenceName   = referenceName;
@@ -67,6 +89,13 @@ public abstract class AbstractSKControl implements SKControl {
     /** {@inheritDoc} */
     public String getName() {
         return name;
+    }
+
+    /** Get the maneuver model.
+     * @return maneuver model
+     */
+    public TunableManeuver getModel() {
+        return model;
     }
 
     /** {@inheritDoc} */
@@ -126,6 +155,87 @@ public abstract class AbstractSKControl implements SKControl {
         }
     }
 
+    /** Find the longest maneuver-free interval.
+     * <p>
+     * Only maneuvers matching the control law model maneuver are considered here.
+     * </p>
+     * @param maneuvers maneuvers scheduled for this control law
+     * @param fixedManeuvers list of maneuvers already fixed for the cycle
+     * @param start start date of the propagation
+     * @param end end date of the propagation
+     * @return longest maneuver-free interval
+     */
+    protected AbsoluteDate[] getManeuverFreeInterval(final ScheduledManeuver[] maneuvers,
+                                                     final List<ScheduledManeuver> fixedManeuvers,
+                                                     final AbsoluteDate start, final AbsoluteDate end) {
+
+        // gather all special dates (start, end, maneuvers) in one chronologically sorted set
+        SortedSet<AbsoluteDate> sortedDates = new TreeSet<AbsoluteDate>();
+        sortedDates.add(start);
+        sortedDates.add(end);
+        AbsoluteDate last = start;
+        for (final ScheduledManeuver maneuver : maneuvers) {
+            final AbsoluteDate date = maneuver.getDate();
+            if (maneuver.getName().equals(model.getName()) && date.compareTo(last) >= 0) {
+                // this is the last maneuver seen so far
+                last = date;
+            }
+            sortedDates.add(date);
+        }
+        for (final ScheduledManeuver maneuver : fixedManeuvers) {
+            final AbsoluteDate date = maneuver.getDate();
+            if (maneuver.getName().equals(model.getName()) && date.compareTo(last) >= 0) {
+                // this is the last maneuver seen so far
+                last = date;
+            }
+            sortedDates.add(date);
+        }
+
+        // select the longest maneuver-free interval after last in plane maneuver
+        AbsoluteDate freeIntervalStart = last;
+        AbsoluteDate freeIntervalEnd   = last;
+        AbsoluteDate previousDate      = last;
+        for (final AbsoluteDate currentDate : sortedDates) {
+            if (currentDate.durationFrom(previousDate) > freeIntervalEnd.durationFrom(freeIntervalStart)) {
+                freeIntervalStart = previousDate;
+                freeIntervalEnd   = currentDate;
+            }
+            previousDate = currentDate;
+        }
+
+        // prevent propagating after end date
+        if (freeIntervalEnd.compareTo(end) >= 0) {
+            freeIntervalEnd = end;
+        }
+
+        return new AbsoluteDate[] {
+            freeIntervalStart, freeIntervalEnd
+        };
+
+    }
+
+    /** Get the sign of the maneuver model with respect to orbital momentum.
+     * @param state spacecraft state
+     * @return +1 if model thrust is along momentum direction, -1 otherwise
+     */
+    protected double thrustSignMomentum(final SpacecraftState state) {
+        final Vector3D thrustDirection =
+                state.getAttitude().getRotation().applyInverseTo(getModel().getDirection());
+        Vector3D momentum = state.getPVCoordinates().getMomentum();
+        return FastMath.signum(Vector3D.dotProduct(thrustDirection, momentum));
+    }
+
+    /** Get the sign of the maneuver model with respect to orbital velocity.
+     * @param state spacecraft state
+     * @return +1 if model thrust is along velocity direction, -1 otherwise
+     */
+    protected double thrustSignVelocity(final SpacecraftState state) {
+        final Vector3D thrustDirection =
+                state.getAttitude().getRotation().applyInverseTo(getModel().getDirection());
+        Vector3D velocity = state.getPVCoordinates().getVelocity();
+        return FastMath.signum(Vector3D.dotProduct(thrustDirection, velocity));
+    }
+
     /** Change the trajectory of some maneuvers.
      * @param maneuvers maneuvers array
      * @param from index of the first maneuver to update (included)
@@ -146,12 +256,11 @@ public abstract class AbstractSKControl implements SKControl {
     /** Distribute a velocity increment change over non-saturated maneuvers.
      * @param dV velocity increment change to distribute
      * @param dT date change to apply to all maneuvers
-     * @param model model of the maneuvers to change
      * @param maneuvers array of maneuvers to change
      * @param adapterPropagator propagator to use for maneuvers
      */
     protected void distributeDV(final double dV, final double dT,
-                                final TunableManeuver model, final ScheduledManeuver[] maneuvers,
+                                final ScheduledManeuver[] maneuvers,
                                 final ManeuverAdapterPropagator adapterPropagator) {
 
         final double inf = model.getDVInf();
@@ -194,4 +303,112 @@ public abstract class AbstractSKControl implements SKControl {
 
     }
 
+    /** 
+     * Find the first crossing of the reference latitude.
+     * @param latitude latitude to search for
+     * @param ascending indicator for desired crossing direction
+     * @param earth Earth model
+     * @param searchStart search start
+     * @param end maximal date not to overtake
+     * @param stepSize step size to use
+     * @param propagator propagator
+     * @return first crossing
+     * @throws OrekitException if state cannot be propagated
+     */
+    protected SpacecraftState findFirstCrossing(final double latitude, final boolean ascending,
+                                                final BodyShape earth,
+                                                final AbsoluteDate searchStart, final AbsoluteDate end,
+                                                final double stepSize, final Propagator propagator)
+        throws OrekitException, SkatException {
+
+        double previousLatitude = Double.NaN;
+        for (AbsoluteDate date = searchStart; date.compareTo(end) < 0; date = date.shiftedBy(stepSize)) {
+            final PVCoordinates pv       = propagator.propagate(date).getPVCoordinates(earth.getBodyFrame());
+            final double currentLatitude = earth.transform(pv.getPosition(), earth.getBodyFrame(), date).getLatitude();
+            if (((previousLatitude <= latitude) && (currentLatitude >= latitude) &&  ascending) ||
+                ((previousLatitude >= latitude) && (currentLatitude <= latitude) && !ascending)) {
+                return findLatitudeCrossing(latitude, earth, date.shiftedBy(-0.5 * stepSize), end,
+                                            0.5 * stepSize, 2 * stepSize, propagator);
+            }
+            previousLatitude = currentLatitude;
+        }
+
+        throw new SkatException(SkatMessages.LATITUDE_NEVER_CROSSED,
+                                FastMath.toDegrees(latitude), searchStart, end);
+
+    }
+    
+    
+    /**
+     * Find the state at which the reference latitude is crossed.
+     * @param latitude latitude to search for
+     * @param earth Earth model
+     * @param guessDate guess date for the crossing
+     * @param endDate maximal date not to overtake
+     * @param shift shift value used to evaluate the latitude function bracketing around the guess date  
+     * @param maxShift maximum value that the shift value can take
+     * @param propagator propagator used
+     * @return state at latitude crossing time
+     * @throws OrekitException if state cannot be propagated
+     * @throws NoBracketingException if latitude cannot be bracketed in the search interval
+     */
+    protected SpacecraftState findLatitudeCrossing(final double latitude, final BodyShape earth,
+                                                   final AbsoluteDate guessDate, final AbsoluteDate endDate,
+                                                   final double shift, final double maxShift,
+                                                   final Propagator propagator)
+        throws OrekitException, NoBracketingException {
+
+        try {
+
+            // function evaluating to 0 at latitude crossings
+            final UnivariateFunction latitudeFunction = new UnivariateFunction() {
+                /** {@inheritDoc} */
+                public double value(double x) throws OrekitWrapperException {
+                    try {
+                        final SpacecraftState state = propagator.propagate(guessDate.shiftedBy(x));
+                        final Vector3D position = state.getPVCoordinates(earth.getBodyFrame()).getPosition();
+                        final GeodeticPoint point = earth.transform(position, earth.getBodyFrame(), state.getDate());
+                        return point.getLatitude() - latitude;
+                    } catch (OrekitException oe) {
+                        throw new OrekitWrapperException(oe);
+                    }
+                }
+            };
+
+            // try to bracket the encounter
+            double span;
+            if (guessDate.shiftedBy(shift).compareTo(endDate) > 0) {
+                // Take a 1e-3 security margin
+                span = endDate.durationFrom(guessDate) - 1e-3;
+            } else {
+                span = shift;
+            }
+
+            while (!UnivariateRealSolverUtils.isBracketing(latitudeFunction, -span, span)) {
+
+                if (2 * span > maxShift) {
+                    // let the Apache Commons Math exception be thrown
+                    UnivariateRealSolverUtils.verifyBracketing(latitudeFunction, -span, span);
+                } else if (guessDate.shiftedBy(2 * span).compareTo(endDate) > 0) {
+                    // Out of range :
+                    return null;
+                }
+
+                // expand the search interval
+                span *= 2;
+
+            }
+
+            // find the encounter in the bracketed interval
+            final BaseUnivariateRealSolver<UnivariateFunction> solver =
+                    new BracketingNthOrderBrentSolver(0.1, 5);
+            final double dt = solver.solve(1000, latitudeFunction,-span, span);
+            return propagator.propagate(guessDate.shiftedBy(dt));
+
+        } catch (OrekitWrapperException owe) {
+            throw owe.getWrappedException();
+        }
+
+    }
+    
 }

@@ -106,14 +106,9 @@ public enum ParameterKey {
     CONTROL_SOLAR_TIME_SOLAR_TIME("solar_time"),
     CONTROL_SOLAR_TIME_SOLAR_TIME_TOLERANCE("solar_time_tolerance"),
     // Ground track grid
-    CONTROL_GROUND_TRACK_LATITUDE("latitude"),
-    CONTROL_GROUND_TRACK_LONGITUDE("longitude"),
-    CONTROL_GROUND_TRACK_ASCENDING("ascending"),
-    CONTROL_GROUND_TRACK_ORBITS_PER_CYCLE("orbits_per_cycle"),
-    CONTROL_GROUND_TRACK_DAYS_PER_CYCLE("days_per_cycle"),
+    CONTROL_GROUND_TRACK_FIRST_OFFSET("offset_first_maneuver"),
+    CONTROL_GROUND_TRACK_GRID_FILE("grid_file"),
     CONTROL_GROUND_TRACK_MAX_CROSS_TRACK_DISTANCE("max_cross_track_distance"),
-    CONTROL_GROUND_TRACK_SUBSAMPLING("subsampling"),
-    CONTROL_GROUND_TRACK_IGNORED_START_DURATION("ignored_start_duration"),
 
     // Maneuvers 
     MANEUVERS_NAME("name"),

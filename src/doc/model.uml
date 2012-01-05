@@ -149,7 +149,7 @@
           <ownedComment xmi:id="_Bk_a4CPyEeG6mOXI37upWQ" annotatedElement="_YLDHkO3VEeCpOqUFV6jmRA">
             <body>uses event detector</body>
           </ownedComment>
-          <ownedComment xmi:id="_R_qdkCPyEeG6mOXI37upWQ" annotatedElement="_E3rcYN1hEeCO1uZVwIAJVg _E3sqgN1hEeCO1uZVwIAJVg _6V7R8O3UEeCpOqUFV6jmRA _uNFyECPxEeG6mOXI37upWQ _NG7pgCPxEeG6mOXI37upWQ">
+          <ownedComment xmi:id="_R_qdkCPyEeG6mOXI37upWQ" annotatedElement="_E3sqgN1hEeCO1uZVwIAJVg _6V7R8O3UEeCpOqUFV6jmRA _uNFyECPxEeG6mOXI37upWQ">
             <body>use step handler</body>
           </ownedComment>
           <packagedElement xmi:type="uml:Class" xmi:id="_E28ckN1hEeCO1uZVwIAJVg" name="ControlLoop" clientDependency="_E_WKoN1hEeCO1uZVwIAJVg">
@@ -241,62 +241,10 @@
               </ownedParameter>
             </ownedOperation>
           </packagedElement>
-          <packagedElement xmi:type="uml:Class" xmi:id="_E3CjMN1hEeCO1uZVwIAJVg" name="SKParameter" clientDependency="_2alyMOBJEeC0rbAAcgLFmg" isAbstract="true">
-            <eAnnotations xmi:id="_E3CjMd1hEeCO1uZVwIAJVg" source="http://www.topcased.org/documentation">
-              <details xmi:id="_E3CjMt1hEeCO1uZVwIAJVg" key="documentation" value=" Base class representing a station-keeping control parameter.&#xA; &lt;p>&#xA; Station-keeping control parameters are the tuning parameters&#xA; used at each station-keeping cycle to get the associated&#xA; {@link StationKeepingGoal station-keeping goal} as close to&#xA; its {@link StationKeepingGoal#getTarget() target} as possible.&#xA; They correspond typically to maneuver amplitudes or dates.&#xA; &lt;/p>&#xA; &lt;p>&#xA; This abstract class implements the commons properties management&#xA; (name, min value, ...). The only thing left to the specific&#xA; implementations is the behavior at parameter setting, since the&#xA; new set value must be provided in an implementation-specific way&#xA; to the orbit propagation.&#xA; &lt;/p>&#xA; @author Luc Maisonobe&#xA;"/>
-            </eAnnotations>
-            <interfaceRealization xmi:id="_2alyMOBJEeC0rbAAcgLFmg" name="InterfaceRealization1" supplier="_9b7-EN7VEeCzQIF1TbkANw" client="_E3CjMN1hEeCO1uZVwIAJVg" contract="_9b7-EN7VEeCzQIF1TbkANw"/>
-            <ownedOperation xmi:id="_E_0EsN1hEeCO1uZVwIAJVg" name="getName" visibility="public">
-              <eAnnotations xmi:id="_E_0Esd1hEeCO1uZVwIAJVg" source="http://www.topcased.org/documentation">
-                <details xmi:id="_E_0Est1hEeCO1uZVwIAJVg" key="documentation" value="Get the name of the parameter.&#xA; @return name of the parameter&#xA; "/>
-              </eAnnotations>
-              <ownedParameter xmi:id="_E_0Es91hEeCO1uZVwIAJVg" type="_E9voId1hEeCO1uZVwIAJVg" direction="return"/>
-            </ownedOperation>
-            <ownedOperation xmi:id="_E_154t1hEeCO1uZVwIAJVg" name="getValue" visibility="public">
-              <eAnnotations xmi:id="_E_15491hEeCO1uZVwIAJVg" source="http://www.topcased.org/documentation">
-                <details xmi:id="_E_155N1hEeCO1uZVwIAJVg" key="documentation" value="Get the current value of the parameter.&#xA; @return current value of the parameter&#xA; "/>
-              </eAnnotations>
-              <ownedParameter xmi:id="_E_155d1hEeCO1uZVwIAJVg" type="_E_Z1BN1hEeCO1uZVwIAJVg" direction="return"/>
-            </ownedOperation>
-            <ownedOperation xmi:id="_E_3IAN1hEeCO1uZVwIAJVg" name="setValue" visibility="public">
-              <eAnnotations xmi:id="_E_3IAd1hEeCO1uZVwIAJVg" source="http://www.topcased.org/documentation">
-                <details xmi:id="_E_3IAt1hEeCO1uZVwIAJVg" key="documentation" value="Set the current value of the parameter.&#xA; @parem value current value of the parameter&#xA; "/>
-              </eAnnotations>
-              <ownedParameter xmi:id="_E_3IA91hEeCO1uZVwIAJVg" name="value" type="_E_Z1BN1hEeCO1uZVwIAJVg"/>
-            </ownedOperation>
-            <ownedOperation xmi:id="_E_4WIN1hEeCO1uZVwIAJVg" name="isTunable" visibility="public">
-              <eAnnotations xmi:id="_E_4WId1hEeCO1uZVwIAJVg" source="http://www.topcased.org/documentation">
-                <details xmi:id="_E_4WIt1hEeCO1uZVwIAJVg" key="documentation" value="Check if the parameter can be tuned.&#xA; &lt;p>&#xA; A tunable parameter can be automatically tuned by the&#xA; station-keeping {@link ControlLoop control loop}.&#xA; &lt;/p>&#xA; @return true if the parameter can be tuned,&#xA; false if its value is fixed&#xA; "/>
-              </eAnnotations>
-              <ownedParameter xmi:id="_E_4WI91hEeCO1uZVwIAJVg" type="_E_3vEt1hEeCO1uZVwIAJVg" direction="return"/>
-            </ownedOperation>
-            <ownedOperation xmi:id="_E_5kQN1hEeCO1uZVwIAJVg" name="setTunable" visibility="public">
-              <eAnnotations xmi:id="_E_5kQd1hEeCO1uZVwIAJVg" source="http://www.topcased.org/documentation">
-                <details xmi:id="_E_5kQt1hEeCO1uZVwIAJVg" key="documentation" value="Set the tunable flag.&#xA; @param tunable if true, the parameter becomes tunable&#xA; "/>
-              </eAnnotations>
-              <ownedParameter xmi:id="_E_5kQ91hEeCO1uZVwIAJVg" name="tunable" type="_E_3vEt1hEeCO1uZVwIAJVg"/>
-            </ownedOperation>
-            <ownedOperation xmi:id="_dFe8cCPnEeGRbZh-MY9luw" name="getConvergence">
-              <ownedParameter xmi:id="_gvkBgCPnEeGRbZh-MY9luw" visibility="public" type="_26xTseRSEeCC7oKz25Mm0Q" direction="return">
-                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_gvkBgSPnEeGRbZh-MY9luw" value="1"/>
-                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_gvkBgiPnEeGRbZh-MY9luw" value="1"/>
-              </ownedParameter>
-            </ownedOperation>
-          </packagedElement>
           <packagedElement xmi:type="uml:Usage" xmi:id="_FKr38N1hEeCO1uZVwIAJVg" supplier="_E_ZN8N1hEeCO1uZVwIAJVg" client="_E21u4N1hEeCO1uZVwIAJVg"/>
           <packagedElement xmi:type="uml:Usage" xmi:id="_FKr38d1hEeCO1uZVwIAJVg" supplier="_E9UxYN1hEeCO1uZVwIAJVg" client="_E21u4N1hEeCO1uZVwIAJVg"/>
           <packagedElement xmi:type="uml:Usage" xmi:id="_FKr38t1hEeCO1uZVwIAJVg" supplier="_E9a4BN1hEeCO1uZVwIAJVg" client="_E21u4N1hEeCO1uZVwIAJVg"/>
           <packagedElement xmi:type="uml:Usage" xmi:id="_FKr3891hEeCO1uZVwIAJVg" supplier="_E3eBAN1hEeCO1uZVwIAJVg" client="_E21u4N1hEeCO1uZVwIAJVg"/>
-          <packagedElement xmi:type="uml:Association" xmi:id="_Pa2DsN1iEeCO1uZVwIAJVg" name="A_&lt;tunableManeuver>_&lt;controlParameter>" memberEnd="_Pa2Dsd1iEeCO1uZVwIAJVg _Pa2DtN1iEeCO1uZVwIAJVg">
-            <ownedEnd xmi:id="_Pa2Dsd1iEeCO1uZVwIAJVg" name="tunableManeuver" type="_E3lVwN1hEeCO1uZVwIAJVg" association="_Pa2DsN1iEeCO1uZVwIAJVg">
-              <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_Pa2Dst1iEeCO1uZVwIAJVg" value="1"/>
-              <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_Pa2Ds91iEeCO1uZVwIAJVg" value="1"/>
-            </ownedEnd>
-            <ownedEnd xmi:id="_Pa2DtN1iEeCO1uZVwIAJVg" name="controlParameter" type="_E3CjMN1hEeCO1uZVwIAJVg" aggregation="shared" association="_Pa2DsN1iEeCO1uZVwIAJVg">
-              <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_Pa2Dtd1iEeCO1uZVwIAJVg" value="2"/>
-              <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_Pa2Dtt1iEeCO1uZVwIAJVg" value="2"/>
-            </ownedEnd>
-          </packagedElement>
           <packagedElement xmi:type="uml:Association" xmi:id="_faSi8N1iEeCO1uZVwIAJVg" name="A_&lt;controlLoop>_&lt;stationKeepingGoal>" memberEnd="_faSi8d1iEeCO1uZVwIAJVg _faSi9N1iEeCO1uZVwIAJVg">
             <ownedEnd xmi:id="_faSi8d1iEeCO1uZVwIAJVg" name="controlLoop" type="_E28ckN1hEeCO1uZVwIAJVg" association="_faSi8N1iEeCO1uZVwIAJVg">
               <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_faSi8t1iEeCO1uZVwIAJVg" value="1"/>
@@ -307,61 +255,21 @@
               <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_faSi9t1iEeCO1uZVwIAJVg" value="1"/>
             </ownedEnd>
           </packagedElement>
-          <packagedElement xmi:type="uml:Interface" xmi:id="_9b7-EN7VEeCzQIF1TbkANw" name="SKElement">
-            <ownedOperation xmi:id="_E_0rwN1hEeCO1uZVwIAJVg" name="getMin" visibility="public">
-              <eAnnotations xmi:id="_E_0rwd1hEeCO1uZVwIAJVg" source="http://www.topcased.org/documentation">
-                <details xmi:id="_E_0rwt1hEeCO1uZVwIAJVg" key="documentation" value="Get the minimal allowed value for the parameter.&#xA; @return minimal allowed value&#xA; "/>
-              </eAnnotations>
-              <ownedParameter xmi:id="_E_0rw91hEeCO1uZVwIAJVg" type="_E_Z1BN1hEeCO1uZVwIAJVg" direction="return"/>
-            </ownedOperation>
-            <ownedOperation xmi:id="_Z40Y8N7XEeCkStxwmGS-Mw" name="getMax">
-              <ownedParameter xmi:id="_bFJCIN7XEeCkStxwmGS-Mw" name="return" type="_E_Z1BN1hEeCO1uZVwIAJVg" direction="return"/>
-            </ownedOperation>
-            <ownedOperation xmi:id="_7EghwN7XEeCkStxwmGS-Mw" name="isConstrained">
-              <ownedParameter xmi:id="_8zkEkN7XEeCkStxwmGS-Mw" name="return" type="_E_3vEt1hEeCO1uZVwIAJVg" direction="return"/>
-            </ownedOperation>
-          </packagedElement>
           <packagedElement xmi:type="uml:Interface" xmi:id="_E3KfAN1hEeCO1uZVwIAJVg" name="SKControl">
             <eAnnotations xmi:id="_E3KfAd1hEeCO1uZVwIAJVg" source="http://www.topcased.org/documentation">
               <details xmi:id="_E3KfAt1hEeCO1uZVwIAJVg" key="documentation" value=" Interface representing a station-keeping goal that should be achieved.&#xA; &lt;p>&#xA; Station-keeping goals can be for example to ensure that spacecraft&#xA; remains within its allowed slot with as large margins as possible.&#xA; &lt;/p>&#xA; @see ControlParametersSet&#xA; @author Luc Maisonobe&#xA;"/>
             </eAnnotations>
-            <generalization xmi:id="_LUUi0N7ZEeCkStxwmGS-Mw" general="_9b7-EN7VEeCzQIF1TbkANw"/>
-            <generalization xmi:id="_r0yCcCPnEeGRbZh-MY9luw" general="_9b7-EN7VEeCzQIF1TbkANw"/>
             <ownedOperation xmi:id="_E_8AgN1hEeCO1uZVwIAJVg" name="getName">
               <eAnnotations xmi:id="_E_8nkN1hEeCO1uZVwIAJVg" source="http://www.topcased.org/documentation">
                 <details xmi:id="_E_8nkd1hEeCO1uZVwIAJVg" key="documentation" value="Get the name of the goal.&#xA; @return name of the goal&#xA; "/>
               </eAnnotations>
               <ownedParameter xmi:id="_E_8nkt1hEeCO1uZVwIAJVg" type="_E9voId1hEeCO1uZVwIAJVg" direction="return"/>
             </ownedOperation>
-            <ownedOperation xmi:id="_E_8nk91hEeCO1uZVwIAJVg" name="getTargetValue">
+            <ownedOperation xmi:id="_E_8nk91hEeCO1uZVwIAJVg" name="getMargins">
               <eAnnotations xmi:id="_E_8nlN1hEeCO1uZVwIAJVg" source="http://www.topcased.org/documentation">
                 <details xmi:id="_E_8nld1hEeCO1uZVwIAJVg" key="documentation" value="Get the target vector of the goal.&#xA; @return target vector of the goal&#xA; "/>
               </eAnnotations>
               <ownedParameter xmi:id="_E_8nlt1hEeCO1uZVwIAJVg" type="_E_Z1BN1hEeCO1uZVwIAJVg" direction="return"/>
-            </ownedOperation>
-            <ownedOperation xmi:id="_E_9OoN1hEeCO1uZVwIAJVg" name="getAchievedValue">
-              <eAnnotations xmi:id="_E_9Ood1hEeCO1uZVwIAJVg" source="http://www.topcased.org/documentation">
-                <details xmi:id="_E_9Oot1hEeCO1uZVwIAJVg" key="documentation" value="Get the achieved value of the goal.&#xA; &lt;p>&#xA; The achieved value will change at the end&#xA; of each attempted simulation, depending&#xA; on the control parameters. The control&#xA; parameters will be set up by the station-keeping&#xA; engine in order to reach a value as close to the&#xA; {@link #getTarget target} as possible.&#xA; &lt;/p>&#xA; @return achieved value of the goal&#xA; "/>
-              </eAnnotations>
-              <ownedParameter xmi:id="_E_9Oo91hEeCO1uZVwIAJVg" type="_E_Z1BN1hEeCO1uZVwIAJVg" direction="return"/>
-            </ownedOperation>
-            <ownedOperation xmi:id="_NBGvwPAnEeCkVpw_tSg2-A" name="getStepHandler">
-              <ownedParameter xmi:id="_PEotwPAnEeCkVpw_tSg2-A" name="return" type="_NH0FIOBXEeCxMfzvkTl0-w" direction="return"/>
-            </ownedOperation>
-            <ownedOperation xmi:id="_H-9rkfAnEeCkVpw_tSg2-A" name="getEventDetector">
-              <ownedParameter xmi:id="_KO9YQPAnEeCkVpw_tSg2-A" name="return" type="_u80KUOBPEeCxMfzvkTl0-w" direction="return"/>
-            </ownedOperation>
-            <ownedOperation xmi:id="_0blgMCPnEeGRbZh-MY9luw" name="getScalingDivisor">
-              <ownedParameter xmi:id="_4A5aACPnEeGRbZh-MY9luw" visibility="public" type="_26xTseRSEeCC7oKz25Mm0Q" direction="return">
-                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_4A6BECPnEeGRbZh-MY9luw" value="1"/>
-                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_4A6BESPnEeGRbZh-MY9luw" value="1"/>
-              </ownedParameter>
-            </ownedOperation>
-            <ownedOperation xmi:id="_8AxI4CPnEeGRbZh-MY9luw" name="limitsExceeded">
-              <ownedParameter xmi:id="_-H9e4CPnEeGRbZh-MY9luw" visibility="public" type="_-V404CPhEeGlStagX1ZcuA" direction="return">
-                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_-H9e4SPnEeGRbZh-MY9luw" value="1"/>
-                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_-H9e4iPnEeGRbZh-MY9luw" value="1"/>
-              </ownedParameter>
             </ownedOperation>
             <ownedOperation xmi:id="_DAZNcCPoEeGRbZh-MY9luw" name="getControlledSpacecraftName">
               <ownedParameter xmi:id="_KLydICPoEeGRbZh-MY9luw" visibility="public" type="_E9voId1hEeCO1uZVwIAJVg" direction="return">
@@ -404,10 +312,12 @@
                 <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_24iOUSPoEeGRbZh-MY9luw" value="1"/>
                 <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_24iOUiPoEeGRbZh-MY9luw" value="1"/>
               </ownedParameter>
-              <ownedParameter xmi:id="_24jccCPoEeGRbZh-MY9luw" name="rollingCycles" visibility="public" type="_buJvwPXJEeCTIMie9DR2WQ">
-                <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_24jccSPoEeGRbZh-MY9luw" value="1"/>
-                <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_24jcciPoEeGRbZh-MY9luw" value="1"/>
-              </ownedParameter>
+              <ownedParameter xmi:id="_7bL_0DYgEeGVN4YMNTGHiA" name="iteration" visibility="public" type="_FDK6sN1hEeCO1uZVwIAJVg" effect="read"/>
+            </ownedOperation>
+            <ownedOperation xmi:id="_4jT7IDYdEeGVN4YMNTGHiA" name="tuneManeuvers">
+              <ownedParameter xmi:id="_BlG2UDYfEeGVN4YMNTGHiA" name="maneuvers" type="_dAgtISP4EeG6mOXI37upWQ" effect="read"/>
+              <ownedParameter xmi:id="_Uj2_UDYfEeGVN4YMNTGHiA" name="reference" visibility="public" type="_mXRwsPZwEeCc5YSU9U_ksQ"/>
+              <ownedParameter xmi:id="_bBvzUDYgEeGVN4YMNTGHiA" name="return" type="_GNPugCPpEeGRbZh-MY9luw" direction="return"/>
             </ownedOperation>
           </packagedElement>
           <packagedElement xmi:type="uml:Collaboration" xmi:id="_fo_msOBqEeCdstVTjind5Q">
@@ -597,16 +507,6 @@
           <packagedElement xmi:type="uml:CallEvent" xmi:id="_XFgckRzMEeGxYPlzdkTvMQ" name="CallEvent10"/>
           <packagedElement xmi:type="uml:CallEvent" xmi:id="_u_IkIBzMEeGxYPlzdkTvMQ" name="CallEvent11"/>
           <packagedElement xmi:type="uml:CallEvent" xmi:id="_36Fs8BzMEeGxYPlzdkTvMQ" name="CallEvent14"/>
-          <packagedElement xmi:type="uml:Association" xmi:id="_0rduQCPyEeG6mOXI37upWQ" name="A_&lt;controlLoop>_&lt;baseMultivariateRealOptimizer>" memberEnd="_0rduQSPyEeG6mOXI37upWQ _0rduRCPyEeG6mOXI37upWQ">
-            <ownedEnd xmi:id="_0rduQSPyEeG6mOXI37upWQ" name="controlLoop" type="_E28ckN1hEeCO1uZVwIAJVg" association="_0rduQCPyEeG6mOXI37upWQ">
-              <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_0rduQiPyEeG6mOXI37upWQ" value="1"/>
-              <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_0rduQyPyEeG6mOXI37upWQ" value="1"/>
-            </ownedEnd>
-            <ownedEnd xmi:id="_0rduRCPyEeG6mOXI37upWQ" name="baseMultivariateRealOptimizer" type="_BbN18OBpEeCdstVTjind5Q" aggregation="composite" association="_0rduQCPyEeG6mOXI37upWQ">
-              <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_0rduRSPyEeG6mOXI37upWQ" value="1"/>
-              <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_0rduRiPyEeG6mOXI37upWQ" value="1"/>
-            </ownedEnd>
-          </packagedElement>
         </packagedElement>
         <packagedElement xmi:type="uml:Package" xmi:id="_E3eBAN1hEeCO1uZVwIAJVg" name="scenario" clientDependency="_FKsfAt1hEeCO1uZVwIAJVg _FKsfA91hEeCO1uZVwIAJVg _FKsfBN1hEeCO1uZVwIAJVg _FKsfBd1hEeCO1uZVwIAJVg _FKsfBt1hEeCO1uZVwIAJVg">
           <ownedComment xmi:id="_5lGl0N1pEeCO1uZVwIAJVg" annotatedElement="_E3iScN1hEeCO1uZVwIAJVg">
@@ -1084,7 +984,7 @@ It is updated by the updateStates methods of all scenario components.</body>
           </packagedElement>
         </packagedElement>
         <packagedElement xmi:type="uml:Package" xmi:id="_E3pAIN1hEeCO1uZVwIAJVg" name="strategies">
-          <ownedComment xmi:id="_yPuoYOBWEeCxMfzvkTl0-w" annotatedElement="_Pa2DsN1iEeCO1uZVwIAJVg">
+          <ownedComment xmi:id="_yPuoYOBWEeCxMfzvkTl0-w">
             <body>the two parameters are date and amplitude
 </body>
           </ownedComment>
@@ -1101,7 +1001,7 @@ It is updated by the updateStates methods of all scenario components.</body>
             <elementImport xmi:id="_FCzuVN1hEeCO1uZVwIAJVg" visibility="private" importedElement="_FCzuU91hEeCO1uZVwIAJVg"/>
             <elementImport xmi:id="_FCzuVd1hEeCO1uZVwIAJVg" visibility="private"/>
             <elementImport xmi:id="_FC0VYN1hEeCO1uZVwIAJVg" visibility="private" importedElement="_E9bfEN1hEeCO1uZVwIAJVg"/>
-            <elementImport xmi:id="_FC0VYd1hEeCO1uZVwIAJVg" visibility="private" importedElement="_E3CjMN1hEeCO1uZVwIAJVg"/>
+            <elementImport xmi:id="_FC0VYd1hEeCO1uZVwIAJVg" visibility="private"/>
             <elementImport xmi:id="_FC0VYt1hEeCO1uZVwIAJVg" visibility="private"/>
             <ownedOperation xmi:id="_FD4sYN1hEeCO1uZVwIAJVg" name="getParameters" visibility="public">
               <eAnnotations xmi:id="_FD4sYd1hEeCO1uZVwIAJVg" source="http://www.topcased.org/documentation">
@@ -1151,130 +1051,6 @@ It is updated by the updateStates methods of all scenario components.</body>
             </ownedEnd>
           </packagedElement>
           <packagedElement xmi:type="uml:Package" xmi:id="_E3pAId1hEeCO1uZVwIAJVg" name="geo" clientDependency="_FKttIN1hEeCO1uZVwIAJVg _FKttId1hEeCO1uZVwIAJVg _FKttIt1hEeCO1uZVwIAJVg _FKttI91hEeCO1uZVwIAJVg _FKttJN1hEeCO1uZVwIAJVg _FKttJd1hEeCO1uZVwIAJVg _FKttJt1hEeCO1uZVwIAJVg _FKttJ91hEeCO1uZVwIAJVg">
-            <packagedElement xmi:type="uml:Class" xmi:id="_E3rcYN1hEeCO1uZVwIAJVg" name="CenteredLongitude" clientDependency="_FE4K4N1hEeCO1uZVwIAJVg _eAAOcOBQEeCxMfzvkTl0-w">
-              <eAnnotations xmi:id="_E3rcYd1hEeCO1uZVwIAJVg" source="http://www.topcased.org/documentation">
-                <details xmi:id="_E3rcYt1hEeCO1uZVwIAJVg" key="documentation" value=" Station-keeping goal attempting to balance East-West margins&#xA; throughout a cycle.&#xA; &lt;p>&#xA; This goal value is:&#xA; &lt;pre>&#xA;   (l&lt;sub>E&lt;/sub> - max(l(t))) - (min(l(t)) - l&lt;sub>W&lt;/sub>)&#xA; &lt;/pre>&#xA; where l&lt;sub>E&lt;/sub> is the East boundary of the longitude slot,&#xA; l&lt;sub>W&lt;/sub> is the West boundary of the longitude slot, l(t) is&#xA; the spacecraft longitude at time t and the min anx max functions&#xA; are evaluated for the complete cycle duration.&#xA; &lt;/p>&#xA; &lt;p>&#xA; The previous definition implies that setting the target of this goal&#xA; to zero attempts to have a longitude excursion covered by the satellite&#xA; during the station-keeping cycle that is well balanced near the center&#xA; of the longitude slot, the same margin being available on both sides.&#xA; Setting the target of this goal to a non-zero value attempts to have&#xA; a shifted longitude excursion, the shift being towards West if the target&#xA; value is positive, and towards East otherwise.&#xA; &lt;/p>&#xA; @author Luc Maisonobe&#xA;"/>
-              </eAnnotations>
-              <elementImport xmi:id="_FE71Qd1hEeCO1uZVwIAJVg" visibility="private" importedElement="_E9PR1d1hEeCO1uZVwIAJVg"/>
-              <elementImport xmi:id="_FE71Qt1hEeCO1uZVwIAJVg" visibility="private" importedElement="_E9RuE91hEeCO1uZVwIAJVg"/>
-              <elementImport xmi:id="_FE71RN1hEeCO1uZVwIAJVg" visibility="private" importedElement="_FE71Q91hEeCO1uZVwIAJVg"/>
-              <elementImport xmi:id="_FE8cUN1hEeCO1uZVwIAJVg" visibility="private" importedElement="_E9S8Md1hEeCO1uZVwIAJVg"/>
-              <elementImport xmi:id="_FE8cUd1hEeCO1uZVwIAJVg" visibility="private" importedElement="_E9S8M91hEeCO1uZVwIAJVg"/>
-              <elementImport xmi:id="_FE8cUt1hEeCO1uZVwIAJVg" visibility="private" importedElement="_E9UxYd1hEeCO1uZVwIAJVg"/>
-              <elementImport xmi:id="_FE8cU91hEeCO1uZVwIAJVg" visibility="private" importedElement="_E9VYcN1hEeCO1uZVwIAJVg"/>
-              <elementImport xmi:id="_FE8cVN1hEeCO1uZVwIAJVg" visibility="private" importedElement="_E9aQ8d1hEeCO1uZVwIAJVg"/>
-              <elementImport xmi:id="_FE8cVd1hEeCO1uZVwIAJVg" visibility="private"/>
-              <elementImport xmi:id="_FE9DYd1hEeCO1uZVwIAJVg" visibility="private" importedElement="_FE9DYN1hEeCO1uZVwIAJVg"/>
-              <elementImport xmi:id="_FE9DYt1hEeCO1uZVwIAJVg" visibility="private" importedElement="_E9bfEN1hEeCO1uZVwIAJVg"/>
-              <elementImport xmi:id="_FE9DY91hEeCO1uZVwIAJVg" visibility="private" importedElement="_E3KfAN1hEeCO1uZVwIAJVg"/>
-              <ownedBehavior xmi:type="uml:OpaqueBehavior" xmi:id="_FFGNUN1hEeCO1uZVwIAJVg" name="getName" specification="_FFDKAN1hEeCO1uZVwIAJVg">
-                <ownedParameter xmi:id="_FFGNUd1hEeCO1uZVwIAJVg" type="_E9voId1hEeCO1uZVwIAJVg"/>
-                <language>JAVA</language>
-                <body>@inheritDoc} */
-    public String getName() {
-        return &quot;longitude margins&quot;;
-    </body>
-              </ownedBehavior>
-              <ownedBehavior xmi:type="uml:OpaqueBehavior" xmi:id="_FFLs4N1hEeCO1uZVwIAJVg" name="getTarget" specification="_FFJQoN1hEeCO1uZVwIAJVg">
-                <ownedParameter xmi:id="_FFLs4d1hEeCO1uZVwIAJVg" type="_E_Z1BN1hEeCO1uZVwIAJVg"/>
-                <language>JAVA</language>
-                <body>@inheritDoc} */
-    public double getTarget() {
-        return target;
-    </body>
-              </ownedBehavior>
-              <ownedBehavior xmi:type="uml:OpaqueBehavior" xmi:id="_FFRMcN1hEeCO1uZVwIAJVg" name="getAchievedValue" specification="_FFOwMN1hEeCO1uZVwIAJVg">
-                <ownedParameter xmi:id="_FFRzgN1hEeCO1uZVwIAJVg" type="_E_Z1BN1hEeCO1uZVwIAJVg"/>
-                <language>JAVA</language>
-                <body>@inheritDoc} */
-    public double getAchievedValue() {
-        return (eastBoundary - maxL) - (minL - westBoundary);
-    </body>
-              </ownedBehavior>
-              <ownedBehavior xmi:type="uml:OpaqueBehavior" xmi:id="_FFf18N1hEeCO1uZVwIAJVg" name="handleStep" specification="_FFdZsN1hEeCO1uZVwIAJVg">
-                <ownedParameter xmi:id="_FFf18d1hEeCO1uZVwIAJVg" name="interpolator" type="_FE9DYN1hEeCO1uZVwIAJVg"/>
-                <ownedParameter xmi:id="_FFf18t1hEeCO1uZVwIAJVg" name="isLast" type="_E_3vEt1hEeCO1uZVwIAJVg"/>
-                <language>JAVA</language>
-                <body>@inheritDoc} */
-    public void handleStep(OrekitStepInterpolator interpolator, boolean isLast)
-        throws PropagationException {
-
-        try {
-
-            // find step boundaries
-            final AbsoluteDate minDate =
-                    interpolator.isForward() ? interpolator.getPreviousDate() : interpolator.getCurrentDate();
-            final AbsoluteDate maxDate =
-                    interpolator.isForward() ? interpolator.getCurrentDate() : interpolator.getPreviousDate();
-
-            // loop throughout step
-            for (AbsoluteDate date = minDate;
-                    date.compareTo(maxDate) &lt; 0;
-                    date = date.shiftedBy(samplingStep)) {
-
-                // compute position in Earth frame
-                interpolator.setInterpolatedDate(date);
-                final SpacecraftState state = interpolator.getInterpolatedState();
-                final Vector3D position = state.getPVCoordinates(earth.getBodyFrame()).getPosition();
-
-                // convert to latitude/longitude/altitude
-                final GeodeticPoint gp = earth.transform(position, earth.getBodyFrame(), date);
-
-                // update longitude excursion
-                minL = FastMath.min(minL, gp.getLongitude());
-                maxL = FastMath.max(maxL, gp.getLongitude());
-
-            }
-
-        } catch (OrekitException oe) {
-            throw new PropagationException(oe);
-        }
-
-    </body>
-              </ownedBehavior>
-              <ownedBehavior xmi:type="uml:OpaqueBehavior" xmi:id="_FFoY0N1hEeCO1uZVwIAJVg" name="reset" specification="_FFl8kN1hEeCO1uZVwIAJVg">
-                <language>JAVA</language>
-                <body>@inheritDoc} */
-    public void reset() {
-        // set the initial values at infinite, to make sure they will be updated
-        // properly as soon as simulation starts
-        minL = Double.POSITIVE_INFINITY;
-        maxL = Double.NEGATIVE_INFINITY;
-    </body>
-              </ownedBehavior>
-              <interfaceRealization xmi:id="_FE4K4N1hEeCO1uZVwIAJVg" name="eu.eumetsat.skat.control.StationKeepingGoal" supplier="_E3KfAN1hEeCO1uZVwIAJVg" client="_E3rcYN1hEeCO1uZVwIAJVg" contract="_E3KfAN1hEeCO1uZVwIAJVg"/>
-              <interfaceRealization xmi:id="_eAAOcOBQEeCxMfzvkTl0-w" name="InterfaceRealization1" supplier="_qfK6UOBPEeCxMfzvkTl0-w" client="_E3rcYN1hEeCO1uZVwIAJVg" contract="_qfK6UOBPEeCxMfzvkTl0-w"/>
-              <ownedOperation xmi:id="_FFDKAN1hEeCO1uZVwIAJVg" name="getName" visibility="public" method="_FFGNUN1hEeCO1uZVwIAJVg">
-                <eAnnotations xmi:id="_FFDKAd1hEeCO1uZVwIAJVg" source="http://www.topcased.org/documentation">
-                  <details xmi:id="_FFDKAt1hEeCO1uZVwIAJVg" key="documentation" value="Get the name of the goal.&#xA; @return name of the goal&#xA; "/>
-                </eAnnotations>
-                <ownedParameter xmi:id="_FFDKA91hEeCO1uZVwIAJVg" type="_E9voId1hEeCO1uZVwIAJVg" direction="return"/>
-              </ownedOperation>
-              <ownedOperation xmi:id="_FFJQoN1hEeCO1uZVwIAJVg" name="getTarget" visibility="public" method="_FFLs4N1hEeCO1uZVwIAJVg">
-                <eAnnotations xmi:id="_FFJQod1hEeCO1uZVwIAJVg" source="http://www.topcased.org/documentation">
-                  <details xmi:id="_FFJQot1hEeCO1uZVwIAJVg" key="documentation" value="Get the target vector of the goal.&#xA; @return target vector of the goal&#xA; "/>
-                </eAnnotations>
-                <ownedParameter xmi:id="_FFJQo91hEeCO1uZVwIAJVg" type="_E_Z1BN1hEeCO1uZVwIAJVg" direction="return"/>
-              </ownedOperation>
-              <ownedOperation xmi:id="_FFOwMN1hEeCO1uZVwIAJVg" name="getAchievedValue" visibility="public" method="_FFRMcN1hEeCO1uZVwIAJVg">
-                <eAnnotations xmi:id="_FFOwMd1hEeCO1uZVwIAJVg" source="http://www.topcased.org/documentation">
-                  <details xmi:id="_FFOwMt1hEeCO1uZVwIAJVg" key="documentation" value="Get the achieved value of the goal.&#xA; &lt;p>&#xA; The achieved value will change at the end&#xA; of each attempted simulation, depending&#xA; on the control parameters. The control&#xA; parameters will be set up by the station-keeping&#xA; engine in order to reach a value as close to the&#xA; {@link #getTarget target} as possible.&#xA; &lt;/p>&#xA; @return achieved value of the goal&#xA; "/>
-                </eAnnotations>
-                <ownedParameter xmi:id="_FFOwM91hEeCO1uZVwIAJVg" type="_E_Z1BN1hEeCO1uZVwIAJVg" direction="return"/>
-              </ownedOperation>
-              <ownedOperation xmi:id="_FFdZsN1hEeCO1uZVwIAJVg" name="handleStep" visibility="public" method="_FFf18N1hEeCO1uZVwIAJVg">
-                <eAnnotations xmi:id="_FFdZsd1hEeCO1uZVwIAJVg" source="http://www.topcased.org/documentation">
-                  <details xmi:id="_FFdZst1hEeCO1uZVwIAJVg" key="documentation" value="Handle the current step.&#xA; @param interpolator interpolator set up for the current step&#xA; @param isLast if true, this is the last integration step&#xA; @exception PropagationException if step cannot be handled&#xA; "/>
-                </eAnnotations>
-                <ownedParameter xmi:id="_FFdZs91hEeCO1uZVwIAJVg" name="interpolator" type="_FE9DYN1hEeCO1uZVwIAJVg"/>
-                <ownedParameter xmi:id="_FFdZtN1hEeCO1uZVwIAJVg" name="isLast" type="_E_3vEt1hEeCO1uZVwIAJVg"/>
-              </ownedOperation>
-              <ownedOperation xmi:id="_FFl8kN1hEeCO1uZVwIAJVg" name="reset" visibility="public" method="_FFoY0N1hEeCO1uZVwIAJVg">
-                <eAnnotations xmi:id="_FFl8kd1hEeCO1uZVwIAJVg" source="http://www.topcased.org/documentation">
-                  <details xmi:id="_FFl8kt1hEeCO1uZVwIAJVg" key="documentation" value="Reset the step handler.&#xA; "/>
-                </eAnnotations>
-              </ownedOperation>
-            </packagedElement>
             <packagedElement xmi:type="uml:Class" xmi:id="_E3sqgN1hEeCO1uZVwIAJVg" name="EccentricityCircle" clientDependency="_FFqOAN1hEeCO1uZVwIAJVg _evyFkOBQEeCxMfzvkTl0-w">
               <eAnnotations xmi:id="_E3sqgd1hEeCO1uZVwIAJVg" source="http://www.topcased.org/documentation">
                 <details xmi:id="_E3sqgt1hEeCO1uZVwIAJVg" key="documentation" value=" Station-keeping goal attempting to follow a specified eccentricity circle.&#xA;"/>
@@ -1467,16 +1243,6 @@ It is updated by the updateStates methods of all scenario components.</body>
             </packagedElement>
           </packagedElement>
           <packagedElement xmi:type="uml:Interface" xmi:id="_qfK6UOBPEeCxMfzvkTl0-w" name="OrekitStepHandler"/>
-          <packagedElement xmi:type="uml:Association" xmi:id="_wkkg4PAqEeCkVpw_tSg2-A" name="A_&lt;longitudeSlotMargins>_&lt;orekitStepHandler>" memberEnd="_wkkg4fAqEeCkVpw_tSg2-A _wkkg5PAqEeCkVpw_tSg2-A">
-            <ownedEnd xmi:id="_wkkg4fAqEeCkVpw_tSg2-A" name="longitudeSlotMargins" type="_E3rcYN1hEeCO1uZVwIAJVg" association="_wkkg4PAqEeCkVpw_tSg2-A">
-              <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_wkkg4vAqEeCkVpw_tSg2-A" value="1"/>
-              <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_wkkg4_AqEeCkVpw_tSg2-A" value="1"/>
-            </ownedEnd>
-            <ownedEnd xmi:id="_wkkg5PAqEeCkVpw_tSg2-A" name="orekitStepHandler" type="_NH0FIOBXEeCxMfzvkTl0-w" aggregation="shared" association="_wkkg4PAqEeCkVpw_tSg2-A">
-              <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_wkkg5fAqEeCkVpw_tSg2-A" value="1"/>
-              <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_wkkg5vAqEeCkVpw_tSg2-A" value="1"/>
-            </ownedEnd>
-          </packagedElement>
           <packagedElement xmi:type="uml:Association" xmi:id="_zblxUPAqEeCkVpw_tSg2-A" name="A_&lt;eccentricityCircle>_&lt;orekitStepHandler>" memberEnd="_zblxUfAqEeCkVpw_tSg2-A _zblxVPAqEeCkVpw_tSg2-A">
             <ownedEnd xmi:id="_zblxUfAqEeCkVpw_tSg2-A" name="eccentricityCircle" type="_E3sqgN1hEeCO1uZVwIAJVg" association="_zblxUPAqEeCkVpw_tSg2-A">
               <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_zblxUvAqEeCkVpw_tSg2-A" value="1"/>
@@ -1564,9 +1330,6 @@ It is updated by the updateStates methods of all scenario components.</body>
               <ownedParameter xmi:id="_BSXOQCP8EeG6mOXI37upWQ" name="Parameter1" type="_E3KfAN1hEeCO1uZVwIAJVg" direction="return"/>
             </ownedOperation>
           </packagedElement>
-          <packagedElement xmi:type="uml:Class" xmi:id="_NG7pgCPxEeG6mOXI37upWQ" name="MinimizedManeuvers" clientDependency="_YRak8CPxEeG6mOXI37upWQ">
-            <interfaceRealization xmi:id="_YRak8CPxEeG6mOXI37upWQ" name="InterfaceRealization1" supplier="_E3KfAN1hEeCO1uZVwIAJVg" client="_NG7pgCPxEeG6mOXI37upWQ" contract="_E3KfAN1hEeCO1uZVwIAJVg"/>
-          </packagedElement>
           <packagedElement xmi:type="uml:Association" xmi:id="_hIiScCP4EeG6mOXI37upWQ" name="A_&lt;tunableManeuver>_&lt;scheduledManeuver>" memberEnd="_hIiScSP4EeG6mOXI37upWQ _hIiSdCP4EeG6mOXI37upWQ" navigableOwnedEnd="_hIiSdCP4EeG6mOXI37upWQ">
             <ownedEnd xmi:id="_hIiScSP4EeG6mOXI37upWQ" name="tunableManeuver" type="_E3lVwN1hEeCO1uZVwIAJVg" association="_hIiScCP4EeG6mOXI37upWQ">
               <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_hIiSciP4EeG6mOXI37upWQ" value="1"/>
@@ -1635,7 +1398,6 @@ It is updated by the updateStates methods of all scenario components.</body>
             </eAnnotations>
             <ownedLiteral xmi:id="_FGZ04N1hEeCO1uZVwIAJVg" name="SIMULATION_OUTPUT_BASE_NAME"/>
             <ownedLiteral xmi:id="_FGab8N1hEeCO1uZVwIAJVg" name="SIMULATION_INERTIAL_FRAME"/>
-            <ownedLiteral xmi:id="_FGab8d1hEeCO1uZVwIAJVg" name="SIMULATION_CYCLE_DURATION"/>
             <ownedLiteral xmi:id="_FGab8t1hEeCO1uZVwIAJVg" name="..."/>
             <ownedLiteral xmi:id="_FGab891hEeCO1uZVwIAJVg" name="COMPONENT_CONTROL_LOOP_FIRST_CYCLE"/>
             <ownedLiteral xmi:id="_FGab9N1hEeCO1uZVwIAJVg" name="CONTROL_ECCENTRICITY_CIRCLE_CENTER_X"/>

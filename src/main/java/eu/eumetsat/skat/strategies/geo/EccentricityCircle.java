@@ -72,9 +72,6 @@ public class EccentricityCircle extends AbstractSKControl {
     /** Associated step handler. */
     private final OrekitStepHandler stephandler;
 
-    /** In-plane maneuver model. */
-    private final TunableManeuver model;
-
     /** Abscissa of the circle center. */
     private final double centerX;
 
@@ -113,9 +110,8 @@ public class EccentricityCircle extends AbstractSKControl {
     public EccentricityCircle(final String name, final String controlledName, final int controlledIndex,
                               final TunableManeuver model, final double centerX, final double centerY,
                               final double radius, final CelestialBody sun, final double samplingStep) {
-        super(name, controlledName, controlledIndex, null, -1, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY);
+        super(name, model, controlledName, controlledIndex, null, -1, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY);
         this.stephandler  = new Handler();
-        this.model        = model;
         this.centerX      = centerX;
         this.centerY      = centerY;
         this.radius       = radius;
@@ -130,26 +126,10 @@ public class EccentricityCircle extends AbstractSKControl {
                               final AbsoluteDate start, final AbsoluteDate end)
         throws OrekitException {
 
-        // eccentricity sampling is meaningful only after the last in-plane maneuver,
-        // since this is one of the maneuvers that will be tuned
-        AbsoluteDate date = start;
-        for (final ScheduledManeuver maneuver : maneuvers) {
-            if (maneuver.getName().equals(model.getName()) &&
-                maneuver.getDate().compareTo(date) >= 0) {
-                date = maneuver.getDate();
-            }
-        }
-        for (final ScheduledManeuver maneuver : fixedManeuvers) {
-            if (maneuver.getName().equals(model.getName()) &&
-                maneuver.getDate().compareTo(date) >= 0) {
-                date = maneuver.getDate();
-            }
-        }
+        // select a long maneuver-free interval for fitting
+        final AbsoluteDate[] freeInterval = getManeuverFreeInterval(maneuvers, fixedManeuvers, start, end);
 
-        if (date.compareTo(end) > 0) {
-            date = end;
-        }
-        samplingStart = propagator.propagate(date);
+       samplingStart = propagator.propagate(freeInterval[0]);
         cycleStart    = start;
 
     }
@@ -231,7 +211,7 @@ public class EccentricityCircle extends AbstractSKControl {
             }
 
             final SpacecraftState state  = tunables[indices[0]].getStateBefore();
-            final double sign            = maneuverSign(state);
+            final double sign            = thrustSignVelocity(state);
             final EquinoctialOrbit orbit = (EquinoctialOrbit) OrbitType.EQUINOCTIAL.convertType(state.getOrbit());
             final double alphaState      = orbit.getLM();
             final double alphaMan        = FastMath.atan2(sign * deY, sign * deX);
@@ -251,6 +231,7 @@ public class EccentricityCircle extends AbstractSKControl {
         double[] trimmed = trimManeuvers(dV0, dV1);
 
         // adjust the two selected maneuvers
+        final TunableManeuver model = getModel();
         final ScheduledManeuver m0 = new ScheduledManeuver(model, t0, new Vector3D(trimmed[0], model.getDirection()),
                                                            model.getCurrentThrust(), model.getCurrentISP(),
                                                            adapterPropagator, false);
@@ -281,17 +262,6 @@ public class EccentricityCircle extends AbstractSKControl {
 
     }
 
-    /** Get the maneuver sign with respect to velocity.
-     * @param state state at maneuver time
-     * @return +1 if thrust is along velocity direction, -1 otherwise
-     */
-    private double maneuverSign(final SpacecraftState state) {
-        final Vector3D thrustDirection =
-                state.getAttitude().getRotation().applyInverseTo(model.getDirection());
-        Vector3D velocity = state.getPVCoordinates().getVelocity();
-        return FastMath.signum(Vector3D.dotProduct(thrustDirection, velocity));
-    }
-
     /** Ensure a maneuvers pair to fulfill constraints.
      * <p>
      * We have an initial pair of maneuvers (dV0, dV1) attempting to control
@@ -309,8 +279,8 @@ public class EccentricityCircle extends AbstractSKControl {
     private double[] trimManeuvers(final double dV0, final double dV1) {
 
         // ensure the sum fulfills the constraints (this should really be a no-op)
-        final double inf = model.getDVInf();
-        final double sup = model.getDVSup();
+        final double inf = getModel().getDVInf();
+        final double sup = getModel().getDVSup();
         final double sum = FastMath.max(2 * inf, FastMath.min(2 * sup, dV0 + dV1));
         final double sumCorrection = 0.5 * (sum - (dV0 + dV1));
         final double dVA = dV0 + sumCorrection;
@@ -355,7 +325,7 @@ public class EccentricityCircle extends AbstractSKControl {
 
         AbsoluteDate date1 = null;
         for (int i = maneuvers.length - 1; i >= 0; --i) {
-            if (maneuvers[i].getName().equals(model.getName())) {
+            if (maneuvers[i].getName().equals(getModel().getName())) {
                 if (indices[1] < 0) {
                     // first maneuver to be found
                     indices[1] = i;

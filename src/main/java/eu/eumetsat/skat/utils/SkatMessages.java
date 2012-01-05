@@ -54,7 +54,6 @@ public enum SkatMessages implements Localizable {
     WRONG_MISS_THRESHOLD("invalid maneuver miss threshold: {0}, must be between 0.0 and 1.0"),
     WRONG_COUPLING("invalid coupling ratio: {0}, must be between -1.0 and 1.0"),
     ALIGNED_COUPLING_AXES("coupling axis ({0}, {1}, {2}) is aligned with the nominal thrust direction"),
-    PHASING_NUMBERS_NOT_MUTUALLY_PRIMES("number of orbits per cycle ({0}) and days per cycle ({1}) are not mutually primes"),
     NO_ECLIPSE_AROUND_DATE("no eclipse around date {0}"),
     INITIAL_MASS_LARGER_THAN_BOL_MASS("initial mass ({0} kg) larger than Begin Of Life mass ({1} kg)"),
     NON_INCREASING_MASSES_IN_THRUST_CALIBRATION_CURVE("non increasing masses in thrust decay law: {0} > {1}"),
