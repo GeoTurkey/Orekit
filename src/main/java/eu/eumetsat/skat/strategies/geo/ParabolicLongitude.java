@@ -14,6 +14,7 @@ import org.apache.commons.math.util.MathUtils;
 import org.orekit.bodies.BodyShape;
 import org.orekit.errors.OrekitException;
 import org.orekit.errors.PropagationException;
+import org.orekit.frames.Frame;
 import org.orekit.frames.Transform;
 import org.orekit.orbits.EquinoctialOrbit;
 import org.orekit.orbits.OrbitType;
@@ -233,8 +234,8 @@ public class ParabolicLongitude extends AbstractSKControl {
         PolynomialFitter aFitter = new PolynomialFitter(1, new LevenbergMarquardtOptimizer());
         PolynomialFitter lFitter = new PolynomialFitter(2, new LevenbergMarquardtOptimizer());
         for (AbsoluteDate date = freeIntervalStart; date.compareTo(freeIntervalEnd) < 0; date = date.shiftedBy(samplingStep)) {
-            final SpacecraftState  state = propagator.propagate(date);
-            final double meanLongitude = getLongitude(state, PositionAngle.MEAN);
+            final SpacecraftState state = propagator.propagate(date);
+            final double meanLongitude = getMeanLongitude(state);
             final double dt = date.durationFrom(freeIntervalStart);
             aFitter.addObservedPoint(dt, state.getA());
             lFitter.addObservedPoint(dt, meanLongitude);
@@ -354,13 +355,12 @@ public class ParabolicLongitude extends AbstractSKControl {
         return FastMath.signum(Vector3D.dotProduct(thrustDirection, velocity));
     }
 
-    /** Get Earth based longitude.
+    /** Get Earth based mean longitude.
      * @param state current state
-     * @param type type of the angle
-     * @return Earth-based longitude
+     * @return Earth based mean longitude
      * @exception OrekitException if frames conversion cannot be computed
      */
-    private double getLongitude(final SpacecraftState state, final PositionAngle type)
+    private double getMeanLongitude(final SpacecraftState state)
         throws OrekitException {
 
         // get equinoctial orbit
@@ -370,7 +370,7 @@ public class ParabolicLongitude extends AbstractSKControl {
         final Transform transform = earth.getBodyFrame().getTransformTo(state.getFrame(), state.getDate());
         final double theta = transform.transformVector(Vector3D.PLUS_I).getAlpha();
 
-        return MathUtils.normalizeAngle(orbit.getL(type) - theta, center);
+        return MathUtils.normalizeAngle(orbit.getL(PositionAngle.MEAN) - theta, center);
 
     }
 
@@ -415,11 +415,12 @@ public class ParabolicLongitude extends AbstractSKControl {
                     // compute longitudes
                     interpolator.setInterpolatedDate(date);
                     final SpacecraftState state = interpolator.getInterpolatedState();
-                    final double trueLongitude = getLongitude(state, PositionAngle.TRUE);
-                    final double meanLongitude = getLongitude(state, PositionAngle.MEAN);
+                    final Frame earthFrame      = earth.getBodyFrame();
+                    final double geogLongitude  = state.getPVCoordinates(earthFrame).getPosition().getAlpha();
+                    final double meanLongitude  = getMeanLongitude(state);
 
                     // check the limits
-                    checkMargins(FastMath.toDegrees(trueLongitude));
+                    checkMargins(FastMath.toDegrees(geogLongitude));
 
                     // add point to sample
                     final double dt = date.durationFrom(fitStart.getDate());

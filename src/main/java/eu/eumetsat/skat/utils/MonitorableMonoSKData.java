@@ -121,9 +121,8 @@ public enum MonitorableMonoSKData implements MonitorableMono {
         @Override
         protected void extractData(final ScenarioState state, double[] data)
             throws OrekitException {
-            final Frame earthFrame  = state.getEarth().getBodyFrame();
-            final Vector3D position = getPVCoordinates(state, earthFrame).getPosition();
-            final double longitude  = FastMath.atan2(position.getY(), position.getX());
+            final Frame earthFrame = state.getEarth().getBodyFrame();
+            final double longitude = getPVCoordinates(state, earthFrame).getPosition().getAlpha();
             data[0] = FastMath.toDegrees(longitude);
         }
 
