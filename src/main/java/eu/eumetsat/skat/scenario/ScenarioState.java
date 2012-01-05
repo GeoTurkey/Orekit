@@ -191,9 +191,9 @@ public class ScenarioState {
      * The instance is not changed, a new instance is created
      * </p>
      * @param maneuverName name of the maneuver
-     * @param number number of in-plane maneuvers
-     * @param cycleDV cycle DV for in-plane maneuvers
-     * @param totalDV total DV for in-plane maneuvers
+     * @param number number of named maneuvers
+     * @param cycleDV cycle DV for the named maneuver
+     * @param totalDV total DV for the named maneuver
      * @return updated state
      */
     public ScenarioState updateManeuverStats(final String maneuverName, final int number,

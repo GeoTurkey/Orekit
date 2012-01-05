@@ -239,7 +239,7 @@ public class Scenario implements ScenarioComponent {
 
         for (final Map.Entry<SKControl, SimpleMonitorable> entry : controlsViolations.entrySet()) {
             double[] v = entry.getValue().getValue(-1).clone();
-            if (entry.getKey().getMargins() > 0) {
+            if (entry.getKey().getMargins() < 0) {
                 // this cycle has lead to constraints violations, increment counter
                 v[0] += 1;
             }
