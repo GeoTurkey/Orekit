@@ -3,8 +3,6 @@ package eu.eumetsat.skat.strategies.geo;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.SortedSet;
-import java.util.TreeSet;
 
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math.optimization.fitting.PolynomialFitter;
@@ -102,9 +100,6 @@ public class ParabolicLongitude extends AbstractSKControl {
     /** Target longitude. */
     private final double center;
 
-    /** In-plane maneuver model. */
-    private final TunableManeuver model;
-
     /** Maximum number of maneuvers to set up in one cycle. */
     private final int maxManeuvers;
 
@@ -165,7 +160,7 @@ public class ParabolicLongitude extends AbstractSKControl {
                               final double lEast, final double lWest,
                               final double samplingStep, final BodyShape earth)
         throws SkatException {
-        super(name, controlledName, controlledIndex, null, -1,
+        super(name, model, controlledName, controlledIndex, null, -1,
               FastMath.toDegrees(lWest), FastMath.toDegrees(MathUtils.normalizeAngle(lEast, lWest)));
         if (getMin() >= getMax()) {
             throw new SkatException(SkatMessages.UNSORTED_LONGITUDES,
@@ -175,7 +170,6 @@ public class ParabolicLongitude extends AbstractSKControl {
         this.samplingStep     = samplingStep;
         this.earth            = earth;
         this.center           = 0.5 * (lWest + MathUtils.normalizeAngle(lEast, lWest));
-        this.model            = model;
         this.firstOffset      = firstOffset;
         this.maxManeuvers     = maxManeuvers;
         this.orbitsSeparation = orbitsSeparation;
@@ -193,49 +187,18 @@ public class ParabolicLongitude extends AbstractSKControl {
         this.start     = start;
         this.end       = end;
 
-        // gather all special dates (start, end, maneuvers) in one chronologically sorted set
-        SortedSet<AbsoluteDate> sortedDates = new TreeSet<AbsoluteDate>();
-        sortedDates.add(start);
-        sortedDates.add(end);
-        AbsoluteDate lastInPlane = start;
-        for (final ScheduledManeuver maneuver : maneuvers) {
-            final AbsoluteDate date = maneuver.getDate();
-            if (maneuver.getName().equals(model.getName()) && date.compareTo(lastInPlane) >= 0) {
-                // this is the last in plane maneuver seen so far
-                lastInPlane = date;
-            }
-            sortedDates.add(date);
-        }
-        for (final ScheduledManeuver maneuver : fixedManeuvers) {
-            final AbsoluteDate date = maneuver.getDate();
-            if (maneuver.getName().equals(model.getName()) && date.compareTo(lastInPlane) >= 0) {
-                // this is the last in plane maneuver seen so far
-                lastInPlane = date;
-            }
-            sortedDates.add(date);
-        }
+        // select a long maneuver-free interval for fitting
+        final AbsoluteDate[] freeInterval = getManeuverFreeInterval(maneuvers, fixedManeuvers, start, end);
 
-        // select the longest maneuver-free interval after last in plane maneuver for fitting
-        AbsoluteDate freeIntervalStart = lastInPlane;
-        AbsoluteDate freeIntervalEnd   = lastInPlane;
-        AbsoluteDate previousDate      = lastInPlane;
-        for (final AbsoluteDate currentDate : sortedDates) {
-            if (currentDate.durationFrom(previousDate) > freeIntervalEnd.durationFrom(freeIntervalStart)) {
-                freeIntervalStart = previousDate;
-                freeIntervalEnd   = currentDate;
-            }
-            previousDate = currentDate;
-        }
-
-        fitStart = propagator.propagate(freeIntervalStart);
+        fitStart = propagator.propagate(freeInterval[0]);
 
         // fit linear model to semi-major axis and quadratic model to mean longitude
         PolynomialFitter aFitter = new PolynomialFitter(1, new LevenbergMarquardtOptimizer());
         PolynomialFitter lFitter = new PolynomialFitter(2, new LevenbergMarquardtOptimizer());
-        for (AbsoluteDate date = freeIntervalStart; date.compareTo(freeIntervalEnd) < 0; date = date.shiftedBy(samplingStep)) {
+        for (AbsoluteDate date = freeInterval[0]; date.compareTo(freeInterval[1]) < 0; date = date.shiftedBy(samplingStep)) {
             final SpacecraftState  state = propagator.propagate(date);
             final double meanLongitude = getLongitude(state, PositionAngle.MEAN);
-            final double dt = date.durationFrom(freeIntervalStart);
+            final double dt = date.durationFrom(freeInterval[0]);
             aFitter.addObservedPoint(dt, state.getA());
             lFitter.addObservedPoint(dt, meanLongitude);
         }
@@ -283,10 +246,11 @@ public class ParabolicLongitude extends AbstractSKControl {
             final double deltaA       = aMas - a0Mas;
             final double mu           = fitStart.getMu();
             final double a            = fitStart.getA();
-            final double totalDeltaV  = thrustSign() *
+            final double totalDeltaV  = thrustSignVelocity(fitStart) *
                                         FastMath.sqrt(mu * (2 / a - 1 / (a + deltaA))) - FastMath.sqrt(mu / a);
 
             // compute the number of maneuvers required
+            final TunableManeuver model = getModel();
             final double limitDV = (totalDeltaV < 0) ? model.getDVInf() : model.getDVSup();
             final int    nMan    = FastMath.min(maxManeuvers,
                                                 (int) FastMath.ceil(FastMath.abs(totalDeltaV / limitDV)));
@@ -325,13 +289,13 @@ public class ParabolicLongitude extends AbstractSKControl {
             // compute the in plane maneuver required to get this initial semi-major axis offset
             final double mu           = fitStart.getMu();
             final double a            = fitStart.getA();
-            final double deltaVChange = thrustSign() *
+            final double deltaVChange = thrustSignVelocity(fitStart) *
                                         FastMath.sqrt(mu * (2 / a - 1 / (a + deltaA))) - FastMath.sqrt(mu / a);
 
             // distribute the change over all maneuvers
             tuned = tunables.clone();
             changeTrajectory(tuned, 0, tuned.length, adapterPropagator);
-            distributeDV(deltaVChange, 0.0, model, tuned, adapterPropagator);
+            distributeDV(deltaVChange, 0.0, tuned, adapterPropagator);
 
         }
 
@@ -342,16 +306,6 @@ public class ParabolicLongitude extends AbstractSKControl {
 
         return tuned;
 
-    }
-
-    /** Get the sign of the maneuver model with respect to velocity.
-     * @return +1 if model thrust is along velocity direction, -1 otherwise
-     */
-    private double thrustSign() {
-        final Vector3D thrustDirection =
-                fitStart.getAttitude().getRotation().applyInverseTo(model.getDirection());
-        Vector3D velocity = fitStart.getPVCoordinates().getVelocity();
-        return FastMath.signum(Vector3D.dotProduct(thrustDirection, velocity));
     }
 
     /** Get Earth based longitude.

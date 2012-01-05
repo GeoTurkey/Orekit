@@ -2,8 +2,6 @@
 package eu.eumetsat.skat.strategies.leo;
 
 import java.util.List;
-import java.util.SortedSet;
-import java.util.TreeSet;
 
 import org.apache.commons.math.analysis.ParametricUnivariateFunction;
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
@@ -71,9 +69,6 @@ public class MeanLocalSolarTime extends AbstractSKControl {
     /** Medium period model pulsation. */
     private static final double BASE_PULSATION = 2.0 * FastMath.PI / Constants.JULIAN_DAY;
 
-    /** In-plane maneuver model. */
-    private final TunableManeuver model;
-
     /** Maximum number of maneuvers to set up in one cycle. */
     private final int maxManeuvers;
 
@@ -111,7 +106,7 @@ public class MeanLocalSolarTime extends AbstractSKControl {
      * @param name name of the control law
      * @param controlledName name of the controlled spacecraft
      * @param controlledIndex index of the controlled spacecraft
-     * @param model in-plane maneuver model
+     * @param model out-of-plane maneuver model
      * @param firstOffset time offset of the first maneuver with respect to cycle start
      * @param maxManeuvers maximum number of maneuvers to set up in one cycle
      * @param orbitsSeparation minimum time between split parts in number of orbits
@@ -129,9 +124,8 @@ public class MeanLocalSolarTime extends AbstractSKControl {
                               final BodyShape earth, final double latitude, final boolean ascending,
                               final double solarTime, final double solarTimetolerance)
         throws OrekitException {
-        super(name, controlledName, controlledIndex, null, -1,
+        super(name, model, controlledName, controlledIndex, null, -1,
               solarTime - solarTimetolerance, solarTime + solarTimetolerance);
-        this.model            = model;
         this.firstOffset      = firstOffset;
         this.maxManeuvers     = maxManeuvers;
         this.orbitsSeparation = orbitsSeparation;
@@ -158,44 +152,13 @@ public class MeanLocalSolarTime extends AbstractSKControl {
 
         if (iteration == 0) {
 
-            // gather all special dates (start, end, maneuvers) in one chronologically sorted set
-            SortedSet<AbsoluteDate> sortedDates = new TreeSet<AbsoluteDate>();
-            sortedDates.add(start);
-            sortedDates.add(end);
-            AbsoluteDate lastInPlane = start;
-            for (final ScheduledManeuver maneuver : maneuvers) {
-                final AbsoluteDate date = maneuver.getDate();
-                if (maneuver.getName().equals(model.getName()) && date.compareTo(lastInPlane) >= 0) {
-                    // this is the last in plane maneuver seen so far
-                    lastInPlane = date;
-                }
-                sortedDates.add(date);
-            }
-            for (final ScheduledManeuver maneuver : fixedManeuvers) {
-                final AbsoluteDate date = maneuver.getDate();
-                if (maneuver.getName().equals(model.getName()) && date.compareTo(lastInPlane) >= 0) {
-                    // this is the last in plane maneuver seen so far
-                    lastInPlane = date;
-                }
-                sortedDates.add(date);
-            }
-
-            // select the longest maneuver-free interval after last in plane maneuver for fitting
-            AbsoluteDate freeIntervalStart = lastInPlane;
-            AbsoluteDate freeIntervalEnd   = lastInPlane;
-            AbsoluteDate previousDate      = lastInPlane;
-            for (final AbsoluteDate currentDate : sortedDates) {
-                if (currentDate.durationFrom(previousDate) > freeIntervalEnd.durationFrom(freeIntervalStart)) {
-                    freeIntervalStart = previousDate;
-                    freeIntervalEnd   = currentDate;
-                }
-                previousDate = currentDate;
-            }
+            // select a long maneuver-free interval for fitting
+            final AbsoluteDate[] freeInterval = getManeuverFreeInterval(maneuvers, fixedManeuvers, start, end);
 
             // find the first following node that is in eclipse
             final double period = propagator.getInitialState().getKeplerianPeriod();
             final double stepSize = period / 100;
-            nodeState = findFirstCrossing(0.0, true, earth, freeIntervalStart.shiftedBy(firstOffset),
+            nodeState = findFirstCrossing(0.0, true, earth, freeInterval[0].shiftedBy(firstOffset),
                                           end, stepSize, propagator);
             double mst = meanSolarTime(nodeState);
             if (mst >= 6.0 && mst <= 18.0) {
@@ -334,9 +297,10 @@ public class MeanLocalSolarTime extends AbstractSKControl {
 
             // compute the out of plane maneuver required to get the initial inclination offset
             final Vector3D v          = nodeState.getPVCoordinates().getVelocity();
-            final double totalDeltaV  = thrustSign() * FastMath.signum(v.getZ()) * 2 * v.getNorm() * deltaI;
+            final double totalDeltaV  = thrustSignMomentum(nodeState) * FastMath.signum(v.getZ()) * 2 * v.getNorm() * deltaI;
 
             // compute the number of maneuvers required
+            final TunableManeuver model = getModel();
             final double limitDV = (totalDeltaV < 0) ? model.getDVInf() : model.getDVSup();
             final int    nMan    = FastMath.min(maxManeuvers,
                                                 (int) FastMath.ceil(FastMath.abs(totalDeltaV / limitDV)));
@@ -364,12 +328,12 @@ public class MeanLocalSolarTime extends AbstractSKControl {
 
             // compute the out of plane maneuver required to get the initial inclination offset
             final double v            = nodeState.getPVCoordinates().getVelocity().getNorm();
-            final double deltaVChange = thrustSign() * 2 * v * deltaI;
+            final double deltaVChange = thrustSignMomentum(nodeState) * 2 * v * deltaI;
 
             // distribute the change over all maneuvers
             tuned = tunables.clone();
             changeTrajectory(tuned, 0, tuned.length, adapterPropagator);
-            distributeDV(deltaVChange, 0.0, model, tuned, adapterPropagator);
+            distributeDV(deltaVChange, 0.0, tuned, adapterPropagator);
 
         }
 
@@ -380,16 +344,6 @@ public class MeanLocalSolarTime extends AbstractSKControl {
 
         return tuned;
 
-    }
-
-    /** Get the sign of the maneuver model with respect to orbital momentum.
-     * @return +1 if model thrust is along momentum direction, -1 otherwise
-     */
-    private double thrustSign() {
-        final Vector3D thrustDirection =
-                nodeState.getAttitude().getRotation().applyInverseTo(model.getDirection());
-        Vector3D momentum = nodeState.getPVCoordinates().getMomentum();
-        return FastMath.signum(Vector3D.dotProduct(thrustDirection, momentum));
     }
 
     /** {@inheritDoc} */

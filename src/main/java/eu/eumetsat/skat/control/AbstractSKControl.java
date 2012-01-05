@@ -3,6 +3,8 @@ package eu.eumetsat.skat.control;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import org.apache.commons.math.analysis.UnivariateFunction;
 import org.apache.commons.math.analysis.solvers.BaseUnivariateRealSolver;
@@ -36,6 +38,9 @@ public abstract class AbstractSKControl implements SKControl {
     /** Name of the control law. */
     private final String name;
 
+    /** Maneuver model. */
+    private final TunableManeuver model;
+
     /** Name of the controlled spacecraft. */
     private final String controlledName;
 
@@ -59,6 +64,7 @@ public abstract class AbstractSKControl implements SKControl {
 
     /** Simple constructor.
      * @param name name of the control law
+     * @param model in-plane maneuver model
      * @param controlledName name of the controlled spacecraft
      * @param controlledIndex index of the controlled spacecraft
      * @param referenceName name of the reference spacecraft
@@ -66,11 +72,12 @@ public abstract class AbstractSKControl implements SKControl {
      * @param min minimal value for the residual
      * @param max maximal value for the residual
      */
-    protected AbstractSKControl(final String name,
+    protected AbstractSKControl(final String name, final TunableManeuver model,
                                 final String controlledName, final int controlledIndex,
                                 final String referenceName, final int referenceIndex,
                                 final double min, final double max) {
         this.name            = name;
+        this.model           = model;
         this.controlledName  = controlledName;
         this.controlledIndex = controlledIndex;
         this.referenceName   = referenceName;
@@ -82,6 +89,13 @@ public abstract class AbstractSKControl implements SKControl {
     /** {@inheritDoc} */
     public String getName() {
         return name;
+    }
+
+    /** Get the maneuver model.
+     * @return maneuver model
+     */
+    public TunableManeuver getModel() {
+        return model;
     }
 
     /** {@inheritDoc} */
@@ -141,6 +155,87 @@ public abstract class AbstractSKControl implements SKControl {
         }
     }
 
+    /** Find the longest maneuver-free interval.
+     * <p>
+     * Only maneuvers matching the control law model maneuver are considered here.
+     * </p>
+     * @param maneuvers maneuvers scheduled for this control law
+     * @param fixedManeuvers list of maneuvers already fixed for the cycle
+     * @param start start date of the propagation
+     * @param end end date of the propagation
+     * @return longest maneuver-free interval
+     */
+    protected AbsoluteDate[] getManeuverFreeInterval(final ScheduledManeuver[] maneuvers,
+                                                     final List<ScheduledManeuver> fixedManeuvers,
+                                                     final AbsoluteDate start, final AbsoluteDate end) {
+
+        // gather all special dates (start, end, maneuvers) in one chronologically sorted set
+        SortedSet<AbsoluteDate> sortedDates = new TreeSet<AbsoluteDate>();
+        sortedDates.add(start);
+        sortedDates.add(end);
+        AbsoluteDate last = start;
+        for (final ScheduledManeuver maneuver : maneuvers) {
+            final AbsoluteDate date = maneuver.getDate();
+            if (maneuver.getName().equals(model.getName()) && date.compareTo(last) >= 0) {
+                // this is the last maneuver seen so far
+                last = date;
+            }
+            sortedDates.add(date);
+        }
+        for (final ScheduledManeuver maneuver : fixedManeuvers) {
+            final AbsoluteDate date = maneuver.getDate();
+            if (maneuver.getName().equals(model.getName()) && date.compareTo(last) >= 0) {
+                // this is the last maneuver seen so far
+                last = date;
+            }
+            sortedDates.add(date);
+        }
+
+        // select the longest maneuver-free interval after last in plane maneuver
+        AbsoluteDate freeIntervalStart = last;
+        AbsoluteDate freeIntervalEnd   = last;
+        AbsoluteDate previousDate      = last;
+        for (final AbsoluteDate currentDate : sortedDates) {
+            if (currentDate.durationFrom(previousDate) > freeIntervalEnd.durationFrom(freeIntervalStart)) {
+                freeIntervalStart = previousDate;
+                freeIntervalEnd   = currentDate;
+            }
+            previousDate = currentDate;
+        }
+
+        // prevent propagating after end date
+        if (freeIntervalEnd.compareTo(end) >= 0) {
+            freeIntervalEnd = end;
+        }
+
+        return new AbsoluteDate[] {
+            freeIntervalStart, freeIntervalEnd
+        };
+
+    }
+
+    /** Get the sign of the maneuver model with respect to orbital momentum.
+     * @param state spacecraft state
+     * @return +1 if model thrust is along momentum direction, -1 otherwise
+     */
+    protected double thrustSignMomentum(final SpacecraftState state) {
+        final Vector3D thrustDirection =
+                state.getAttitude().getRotation().applyInverseTo(getModel().getDirection());
+        Vector3D momentum = state.getPVCoordinates().getMomentum();
+        return FastMath.signum(Vector3D.dotProduct(thrustDirection, momentum));
+    }
+
+    /** Get the sign of the maneuver model with respect to orbital velocity.
+     * @param state spacecraft state
+     * @return +1 if model thrust is along velocity direction, -1 otherwise
+     */
+    protected double thrustSignVelocity(final SpacecraftState state) {
+        final Vector3D thrustDirection =
+                state.getAttitude().getRotation().applyInverseTo(getModel().getDirection());
+        Vector3D velocity = state.getPVCoordinates().getVelocity();
+        return FastMath.signum(Vector3D.dotProduct(thrustDirection, velocity));
+    }
+
     /** Change the trajectory of some maneuvers.
      * @param maneuvers maneuvers array
      * @param from index of the first maneuver to update (included)
@@ -161,12 +256,11 @@ public abstract class AbstractSKControl implements SKControl {
     /** Distribute a velocity increment change over non-saturated maneuvers.
      * @param dV velocity increment change to distribute
      * @param dT date change to apply to all maneuvers
-     * @param model model of the maneuvers to change
      * @param maneuvers array of maneuvers to change
      * @param adapterPropagator propagator to use for maneuvers
      */
     protected void distributeDV(final double dV, final double dT,
-                                final TunableManeuver model, final ScheduledManeuver[] maneuvers,
+                                final ScheduledManeuver[] maneuvers,
                                 final ManeuverAdapterPropagator adapterPropagator) {
 
         final double inf = model.getDVInf();

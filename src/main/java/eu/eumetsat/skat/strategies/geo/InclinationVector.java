@@ -2,8 +2,6 @@
 package eu.eumetsat.skat.strategies.geo;
 
 import java.util.List;
-import java.util.SortedSet;
-import java.util.TreeSet;
 
 import org.apache.commons.math.analysis.ParametricUnivariateFunction;
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
@@ -64,9 +62,6 @@ public class InclinationVector extends AbstractSKControl {
 
     /** Associated step handler. */
     private final OrekitStepHandler stephandler;
-
-    /** Out-of-plane maneuver model. */
-    private final TunableManeuver model;
 
     /** Maximum number of maneuvers to set up in one cycle. */
     private final int maxManeuvers;
@@ -135,10 +130,9 @@ public class InclinationVector extends AbstractSKControl {
                              final double referenceHx, final double referenceHy,
                              final double limitInclination, final double samplingStep) {
 
-        super(name, controlledName, controlledIndex, null, -1, 0.0, FastMath.toDegrees(limitInclination));
+        super(name, model, controlledName, controlledIndex, null, -1, 0.0, FastMath.toDegrees(limitInclination));
 
         this.stephandler      = new Handler();
-        this.model            = model;
         this.firstOffset      = firstOffset;
         this.maxManeuvers     = maxManeuvers;
         this.orbitsSeparation = orbitsSeparation;
@@ -170,44 +164,10 @@ public class InclinationVector extends AbstractSKControl {
 
         this.iteration = iteration;
 
-        // gather all special dates (start, end, maneuvers) in one chronologically sorted set
-        SortedSet<AbsoluteDate> sortedDates = new TreeSet<AbsoluteDate>();
-        sortedDates.add(start);
-        sortedDates.add(end);
-        AbsoluteDate lastOutOfPlane = start;
-        for (final ScheduledManeuver maneuver : maneuvers) {
-            final AbsoluteDate date = maneuver.getDate();
-            if (maneuver.getName().equals(model.getName()) && date.compareTo(lastOutOfPlane) >= 0) {
-                // this is the last out of plane maneuver seen so far
-                lastOutOfPlane = date;
-            }
-            sortedDates.add(date);
-        }
-        for (final ScheduledManeuver maneuver : fixedManeuvers) {
-            final AbsoluteDate date = maneuver.getDate();
-            if (maneuver.getName().equals(model.getName()) && date.compareTo(lastOutOfPlane) >= 0) {
-                // this is the last out of plane maneuver seen so far
-                lastOutOfPlane = date;
-            }
-            sortedDates.add(date);
-        }
+        // select a long maneuver-free interval for fitting
+        final AbsoluteDate[] freeInterval = getManeuverFreeInterval(maneuvers, fixedManeuvers, start, end);
 
-        // select the longest maneuver-free interval after last out of plane maneuver for fitting
-        AbsoluteDate freeIntervalStart = lastOutOfPlane;
-        AbsoluteDate freeIntervalEnd   = lastOutOfPlane;
-        AbsoluteDate previousDate      = lastOutOfPlane;
-        for (final AbsoluteDate currentDate : sortedDates) {
-            if (currentDate.durationFrom(previousDate) > freeIntervalEnd.durationFrom(freeIntervalStart)) {
-                freeIntervalStart = previousDate;
-                freeIntervalEnd   = currentDate;
-            }
-            previousDate = currentDate;
-        }
-
-        if (freeIntervalStart.compareTo(end) > 0) {
-            freeIntervalStart = end;
-        }
-        fitStart = propagator.propagate(freeIntervalStart);
+        fitStart = propagator.propagate(freeInterval[0]);
         this.cycleStart = start;
 
         if (iteration == 0) {
@@ -216,10 +176,10 @@ public class InclinationVector extends AbstractSKControl {
             // fit secular plus long periods model to inclination
             CurveFitter xFitter = new CurveFitter(new LevenbergMarquardtOptimizer());
             CurveFitter yFitter = new CurveFitter(new LevenbergMarquardtOptimizer());
-            for (AbsoluteDate date = freeIntervalStart; date.compareTo(freeIntervalEnd) < 0; date = date.shiftedBy(samplingStep)) {
+            for (AbsoluteDate date = freeInterval[0]; date.compareTo(freeInterval[1]) < 0; date = date.shiftedBy(samplingStep)) {
                 final EquinoctialOrbit orbit =
                         (EquinoctialOrbit) OrbitType.EQUINOCTIAL.convertType(propagator.propagate(date).getOrbit());
-                final double dt = date.durationFrom(freeIntervalStart);
+                final double dt = date.durationFrom(freeInterval[0]);
                 xFitter.addObservedPoint(dt, orbit.getHx());
                 yFitter.addObservedPoint(dt, orbit.getHy());
             }
@@ -276,9 +236,10 @@ public class InclinationVector extends AbstractSKControl {
             final double deltaHx     = targetHx - startHx;
             final double deltaHy     = targetHy - startHy;
             final double vs          = fitStart.getPVCoordinates().getVelocity().getNorm();
-            final double totalDeltaV = thrustSign() * 2 * FastMath.hypot(deltaHx, deltaHy) * vs;
+            final double totalDeltaV = thrustSignMomentum(fitStart) * 2 * FastMath.hypot(deltaHx, deltaHy) * vs;
 
             // compute the number of maneuvers required
+            final TunableManeuver model = getModel();
             final double limitDV = (totalDeltaV < 0) ? model.getDVInf() : model.getDVSup();
             nbMan = FastMath.min(maxManeuvers, (int) FastMath.ceil(FastMath.abs(totalDeltaV / limitDV)));
             final double deltaV  = FastMath.max(model.getDVInf(),
@@ -321,7 +282,7 @@ public class InclinationVector extends AbstractSKControl {
             // find the date of the last adjusted maneuver
             ScheduledManeuver last = null;
             for (final ScheduledManeuver maneuver : tunables) {
-                if (maneuver.getName().equals(model.getName())) {
+                if (maneuver.getName().equals(getModel().getName())) {
                     if (last == null || maneuver.getDate().compareTo(last.getDate()) > 0) {
                         last = maneuver;
                     }
@@ -349,7 +310,7 @@ public class InclinationVector extends AbstractSKControl {
             // distribute the change over all maneuvers
             tuned = tunables.clone();
             changeTrajectory(tuned, 0, tuned.length, adapterPropagator);
-            distributeDV(deltaV, deltaT, model, tuned, adapterPropagator);
+            distributeDV(deltaV, deltaT, tuned, adapterPropagator);
 
         }
 
@@ -360,16 +321,6 @@ public class InclinationVector extends AbstractSKControl {
 
         return tuned;
 
-    }
-
-    /** Get the sign of the maneuver model with respect to orbital momentum.
-     * @return +1 if model thrust is along orbital momentum direction, -1 otherwise
-     */
-    private double thrustSign() {
-        final Vector3D thrustDirection =
-                fitStart.getAttitude().getRotation().applyInverseTo(model.getDirection());
-        Vector3D momentum = fitStart.getPVCoordinates().getMomentum();
-        return FastMath.signum(Vector3D.dotProduct(thrustDirection, momentum));
     }
 
     /** {@inheritDoc} */
