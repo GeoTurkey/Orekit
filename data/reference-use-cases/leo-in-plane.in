@@ -92,16 +92,14 @@ scenario         = [
         controls    = [
            {
                 scaling_divisor             = 0.1; 
-                type                        = MEAN_LOCAL_SOLAR_TIME;
-                name                        = "mean local solar time";
+                type                        = GROUND_TRACK_GRID;
+                name                        = "ground track grid";
                 maneuver_name               = "in-plane";
                 max_maneuvers               = 6;
                 maneuvers_orbits_separation = 5;
                 offset_first_maneuver       = 86400.0;
-                latitude                    =  0.0;
-                ascending                   = false;
-                solar_time                  = 9.5;  # solar time in fractional hours
-                solar_time_tolerance        = 2.0;  # tolerance in minutes
+                grid_file                   = "grid-file.grd";
+                max_cross_track_distance    =  2000.0;
             }                       
         ];
     },
