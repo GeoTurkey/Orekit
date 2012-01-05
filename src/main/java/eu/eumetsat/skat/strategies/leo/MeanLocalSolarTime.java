@@ -149,6 +149,7 @@ public class MeanLocalSolarTime extends AbstractSKControl {
 
         this.iteration = iteration;
         this.end       = end;
+        resetMarginsChecks();
 
         if (iteration == 0) {
 
