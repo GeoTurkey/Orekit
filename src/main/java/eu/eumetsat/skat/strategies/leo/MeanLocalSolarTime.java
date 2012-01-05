@@ -38,29 +38,42 @@ import eu.eumetsat.skat.utils.SkatException;
 import eu.eumetsat.skat.utils.SkatMessages;
 
 /**
- * Station-keeping control attempting to get mean local solar time in a deadband.
- * The deadband is located around a main value {@link #center}. A tolerance margin
- * can be define through the minSolarTime and maxSolarTime parameters, defined by
- * construction. If a violation occurs by getting out of the [minSolarTime, maxSolarTime] 
- * interval, a notifier will be triggered and this information will be monitored.
- *  <p>
- * This control value is:
- * <pre> max(|MLST<sub>75</sub> - MLST<sub>c</sub>|,|MLST<sub>c</sub> - MLST<sub>25</sub>|)</pre>
- * where MLST<sub>75</sub> and MLST<sub>25</sub> are the spacecraft mean local solar time 1st and 3rd
- * quartiles evaluated for the complete cycle duration and MLST<sub>c</sub> is the target mean local
- * solar time.
+ * Station-keeping control for mean solar time in sun synchronous Low Earth Orbits.
+ * <p>
+ * The mean solar time at a specific latitude crossinf evolves as a quadratic model
+ * of time with medium periods at one day and one half day. The coefficients of this
+ * model depend on semi major axis and inclination, since the main effect of
+ * J<sub>2</sub> is a secular drift of ascending node with short periodic effects
+ * at twice the spacecraft pulsation.
  * </p>
  * <p>
- * The previous definition implies that setting the target of this control
- * to MLST<sub>c</sub> attempts to have most of the points mean local solar time
- * for the satellite centered around the target mean local solar time during the
- * station-keeping. 
+ * The evolution of mean solar time is very slow, it takes several months to exceeds
+ * a few minutes offset from central assigned mean solar time. The aim of the control
+ * law is to achieve a parabolic motion that stays within the assigned deadband, by
+ * having the peak of the parabola (once medium periodic terms have been removed)
+ * that osculates the deadband limit.
  * </p>
  * <p>
- * Using quantiles instead of min/max improves robustness with respect to
- * outliers, which occur when starting far from the desired window. Here, we ignore 25%
- * outliers on both sides.
+ * The model parameters are not computed from Keplerian motion, but rather fitted to
+ * the real evolution of the parameters against the polynomial and periodic models
+ * above. The fitting is performed on the longest maneuver-free interval of the
+ * cycle after the last out-of-plane maneuver.
  * </p>
+ * <p>
+ * The maneuvers which target a parabola osculating the deadband are out-or-plane
+ * maneuvers performed at a node (nodes in eclipse are selected) which change
+ * inclination and hence change ascending node drift rate, which is directly the
+ * slope of the parabola.
+ * </p>
+ * <p>
+ * If the deadband limits are not crossed before next cycle, no maneuvers at all
+ * are performed, even if the parabola does not perfectly osculates the deadband but
+ * is well inside it. Maneuvers are triggered only when deadband limits will be
+ * exceeded before next cycle. If the maneuvers are too large, they will be split
+ * into several maneuvers, up to the maximal number of allowed maneuvers par cycle
+ * and fulfilling the constraints on velocity increment sizes.
+ * </p>
+ * @author Luc Maisonobe
  */
 public class MeanLocalSolarTime extends AbstractSKControl {
 
