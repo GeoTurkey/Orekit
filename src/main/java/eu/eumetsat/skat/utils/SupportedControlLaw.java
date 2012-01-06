@@ -61,9 +61,10 @@ public enum SupportedControlLaw {
             final TunableManeuver model = skat.getManeuver(parser.getString(node, ParameterKey.CONTROL_MANEUVER_NAME));
             final double centerX        = parser.getDouble(node, ParameterKey.CONTROL_ECCENTRICITY_CIRCLE_CENTER_X);
             final double centerY        = parser.getDouble(node, ParameterKey.CONTROL_ECCENTRICITY_CIRCLE_CENTER_Y);
-            final double radius         = parser.getDouble(node, ParameterKey.CONTROL_ECCENTRICITY_CIRCLE_RADIUS);
+            final double meanRadius     = parser.getDouble(node, ParameterKey.CONTROL_ECCENTRICITY_CIRCLE_MEAN_RADIUS);
+            final double maxRadius      = parser.getDouble(node, ParameterKey.CONTROL_ECCENTRICITY_CIRCLE_MAX_RADIUS);
             return new EccentricityCircle(name, controlled, skat.getSpacecraftIndex(controlled),
-                                          model, centerX, centerY, radius, skat.getSun(), sampling);
+                                          model, centerX, centerY, meanRadius, maxRadius, skat.getSun(), sampling);
         }
 
     },

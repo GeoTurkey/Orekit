@@ -169,7 +169,8 @@ scenario         = [
 #                maneuver_name               = "E/W";
 #                center_x                    = -1.5e-4;
 #                center_y                    =  0.0;
-#                radius                      =  2.0e-4;
+#                mean_radius                 =  2.0e-4;
+#                max_radius                  =  4.0e-4;
 #                sampling                    = 3600;
             }
         ]
