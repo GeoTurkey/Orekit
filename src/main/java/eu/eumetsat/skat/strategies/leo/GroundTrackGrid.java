@@ -4,7 +4,9 @@ package eu.eumetsat.skat.strategies.leo;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.math.util.FastMath;
 import org.apache.commons.math.util.MathUtils;
@@ -127,20 +129,50 @@ public class GroundTrackGrid extends AbstractSKControl {
         });
 
         // extract the limited set of independent latitudes/directions from the grid
+        double firstOffsetPoint0 = 0;
+        double lastOffsetPoint0  = 0;
+        Map<GridPoint, Integer> count    = new HashMap<GridPoint, Integer>();
         gridExcerpt = new ArrayList<GridPoint>();
         for (final GridPoint regularPoint : this.grid) {
-            boolean found = false;
+            GridPoint found = null;
             for (final GridPoint excerptPoint : gridExcerpt) {
                 if (Precision.equals(excerptPoint.getLatitude(), regularPoint.getLatitude(), EPSILON_LATITUDE) &&
                     (excerptPoint.isAscending() == regularPoint.isAscending())) {
-                    found = true;
+                    found = excerptPoint;
                 }
             }
-            if (!found) {
+            if (found == null) {
                 // this is a new latitude/direction pair, store it
+                if (gridExcerpt.isEmpty()) {
+                    firstOffsetPoint0 = regularPoint.getTimeOffset();
+                    lastOffsetPoint0  = firstOffsetPoint0;
+                }
                 gridExcerpt.add(regularPoint);
+                count.put(regularPoint, 1);
+            } else {
+                if (found == gridExcerpt.get(0)) {
+                    lastOffsetPoint0 = regularPoint.getTimeOffset();
+                }
+                count.put(found, count.get(found) + 1);
             }
         }
+
+        // safety checks
+        if (gridExcerpt.isEmpty()) {
+            throw new SkatException(SkatMessages.NO_GRID_POINTS);
+        }
+        final GridPoint p0 = gridExcerpt.get(0);
+        final int nbOrbits = count.get(p0);
+        for (final GridPoint excerptPoint : gridExcerpt) {
+            if (count.get(excerptPoint) != nbOrbits) {
+                throw new SkatException(SkatMessages.GRID_POINTS_NUMBER_MISMATCH,
+                                        nbOrbits, p0.getLatitude(),
+                                        count.get(excerptPoint), excerptPoint.getLatitude());
+            }
+        }
+
+        // phasing is reached one orbit after last
+        phasingDuration = (nbOrbits * (lastOffsetPoint0 - firstOffsetPoint0)) / (nbOrbits - 1);
 
     }
 
@@ -201,24 +233,6 @@ public class GroundTrackGrid extends AbstractSKControl {
 
             // set up grid reference date
             gridReference = firstCrossing.getDate().shiftedBy(-grid[firstEncounter].getTimeOffset());
-
-            // find cycle phasing duration
-            phasingDuration = Double.POSITIVE_INFINITY;
-            final AbsoluteDate lastGridCrossing = gridReference.shiftedBy(grid[grid.length - 1].getTimeOffset());
-            if (freeInterval[1].compareTo(lastGridCrossing) > 0) {
-                // the free interval goes past the last grid point,
-                // we must find the duration to add to grid reference when wrapping around grid
-                final SpacecraftState wrappedCrossing =
-                        findFirstCrossing(grid[0].getLatitude(), grid[0].isAscending(),
-                                          earth, lastGridCrossing, freeInterval[1],
-                                          stepSize, propagator);
-                if (wrappedCrossing != null) {
-                    final AbsoluteDate nextGridReference =
-                            wrappedCrossing.getDate().shiftedBy(-grid[0].getTimeOffset());
-                    phasingDuration = nextGridReference.durationFrom(gridReference);
-                }
-
-            }
 
         }
 
