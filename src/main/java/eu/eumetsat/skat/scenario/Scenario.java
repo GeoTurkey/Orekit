@@ -170,6 +170,15 @@ public class Scenario implements ScenarioComponent {
                                                               states[i].getManeuversNumber(name),
                                                               0.0,
                                                               states[i].getManeuversTotalDV(name));
+
+                    // monitor maneuver at cycle start
+                    SimpleMonitorable monitorable = maneuversMonitorables.get(name);
+                    monitorable.setSampledValue(iterationTarget,
+                                                new double[] {
+                                                   states[i].getManeuversNumber(name),
+                                                   states[i].getManeuversCycleDV(name),
+                                                   states[i].getManeuversTotalDV(name)
+                                                });
                 }
                 states[i] = states[i].updateEstimatedState(null);
                 states[i] = states[i].updateManeuvers(new ArrayList<ScheduledManeuver>());
