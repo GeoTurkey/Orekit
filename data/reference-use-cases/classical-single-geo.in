@@ -159,19 +159,19 @@ scenario         = [
                 offset_first_maneuver       = 172800;
                 max_maneuvers               = 3;
                 maneuvers_orbits_separation = 1;
-                east_longitude              = -56.9;
-                west_longitude              = -57.1;
+                east_longitude              = -56.8;
+                west_longitude              = -57.2;
                 sampling                    = 10800.0;
-#            },
-#            {
-#                type                        = ECCENTRICITY_CIRCLE;
-#                name                        = "eccentricity circle";
-#                maneuver_name               = "E/W";
-#                center_x                    = -1.5e-4;
-#                center_y                    =  0.0;
-#                mean_radius                 =  2.0e-4;
-#                max_radius                  =  4.0e-4;
-#                sampling                    = 3600;
+            },
+            {
+                type                        = ECCENTRICITY_CIRCLE;
+                name                        = "eccentricity circle";
+                maneuver_name               = "E/W";
+                center_x                    =  0.0;
+                center_y                    =  0.0;
+                mean_radius                 =  2.5e-4;
+                max_radius                  =  5.0e-4;
+                sampling                    = 3600;
             }
         ]
     },
