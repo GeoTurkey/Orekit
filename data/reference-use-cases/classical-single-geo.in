@@ -6,7 +6,7 @@ simulation       = {
     solar_activity_strength = AVERAGE;
     start_date              = 2011-10-23T00:00:00.000;
     end_date                = 2013-01-01T00:00:00.000;
-    cycle_duration          = 14.0;
+    cycle_duration          = 28.0;
     output_step             = 43200.0;
     random_seed             = 156325253;
     ground_location         = {
@@ -168,9 +168,9 @@ scenario         = [
                 name                        = "eccentricity circle";
                 maneuver_name               = "E/W";
                 center_x                    =  0.0;
-                center_y                    =  0.0;
-                mean_radius                 =  2.5e-4;
-                max_radius                  =  5.0e-4;
+                center_y                    = -1.5e-4;
+                mean_radius                 =  1.5e-4;
+                max_radius                  =  3.0e-4;
                 sampling                    = 3600;
             }
         ]

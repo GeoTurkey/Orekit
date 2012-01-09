@@ -169,34 +169,10 @@ public class EccentricityCircle extends AbstractSKControl {
                 final double dt = date.durationFrom(freeInterval[0]);
                 xFitter.addObservedPoint(dt, orbit.getEquinoctialEx());
                 yFitter.addObservedPoint(dt, orbit.getEquinoctialEy());
-                System.out.println(dt + " " + orbit.getEquinoctialEx() + " " + orbit.getEquinoctialEy());
             }
 
             fitted[0] = xFitter.fit(new ShortAndLongPeriod(), fitted[0]);
             fitted[1] = yFitter.fit(new ShortAndLongPeriod(), fitted[1]);
-            System.out.println("# "  + fitted[0][0]  +
-                               " + " + fitted[0][1]  + " * cos ($t * " + (SUN_PULSATION) + ")" +
-                               " + " + fitted[0][2]  + " * sin ($t * " + (SUN_PULSATION) + ")" +
-                               " + " + fitted[0][3]  + " * cos ($t * " + (EARTH_PULSATION) + ")" +
-                               " + " + fitted[0][4]  + " * sin ($t * " + (EARTH_PULSATION) + ")" +
-                               " + " + fitted[0][5]  + " * cos ($t * " + (MOON_PULSATION)  + ")" +
-                               " + " + fitted[0][6]  + " * sin ($t * " + (MOON_PULSATION)  + ")" +
-                               " + " + fitted[0][7]  + " * cos ($t * " + (EARTH_PULSATION - 2 * MOON_PULSATION) + ")" +
-                               " + " + fitted[0][8]  + " * sin ($t * " + (EARTH_PULSATION - 2 * MOON_PULSATION) + ")" +
-                               " + " + fitted[0][9]  + " * cos ($t * " + (EARTH_PULSATION - 2 * SUN_PULSATION) + ")" +
-                               " + " + fitted[0][10] + " * sin ($t * " + (EARTH_PULSATION - 2 * SUN_PULSATION) + ")" );
-            System.out.println("# "  + fitted[1][0]  +
-                               " + " + fitted[1][1]  + " * cos ($t * " + (SUN_PULSATION) + ")" +
-                               " + " + fitted[1][2]  + " * sin ($t * " + (SUN_PULSATION) + ")" +
-                               " + " + fitted[1][3]  + " * cos ($t * " + (EARTH_PULSATION) + ")" +
-                               " + " + fitted[1][4]  + " * sin ($t * " + (EARTH_PULSATION) + ")" +
-                               " + " + fitted[1][5]  + " * cos ($t * " + (MOON_PULSATION)  + ")" +
-                               " + " + fitted[1][6]  + " * sin ($t * " + (MOON_PULSATION)  + ")" +
-                               " + " + fitted[1][7]  + " * cos ($t * " + (EARTH_PULSATION - 2 * MOON_PULSATION) + ")" +
-                               " + " + fitted[1][8]  + " * sin ($t * " + (EARTH_PULSATION - 2 * MOON_PULSATION) + ")" +
-                               " + " + fitted[1][9]  + " * cos ($t * " + (EARTH_PULSATION - 2 * SUN_PULSATION) + ")" +
-                               " + " + fitted[1][10] + " * sin ($t * " + (EARTH_PULSATION - 2 * SUN_PULSATION) + ")" );
-
         }
 
     }
@@ -220,13 +196,13 @@ public class EccentricityCircle extends AbstractSKControl {
         final PVCoordinates sunPV = sun.getPVCoordinates(fitStart.getDate().shiftedBy(dt), fitStart.getFrame());
         final double alphaSun = sunPV.getPosition().getAlpha();
         final double targetEx = centerX + meanRadius * FastMath.cos(alphaSun);
-        final double targetEy = centerY + meanRadius * FastMath.cos(alphaSun);
+        final double targetEy = centerY + meanRadius * FastMath.sin(alphaSun);
 
         // eccentricity change needed
         final double deX = targetEx - meanEx;
         final double deY = targetEy - meanEy;
         final double vs  = fitStart.getPVCoordinates().getVelocity().getNorm();
-        final double dV  = 2 * FastMath.hypot(deX, deY) * vs;
+        final double dV  = 0.5 * FastMath.hypot(deX, deY) * vs;
 
         final ScheduledManeuver[] tuned;
         final ManeuverAdapterPropagator adapterPropagator = new ManeuverAdapterPropagator(reference);
