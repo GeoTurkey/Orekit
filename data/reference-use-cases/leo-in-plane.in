@@ -5,7 +5,7 @@ simulation       = {
     earth_frame      = "GTOD without EOP";
     start_date       = 2011-12-12T11:00:00.000;
     end_date         = 2012-12-12T11:00:00.000;
-    cycle_duration   = 60;
+    cycle_duration   = 30;
     ground_location  = {
         latitude     = 49.85;
         longitude    =  8.65;
@@ -22,7 +22,7 @@ simulation       = {
                 isp_curve             = [ [ 200, 0.0 ], [ 180, 100.0 ] ];
                 dv_inf                = -10;
                 dv_sup                =  10;
-                dv_convergence        = 0.01;
+                dv_convergence        = 0.001;
                 dt_convergence        =  1.0;
                 elimination_threshold = 0.001;
             }      
@@ -91,14 +91,13 @@ scenario         = [
         };
         controls    = [
            {
-                scaling_divisor             = 0.1; 
                 type                        = GROUND_TRACK_GRID;
                 name                        = "ground track grid";
                 maneuver_name               = "in-plane";
                 max_maneuvers               = 6;
                 maneuvers_orbits_separation = 5;
                 offset_first_maneuver       = 86400.0;
-                grid_file                   = "grid-file.grd";
+                grid_file                   = "metop.grd";
                 max_cross_track_distance    =  2000.0;
             }                       
         ];

@@ -4,57 +4,54 @@ package eu.eumetsat.skat.strategies.leo;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
+import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
+import org.apache.commons.math.optimization.fitting.CurveFitter;
+import org.apache.commons.math.optimization.general.LevenbergMarquardtOptimizer;
 import org.apache.commons.math.util.FastMath;
 import org.apache.commons.math.util.MathUtils;
 import org.apache.commons.math.util.Precision;
-import org.orekit.bodies.BodyShape;
 import org.orekit.bodies.GeodeticPoint;
+import org.orekit.bodies.OneAxisEllipsoid;
 import org.orekit.errors.OrekitException;
 import org.orekit.propagation.BoundedPropagator;
 import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
+import org.orekit.propagation.analytical.ManeuverAdapterPropagator;
 import org.orekit.propagation.events.EventDetector;
 import org.orekit.propagation.sampling.OrekitStepHandler;
 import org.orekit.time.AbsoluteDate;
+import org.orekit.utils.Constants;
 
 import eu.eumetsat.skat.control.AbstractSKControl;
 import eu.eumetsat.skat.strategies.ScheduledManeuver;
+import eu.eumetsat.skat.strategies.SecularAndHarmonic;
 import eu.eumetsat.skat.strategies.TunableManeuver;
 import eu.eumetsat.skat.utils.SkatException;
 import eu.eumetsat.skat.utils.SkatMessages;
 
 /**
- * Station-keeping control attempting to follow a specified ground-track
- * at a specified latitude. The ground-track is defined by a latitude and 
- * a longitude. The tolerance deadband is extended from the center value
- * from the minLongitude and maxLongitude parameters defined by construction.
- * If a violation occurs by getting out of the [minLongitude, maxLongitude] 
- * interval, a notifier will be triggered and this information will be monitored.
+ * Station-keeping control attempting to follow a specified ground-track grid.
  * <p>
- * This control value is:
- * <pre>
- *   (d<sub>25</sub> + d<sub>75</sub>) / 2
- * </pre>
- * where d<sub>25</sub> and d<sub>75</sub> are respectively the 25% quantile and
- * the 75% quantile of signed ground track distances for the considered
- * encounters with the reference ground track points for the complete
- * station-keeping cycle duration (which may be completely different from
- * the phasing cycle).
+ * The ground-track is defined by a set of latitude/longitude reference points
+ * with an associated latitude crossing direction (ascending/descending). The
+ * control checks the longitude offset with respect to the reference longitude
+ * each time the spacecraft crosses a reference latitude in the specifued
+ * direction. Hence the control correspond to an East/West positioning with respect
+ * to the grid.
  * </p>
  * <p>
- * The previous definition implies that setting the target of this control
- * to 0 attempts to have most of the points close to the reference ground
- * track points.
+ * The logitude offset evolution is parabolic and is mainly due to atmospheric drag
+ * which lower the semi major axis and hence changes orbit period. The initial
+ * longitude offset is inherited from the previous cycle motion. The curvature comes
+ * from &aring; which depends on current drag. So the only control parameter left for
+ * control is the initial longitude drift, which is adjusted by changing the offset
+ * [a(t<sub>0</sub>) - a<sub>ref</sub>] at initial time t<sub>0</sub> thanks to
+ * in-plane maneuvers. The aim of the control law is to achieve a parabolic motion
+ * that remains in the deadband for as long as possible.
  * </p>
- * <p>
- * Using quantiles instead of min/max improves robustness with respect to
- * outliers, which occur when starting far from the desired window for example
- * at the end of LEOP. Here, we ignore 25% outliers.
- * </p>
+ * @author Luc Maisonobe
  */
 public class GroundTrackGrid extends AbstractSKControl {
 
@@ -71,13 +68,19 @@ public class GroundTrackGrid extends AbstractSKControl {
     private final int orbitsSeparation;
 
     /** Earth model. */
-    private final BodyShape earth;
+    private final OneAxisEllipsoid earth;
 
     /** Reference grid points in Earth frame. */
     private final GridPoint[] grid;
 
-    /** Excerpt from the grid with only one point per latitude/crossing direction. */
-    private final List<GridPoint> gridExcerpt;
+    /** Error models for each reference latitude. */
+    private final List<ErrorModel> errorModels;
+
+    /** State at fit start. */
+    private SpacecraftState fitStart;
+
+    /** Mean fitting parameters for longitude error. */
+    private final double[] fittedDL;
 
     /** Index of the first encountered grid point. */
     private int firstEncounter;
@@ -87,6 +90,12 @@ public class GroundTrackGrid extends AbstractSKControl {
 
     /** Phasing duration (interval between two grids. */
     private double phasingDuration;
+
+    /** Iteration number. */
+    private int iteration;
+
+    /** Cycle end. */
+    private AbsoluteDate end;
 
     /** Simple constructor.
      * <p>
@@ -108,7 +117,7 @@ public class GroundTrackGrid extends AbstractSKControl {
     public GroundTrackGrid(final String name, final String controlledName, final int controlledIndex,
                            final TunableManeuver model, final double firstOffset,
                            final int maxManeuvers, final int orbitsSeparation,
-                           final BodyShape earth, final List<GridPoint> grid, final double maxDistance)
+                           final OneAxisEllipsoid earth, final List<GridPoint> grid, final double maxDistance)
         throws SkatException {
         super(name, model, controlledName, controlledIndex, null, -1, -maxDistance, maxDistance);
 
@@ -116,6 +125,7 @@ public class GroundTrackGrid extends AbstractSKControl {
         this.maxManeuvers     = maxManeuvers;
         this.orbitsSeparation = orbitsSeparation;
         this.earth            = earth;
+        this.fittedDL         = new double[3];
 
         // store the grid in chronological order
         this.grid             = grid.toArray(new GridPoint[grid.size()]);
@@ -129,50 +139,38 @@ public class GroundTrackGrid extends AbstractSKControl {
         });
 
         // extract the limited set of independent latitudes/directions from the grid
-        double firstOffsetPoint0 = 0;
-        double lastOffsetPoint0  = 0;
-        Map<GridPoint, Integer> count    = new HashMap<GridPoint, Integer>();
-        gridExcerpt = new ArrayList<GridPoint>();
-        for (final GridPoint regularPoint : this.grid) {
-            GridPoint found = null;
-            for (final GridPoint excerptPoint : gridExcerpt) {
-                if (Precision.equals(excerptPoint.getLatitude(), regularPoint.getLatitude(), EPSILON_LATITUDE) &&
-                    (excerptPoint.isAscending() == regularPoint.isAscending())) {
-                    found = excerptPoint;
+        errorModels = new ArrayList<ErrorModel>();
+        for (final GridPoint point : this.grid) {
+            ErrorModel found = null;
+            for (final ErrorModel errorModel : errorModels) {
+                if (errorModel.matches(point.getLatitude(), point.isAscending())) {
+                    found = errorModel;
                 }
             }
             if (found == null) {
                 // this is a new latitude/direction pair, store it
-                if (gridExcerpt.isEmpty()) {
-                    firstOffsetPoint0 = regularPoint.getTimeOffset();
-                    lastOffsetPoint0  = firstOffsetPoint0;
-                }
-                gridExcerpt.add(regularPoint);
-                count.put(regularPoint, 1);
+                errorModels.add(new ErrorModel(point));
             } else {
-                if (found == gridExcerpt.get(0)) {
-                    lastOffsetPoint0 = regularPoint.getTimeOffset();
-                }
-                count.put(found, count.get(found) + 1);
+                // this is an already known latitude/direction pair
+                found.addGridPoint(point);
             }
         }
 
         // safety checks
-        if (gridExcerpt.isEmpty()) {
+        if (errorModels.isEmpty()) {
             throw new SkatException(SkatMessages.NO_GRID_POINTS);
         }
-        final GridPoint p0 = gridExcerpt.get(0);
-        final int nbOrbits = count.get(p0);
-        for (final GridPoint excerptPoint : gridExcerpt) {
-            if (count.get(excerptPoint) != nbOrbits) {
+        final ErrorModel m0 = errorModels.get(0);
+        for (final ErrorModel errorModel : errorModels) {
+            if (errorModel.getCount() != m0.getCount()) {
                 throw new SkatException(SkatMessages.GRID_POINTS_NUMBER_MISMATCH,
-                                        nbOrbits, p0.getLatitude(),
-                                        count.get(excerptPoint), excerptPoint.getLatitude());
+                                        m0.getCount(), m0.getLatitude(),
+                                        errorModel.getCount(), errorModel.getLatitude());
             }
         }
 
         // phasing is reached one orbit after last
-        phasingDuration = (nbOrbits * (lastOffsetPoint0 - firstOffsetPoint0)) / (nbOrbits - 1);
+        phasingDuration = (m0.getCount() * m0.getTimeSpan()) / (m0.getCount() - 1);
 
     }
 
@@ -183,29 +181,33 @@ public class GroundTrackGrid extends AbstractSKControl {
         throws OrekitException, SkatException {
 
         resetMarginsChecks();
+        this.iteration = iteration;
+        this.end       = end;
 
         if (iteration == 0) {
 
             // select a long maneuver-free interval for fitting
-            final AbsoluteDate[] freeInterval = getManeuverFreeInterval(maneuvers, fixedManeuvers, start, end);
+            double period = phasingDuration / errorModels.get(0).getCount();
+            final AbsoluteDate[] freeInterval = getManeuverFreeInterval(maneuvers, fixedManeuvers,
+                                                                        start.shiftedBy(period),
+                                                                        end.shiftedBy(-period));
 
             // find the first crossing of one of the grid latitudes
-            final double period = propagator.getInitialState().getKeplerianPeriod();
             final double stepSize = period / 100;
             SpacecraftState firstCrossing = null;
             boolean firstAscending = true;
-            for (final GridPoint point : gridExcerpt) {
-                final SpacecraftState crossing = findFirstCrossing(point.getLatitude(), point.isAscending(),
+            for (final ErrorModel errorModel : errorModels) {
+                final SpacecraftState crossing = findFirstCrossing(errorModel.getLatitude(), errorModel.isAscending(),
                                                                    earth, freeInterval[0], freeInterval[1],
                                                                    stepSize, propagator);
                 if (firstCrossing == null || crossing.getDate().compareTo(firstCrossing.getDate()) < 0) {
                     firstCrossing  = crossing;
-                    firstAscending = point.isAscending();
+                    firstAscending = errorModel.isAscending();
                 }
             }
             if (firstCrossing == null) {
                 throw new SkatException(SkatMessages.LATITUDE_NEVER_CROSSED,
-                                        FastMath.toDegrees(gridExcerpt.get(0).getLatitude()),
+                                        FastMath.toDegrees(errorModels.get(0).getLatitude()),
                                         freeInterval[0], freeInterval[1]);
             }
 
@@ -227,7 +229,7 @@ public class GroundTrackGrid extends AbstractSKControl {
             if (firstEncounter < 0) {
                 // this should never happen
                 throw new SkatException(SkatMessages.LATITUDE_NEVER_CROSSED,
-                                        FastMath.toDegrees(gridExcerpt.get(0).getLatitude()),
+                                        FastMath.toDegrees(errorModels.get(0).getLatitude()),
                                         freeInterval[0], freeInterval[1]);
             }
 
@@ -236,14 +238,166 @@ public class GroundTrackGrid extends AbstractSKControl {
 
         }
 
+        // fit longitude offsets to parabolic models
+        for (final ErrorModel errorModel : errorModels) {
+            errorModel.resetFitting();
+        }
+        int index = firstEncounter;
+        fitStart = propagator.propagate(gridReference.shiftedBy(grid[index].getTimeOffset()));
+        AbsoluteDate date  = fitStart.getDate();
+        while (date.compareTo(end) < 0) {
+
+            int nextIndex = (index + 1) % grid.length;
+
+            // find the latitude crossing for the current grid point
+            double gap = grid[nextIndex].getTimeOffset() - grid[index].getTimeOffset();
+            if (nextIndex == 0) {
+                // wrap point from end of phasing cycle to start of next phasing cycle
+                gap += phasingDuration;
+           }
+            SpacecraftState crossing = findLatitudeCrossing(grid[index].getLatitude(), earth, date, end,
+                                                            0.1 * gap, gap, propagator);
+            Vector3D position = crossing.getPVCoordinates(earth.getBodyFrame()).getPosition();
+            final GeodeticPoint gp = earth.transform(position, earth.getBodyFrame(), crossing.getDate());
+
+            double dt = crossing.getDate().durationFrom(fitStart.getDate());
+            double dl = MathUtils.normalizeAngle(gp.getLongitude() - grid[index].getLongitude(), 0);
+            checkMargins(dl * FastMath.hypot(position.getX(), position.getY()));
+
+            for (final ErrorModel errorModel : errorModels) {
+                if (errorModel.matches(grid[index].getLatitude(), grid[index].isAscending())) {
+                    errorModel.addPoint(dt, dl);
+                }
+            }
+
+            // go to next grid point
+            index = nextIndex;
+            date  = crossing.getDate().shiftedBy(gap);
+
+        }
+
+        // fit all latitude/direction specific models and compute a mean model
+        Arrays.fill(fittedDL, 0);
+        for (final ErrorModel errorModel : errorModels) {
+            final double[] f = errorModel.fit();
+            for (int i = 0; i < fittedDL.length; ++i) {
+                fittedDL[i] += f[i];
+            }
+        }
+        for (int i = 0; i < fittedDL.length; ++i) {
+            fittedDL[i] /= errorModels.size();
+        }
+
     }
 
     /** {@inheritDoc} */
     public ScheduledManeuver[] tuneManeuvers(final ScheduledManeuver[] tunables,
                                              final BoundedPropagator reference)
         throws OrekitException {
-        // TODO
-        throw SkatException.createInternalError(null);
+
+        final double dlMax = getMax() / earth.getEquatorialRadius();
+
+        // which depends on current state
+        final double newDLdot;
+        if ((fittedDL[2] < 0 && fittedDL[0] > dlMax) || (fittedDL[2] > 0 && fittedDL[0] < -dlMax)) {
+            // the start point is already on the wrong side of the window
+
+            // the current cycle is already bad, we set up a target to start a new cycle
+            // at time horizon with good initial conditions, and reach this target by changing dlDot(t0)
+            final double targetT  = end.durationFrom(fitStart.getDate()) + firstOffset;
+            final double targetDL = FastMath.copySign(dlMax, fittedDL[2]);
+            newDLdot = (targetDL - fittedDL[0]) / targetT - fittedDL[2] * targetT;
+
+        } else {
+            // the start point is on the right side of the window
+
+            final double tPeak   = -0.5 * fittedDL[1] / fittedDL[2];
+            final double dlPeak  = fittedDL[0] + 0.5 * fittedDL[1] * tPeak;
+            final double finalT  = end.durationFrom(fitStart.getDate()) + firstOffset;
+            final double finalDL = fittedDL[0] + finalT * (fittedDL[1] + finalT * fittedDL[2]);
+
+            final boolean intermediateExit = tPeak > 0 && tPeak < finalT && FastMath.abs(dlPeak) > dlMax;
+            final boolean finalExit        = FastMath.abs(finalDL) >= dlMax;
+            if (intermediateExit || finalExit) {
+                // longitude error exits the window limit before next cycle
+
+                // we target a future longitude error peak osculating window boundary
+                final double targetDL = FastMath.copySign(dlMax, -fittedDL[2]);
+                newDLdot = FastMath.copySign(FastMath.sqrt(4 * fittedDL[2] * (fittedDL[0] - targetDL)),
+                                             (tPeak > 0) ? fittedDL[1] : -fittedDL[1]);
+
+            } else {
+                // longitude error stays within bounds up to next cycle,
+                // we don't change anything on the maneuvers
+                return tunables;
+            }
+
+        }
+
+        // compute semi major axis offset needed to achieve station-keeping target
+        final double dlDotDa = -3 * FastMath.PI / (fitStart.getA() * Constants.JULIAN_DAY);
+        final double deltaA  = (newDLdot - fittedDL[1]) / dlDotDa;
+
+        final ScheduledManeuver[] tuned;
+        final ManeuverAdapterPropagator adapterPropagator = new ManeuverAdapterPropagator(reference);
+        if (iteration == 0) {
+            // we need to first define the number of maneuvers and their initial settings
+
+            // compute the in plane maneuver required to get this initial semi-major axis offset
+            final double mu           = fitStart.getMu();
+            final double a            = fitStart.getA();
+            final double totalDeltaV  = thrustSignVelocity(fitStart) *
+                                        FastMath.sqrt(mu * (2 / a - 1 / (a + deltaA))) - FastMath.sqrt(mu / a);
+
+            // compute the number of maneuvers required
+            final TunableManeuver model = getModel();
+            final double limitDV = (totalDeltaV < 0) ? model.getDVInf() : model.getDVSup();
+            final int    nMan    = FastMath.min(maxManeuvers,
+                                                (int) FastMath.ceil(FastMath.abs(totalDeltaV / limitDV)));
+            final double deltaV  = FastMath.max(model.getDVInf(),
+                                                FastMath.min(model.getDVSup(), totalDeltaV / nMan));
+
+            tuned = new ScheduledManeuver[tunables.length + nMan];
+            System.arraycopy(tunables, 0, tuned, 0, tunables.length);
+            changeTrajectory(tuned, 0, tunables.length, adapterPropagator);
+
+            // in order to avoid tempering eccentricity too much,
+            // we use a (n+1/2) orbits between maneuvers, where n is an integer
+            final double separation = (orbitsSeparation + 0.5) * fitStart.getKeplerianPeriod();
+
+            // add the new maneuvers
+            for (int i = 0; i < nMan; ++i) {
+                tuned[tunables.length + i] =
+                        new ScheduledManeuver(model, fitStart.getDate().shiftedBy(firstOffset + i * separation),
+                                              new Vector3D(deltaV, model.getDirection()),
+                                              model.getCurrentThrust(), model.getCurrentISP(),
+                                              adapterPropagator, false);
+            }
+
+        } else {
+
+            // adjust the existing maneuvers
+
+            // compute the in plane maneuver required to get this initial semi-major axis offset
+            final double mu           = fitStart.getMu();
+            final double a            = fitStart.getA();
+            final double deltaVChange = thrustSignVelocity(fitStart) *
+                                        FastMath.sqrt(mu * (2 / a - 1 / (a + deltaA))) - FastMath.sqrt(mu / a);
+
+            // distribute the change over all maneuvers
+            tuned = tunables.clone();
+            changeTrajectory(tuned, 0, tuned.length, adapterPropagator);
+            distributeDV(deltaVChange, 0.0, tuned, adapterPropagator);
+
+        }
+
+        // finalize propagator
+        for (final ScheduledManeuver maneuver : tuned) {
+            adapterPropagator.addManeuver(maneuver.getDate(), maneuver.getDeltaV(), maneuver.getIsp());
+        }
+
+        return tuned;
+
     }
 
     /** {@inheritDoc} */
@@ -254,6 +408,115 @@ public class GroundTrackGrid extends AbstractSKControl {
     /** {@inheritDoc} */
     public OrekitStepHandler getStepHandler() {
         return null;
+    }
+
+    /** Inner class for longitude error models. */
+    private static class ErrorModel {
+
+        /** Latitude. */
+        private final double latitude;
+
+        /** Latitude crossing direction. */
+        private final boolean ascending;
+
+        /** Number of grid points this model refers to. */
+        private int count;
+
+        /** Time offset of the earliest grid point. */
+        private double earliestOffset;
+
+        /** Time offset of the latest grid point. */
+        private double latestOffset;
+
+        /** Models parameters. */
+        private double[] fitted;
+
+        /** Curve fitter. */
+        private CurveFitter fitter;
+
+        /** Simple constructor.
+         * @param gridPoint grid point
+         */
+        public ErrorModel(final GridPoint gridPoint) {
+            this.latitude       = gridPoint.getLatitude();
+            this.ascending      = gridPoint.isAscending();
+            this.earliestOffset = gridPoint.getTimeOffset();
+            this.latestOffset   = earliestOffset;
+            this.count          = 1;
+            this.fitted         = new double[] {
+                0, -1.0e-9, 1.0e-16
+            };
+        }
+
+        /** Add one more point in the model.
+         * @param grid point to add
+         */
+        public void addGridPoint(final GridPoint gridPoint) {
+            earliestOffset = FastMath.min(earliestOffset, gridPoint.getTimeOffset());
+            latestOffset   = FastMath.max(latestOffset,   gridPoint.getTimeOffset());
+            ++count;
+        }
+
+        /** Get latitude of the model.
+         * @return latitude of the model
+         */
+        public double getLatitude() {
+            return latitude;
+        }
+
+        /** Get crossing direction.
+         * @return true of crossign direction is from South to North
+         */
+        public boolean isAscending() {
+            return ascending;
+        }
+
+        /** Get the number of grid points this model refers to.
+         * @return number of grid points this model refers to
+         */
+        public int getCount() {
+            return count;
+        }
+
+        /** Get the time span between earliest and latest grid points.
+         * @return time span between earliest and latest grid points
+         */
+        public double getTimeSpan() {
+            return latestOffset - earliestOffset;
+        }
+
+        /** Check if a grid point belongs to this model.
+         * @param pointLatitude latitude of the point
+         * @param pointAscending latitude crossing direction
+         * @return true if grid point has same latitude and crossing direction
+         */
+        public boolean matches(final double pointLatitude, final boolean pointAscending) {
+            return (Precision.equals(pointLatitude, latitude, EPSILON_LATITUDE) &&
+                   (pointAscending == ascending));
+        }
+
+        /** Reset fitting.
+         */
+        public void resetFitting() {
+            fitter = new CurveFitter(new LevenbergMarquardtOptimizer());
+        }
+
+        /** Add a fitting point.
+         * @param dt time offset
+         * @param dl Longitude offset
+         */
+        public void addPoint(final double dt, final double dl) {
+            fitter.addObservedPoint(dt, dl);
+        }
+
+        /** Fit parameters.
+         * @return tidded parameters
+         */
+        public double[] fit() {
+            fitted = fitter.fit(new SecularAndHarmonic(2, new double[0]), fitted);
+            return fitted.clone();
+        }
+
     }
 
 }
