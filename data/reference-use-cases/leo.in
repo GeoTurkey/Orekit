@@ -1,6 +1,6 @@
 # General simulation parameters
 simulation       = {
-    output_base_name = "leo-in-plane";
+    output_base_name = "leo";
     inertial_frame   = "EME2000";
     earth_frame      = "GTOD without EOP";
     start_date       = 2011-12-12T11:00:00.000;
@@ -22,6 +22,17 @@ simulation       = {
                 isp_curve             = [ [ 200, 0.0 ], [ 180, 100.0 ] ];
                 dv_inf                = -10;
                 dv_sup                =  10;
+                dv_convergence        = 0.001;
+                dt_convergence        =  1.0;
+                elimination_threshold = 0.001;
+            },
+            {
+                name                  = "out-of-plane";
+                direction             = [ 0.0, -1.0, 0.0 ];
+                thrust                = [ [  20, 0.0],  [  10, 100.0 ] ];
+                isp_curve             = [ [ 200, 0.0 ], [ 180, 100.0 ] ];
+                dv_inf                = -30;
+                dv_sup                =  30;
                 dv_convergence        = 0.001;
                 dt_convergence        =  1.0;
                 elimination_threshold = 0.001;
@@ -96,10 +107,22 @@ scenario         = [
                 maneuver_name               = "in-plane";
                 max_maneuvers               = 6;
                 maneuvers_orbits_separation = 5;
-                offset_first_maneuver       = 86400.0;
+                offset_first_maneuver       = 172800;
                 grid_file                   = "metop.grd";
                 max_cross_track_distance    =  2000.0;
-            }                       
+            },
+            {
+                type                        = MEAN_LOCAL_SOLAR_TIME;
+                name                        = "mean local solar time (MST)";
+                maneuver_name               = "out-of-plane";
+                max_maneuvers               = 6;
+                offset_first_maneuver       = 86400;
+                maneuvers_orbits_separation = 5;
+                latitude                    = 0.;
+                ascending                   = false;
+                solar_time                  = 9.5;   # solar time in fractional hours
+                solar_time_tolerance        = 2;     # tolerance in minutes
+            }
         ];
     },
     {   component           = MISSED_MANEUVER;
@@ -136,5 +159,5 @@ scenario         = [
 monitoring_mono = [
     INCLINATION,
     SEMI_MAJOR_AXIS,
-    ECCENTRICITY
+    CIRCULAR_ECCENTRICITY_VECTOR
 ]
