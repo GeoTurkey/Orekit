@@ -69,8 +69,8 @@ public abstract class AbstractSKControl implements SKControl {
      * @param controlledIndex index of the controlled spacecraft
      * @param referenceName name of the reference spacecraft
      * @param referenceIndex index of the reference spacecraft
-     * @param min minimal value for the residual
-     * @param max maximal value for the residual
+     * @param min minimal value for the constraint
+     * @param max maximal value for the constraint
      */
     protected AbstractSKControl(final String name, final TunableManeuver model,
                                 final String controlledName, final int controlledIndex,

@@ -63,8 +63,10 @@ public enum SupportedControlLaw {
             final double centerY        = parser.getDouble(node, ParameterKey.CONTROL_ECCENTRICITY_CIRCLE_CENTER_Y);
             final double meanRadius     = parser.getDouble(node, ParameterKey.CONTROL_ECCENTRICITY_CIRCLE_MEAN_RADIUS);
             final double maxRadius      = parser.getDouble(node, ParameterKey.CONTROL_ECCENTRICITY_CIRCLE_MAX_RADIUS);
+            final boolean singleBurn    = parser.getBoolean(node, ParameterKey.CONTROL_ECCENTRICITY_CIRCLE_SINGLE_BURN);
             return new EccentricityCircle(name, controlled, skat.getSpacecraftIndex(controlled),
-                                          model, centerX, centerY, meanRadius, maxRadius, skat.getSun(), sampling);
+                                          model, centerX, centerY, meanRadius, maxRadius, singleBurn,
+                                          skat.getSun(), sampling);
         }
 
     },
