@@ -5,8 +5,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
-import org.apache.commons.math.optimization.fitting.PolynomialFitter;
-import org.apache.commons.math.optimization.general.LevenbergMarquardtOptimizer;
 import org.apache.commons.math.util.FastMath;
 import org.apache.commons.math.util.MathUtils;
 import org.orekit.bodies.BodyShape;
@@ -28,6 +26,7 @@ import org.orekit.time.AbsoluteDate;
 
 import eu.eumetsat.skat.control.AbstractSKControl;
 import eu.eumetsat.skat.strategies.ScheduledManeuver;
+import eu.eumetsat.skat.strategies.SecularAndHarmonic;
 import eu.eumetsat.skat.strategies.TunableManeuver;
 import eu.eumetsat.skat.utils.SkatException;
 import eu.eumetsat.skat.utils.SkatMessages;
@@ -194,22 +193,25 @@ public class ParabolicLongitude extends AbstractSKControl {
         fitStart = propagator.propagate(freeInterval[0]);
 
         // fit linear model to semi-major axis and quadratic model to mean longitude
-        PolynomialFitter aFitter = new PolynomialFitter(1, new LevenbergMarquardtOptimizer());
-        PolynomialFitter lFitter = new PolynomialFitter(2, new LevenbergMarquardtOptimizer());
+        SecularAndHarmonic aModel = new SecularAndHarmonic(1, new double[0]);
+        SecularAndHarmonic lModel = new SecularAndHarmonic(2, new double[0]);
+        aModel.resetFitting(freeInterval[0], fitStart.getA(), 0.0);
+        lModel.resetFitting(freeInterval[0], center, 0.0, 0.0);
         for (AbsoluteDate date = freeInterval[0]; date.compareTo(freeInterval[1]) < 0; date = date.shiftedBy(samplingStep)) {
             final SpacecraftState  state = propagator.propagate(date);
             final double meanLongitude = getMeanLongitude(state);
-            final double dt = date.durationFrom(freeInterval[0]);
-            aFitter.addObservedPoint(dt, state.getA());
-            lFitter.addObservedPoint(dt, meanLongitude);
+            aModel.addPoint(date, state.getA());
+            lModel.addPoint(date, meanLongitude);
         }
 
         // polynomial models are:
         // dl(t)/dt  = dlDotDa * [a(t) - as]
         // a(t)      = a(t0) + aDot * (t - t0)
         // l(t)      = l(t0) + dlDotDa * [a(t0) - as] * (t - t0) + dlDotDa/2 * aDot * (t - t0)^2
-        final double[] linear = aFitter.fit();
-        final double[] quadratic = lFitter.fit();
+        aModel.fit();
+        lModel.fit();
+        final double[] linear = aModel.getFittedParameters();
+        final double[] quadratic = lModel.getFittedParameters();
         l0      = quadratic[0];
         aDot    = linear[1];
         dlDotDa = 2 * quadratic[2] / aDot;

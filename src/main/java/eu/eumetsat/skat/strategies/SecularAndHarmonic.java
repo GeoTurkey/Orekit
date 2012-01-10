@@ -17,7 +17,10 @@
 package eu.eumetsat.skat.strategies;
 
 import org.apache.commons.math.analysis.ParametricUnivariateFunction;
+import org.apache.commons.math.optimization.fitting.CurveFitter;
+import org.apache.commons.math.optimization.general.LevenbergMarquardtOptimizer;
 import org.apache.commons.math.util.FastMath;
+import org.orekit.time.AbsoluteDate;
 
 /** Class for fitting evolution of osculating orbital parameters.
  * <p>
@@ -27,13 +30,22 @@ import org.apache.commons.math.util.FastMath;
  * 
  * @author Luc Maisonobe
  */
-public class SecularAndHarmonic implements ParametricUnivariateFunction {
+public class SecularAndHarmonic {
 
     /** Degree of polynomial secular part. */
     private final int secularDegree;
 
     /** Pulsations of harmonic part. */
     private final double[] pulsations;
+
+    /** Curve fitting engine. */
+    private CurveFitter fitter;
+
+    /** Reference date for the model. */
+    private AbsoluteDate reference;
+
+    /** Fitted parameters. */
+    private double[] fitted;
 
     /** Simple constructor.
      * @param secularDegree degree of polynomial secular part
@@ -44,43 +56,116 @@ public class SecularAndHarmonic implements ParametricUnivariateFunction {
         this.pulsations    = pulsations.clone();
     }
 
-    /** {@inheritDoc} */
-    public double[] gradient(double x, double ... parameters) {
+    /** Reset fitting.
+     * @param date reference date
+     * @param initialGuess initial guess for the parameters
+     */
+    public void resetFitting(final AbsoluteDate date, final double ... initialGuess) {
+        fitter    = new CurveFitter(new LevenbergMarquardtOptimizer());
+        reference = date;
+        fitted    = initialGuess.clone();
+    }
 
-        final double[] gradient = new double[secularDegree + 1 + 2 * pulsations.length];
+    /** Add a fitting point.
+     * @param date date of the point
+     * @param osculatingValue osculating value
+     */
+    public void addPoint(final AbsoluteDate date, final double osculatingValue) {
+        fitter.addObservedPoint(date.durationFrom(reference), osculatingValue);
+    }
 
-        // secular part
-        double xN = 1.0;
-        for (int i = 0; i <= secularDegree; ++i) {
-            gradient[i] = xN;
-            xN *= x;
-        }
+    /** Fit parameters.
+     * @see #getFittedParameters()
+     */
+    public void fit() {
 
-        // harmonic part
-        for (int i = 0; i < pulsations.length; ++i) {
-            gradient[secularDegree + 2 * i + 1] = FastMath.cos(pulsations[i] * x);
-            gradient[secularDegree + 2 * i + 2] = FastMath.sin(pulsations[i] * x);
-        }
+        fitted = fitter.fit(new ParametricUnivariateFunction() {
 
-        return gradient;
+            /** {@inheritDoc} */
+            public double value(double x, double... parameters) {
+                return truncatedValue(secularDegree, pulsations.length, x, parameters);
+            }
+            
+            /** {@inheritDoc} */
+            public double[] gradient(double x, double... parameters) {
+                final double[] gradient = new double[secularDegree + 1 + 2 * pulsations.length];
+
+                // secular part
+                double xN = 1.0;
+                for (int i = 0; i <= secularDegree; ++i) {
+                    gradient[i] = xN;
+                    xN *= x;
+                }
+
+                // harmonic part
+                for (int i = 0; i < pulsations.length; ++i) {
+                    gradient[secularDegree + 2 * i + 1] = FastMath.cos(pulsations[i] * x);
+                    gradient[secularDegree + 2 * i + 2] = FastMath.sin(pulsations[i] * x);
+                }
+
+                return gradient;
+            }
+
+        }, fitted);
 
     }
 
-    /** {@inheritDoc} */
-    public double value(final double x, final double ... parameters) {
-        return meanValue(secularDegree, pulsations.length, x, parameters);
+    /** Get a copy of the last fitted parameters.
+     * @return copy of the last fitted parameters.
+     * @see #fit()
+     */
+    public double[] getFittedParameters() {
+        return fitted.clone();
+    }
+
+    /** Get fitted osculating value.
+     * @param date current date
+     * @return osculating value at current date
+     */
+    public double osculatingValue(final AbsoluteDate date) {
+        return truncatedValue(secularDegree, pulsations.length,
+                         date.durationFrom(reference), fitted);
+    }
+
+    /** Get fitted osculating derivative.
+     * @param date current date
+     * @return osculating derivative at current date
+     */
+    public double osculatingDerivative(final AbsoluteDate date) {
+        return truncatedDerivative(secularDegree, pulsations.length,
+                                   date.durationFrom(reference), fitted);
     }
 
     /** Get mean value, truncated to first components.
+     * @param date current date
+     * @param degree degree of polynomial secular part
+     * @param harmonics number of harmonics terms to consider
+     * @return mean value at current date
+     */
+    public double meanValue(final AbsoluteDate date, final int degree, final int harmonics) {
+        return truncatedValue(degree, harmonics, date.durationFrom(reference), fitted);
+    }
+
+    /** Get mean derivative, truncated to first components.
+     * @param date current date
+     * @param degree degree of polynomial secular part
+     * @param harmonics number of harmonics terms to consider
+     * @return mean derivative at current date
+     */
+    public double meanDerivative(final AbsoluteDate date, final int degree, final int harmonics) {
+        return truncatedDerivative(degree, harmonics, date.durationFrom(reference), fitted);
+    }
+
+    /** Get value truncated to first components.
      * @param degree degree of polynomial secular part
      * @param harmonics number of harmonics terms to consider
      * @param time time parameter
      * @param parameters models parameters (must include all parameters,
      * including the ones ignored due to model truncation)
-     * @return mean value
+     * @return truncated value
      */
-    public double meanValue(final int degree, final int harmonics,
-                            final double time, final double ... parameters) {
+    private double truncatedValue(final int degree, final int harmonics,
+                                  final double time, final double ... parameters) {
 
         double value = 0;
 
@@ -98,6 +183,36 @@ public class SecularAndHarmonic implements ParametricUnivariateFunction {
         }
 
         return value;
+
+    }
+
+    /** Get derivative truncated to first components.
+     * @param degree degree of polynomial secular part
+     * @param harmonics number of harmonics terms to consider
+     * @param time time parameter
+     * @param parameters models parameters (must include all parameters,
+     * including the ones ignored due to model truncation)
+     * @return truncated derivative
+     */
+    private double truncatedDerivative(final int degree, final int harmonics,
+                                       final double time, final double ... parameters) {
+
+        double derivative = 0;
+
+        // secular part
+        double tN = 1.0;
+        for (int i = 1; i <= degree; ++i) {
+            derivative += i * parameters[i] * tN;
+            tN    *= time;
+        }
+
+        // harmonic part
+        for (int i = 0; i < harmonics; ++i) {
+            derivative += pulsations[i] * (-parameters[secularDegree + 2 * i + 1] * FastMath.sin(pulsations[i] * time) +
+                                            parameters[secularDegree + 2 * i + 2] * FastMath.cos(pulsations[i] * time));
+        }
+
+        return derivative;
 
     }
 

@@ -7,8 +7,6 @@ import java.util.Comparator;
 import java.util.List;
 
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
-import org.apache.commons.math.optimization.fitting.CurveFitter;
-import org.apache.commons.math.optimization.general.LevenbergMarquardtOptimizer;
 import org.apache.commons.math.util.FastMath;
 import org.apache.commons.math.util.MathUtils;
 import org.apache.commons.math.util.Precision;
@@ -239,11 +237,11 @@ public class GroundTrackGrid extends AbstractSKControl {
         }
 
         // fit longitude offsets to parabolic models
-        for (final ErrorModel errorModel : errorModels) {
-            errorModel.resetFitting();
-        }
         int index = firstEncounter;
         fitStart = propagator.propagate(gridReference.shiftedBy(grid[index].getTimeOffset()));
+        for (final ErrorModel errorModel : errorModels) {
+            errorModel.resetFitting(fitStart.getDate(), fittedDL);
+        }
         AbsoluteDate date  = fitStart.getDate();
         while (date.compareTo(end) < 0) {
 
@@ -260,13 +258,12 @@ public class GroundTrackGrid extends AbstractSKControl {
             Vector3D position = crossing.getPVCoordinates(earth.getBodyFrame()).getPosition();
             final GeodeticPoint gp = earth.transform(position, earth.getBodyFrame(), crossing.getDate());
 
-            double dt = crossing.getDate().durationFrom(fitStart.getDate());
             double dl = MathUtils.normalizeAngle(gp.getLongitude() - grid[index].getLongitude(), 0);
             checkMargins(dl * FastMath.hypot(position.getX(), position.getY()));
 
             for (final ErrorModel errorModel : errorModels) {
                 if (errorModel.matches(grid[index].getLatitude(), grid[index].isAscending())) {
-                    errorModel.addPoint(dt, dl);
+                    errorModel.addPoint(crossing.getDate(), dl);
                 }
             }
 
@@ -279,7 +276,8 @@ public class GroundTrackGrid extends AbstractSKControl {
         // fit all latitude/direction specific models and compute a mean model
         Arrays.fill(fittedDL, 0);
         for (final ErrorModel errorModel : errorModels) {
-            final double[] f = errorModel.fit();
+            errorModel.fit();
+            final double[] f = errorModel.getFittedParameters();
             for (int i = 0; i < fittedDL.length; ++i) {
                 fittedDL[i] += f[i];
             }
@@ -411,7 +409,7 @@ public class GroundTrackGrid extends AbstractSKControl {
     }
 
     /** Inner class for longitude error models. */
-    private static class ErrorModel {
+    private static class ErrorModel extends SecularAndHarmonic {
 
         /** Latitude. */
         private final double latitude;
@@ -428,24 +426,16 @@ public class GroundTrackGrid extends AbstractSKControl {
         /** Time offset of the latest grid point. */
         private double latestOffset;
 
-        /** Models parameters. */
-        private double[] fitted;
-
-        /** Curve fitter. */
-        private CurveFitter fitter;
-
         /** Simple constructor.
          * @param gridPoint grid point
          */
         public ErrorModel(final GridPoint gridPoint) {
+            super(2, new double[0]);
             this.latitude       = gridPoint.getLatitude();
             this.ascending      = gridPoint.isAscending();
             this.earliestOffset = gridPoint.getTimeOffset();
             this.latestOffset   = earliestOffset;
             this.count          = 1;
-            this.fitted         = new double[] {
-                0, -1.0e-9, 1.0e-16
-            };
         }
 
         /** Add one more point in the model.
@@ -493,28 +483,6 @@ public class GroundTrackGrid extends AbstractSKControl {
         public boolean matches(final double pointLatitude, final boolean pointAscending) {
             return (Precision.equals(pointLatitude, latitude, EPSILON_LATITUDE) &&
                    (pointAscending == ascending));
-        }
-
-        /** Reset fitting.
-         */
-        public void resetFitting() {
-            fitter = new CurveFitter(new LevenbergMarquardtOptimizer());
-        }
-
-        /** Add a fitting point.
-         * @param dt time offset
-         * @param dl Longitude offset
-         */
-        public void addPoint(final double dt, final double dl) {
-            fitter.addObservedPoint(dt, dl);
-        }
-
-        /** Fit parameters.
-         * @return tidded parameters
-         */
-        public double[] fit() {
-            fitted = fitter.fit(new SecularAndHarmonic(2, new double[0]), fitted);
-            return fitted.clone();
         }
 
     }

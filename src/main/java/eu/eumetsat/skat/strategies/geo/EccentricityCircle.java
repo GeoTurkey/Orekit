@@ -3,13 +3,9 @@ package eu.eumetsat.skat.strategies.geo;
 
 import java.util.List;
 
-import org.apache.commons.math.analysis.ParametricUnivariateFunction;
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
-import org.apache.commons.math.optimization.fitting.CurveFitter;
-import org.apache.commons.math.optimization.general.LevenbergMarquardtOptimizer;
 import org.apache.commons.math.util.FastMath;
 import org.apache.commons.math.util.MathUtils;
-import org.apache.commons.math.util.Precision;
 import org.orekit.bodies.CelestialBody;
 import org.orekit.errors.OrekitException;
 import org.orekit.errors.PropagationException;
@@ -28,6 +24,7 @@ import org.orekit.utils.PVCoordinates;
 
 import eu.eumetsat.skat.control.AbstractSKControl;
 import eu.eumetsat.skat.strategies.ScheduledManeuver;
+import eu.eumetsat.skat.strategies.SecularAndHarmonic;
 import eu.eumetsat.skat.strategies.TunableManeuver;
 
 /**
@@ -103,8 +100,11 @@ public class EccentricityCircle extends AbstractSKControl {
     /** Start of sampling. */
     private SpacecraftState fitStart;
 
-    /** Parameters of the fitted eccentricity model. */
-    private double[][] fitted;
+    /** Fitter for x part of eccentricity. */
+    private SecularAndHarmonic xModel;
+
+    /** Fitter for x part of eccentricity. */
+    private SecularAndHarmonic yModel;
 
     /** Cycle start. */
     private AbsoluteDate cycleStart;
@@ -136,11 +136,32 @@ public class EccentricityCircle extends AbstractSKControl {
         this.sun          = sun;
         this.samplingStep = samplingStep;
 
+        xModel = new SecularAndHarmonic(0,
+                                         new double[] {
+                                             SUN_PULSATION,
+                                             EARTH_PULSATION,
+                                             MOON_PULSATION,
+                                             EARTH_PULSATION - 2 * MOON_PULSATION,
+                                             EARTH_PULSATION - 2 * SUN_PULSATION
+                                         });
+        yModel = new SecularAndHarmonic(0,
+                                         new double[] {
+                                             SUN_PULSATION,
+                                             EARTH_PULSATION,
+                                             MOON_PULSATION,
+                                             EARTH_PULSATION - 2 * MOON_PULSATION,
+                                             EARTH_PULSATION - 2 * SUN_PULSATION
+                                         });
+
         // rough order of magnitudes values for initialization purposes
-        fitted = new double[][] {
-            { centerX, 1.0e-2, 1.0e-2, 1.0e-5, 1.0e-5, 1.0e-5, 1.0e-5, 1.0e-5, 1.0e-5, 1.0e-5, 1.0e-5 },
-            { centerY, 1.0e-2, 1.0e-2, 1.0e-5, 1.0e-5, 1.0e-5, 1.0e-5, 1.0e-5, 1.0e-5, 1.0e-5, 1.0e-5 }
-        };
+        xModel.resetFitting(AbsoluteDate.J2000_EPOCH,
+                             new double[] {
+                                 centerX, 1.0e-2, 1.0e-2, 1.0e-5, 1.0e-5, 1.0e-5, 1.0e-5, 1.0e-5, 1.0e-5, 1.0e-5, 1.0e-5
+                             });
+        yModel.resetFitting(AbsoluteDate.J2000_EPOCH,
+                             new double[] {
+                                 centerY, 1.0e-2, 1.0e-2, 1.0e-5, 1.0e-5, 1.0e-5, 1.0e-5, 1.0e-5, 1.0e-5, 1.0e-5, 1.0e-5
+                             });
 
     }
 
@@ -161,18 +182,17 @@ public class EccentricityCircle extends AbstractSKControl {
             // reconstruct eccentricity motion model only on first iteration
 
             // fit short long periods model to eccentricity
-            CurveFitter xFitter = new CurveFitter(new LevenbergMarquardtOptimizer(100, 1.0e-14, 1.0e-14, 1.0e-14, Precision.SAFE_MIN));
-            CurveFitter yFitter = new CurveFitter(new LevenbergMarquardtOptimizer(100, 1.0e-14, 1.0e-14, 1.0e-14, Precision.SAFE_MIN));
+            xModel.resetFitting(freeInterval[0], xModel.getFittedParameters());
+            yModel.resetFitting(freeInterval[0], yModel.getFittedParameters());
             for (AbsoluteDate date = freeInterval[0]; date.compareTo(freeInterval[1]) < 0; date = date.shiftedBy(samplingStep)) {
                 final EquinoctialOrbit orbit =
                         (EquinoctialOrbit) OrbitType.EQUINOCTIAL.convertType(propagator.propagate(date).getOrbit());
-                final double dt = date.durationFrom(freeInterval[0]);
-                xFitter.addObservedPoint(dt, orbit.getEquinoctialEx());
-                yFitter.addObservedPoint(dt, orbit.getEquinoctialEy());
+                xModel.addPoint(date, orbit.getEquinoctialEx());
+                yModel.addPoint(date, orbit.getEquinoctialEy());
             }
 
-            fitted[0] = xFitter.fit(new ShortAndLongPeriod(), fitted[0]);
-            fitted[1] = yFitter.fit(new ShortAndLongPeriod(), fitted[1]);
+            xModel.fit();
+            yModel.fit();
         }
 
     }
@@ -183,17 +203,12 @@ public class EccentricityCircle extends AbstractSKControl {
         throws OrekitException {
 
         // mean eccentricity at cycle middle time
-        final double dt     = 0.5 * (cycleStart.durationFrom(fitStart.getDate()) +
-                                     cycleEnd.durationFrom(fitStart.getDate()));
-        final double meanEx = fitted[0][0] +
-                              fitted[0][1] * FastMath.cos(SUN_PULSATION * dt) +
-                              fitted[0][2] * FastMath.sin(SUN_PULSATION * dt);
-        final double meanEy = fitted[1][0] +
-                              fitted[1][1] * FastMath.cos(SUN_PULSATION * dt) +
-                              fitted[1][2] * FastMath.sin(SUN_PULSATION * dt);
+        final AbsoluteDate middleDate = cycleStart.shiftedBy(0.5 * (cycleEnd.durationFrom(cycleStart)));
+        final double meanEx = xModel.meanValue(middleDate, 0, 1);
+        final double meanEy = yModel.meanValue(middleDate, 0, 1);
 
         // desired eccentricity at cycle middle time
-        final PVCoordinates sunPV = sun.getPVCoordinates(fitStart.getDate().shiftedBy(dt), fitStart.getFrame());
+        final PVCoordinates sunPV = sun.getPVCoordinates(middleDate, fitStart.getFrame());
         final double alphaSun = sunPV.getPosition().getAlpha();
         final double targetEx = centerX + meanRadius * FastMath.cos(alphaSun);
         final double targetEy = centerY + meanRadius * FastMath.sin(alphaSun);
@@ -460,45 +475,4 @@ public class EccentricityCircle extends AbstractSKControl {
 
     }
 
-    /** Inner class for short and long period motion.
-     * <p>
-     * This function has 9 parameters: one constant,
-     * two for Moon-Earth, Moon+Earth, Sun-Earth and Sun+Earth effects (cosines and sines).
-     * </p>
-     */
-    private static class ShortAndLongPeriod implements ParametricUnivariateFunction {
-
-        /** {@inheritDoc} */
-        public double[] gradient(double x, double ... parameters) {
-            return new double[] {
-                1.0,
-                FastMath.cos(SUN_PULSATION   * x),
-                FastMath.sin(SUN_PULSATION   * x),
-                FastMath.cos(EARTH_PULSATION * x),
-                FastMath.sin(EARTH_PULSATION * x),
-                FastMath.cos(MOON_PULSATION  * x),
-                FastMath.sin(MOON_PULSATION  * x),
-                FastMath.cos((EARTH_PULSATION - 2 * MOON_PULSATION) * x),
-                FastMath.sin((EARTH_PULSATION - 2 * MOON_PULSATION) * x),
-                FastMath.cos((EARTH_PULSATION - 2 * SUN_PULSATION)  * x),
-                FastMath.sin((EARTH_PULSATION - 2 * SUN_PULSATION)  * x)
-            };
-        }
-
-        /** {@inheritDoc} */
-        public double value(final double x, final double ... parameters) {
-            return parameters[0] +
-                   parameters[1]  * FastMath.cos(SUN_PULSATION   * x) +
-                   parameters[2]  * FastMath.sin(SUN_PULSATION   * x) +
-                   parameters[3]  * FastMath.cos(EARTH_PULSATION * x) +
-                   parameters[4]  * FastMath.sin(EARTH_PULSATION * x) +
-                   parameters[5]  * FastMath.cos(MOON_PULSATION  * x) +
-                   parameters[6]  * FastMath.sin(MOON_PULSATION  * x) +
-                   parameters[7]  * FastMath.cos((EARTH_PULSATION - 2 * MOON_PULSATION) * x) +
-                   parameters[8]  * FastMath.sin((EARTH_PULSATION - 2 * MOON_PULSATION) * x) +
-                   parameters[9]  * FastMath.cos((EARTH_PULSATION - 2 * SUN_PULSATION)  * x) +
-                   parameters[10] * FastMath.sin((EARTH_PULSATION - 2 * SUN_PULSATION)  * x);
-        }
-
-    }
 }

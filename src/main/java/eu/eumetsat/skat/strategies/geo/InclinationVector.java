@@ -3,10 +3,7 @@ package eu.eumetsat.skat.strategies.geo;
 
 import java.util.List;
 
-import org.apache.commons.math.analysis.ParametricUnivariateFunction;
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
-import org.apache.commons.math.optimization.fitting.CurveFitter;
-import org.apache.commons.math.optimization.general.LevenbergMarquardtOptimizer;
 import org.apache.commons.math.util.FastMath;
 import org.apache.commons.math.util.MathUtils;
 import org.orekit.errors.OrekitException;
@@ -25,6 +22,7 @@ import org.orekit.utils.Constants;
 
 import eu.eumetsat.skat.control.AbstractSKControl;
 import eu.eumetsat.skat.strategies.ScheduledManeuver;
+import eu.eumetsat.skat.strategies.SecularAndHarmonic;
 import eu.eumetsat.skat.strategies.TunableManeuver;
 
 /**
@@ -105,8 +103,11 @@ public class InclinationVector extends AbstractSKControl {
     /** Reference state at fitting start. */
     private SpacecraftState fitStart;
 
-    /** Parameters of the fitted inclination model. */
-    private double[][] fitted;
+    /** Model for the x part. */
+    private SecularAndHarmonic xModel;
+
+    /** Model for the y part. */
+    private SecularAndHarmonic yModel;
 
     /** Cycle start. */
     private AbsoluteDate cycleStart;
@@ -142,11 +143,18 @@ public class InclinationVector extends AbstractSKControl {
         this.samplingStep     = samplingStep;
         this.innerRadius      = innerRadius(referenceHx, referenceHy, limitInclination);
 
+        xModel = new SecularAndHarmonic(1, new double[] { SUN_PULSATION, MOON_PULSATION });
+        yModel = new SecularAndHarmonic(1, new double[] { SUN_PULSATION, MOON_PULSATION });
+
         // rough order of magnitudes values for initialization purposes
-        fitted = new double[][] {
-            { referenceHx, 0.0,     1.0e-4, 1.0e-4, 1.0e-5, 1.0e-5 },
-            { referenceHy, 1.0e-10, 1.0e-4, 1.0e-4, 1.0e-5, 1.0e-5 }
-        };
+        xModel.resetFitting(AbsoluteDate.J2000_EPOCH,
+                            new double[] {
+                                referenceHx, 0.0,     1.0e-4, 1.0e-4, 1.0e-5, 1.0e-5
+                            });
+        yModel.resetFitting(AbsoluteDate.J2000_EPOCH,
+                            new double[] {
+                                referenceHy, 1.0e-10, 1.0e-4, 1.0e-4, 1.0e-5, 1.0e-5
+                            });
 
     }
     
@@ -183,18 +191,17 @@ public class InclinationVector extends AbstractSKControl {
             // reconstruct inclination motion model only on first iteration
 
             // fit secular plus long periods model to inclination
-            CurveFitter xFitter = new CurveFitter(new LevenbergMarquardtOptimizer());
-            CurveFitter yFitter = new CurveFitter(new LevenbergMarquardtOptimizer());
+            xModel.resetFitting(freeInterval[0], xModel.getFittedParameters());
+            yModel.resetFitting(freeInterval[0], yModel.getFittedParameters());
             for (AbsoluteDate date = freeInterval[0]; date.compareTo(freeInterval[1]) < 0; date = date.shiftedBy(samplingStep)) {
                 final EquinoctialOrbit orbit =
                         (EquinoctialOrbit) OrbitType.EQUINOCTIAL.convertType(propagator.propagate(date).getOrbit());
-                final double dt = date.durationFrom(freeInterval[0]);
-                xFitter.addObservedPoint(dt, orbit.getHx());
-                yFitter.addObservedPoint(dt, orbit.getHy());
+                xModel.addPoint(date, orbit.getHx());
+                yModel.addPoint(date, orbit.getHy());
             }
 
-            fitted[0] = xFitter.fit(new SecularAndLongPeriod(), fitted[0]);
-            fitted[1] = yFitter.fit(new SecularAndLongPeriod(), fitted[1]);
+            xModel.fit();
+            yModel.fit();
 
         }
 
@@ -216,25 +223,15 @@ public class InclinationVector extends AbstractSKControl {
                 return tunables;
             }
 
-            // we need to first define the number of maneuvers and their initial settings
-            final double dt     = cycleStart.shiftedBy(firstOffset).durationFrom(fitStart.getDate());
-            final double sunC   = FastMath.cos(SUN_PULSATION  * dt);
-            final double sunS   = FastMath.sin(SUN_PULSATION  * dt);
-            final double moonC  = FastMath.cos(MOON_PULSATION * dt);
-            final double moonS  = FastMath.sin(MOON_PULSATION * dt);
-
             // inclination vector at maneuver time
-            startHx = fitted[0][0]         + fitted[0][1] * dt +
-                      fitted[0][2] * sunC  + fitted[0][3] * sunS +
-                      fitted[0][4] * moonC + fitted[0][5] * moonS;
-            startHy = fitted[1][0]         + fitted[1][1] * dt +
-                      fitted[1][2] * sunC  + fitted[1][3] * sunS +
-                      fitted[1][4] * moonC + fitted[1][5] * moonS;
+            AbsoluteDate date = cycleStart.shiftedBy(firstOffset);
+            startHx = xModel.osculatingValue(date);
+            startHy = yModel.osculatingValue(date);
 
             // inclination vector evolution direction, considering only secular and Sun effects
             // we ignore Moon effects here since they have a too short period
-            final double dHXdT = fitted[0][1] + SUN_PULSATION  * (fitted[0][3] * sunC  - fitted[0][2] * sunS);
-            final double dHYdT = fitted[1][1] + SUN_PULSATION  * (fitted[1][3] * sunC  - fitted[1][2] * sunS);
+            final double dHXdT = xModel.meanDerivative(date, 1, 1);
+            final double dHYdT = yModel.meanDerivative(date, 1, 1);
 
             // select a target a point on the limit circle
             // such that trajectory enters the circle inner part radially at that point
@@ -383,39 +380,6 @@ public class InclinationVector extends AbstractSKControl {
                 throw new PropagationException(oe);
             }
 
-        }
-
-    }
-
-    /** Inner class for secular plus long period motion.
-     * <p>
-     * This function has 6 parameters, two for the secular part
-     * (constant and slope), two for Moon effects and two for Sun
-     * effects (cosines and sines).
-     * </p>
-     */
-    private static class SecularAndLongPeriod implements ParametricUnivariateFunction {
-
-        /** {@inheritDoc} */
-        public double[] gradient(double x, double ... parameters) {
-            return new double[] {
-                1.0,                              // constant term of the secular part
-                x,                                // slope term of the secular part
-                FastMath.cos(SUN_PULSATION  * x), // cosine part of the Sun effect
-                FastMath.sin(SUN_PULSATION  * x), // sine part of the Sun effect
-                FastMath.cos(MOON_PULSATION * x), // cosine part of the Moon effect
-                FastMath.sin(MOON_PULSATION * x)  // sine part of the Moon effect
-            };
-        }
-
-        /** {@inheritDoc} */
-        public double value(final double x, final double ... parameters) {
-            return parameters[0] +
-                   parameters[1] * x +
-                   parameters[2] * FastMath.cos(SUN_PULSATION  * x) +
-                   parameters[3] * FastMath.sin(SUN_PULSATION  * x) +
-                   parameters[4] * FastMath.cos(MOON_PULSATION * x) +
-                   parameters[5] * FastMath.sin(MOON_PULSATION * x);
         }
 
     }
