@@ -177,6 +177,28 @@ public enum MonitorableMonoSKData implements MonitorableMono {
 
     },
 
+    PERIGEE_ARGUMENT(1) {
+
+        /** {@inheritDoc} */
+        @Override
+        protected void extractData(final ScenarioState state, double[] data)
+            throws OrekitException {
+                data[0] = FastMath.toDegrees(getKeplerianOrbit(state).getPerigeeArgument());
+        }
+
+    },
+
+    RIGHT_ASCENSION_ASCENDING_NODE(1) {
+
+        /** {@inheritDoc} */
+        @Override
+        protected void extractData(final ScenarioState state, double[] data)
+            throws OrekitException {
+                data[0] = FastMath.toDegrees(getKeplerianOrbit(state).getRightAscensionOfAscendingNode());
+        }
+
+    },
+
     CIRCULAR_ECCENTRICITY_VECTOR(2) {
 
         /** {@inheritDoc} */
