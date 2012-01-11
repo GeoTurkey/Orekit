@@ -59,6 +59,7 @@ public class SecularAndHarmonic {
     /** Reset fitting.
      * @param date reference date
      * @param initialGuess initial guess for the parameters
+     * @see #getReferenceDate()
      */
     public void resetFitting(final AbsoluteDate date, final double ... initialGuess) {
         fitter    = new CurveFitter(new LevenbergMarquardtOptimizer());
@@ -72,6 +73,26 @@ public class SecularAndHarmonic {
      */
     public void addPoint(final AbsoluteDate date, final double osculatingValue) {
         fitter.addObservedPoint(date.durationFrom(reference), osculatingValue);
+    }
+
+    /** Get the referene date.
+     * @return reference date
+     * @see #resetFitting(AbsoluteDate, double...)
+     */
+    public AbsoluteDate getReferenceDate() {
+        return reference;
+    }
+
+    /** Get an upper bound of the fitted harmonic amplitude.
+     * @return upper bound of the fitted harmonic amplitude
+     */
+    public double getHarmonicAmplitude() {
+        double amplitude = 0;
+        for (int i = 0; i < pulsations.length; ++i) {
+            amplitude += FastMath.hypot(fitted[secularDegree + 2 * i + 1],
+                                    fitted[secularDegree + 2 * i + 2]);
+        }
+        return amplitude;
     }
 
     /** Fit parameters.
