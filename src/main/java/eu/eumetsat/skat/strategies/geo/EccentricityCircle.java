@@ -88,8 +88,11 @@ public class EccentricityCircle extends AbstractSKControl {
     /** Ordinate of the circle center. */
     private final double centerY;
 
-    /** Circle radius. */
+    /** Target circle radius. */
     private final double meanRadius;
+
+    /** Flag for single burn. */
+    private final boolean singleBurn;
 
     /** Sun model. */
     private CelestialBody sun;
@@ -121,18 +124,20 @@ public class EccentricityCircle extends AbstractSKControl {
      * @param centerY ordinate of the circle center
      * @param meanRadius radius of the controlled circle
      * @param maxRadius radius of the violation circle
+     * @param singleBurn flag for single burn recognition
      * @param sun Sun model
      * @param samplingStep step to use for sampling throughout propagation
      */
     public EccentricityCircle(final String name, final String controlledName, final int controlledIndex,
                               final TunableManeuver model, final double centerX, final double centerY,
-                              final double meanRadius, final double maxRadius,
+                              final double meanRadius, final double maxRadius, final boolean singleBurn,
                               final CelestialBody sun, final double samplingStep) {
         super(name, model, controlledName, controlledIndex, null, -1, 0, maxRadius);
         this.stephandler  = new Handler();
         this.centerX      = centerX;
         this.centerY      = centerY;
         this.meanRadius   = meanRadius;
+        this.singleBurn   = singleBurn;
         this.sun          = sun;
         this.samplingStep = samplingStep;
 
@@ -202,128 +207,135 @@ public class EccentricityCircle extends AbstractSKControl {
                                              final BoundedPropagator reference)
         throws OrekitException {
 
-        // mean eccentricity at cycle middle time
-        final AbsoluteDate middleDate = cycleStart.shiftedBy(0.5 * (cycleEnd.durationFrom(cycleStart)));
-        final double meanEx = xModel.meanValue(middleDate, 0, 1);
-        final double meanEy = yModel.meanValue(middleDate, 0, 1);
-
-        // desired eccentricity at cycle middle time
-        final PVCoordinates sunPV = sun.getPVCoordinates(middleDate, fitStart.getFrame());
-        final double alphaSun = sunPV.getPosition().getAlpha();
-        final double targetEx = centerX + meanRadius * FastMath.cos(alphaSun);
-        final double targetEy = centerY + meanRadius * FastMath.sin(alphaSun);
-
-        // eccentricity change needed
-        final double deX = targetEx - meanEx;
-        final double deY = targetEy - meanEy;
-        final double vs  = fitStart.getPVCoordinates().getVelocity().getNorm();
-        final double dV  = 0.5 * FastMath.hypot(deX, deY) * vs;
-
-        final ScheduledManeuver[] tuned;
-        final ManeuverAdapterPropagator adapterPropagator = new ManeuverAdapterPropagator(reference);
-
-        // try to select two in-plane maneuvers we can adjust
-        final int[] indices = selectManeuversPair(tunables);
-
-        // adjust the maneuvers (or create them)
-        final AbsoluteDate t0;
-        double dV0;
-        final AbsoluteDate t1;
-        double dV1;
-        if (indices[1] < 0) {
-
-            // we don't have even one maneuver, create two maneuvers from scratch
-            tuned = new ScheduledManeuver[tunables.length + 2];
-            System.arraycopy(tunables, 0, tuned, 0, tunables.length);
-            indices[0] = tunables.length;
-            indices[1] = tunables.length + 1;
-
-            final EquinoctialOrbit orbit =
-                    (EquinoctialOrbit) OrbitType.EQUINOCTIAL.convertType(fitStart.getOrbit());
-            final double alphaStart = orbit.getLM();
-            final double alphaMan   = FastMath.atan2(deY, deX);
-            final double dAlpha     = MathUtils.normalizeAngle(alphaMan - alphaStart, 2 * FastMath.PI);
-            final double n          = fitStart.getKeplerianMeanMotion();
-
-            t0  = fitStart.getDate().shiftedBy(dAlpha / n);
-            dV0 = +0.5 * dV;
-            t1  = t0.shiftedBy(FastMath.PI / n);
-            dV1 = -0.5 * dV;
+        // Check if tuning maneuvers is needed
+        if (singleBurn && getMargins() >= 0) {
+            // No need to tune maneuvers as no constraint violation has been checked
+            return tunables;
 
         } else {
+            // mean eccentricity at cycle middle time
+            final AbsoluteDate middleDate = cycleStart.shiftedBy(0.5 * (cycleEnd.durationFrom(cycleStart)));
+            final double meanEx = xModel.meanValue(middleDate, 0, 1);
+            final double meanEy = yModel.meanValue(middleDate, 0, 1);
 
-            final double dVExisting;
-            if (indices[0] < 0) {
+            // desired eccentricity at cycle middle time
+            final PVCoordinates sunPV = sun.getPVCoordinates(middleDate, fitStart.getFrame());
+            final double alphaSun = sunPV.getPosition().getAlpha();
+            final double targetEx = centerX + meanRadius * FastMath.cos(alphaSun);
+            final double targetEy = centerY + meanRadius * FastMath.sin(alphaSun);
 
-                // we have one maneuver to split
-                dVExisting = tunables[indices[1]].getSignedDeltaV();
+            // eccentricity change needed
+            final double deX = targetEx - meanEx;
+            final double deY = targetEy - meanEy;
+            final double vs  = fitStart.getPVCoordinates().getVelocity().getNorm();
+            final double dV  = 0.5 * FastMath.hypot(deX, deY) * vs;
 
-                // add one element to the array
-                tuned = new ScheduledManeuver[tunables.length + 1];
+            final ScheduledManeuver[] tuned;
+            final ManeuverAdapterPropagator adapterPropagator = new ManeuverAdapterPropagator(reference);
+
+            // try to select two in-plane maneuvers we can adjust
+            final int[] indices = selectManeuversPair(tunables);
+
+            // adjust the maneuvers (or create them)
+            final AbsoluteDate t0;
+            double dV0;
+            final AbsoluteDate t1;
+            double dV1;
+            if (indices[1] < 0) {
+
+                // we don't have even one maneuver, create two maneuvers from scratch
+                tuned = new ScheduledManeuver[tunables.length + 2];
                 System.arraycopy(tunables, 0, tuned, 0, tunables.length);
-                indices[0] = indices[1];
-                indices[1] = tunables.length;
+                indices[0] = tunables.length;
+                indices[1] = tunables.length + 1;
+
+                final EquinoctialOrbit orbit =
+                        (EquinoctialOrbit) OrbitType.EQUINOCTIAL.convertType(fitStart.getOrbit());
+                final double alphaStart = orbit.getLM();
+                final double alphaMan   = FastMath.atan2(deY, deX);
+                final double dAlpha     = MathUtils.normalizeAngle(alphaMan - alphaStart, 2 * FastMath.PI);
+                final double n          = fitStart.getKeplerianMeanMotion();
+
+                t0  = fitStart.getDate().shiftedBy(dAlpha / n);
+                dV0 = +0.5 * dV;
+                t1  = t0.shiftedBy(FastMath.PI / n);
+                dV1 = -0.5 * dV;
 
             } else {
 
-                // we have two existing maneuvers to adjust
-                dVExisting = tunables[indices[0]].getSignedDeltaV() +
-                             tunables[indices[1]].getSignedDeltaV();
+                final double dVExisting;
+                if (indices[0] < 0) {
 
-                // copy the array
-                tuned = tunables.clone();
+                    // we have one maneuver to split
+                    dVExisting = tunables[indices[1]].getSignedDeltaV();
+
+                    // add one element to the array
+                    tuned = new ScheduledManeuver[tunables.length + 1];
+                    System.arraycopy(tunables, 0, tuned, 0, tunables.length);
+                    indices[0] = indices[1];
+                    indices[1] = tunables.length;
+
+                } else {
+
+                    // we have two existing maneuvers to adjust
+                    dVExisting = tunables[indices[0]].getSignedDeltaV() +
+                                 tunables[indices[1]].getSignedDeltaV();
+
+                    // copy the array
+                    tuned = tunables.clone();
+
+                }
+
+                final SpacecraftState state  = tunables[indices[0]].getStateBefore();
+                final double sign            = thrustSignVelocity(state);
+                final EquinoctialOrbit orbit = (EquinoctialOrbit) OrbitType.EQUINOCTIAL.convertType(state.getOrbit());
+                final double alphaState      = orbit.getLM();
+                final double alphaMan        = FastMath.atan2(sign * deY, sign * deX);
+                final double dAlpha          = MathUtils.normalizeAngle(alphaMan - alphaState, 0);
+                final double n               = state.getKeplerianMeanMotion();
+
+                // adjust the maneuver(s)
+                AbsoluteDate t = state.getDate().shiftedBy(dAlpha / n);
+                t0 = (t.compareTo(cycleStart.getDate()) <= 0) ? t.shiftedBy(2 * FastMath.PI / n) : t;
+                dV0 = 0.5 * (dVExisting + sign * dV);
+                t1  = t0.shiftedBy(FastMath.PI / n);
+                dV1 = 0.5 * (dVExisting - sign * dV);
 
             }
 
-            final SpacecraftState state  = tunables[indices[0]].getStateBefore();
-            final double sign            = thrustSignVelocity(state);
-            final EquinoctialOrbit orbit = (EquinoctialOrbit) OrbitType.EQUINOCTIAL.convertType(state.getOrbit());
-            final double alphaState      = orbit.getLM();
-            final double alphaMan        = FastMath.atan2(sign * deY, sign * deX);
-            final double dAlpha          = MathUtils.normalizeAngle(alphaMan - alphaState, 0);
-            final double n               = state.getKeplerianMeanMotion();
+            // take the limits into account, trying to preserve the sum dV0 + dV1 if possible
+            double[] trimmed = trimManeuvers(dV0, dV1);
 
-            // adjust the maneuver(s)
-            AbsoluteDate t = state.getDate().shiftedBy(dAlpha / n);
-            t0 = (t.compareTo(cycleStart.getDate()) <= 0) ? t.shiftedBy(2 * FastMath.PI / n) : t;
-            dV0 = 0.5 * (dVExisting + sign * dV);
-            t1  = t0.shiftedBy(FastMath.PI / n);
-            dV1 = 0.5 * (dVExisting - sign * dV);
+            // adjust the two selected maneuvers
+            final TunableManeuver model = getModel();
+            final ScheduledManeuver m0 = new ScheduledManeuver(model, t0, new Vector3D(trimmed[0], model.getDirection()),
+                                                               model.getCurrentThrust(), model.getCurrentISP(),
+                                                               adapterPropagator, false);
+            adapterPropagator.addManeuver(m0.getDate(), m0.getDeltaV(), m0.getIsp());
+            tuned[indices[0]] = m0;
 
-        }
-
-        // take the limits into account, trying to preserve the sum dV0 + dV1 if possible
-        double[] trimmed = trimManeuvers(dV0, dV1);
-
-        // adjust the two selected maneuvers
-        final TunableManeuver model = getModel();
-        final ScheduledManeuver m0 = new ScheduledManeuver(model, t0, new Vector3D(trimmed[0], model.getDirection()),
-                                                           model.getCurrentThrust(), model.getCurrentISP(),
-                                                           adapterPropagator, false);
-        adapterPropagator.addManeuver(m0.getDate(), m0.getDeltaV(), m0.getIsp());
-        tuned[indices[0]] = m0;
-
-        final ScheduledManeuver m1 = new ScheduledManeuver(model, t1, new Vector3D(trimmed[1], model.getDirection()),
-                                                           model.getCurrentThrust(), model.getCurrentISP(),
-                                                           adapterPropagator, false);
-        adapterPropagator.addManeuver(m1.getDate(), m1.getDeltaV(), m1.getIsp());
-        tuned[indices[1]] = m1;
+            final ScheduledManeuver m1 = new ScheduledManeuver(model, t1, new Vector3D(trimmed[1], model.getDirection()),
+                                                               model.getCurrentThrust(), model.getCurrentISP(),
+                                                               adapterPropagator, false);
+            adapterPropagator.addManeuver(m1.getDate(), m1.getDeltaV(), m1.getIsp());
+            tuned[indices[1]] = m1;
 
 
-        // change the trajectory of untouched maneuvers
-        for (int i = 0; i < tuned.length; ++i) {
-            if (i != indices[0] && i != indices[1]) {
-                final ScheduledManeuver maneuver =
-                        new ScheduledManeuver(tuned[i].getModel(), tuned[i].getDate(),
-                                              tuned[i].getDeltaV(), tuned[i].getThrust(),
-                                              tuned[i].getIsp(), adapterPropagator,
-                                              tuned[i].isReplanned());
-                tuned[i] = maneuver;
-                adapterPropagator.addManeuver(maneuver.getDate(), maneuver.getDeltaV(), maneuver.getIsp());
+            // change the trajectory of untouched maneuvers
+            for (int i = 0; i < tuned.length; ++i) {
+                if (i != indices[0] && i != indices[1]) {
+                    final ScheduledManeuver maneuver =
+                            new ScheduledManeuver(tuned[i].getModel(), tuned[i].getDate(),
+                                                  tuned[i].getDeltaV(), tuned[i].getThrust(),
+                                                  tuned[i].getIsp(), adapterPropagator,
+                                                  tuned[i].isReplanned());
+                    tuned[i] = maneuver;
+                    adapterPropagator.addManeuver(maneuver.getDate(), maneuver.getDeltaV(), maneuver.getIsp());
+                }
             }
-        }
 
-        return tuned;
+            return tuned;
+        }
 
     }
 

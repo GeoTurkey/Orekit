@@ -37,12 +37,7 @@ simulation       = {
             dt_convergence        =  300.0;
             elimination_threshold =  0.1;
         }
-    ];
-    ground_location         = {
-        latitude     = 49.85;
-        longitude    =  8.65;
-        altitude     =  0.0
-    }
+    ]
 };
 # Array of initial states
 initial_states   = [

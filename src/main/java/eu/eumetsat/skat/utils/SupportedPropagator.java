@@ -27,7 +27,6 @@ import org.orekit.propagation.semianalytical.dsst.dsstforcemodel.DSSTCentralBody
 import org.orekit.propagation.semianalytical.dsst.dsstforcemodel.DSSTForceModel;
 import org.orekit.propagation.semianalytical.dsst.dsstforcemodel.DSSTSolarRadiationPressure;
 import org.orekit.propagation.semianalytical.dsst.dsstforcemodel.DSSTThirdBody;
-import org.orekit.propagation.semianalytical.dsst.dsstforcemodel.ResonantCouple;
 import org.orekit.utils.Constants;
 
 import eu.eumetsat.skat.Skat;
@@ -173,7 +172,7 @@ public enum SupportedPropagator {
                                                 gravityField.getMu(),
                                                 gravityField.getC(degree, order, false),
                                                 gravityField.getS(degree, order, false),
-                                                new ArrayList<ResonantCouple>()));
+                                                null));
 
             // drag
             final double dragStandardDeviation =

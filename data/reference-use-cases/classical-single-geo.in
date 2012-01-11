@@ -114,7 +114,6 @@ scenario         = [
                 reference_hy                = -1.0e-3;
                 limit_inclination_angle     =  0.2;  # this is an angle in degrees
                 sampling                    = 3600;
-                
             }
         ]
     },
@@ -171,7 +170,8 @@ scenario         = [
                 center_y                    = -1.5e-4;
                 mean_radius                 =  1.5e-4;
                 max_radius                  =  3.0e-4;
-                sampling                    = 3600;
+                single_burn                 =  true;
+                sampling                    =  3600;
             }
         ]
     },
