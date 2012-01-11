@@ -313,7 +313,8 @@ public abstract class AbstractSKControl implements SKControl {
      * @param stepSize step size to use
      * @param propagator propagator
      * @return first crossing
-     * @throws OrekitException if state cannot be propagated
+     * @exception OrekitException if state cannot be propagated
+     * @exception SkatException if latitude is never crossed
      */
     protected SpacecraftState findFirstCrossing(final double latitude, final boolean ascending,
                                                 final BodyShape earth,
