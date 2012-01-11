@@ -27,6 +27,7 @@ import org.orekit.propagation.semianalytical.dsst.dsstforcemodel.DSSTCentralBody
 import org.orekit.propagation.semianalytical.dsst.dsstforcemodel.DSSTForceModel;
 import org.orekit.propagation.semianalytical.dsst.dsstforcemodel.DSSTSolarRadiationPressure;
 import org.orekit.propagation.semianalytical.dsst.dsstforcemodel.DSSTThirdBody;
+import org.orekit.utils.Constants;
 
 import eu.eumetsat.skat.Skat;
 
@@ -166,11 +167,12 @@ public enum SupportedPropagator {
             PotentialCoefficientsProvider gravityField = skat.getgravityField();
             final int degree = parser.getInt(node, ParameterKey.DSST_PROPAGATOR_GRAVITY_FIELD_DEGREE);
             final int order  = parser.getInt(node, ParameterKey.DSST_PROPAGATOR_GRAVITY_FIELD_ORDER);
-            forceModels.add(new DSSTCentralBody(gravityField.getAe(),
-                                                         gravityField.getMu(),
-                                                         gravityField.getC(degree, order, false),
-                                                         gravityField.getS(degree, order, false),
-                                                         null, 1.e-4));
+            forceModels.add(new DSSTCentralBody(Constants.WGS84_EARTH_ANGULAR_VELOCITY,
+                                                gravityField.getAe(),
+                                                gravityField.getMu(),
+                                                gravityField.getC(degree, order, false),
+                                                gravityField.getS(degree, order, false),
+                                                null));
 
             // drag
             final double dragStandardDeviation =
