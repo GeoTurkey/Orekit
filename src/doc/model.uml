@@ -240,6 +240,14 @@
                 <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_WB62QiPrEeG6mOXI37upWQ" value="1"/>
               </ownedParameter>
             </ownedOperation>
+            <ownedOperation xmi:id="_vgmh8D0XEeGZy5WaG-jnrA" name="runCycle">
+              <ownedParameter xmi:id="_IjKAcD0YEeGZy5WaG-jnrA" name="iteration" visibility="public" type="_FDK6sN1hEeCO1uZVwIAJVg" effect="read"/>
+              <ownedParameter xmi:id="_oM1j8D0YEeGZy5WaG-jnrA" name="maneuvers" type="_dAgtISP4EeG6mOXI37upWQ" direction="inout" effect="update"/>
+              <ownedParameter xmi:id="_5MaDcD0YEeGZy5WaG-jnrA" name="propagator" type="_E9Zp491hEeCO1uZVwIAJVg" effect="read"/>
+              <ownedParameter xmi:id="_CHUI8D0ZEeGZy5WaG-jnrA" name="fixedManeuvers" type="_dAgtISP4EeG6mOXI37upWQ"/>
+              <ownedParameter xmi:id="_ZbZTcD0ZEeGZy5WaG-jnrA" name="start" type="_E9bfEN1hEeCO1uZVwIAJVg"/>
+              <ownedParameter xmi:id="_ca0R8D0ZEeGZy5WaG-jnrA" name="end" type="_E9bfEN1hEeCO1uZVwIAJVg"/>
+            </ownedOperation>
           </packagedElement>
           <packagedElement xmi:type="uml:Usage" xmi:id="_FKr38N1hEeCO1uZVwIAJVg" supplier="_E_ZN8N1hEeCO1uZVwIAJVg" client="_E21u4N1hEeCO1uZVwIAJVg"/>
           <packagedElement xmi:type="uml:Usage" xmi:id="_FKr38d1hEeCO1uZVwIAJVg" supplier="_E9UxYN1hEeCO1uZVwIAJVg" client="_E21u4N1hEeCO1uZVwIAJVg"/>
@@ -473,11 +481,11 @@
           <packagedElement xmi:type="uml:CallEvent" xmi:id="_PGQI8OBxEeCdstVTjind5Q" name="CallEvent17"/>
           <packagedElement xmi:type="uml:CallEvent" xmi:id="_SARqEOBxEeCdstVTjind5Q" name="CallEvent18"/>
           <packagedElement xmi:type="uml:Association" xmi:id="_DGFboPAoEeCkVpw_tSg2-A" name="A_&lt;controlLoop>_&lt;tunableManeuver>" memberEnd="_DGFbofAoEeCkVpw_tSg2-A _DGFbpPAoEeCkVpw_tSg2-A">
-            <ownedEnd xmi:id="_DGFbofAoEeCkVpw_tSg2-A" name="controlLoop" type="_E28ckN1hEeCO1uZVwIAJVg" association="_DGFboPAoEeCkVpw_tSg2-A">
+            <ownedEnd xmi:id="_DGFbofAoEeCkVpw_tSg2-A" name="controlLoop" visibility="public" type="_E28ckN1hEeCO1uZVwIAJVg" association="_DGFboPAoEeCkVpw_tSg2-A">
               <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_DGFbovAoEeCkVpw_tSg2-A" value="1"/>
               <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_DGFbo_AoEeCkVpw_tSg2-A" value="1"/>
             </ownedEnd>
-            <ownedEnd xmi:id="_DGFbpPAoEeCkVpw_tSg2-A" name="tunableManeuver" type="_E3lVwN1hEeCO1uZVwIAJVg" aggregation="shared" association="_DGFboPAoEeCkVpw_tSg2-A">
+            <ownedEnd xmi:id="_DGFbpPAoEeCkVpw_tSg2-A" name="tunableManeuver" type="_E3lVwN1hEeCO1uZVwIAJVg" isUnique="false" aggregation="shared" association="_DGFboPAoEeCkVpw_tSg2-A">
               <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_DGFbpfAoEeCkVpw_tSg2-A" value="*"/>
               <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_DGFbpvAoEeCkVpw_tSg2-A" value="1"/>
             </ownedEnd>
@@ -622,32 +630,26 @@ It is updated by the updateStates methods of all scenario components.</body>
                 <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_Sv5OYiP3EeG6mOXI37upWQ" value="1"/>
               </ownedParameter>
             </ownedOperation>
-            <ownedOperation xmi:id="_7jm7cOA-EeC0rbAAcgLFmg" name="getManeuvers">
-              <ownedParameter xmi:id="_95LrsOA-EeC0rbAAcgLFmg" name="return" type="_E_ZN891hEeCO1uZVwIAJVg" direction="return"/>
-            </ownedOperation>
             <ownedOperation xmi:id="_g_CecfS0EeCwdKSYhKL5Dg" name="getCyclesNumber">
               <ownedParameter xmi:id="_JZYyACP3EeG6mOXI37upWQ" visibility="public" type="_buJvwPXJEeCTIMie9DR2WQ" direction="return">
                 <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_JZYyASP3EeG6mOXI37upWQ" value="1"/>
                 <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_JZYyAiP3EeG6mOXI37upWQ" value="1"/>
               </ownedParameter>
             </ownedOperation>
-            <ownedOperation xmi:id="_zir0QPS-EeCwdKSYhKL5Dg" name="getInPlaneManeuvers">
-              <ownedParameter xmi:id="_6xoHMPS-EeCwdKSYhKL5Dg" name="return" type="_FDK6sN1hEeCO1uZVwIAJVg" direction="return"/>
+            <ownedOperation xmi:id="_zir0QPS-EeCwdKSYhKL5Dg" name="getManeuversNames">
+              <ownedParameter xmi:id="_6xoHMPS-EeCwdKSYhKL5Dg" name="return" type="_E_ZN891hEeCO1uZVwIAJVg" direction="return"/>
             </ownedOperation>
-            <ownedOperation xmi:id="_0fpy0PS-EeCwdKSYhKL5Dg" name="getInPlaneCycleDV">
-              <ownedParameter xmi:id="__GgcwPS-EeCwdKSYhKL5Dg" name="return" type="_26xTseRSEeCC7oKz25Mm0Q" direction="return"/>
+            <ownedOperation xmi:id="_0fpy0PS-EeCwdKSYhKL5Dg" name="getManeuversNumber">
+              <ownedParameter xmi:id="_xfADID0pEeGZy5WaG-jnrA" name="name" type="_E9voId1hEeCO1uZVwIAJVg" effect="read"/>
+              <ownedParameter xmi:id="_2dcTED0pEeGZy5WaG-jnrA" name="return" type="_buJvwPXJEeCTIMie9DR2WQ" direction="return"/>
             </ownedOperation>
-            <ownedOperation xmi:id="_11BDQPS-EeCwdKSYhKL5Dg" name="getOutOfPlaneManeuvers">
-              <ownedParameter xmi:id="_FJi9QPS_EeCwdKSYhKL5Dg" name="return" type="_FDK6sN1hEeCO1uZVwIAJVg" direction="return"/>
-            </ownedOperation>
-            <ownedOperation xmi:id="_2t2vwPS-EeCwdKSYhKL5Dg" name="getOutOfPlaneCycleDV">
+            <ownedOperation xmi:id="_2t2vwPS-EeCwdKSYhKL5Dg" name="getManeuversCycleDV">
               <ownedParameter xmi:id="_HzSmsPS_EeCwdKSYhKL5Dg" name="return" type="_26xTseRSEeCC7oKz25Mm0Q" direction="return"/>
+              <ownedParameter xmi:id="_AYg1ED0qEeGZy5WaG-jnrA" name="name" type="_E9voId1hEeCO1uZVwIAJVg"/>
             </ownedOperation>
-            <ownedOperation xmi:id="_Mz9rQPS_EeCwdKSYhKL5Dg" name="getInPlaneTotalDV">
-              <ownedParameter xmi:id="_Vxu6sPTDEeCwdKSYhKL5Dg" name="return" type="_26xTseRSEeCC7oKz25Mm0Q" direction="return"/>
-            </ownedOperation>
-            <ownedOperation xmi:id="_OwtEwPS_EeCwdKSYhKL5Dg" name="getOutOfPlaneTotalDV">
+            <ownedOperation xmi:id="_OwtEwPS_EeCwdKSYhKL5Dg" name="getManeuversTotalDV">
               <ownedParameter xmi:id="_a0wvsPTDEeCwdKSYhKL5Dg" name="return" type="_26xTseRSEeCC7oKz25Mm0Q" direction="return"/>
+              <ownedParameter xmi:id="_F2ZaED0qEeGZy5WaG-jnrA" name="name" type="_E9voId1hEeCO1uZVwIAJVg" effect="read"/>
             </ownedOperation>
             <ownedOperation xmi:id="_EnDAYBzQEeGxYPlzdkTvMQ" name="getBOLMass">
               <ownedParameter xmi:id="_Hz26oBzQEeGxYPlzdkTvMQ" name="return" type="_26xTseRSEeCC7oKz25Mm0Q" direction="return"/>
@@ -874,9 +876,6 @@ It is updated by the updateStates methods of all scenario components.</body>
           <packagedElement xmi:type="uml:Usage" xmi:id="_FKtGF91hEeCO1uZVwIAJVg" supplier="_FELnU91hEeCO1uZVwIAJVg" client="_E3i5gN1hEeCO1uZVwIAJVg"/>
           <packagedElement xmi:type="uml:Usage" xmi:id="_FKtGGN1hEeCO1uZVwIAJVg" supplier="_E9X0sd1hEeCO1uZVwIAJVg" client="_E3i5gN1hEeCO1uZVwIAJVg"/>
           <packagedElement xmi:type="uml:Usage" xmi:id="_FKtGGd1hEeCO1uZVwIAJVg" supplier="_E3eBAN1hEeCO1uZVwIAJVg" client="_E3i5gN1hEeCO1uZVwIAJVg"/>
-          <packagedElement xmi:type="uml:Class" xmi:id="_LqCEAN6gEeCJNKrGCyr87w" name="ManeuverSplitter" clientDependency="_XPAjEN6gEeCJNKrGCyr87w">
-            <interfaceRealization xmi:id="_XPAjEN6gEeCJNKrGCyr87w" name="InterfaceRealization1" supplier="_E3eoEN1hEeCO1uZVwIAJVg" client="_LqCEAN6gEeCJNKrGCyr87w" contract="_E3eoEN1hEeCO1uZVwIAJVg"/>
-          </packagedElement>
           <packagedElement xmi:type="uml:Class" xmi:id="_OyKSkN6gEeCJNKrGCyr87w" name="ManeuverMagnitudeError" clientDependency="_YB5_oN6gEeCJNKrGCyr87w">
             <interfaceRealization xmi:id="_YB5_oN6gEeCJNKrGCyr87w" name="InterfaceRealization1" supplier="_E3eoEN1hEeCO1uZVwIAJVg" client="_OyKSkN6gEeCJNKrGCyr87w" contract="_E3eoEN1hEeCO1uZVwIAJVg"/>
           </packagedElement>
@@ -888,16 +887,6 @@ It is updated by the updateStates methods of all scenario components.</body>
             <ownedEnd xmi:id="_i2u0JN6gEeCJNKrGCyr87w" name="monitorable" type="_dhPWIN6gEeCJNKrGCyr87w" aggregation="shared" association="_i2u0IN6gEeCJNKrGCyr87w">
               <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_i2u0Jd6gEeCJNKrGCyr87w" value="*"/>
               <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_i2u0Jt6gEeCJNKrGCyr87w"/>
-            </ownedEnd>
-          </packagedElement>
-          <packagedElement xmi:type="uml:Association" xmi:id="_jd1QYN6gEeCJNKrGCyr87w" name="A_&lt;maneuverSplitter>_&lt;monitorable>" memberEnd="_jd1QYd6gEeCJNKrGCyr87w _jd1QZN6gEeCJNKrGCyr87w">
-            <ownedEnd xmi:id="_jd1QYd6gEeCJNKrGCyr87w" name="maneuverSplitter" type="_LqCEAN6gEeCJNKrGCyr87w" association="_jd1QYN6gEeCJNKrGCyr87w">
-              <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_jd1QYt6gEeCJNKrGCyr87w" value="1"/>
-              <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_jd1QY96gEeCJNKrGCyr87w" value="1"/>
-            </ownedEnd>
-            <ownedEnd xmi:id="_jd1QZN6gEeCJNKrGCyr87w" name="monitorable" type="_dhPWIN6gEeCJNKrGCyr87w" aggregation="shared" association="_jd1QYN6gEeCJNKrGCyr87w">
-              <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_jd1QZd6gEeCJNKrGCyr87w" value="*"/>
-              <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_jd1QZt6gEeCJNKrGCyr87w"/>
             </ownedEnd>
           </packagedElement>
           <packagedElement xmi:type="uml:Association" xmi:id="_kKrIQN6gEeCJNKrGCyr87w" name="A_&lt;maneuverRealizationError>_&lt;monitorable>" memberEnd="_kKrIQd6gEeCJNKrGCyr87w _kKrIRN6gEeCJNKrGCyr87w">
@@ -963,9 +952,7 @@ It is updated by the updateStates methods of all scenario components.</body>
               <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_9v9WVvXLEeCTIMie9DR2WQ"/>
             </ownedEnd>
           </packagedElement>
-          <packagedElement xmi:type="uml:Class" xmi:id="_JEu4ACP0EeG6mOXI37upWQ" name="ManeuverCrossCoupling" clientDependency="_i_yEwCP0EeG6mOXI37upWQ">
-            <interfaceRealization xmi:id="_i_yEwCP0EeG6mOXI37upWQ" name="InterfaceRealization1" supplier="_E3eoEN1hEeCO1uZVwIAJVg" client="_JEu4ACP0EeG6mOXI37upWQ" contract="_E3eoEN1hEeCO1uZVwIAJVg"/>
-          </packagedElement>
+          <packagedElement xmi:type="uml:Class" xmi:id="_JEu4ACP0EeG6mOXI37upWQ" name="ManeuverCrossCoupling"/>
           <packagedElement xmi:type="uml:Class" xmi:id="_M_v8ECP0EeG6mOXI37upWQ" name="ManeuverEclipseConstraint" clientDependency="_jsfZwCP0EeG6mOXI37upWQ">
             <interfaceRealization xmi:id="_jsfZwCP0EeG6mOXI37upWQ" name="InterfaceRealization1" supplier="_E3eoEN1hEeCO1uZVwIAJVg" client="_M_v8ECP0EeG6mOXI37upWQ" contract="_E3eoEN1hEeCO1uZVwIAJVg"/>
           </packagedElement>
@@ -1003,14 +990,8 @@ It is updated by the updateStates methods of all scenario components.</body>
             <elementImport xmi:id="_FC0VYN1hEeCO1uZVwIAJVg" visibility="private" importedElement="_E9bfEN1hEeCO1uZVwIAJVg"/>
             <elementImport xmi:id="_FC0VYd1hEeCO1uZVwIAJVg" visibility="private"/>
             <elementImport xmi:id="_FC0VYt1hEeCO1uZVwIAJVg" visibility="private"/>
-            <ownedOperation xmi:id="_FD4sYN1hEeCO1uZVwIAJVg" name="getParameters" visibility="public">
-              <eAnnotations xmi:id="_FD4sYd1hEeCO1uZVwIAJVg" source="http://www.topcased.org/documentation">
-                <details xmi:id="_FD4sYt1hEeCO1uZVwIAJVg" key="documentation" value="Get the control parameters.&#xA; @return control parameters&#xA; "/>
-              </eAnnotations>
-              <ownedParameter xmi:id="_FD4sY91hEeCO1uZVwIAJVg" type="_E_ZN891hEeCO1uZVwIAJVg" direction="return"/>
-            </ownedOperation>
-            <ownedOperation xmi:id="_mVuZMPAoEeCkVpw_tSg2-A" name="getManeuver">
-              <ownedParameter xmi:id="_dAjJYCP4EeG6mOXI37upWQ" visibility="public" type="_dAgtISP4EeG6mOXI37upWQ" direction="return">
+            <ownedOperation xmi:id="_mVuZMPAoEeCkVpw_tSg2-A" name="getName">
+              <ownedParameter xmi:id="_dAjJYCP4EeG6mOXI37upWQ" visibility="public" type="_E9voId1hEeCO1uZVwIAJVg" direction="return">
                 <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_dAjJYSP4EeG6mOXI37upWQ" value="1"/>
                 <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_dAjJYiP4EeG6mOXI37upWQ" value="1"/>
               </ownedParameter>
@@ -1027,17 +1008,29 @@ It is updated by the updateStates methods of all scenario components.</body>
                 <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_7IWqcSP4EeG6mOXI37upWQ" value="1"/>
               </ownedParameter>
             </ownedOperation>
-            <ownedOperation xmi:id="_yCbnwCP4EeG6mOXI37upWQ" name="getDV">
+            <ownedOperation xmi:id="_yCbnwCP4EeG6mOXI37upWQ" name="getDVinf">
               <ownedParameter xmi:id="__TnJ8CP4EeG6mOXI37upWQ" visibility="public" type="_26xTseRSEeCC7oKz25Mm0Q" direction="return">
                 <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="__TnJ8SP4EeG6mOXI37upWQ" value="1"/>
                 <lowerValue xmi:type="uml:LiteralInteger" xmi:id="__TnJ8iP4EeG6mOXI37upWQ" value="1"/>
               </ownedParameter>
             </ownedOperation>
-            <ownedOperation xmi:id="_ysi7wCP4EeG6mOXI37upWQ" name="getDate">
-              <ownedParameter xmi:id="_DwsZQCP5EeG6mOXI37upWQ" visibility="public" type="_E9bfEN1hEeCO1uZVwIAJVg" direction="return">
+            <ownedOperation xmi:id="_ysi7wCP4EeG6mOXI37upWQ" name="getDVsup">
+              <ownedParameter xmi:id="_DwsZQCP5EeG6mOXI37upWQ" visibility="public" type="_26xTseRSEeCC7oKz25Mm0Q" direction="return">
                 <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_DwsZQSP5EeG6mOXI37upWQ" value="1"/>
                 <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_DwsZQiP5EeG6mOXI37upWQ" value="1"/>
               </ownedParameter>
+            </ownedOperation>
+            <ownedOperation xmi:id="_w0sz0D0nEeGZy5WaG-jnrA" name="getDirection">
+              <ownedParameter xmi:id="_0tTdED0nEeGZy5WaG-jnrA" name="return" type="_E9PR1d1hEeCO1uZVwIAJVg" direction="return"/>
+            </ownedOperation>
+            <ownedOperation xmi:id="_9jKqgD0nEeGZy5WaG-jnrA" name="getCurrentThrust">
+              <ownedParameter xmi:id="_ALZ4ED0oEeGZy5WaG-jnrA" name="return" type="_26xTseRSEeCC7oKz25Mm0Q" direction="return"/>
+            </ownedOperation>
+            <ownedOperation xmi:id="_Et2vkD0oEeGZy5WaG-jnrA" name="getCurrentIsp">
+              <ownedParameter xmi:id="_Gj4dED0oEeGZy5WaG-jnrA" name="return" type="_26xTseRSEeCC7oKz25Mm0Q" direction="return"/>
+            </ownedOperation>
+            <ownedOperation xmi:id="_TvXm8D0oEeGZy5WaG-jnrA" name="getEliminationThreshold">
+              <ownedParameter xmi:id="_Wa5ZED0oEeGZy5WaG-jnrA" name="return" type="_26xTseRSEeCC7oKz25Mm0Q" direction="return"/>
             </ownedOperation>
           </packagedElement>
           <packagedElement xmi:type="uml:Association" xmi:id="_o_bJYOBQEeCxMfzvkTl0-w" name="A_&lt;tunableManeuver>_&lt;impulseManeuver>" memberEnd="_o_bwcOBQEeCxMfzvkTl0-w _o_bwc-BQEeCxMfzvkTl0-w">
@@ -1280,8 +1273,8 @@ It is updated by the updateStates methods of all scenario components.</body>
                 <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_TGd-giP7EeG6mOXI37upWQ" value="1"/>
               </ownedParameter>
             </ownedOperation>
-            <ownedOperation xmi:id="_G_TYYCP7EeG6mOXI37upWQ" name="isInPlane">
-              <ownedParameter xmi:id="_Wf2VICP7EeG6mOXI37upWQ" visibility="public" type="_-V404CPhEeGlStagX1ZcuA" direction="return">
+            <ownedOperation xmi:id="_G_TYYCP7EeG6mOXI37upWQ" name="getModel">
+              <ownedParameter xmi:id="_Wf2VICP7EeG6mOXI37upWQ" visibility="public" type="_E3lVwN1hEeCO1uZVwIAJVg" direction="return">
                 <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_Wf28MCP7EeG6mOXI37upWQ" value="1"/>
                 <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_Wf28MSP7EeG6mOXI37upWQ" value="1"/>
               </ownedParameter>
@@ -1326,8 +1319,8 @@ It is updated by the updateStates methods of all scenario components.</body>
             <ownedOperation xmi:id="_LmbUgCP7EeG6mOXI37upWQ" name="getTrajectory">
               <ownedParameter xmi:id="_8TvYICP7EeG6mOXI37upWQ" name="Parameter1" type="_E9Zp491hEeCO1uZVwIAJVg" direction="return"/>
             </ownedOperation>
-            <ownedOperation xmi:id="_MKgR8CP7EeG6mOXI37upWQ" name="Operation10">
-              <ownedParameter xmi:id="_BSXOQCP8EeG6mOXI37upWQ" name="Parameter1" type="_E3KfAN1hEeCO1uZVwIAJVg" direction="return"/>
+            <ownedOperation xmi:id="_UwdtAD0nEeGZy5WaG-jnrA" name="getState">
+              <ownedParameter xmi:id="_XvSOkD0nEeGZy5WaG-jnrA" name="dt" type="_26xTseRSEeCC7oKz25Mm0Q" effect="read"/>
             </ownedOperation>
           </packagedElement>
           <packagedElement xmi:type="uml:Association" xmi:id="_hIiScCP4EeG6mOXI37upWQ" name="A_&lt;tunableManeuver>_&lt;scheduledManeuver>" memberEnd="_hIiScSP4EeG6mOXI37upWQ _hIiSdCP4EeG6mOXI37upWQ" navigableOwnedEnd="_hIiSdCP4EeG6mOXI37upWQ">
@@ -1388,6 +1381,26 @@ It is updated by the updateStates methods of all scenario components.</body>
             <ownedEnd xmi:id="_zs4alCP8EeG6mOXI37upWQ" name="orekitStepHandler" type="_NH0FIOBXEeCxMfzvkTl0-w" aggregation="shared" association="_zs4akCP8EeG6mOXI37upWQ">
               <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_zs4alSP8EeG6mOXI37upWQ" value="1"/>
               <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_zs4aliP8EeG6mOXI37upWQ" value="1"/>
+            </ownedEnd>
+          </packagedElement>
+          <packagedElement xmi:type="uml:Association" xmi:id="_c-UcED0jEeGZy5WaG-jnrA" name="A_&lt;tunableManeuver>_&lt;scheduledManeuver>_2" memberEnd="_c-UcET0jEeGZy5WaG-jnrA _c-UcFD0jEeGZy5WaG-jnrA">
+            <ownedEnd xmi:id="_c-UcET0jEeGZy5WaG-jnrA" name="tunableManeuver" type="_E3lVwN1hEeCO1uZVwIAJVg" association="_c-UcED0jEeGZy5WaG-jnrA">
+              <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_c-UcEj0jEeGZy5WaG-jnrA" value="1"/>
+              <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_c-UcEz0jEeGZy5WaG-jnrA" value="1"/>
+            </ownedEnd>
+            <ownedEnd xmi:id="_c-UcFD0jEeGZy5WaG-jnrA" name="scheduledManeuver" type="_GNPugCPpEeGRbZh-MY9luw" aggregation="shared" association="_c-UcED0jEeGZy5WaG-jnrA">
+              <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_c-UcFT0jEeGZy5WaG-jnrA" value="1"/>
+              <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_c-UcFj0jEeGZy5WaG-jnrA" value="1"/>
+            </ownedEnd>
+          </packagedElement>
+          <packagedElement xmi:type="uml:Association" xmi:id="_eW1uMD0jEeGZy5WaG-jnrA" name="A_&lt;scheduledManeuver>_&lt;tunableManeuver>" memberEnd="_eW1uMT0jEeGZy5WaG-jnrA _eW1uND0jEeGZy5WaG-jnrA">
+            <ownedEnd xmi:id="_eW1uMT0jEeGZy5WaG-jnrA" name="scheduledManeuver" type="_GNPugCPpEeGRbZh-MY9luw" isUnique="false" association="_eW1uMD0jEeGZy5WaG-jnrA">
+              <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_eW1uMj0jEeGZy5WaG-jnrA" value="1"/>
+              <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_eW1uMz0jEeGZy5WaG-jnrA" value="1"/>
+            </ownedEnd>
+            <ownedEnd xmi:id="_eW1uND0jEeGZy5WaG-jnrA" name="tunableManeuver" type="_E3lVwN1hEeCO1uZVwIAJVg" aggregation="shared" association="_eW1uMD0jEeGZy5WaG-jnrA">
+              <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_eW1uNT0jEeGZy5WaG-jnrA" value="1"/>
+              <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_eW1uNj0jEeGZy5WaG-jnrA" value="1"/>
             </ownedEnd>
           </packagedElement>
         </packagedElement>
@@ -2477,7 +2490,7 @@ It is updated by the updateStates methods of all scenario components.</body>
     <nestedClassifier xmi:type="uml:Component" xmi:id="_bZUpwN7UEeCzQIF1TbkANw" name="Apache Commons Math"/>
     <packagedElement xmi:type="uml:Package" xmi:id="_3S19EN7OEeCzQIF1TbkANw" name="eu.eumetsat.skat">
       <packagedElement xmi:type="uml:Package" xmi:id="_02fZ8N7PEeCzQIF1TbkANw" name="realization" clientDependency="_X8jn8N7UEeCzQIF1TbkANw"/>
-      <packagedElement xmi:type="uml:Package" xmi:id="_-WE50N7PEeCzQIF1TbkANw" name="scenario" clientDependency="_wW9BoN7REeCzQIF1TbkANw _5bLbMN7REeCzQIF1TbkANw"/>
+      <packagedElement xmi:type="uml:Package" xmi:id="_-WE50N7PEeCzQIF1TbkANw" name="scenario" clientDependency="_wW9BoN7REeCzQIF1TbkANw _5bLbMN7REeCzQIF1TbkANw _jvBLQD0MEeGZy5WaG-jnrA _npGbMD0MEeGZy5WaG-jnrA _uRmZMz0MEeGZy5WaG-jnrA"/>
       <packagedElement xmi:type="uml:Package" xmi:id="__dtQQN7PEeCzQIF1TbkANw" name="strategies" clientDependency="_XQZFgN7UEeCzQIF1TbkANw">
         <packagedElement xmi:type="uml:Package" xmi:id="_JWky0N7QEeCzQIF1TbkANw" name="geo" clientDependency="_ArXEQN7SEeCzQIF1TbkANw"/>
         <packagedElement xmi:type="uml:Package" xmi:id="_KPrlEN7QEeCzQIF1TbkANw" name="leo" clientDependency="_DzmnkN7SEeCzQIF1TbkANw"/>
@@ -2493,6 +2506,9 @@ It is updated by the updateStates methods of all scenario components.</body>
     <packagedElement xmi:type="uml:Dependency" xmi:id="_X8jn8N7UEeCzQIF1TbkANw" name="" supplier="__V5bQN7TEeCzQIF1TbkANw" client="_02fZ8N7PEeCzQIF1TbkANw"/>
     <packagedElement xmi:type="uml:Dependency" xmi:id="_00GbAN7UEeCzQIF1TbkANw" name="" supplier="_bZUpwN7UEeCzQIF1TbkANw" client="_yLJ1EN7PEeCzQIF1TbkANw"/>
     <packagedElement xmi:type="uml:Dependency" xmi:id="_1vJG8N7UEeCzQIF1TbkANw" name="" supplier="_bZUpwN7UEeCzQIF1TbkANw" client="__V5bQN7TEeCzQIF1TbkANw"/>
+    <packagedElement xmi:type="uml:Dependency" xmi:id="_jvBLQD0MEeGZy5WaG-jnrA" name="" supplier="_yLJ1EN7PEeCzQIF1TbkANw" client="_-WE50N7PEeCzQIF1TbkANw"/>
+    <packagedElement xmi:type="uml:Dependency" xmi:id="_npGbMD0MEeGZy5WaG-jnrA" name="" supplier="_yLJ1EN7PEeCzQIF1TbkANw" client="_-WE50N7PEeCzQIF1TbkANw"/>
+    <packagedElement xmi:type="uml:Dependency" xmi:id="_uRmZMz0MEeGZy5WaG-jnrA" name="" supplier="_yLJ1EN7PEeCzQIF1TbkANw" client="_-WE50N7PEeCzQIF1TbkANw"/>
   </packagedElement>
   <packagedElement xmi:type="uml:Model" xmi:id="_26xTsORSEeCC7oKz25Mm0Q" name="Java Types View">
     <packagedElement xmi:type="uml:PrimitiveType" xmi:id="_26xTseRSEeCC7oKz25Mm0Q" name="double"/>
