@@ -5,7 +5,7 @@ simulation       = {
     earth_frame      = "GTOD without EOP";
     start_date       = 2011-12-12T11:00:00.000;
     end_date         = 2014-12-12T11:00:00.000;
-    cycle_duration   = 360;
+    cycle_duration   = 90;
     ground_location  = {
         latitude     = 49.85;
         longitude    =  8.65;
@@ -54,11 +54,11 @@ initial_states   = [
         orbit                  = {
            orbit_type               = CIRCULAR;
             date                    = 2011-12-12T11:57:20.000;
-            a                       = 7204560.453750376;
-            ex                      = -0.001302850275538976;
-            ey                      = -5.206077331956124E-4;
-            i                       =  98.73777323184136;
-            raan                    = 43.33827326502078;
+            a                       = 7204535.848109436;
+            ex                      = -4.484755873986251E-4;
+            ey                      = 0.0011562979012178316;
+            i                       = 98.74341600466741;
+            raan                    = 43.32990110790338;
             latitude_argument       = 180.0;
             angle_type              = MEAN;
         }
@@ -94,23 +94,23 @@ scenario         = [
             min_step               = 0.1;
             max_step               = 200.;
             position_tolerance     = 1;
-            gravity_field_degree   = 6;
-            gravity_field_order    = 6;
+            gravity_field_degree   = 8;
+            gravity_field_order    = 8;
             drag_cross_section     = 40.0;
             drag_coefficient       = 2;
             third_bodies           = [ SUN, MOON ];
         };
         controls    = [
-         #  {
-         #       type                        = GROUND_TRACK_GRID;
-         #       name                        = "ground track grid";
-         #       maneuver_name               = "in-plane";
-         #       max_maneuvers               = 6;
-         #       maneuvers_orbits_separation = 5;
-         #       offset_first_maneuver       = 172800;
-         #       grid_file                   = "metop.grd";
-         #       max_cross_track_distance    =  2000.0;
-         #   },
+            #{
+            #    type                        = GROUND_TRACK_GRID;
+            #    name                        = "ground track grid";
+            #    maneuver_name               = "in-plane";
+            #    max_maneuvers               = 6;
+            #    maneuvers_orbits_separation = 5;
+            #    offset_first_maneuver       = 172800;
+            #    grid_file                   = "metop.grd";
+            #    max_cross_track_distance    =  2000.0;
+            #},
             {
                 type                        = MEAN_LOCAL_SOLAR_TIME;
                 name                        = "mean local solar time (MST)";
@@ -134,8 +134,8 @@ scenario         = [
             min_step               = 0.1;
             max_step               = 200.;
             position_tolerance     = 1.0;
-            gravity_field_degree   = 6;
-            gravity_field_order    = 6;
+            gravity_field_degree   = 8;
+            gravity_field_order    = 8;
             drag_cross_section     = 40.0;
             drag_coefficient       = 2.;
             third_bodies           = [ SUN, MOON ];

@@ -83,7 +83,7 @@ public interface SKControl {
 
     /** Tune the maneuvers to improve control law fulfillment.
      * @param maneuvers existing set of maneuvers
-     * @param reference reerence ephemeris to use (does not take maneuvers into account)
+     * @param reference reference ephemeris to use (does not take maneuvers into account)
      * @return tuned maneuvers
      * @exception OrekitException if maneuvers cannot be tuned
      */

@@ -243,7 +243,7 @@ public class GroundTrackGrid extends AbstractSKControl {
             errorModel.resetFitting(fitStart.getDate(), fittedDL);
         }
         AbsoluteDate date  = fitStart.getDate();
-        while (date.compareTo(end) < 0) {
+        while (date != null && date.compareTo(end) < 0) {
 
             int nextIndex = (index + 1) % grid.length;
 
@@ -255,21 +255,25 @@ public class GroundTrackGrid extends AbstractSKControl {
            }
             SpacecraftState crossing = findLatitudeCrossing(grid[index].getLatitude(), earth, date, end,
                                                             0.1 * gap, gap, propagator);
-            Vector3D position = crossing.getPVCoordinates(earth.getBodyFrame()).getPosition();
-            final GeodeticPoint gp = earth.transform(position, earth.getBodyFrame(), crossing.getDate());
+            if (crossing != null) {
+                Vector3D position = crossing.getPVCoordinates(earth.getBodyFrame()).getPosition();
+                final GeodeticPoint gp = earth.transform(position, earth.getBodyFrame(), crossing.getDate());
 
-            double dl = MathUtils.normalizeAngle(gp.getLongitude() - grid[index].getLongitude(), 0);
-            checkMargins(dl * FastMath.hypot(position.getX(), position.getY()));
+                double dl = MathUtils.normalizeAngle(gp.getLongitude() - grid[index].getLongitude(), 0);
+                checkMargins(dl * FastMath.hypot(position.getX(), position.getY()));
 
-            for (final ErrorModel errorModel : errorModels) {
-                if (errorModel.matches(grid[index].getLatitude(), grid[index].isAscending())) {
-                    errorModel.addPoint(crossing.getDate(), dl);
+                for (final ErrorModel errorModel : errorModels) {
+                    if (errorModel.matches(grid[index].getLatitude(), grid[index].isAscending())) {
+                        errorModel.addPoint(crossing.getDate(), dl);
+                    }
                 }
-            }
 
-            // go to next grid point
-            index = nextIndex;
-            date  = crossing.getDate().shiftedBy(gap);
+                // go to next grid point
+                index = nextIndex;
+                date  = crossing.getDate().shiftedBy(gap);
+            } else {
+                date = null;
+            }
 
         }
 
