@@ -131,11 +131,11 @@ public class Skat {
     /** Simulation start date. */
     private final AbsoluteDate startDate;
 
-    /** Cycle duration. */
-    private final double cycleDuration;
-
     /** Output step. */
     private final double outputStep;
+
+    /** Cycle duration. */
+    private double cycleDuration;
 
     /** Mono-spacecraft monitors. */
     private MonitorMono[] monitorsMono;
@@ -270,6 +270,7 @@ public class Skat {
         maneuversOutput.println("#");
 
         // get general data
+        cycleDuration = 0.0;
         inertialFrame = parser.getInertialFrame(simulationNode, ParameterKey.SIMULATION_INERTIAL_FRAME);
         earth         = new OneAxisEllipsoid(Constants.WGS84_EARTH_EQUATORIAL_RADIUS,
                                              Constants.WGS84_EARTH_FLATTENING,
@@ -291,7 +292,6 @@ public class Skat {
 
         startDate     = parser.getDate(simulationNode, ParameterKey.SIMULATION_START_DATE, utc);
         generator     = new Well19937a(parser.getInt(simulationNode, ParameterKey.SIMULATION_RANDOM_SEED));
-        cycleDuration = parser.getDouble(simulationNode, ParameterKey.SIMULATION_CYCLE_DURATION);
         outputStep    = parser.getDouble(simulationNode, ParameterKey.SIMULATION_OUTPUT_STEP);
 
         final Tree locationNode = parser.getValue(simulationNode, ParameterKey.SIMULATION_GROUND_LOCATION);
@@ -617,6 +617,8 @@ public class Skat {
      */
     public void addControl(final SKControl controlLaw)
         throws SkatException {
+
+        cycleDuration = FastMath.max(cycleDuration, controlLaw.getTimeHorizon());
 
         final SimpleMonitorable monitorableResidual =
                 new SimpleMonitorable(1, "control law margins: " + controlLaw.getName());

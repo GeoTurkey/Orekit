@@ -53,11 +53,14 @@ public abstract class AbstractSKControl implements SKControl {
     /** Index of the reference spacecraft (may be null). */
     private final int referenceIndex;
 
-    /** Minimal value for the residual. */
+    /** Minimal value for the constraint. */
     private final double min;
 
-    /** Maximal value for the residual. */
+    /** Maximal value for the constraint. */
     private final double max;
+
+    /** Time horizon duration. */
+    private final double horizon;
 
     /** Indicator of constraint violation during the cycle. */
     private double margins;
@@ -71,11 +74,12 @@ public abstract class AbstractSKControl implements SKControl {
      * @param referenceIndex index of the reference spacecraft
      * @param min minimal value for the constraint
      * @param max maximal value for the constraint
+     * @param horizon time horizon duration
      */
     protected AbstractSKControl(final String name, final TunableManeuver model,
                                 final String controlledName, final int controlledIndex,
                                 final String referenceName, final int referenceIndex,
-                                final double min, final double max) {
+                                final double min, final double max, final double horizon) {
         this.name            = name;
         this.model           = model;
         this.controlledName  = controlledName;
@@ -84,6 +88,7 @@ public abstract class AbstractSKControl implements SKControl {
         this.referenceIndex  = referenceIndex;
         this.min             = min;
         this.max             = max;
+        this.horizon         = horizon;
     }
 
     /** {@inheritDoc} */
@@ -142,6 +147,11 @@ public abstract class AbstractSKControl implements SKControl {
     /** {@inheritDoc} */
     public double getMargins() {
         return margins;
+    }
+
+    /** {@inheritDoc} */
+    public double getTimeHorizon() {
+        return horizon;
     }
 
     /** Check if control limits are exceeded.

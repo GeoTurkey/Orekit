@@ -127,12 +127,13 @@ public class EccentricityCircle extends AbstractSKControl {
      * @param singleBurn flag for single burn recognition
      * @param sun Sun model
      * @param samplingStep step to use for sampling throughout propagation
+     * @param horizon time horizon duration
      */
     public EccentricityCircle(final String name, final String controlledName, final int controlledIndex,
                               final TunableManeuver model, final double centerX, final double centerY,
                               final double meanRadius, final double maxRadius, final boolean singleBurn,
-                              final CelestialBody sun, final double samplingStep) {
-        super(name, model, controlledName, controlledIndex, null, -1, 0, maxRadius);
+                              final CelestialBody sun, final double samplingStep, final double horizon) {
+        super(name, model, controlledName, controlledIndex, null, -1, 0, maxRadius, horizon * Constants.JULIAN_DAY);
         this.stephandler  = new Handler();
         this.centerX      = centerX;
         this.centerY      = centerY;

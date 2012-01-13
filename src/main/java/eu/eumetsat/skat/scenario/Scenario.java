@@ -41,9 +41,6 @@ public class Scenario implements ScenarioComponent {
     /** Scenario components. */
     private final List<ScenarioComponent> components;
 
-    /** Cycle duration. */
-    private final double cycleDuration;
-
     /** Output step for monitoring. */
     private final double outputstep;
 
@@ -74,12 +71,14 @@ public class Scenario implements ScenarioComponent {
     /** Maneuvers output. */
     private PrintStream maneuversOutput;
 
+    /** Cycle duration. */
+    private double cycleDuration;
+
     /** Simple constructor.
      * <p>
      * Create an empty scenario without any components. Components
      * must be added by calling {@link #addComponent(ScenarioComponent)}.
      * </p>
-     * @param cycleDuration duration of one cycle (s)
      * @param outputStep output step for monitoring (s)
      * @param earth Earth model
      * @param sun Sun model
@@ -91,7 +90,7 @@ public class Scenario implements ScenarioComponent {
      * @param controlsViolations map for control laws violations monitoring
      * @param maneuversOutput maneuves output stream
      */
-    public Scenario(final double cycleDuration, final double outputStep,
+    public Scenario(final double outputStep,
                     final BodyShape earth, final CelestialBody sun,
                     final TopocentricFrame groundLocation,
                     final List<MonitorableMonoSKData> monitorablesMono,
@@ -101,7 +100,6 @@ public class Scenario implements ScenarioComponent {
                     final Map<SKControl, SimpleMonitorable> controlsViolations,
                     final PrintStream maneuversOutput) {
         this.components            = new ArrayList<ScenarioComponent>();
-        this.cycleDuration         = cycleDuration;
         this.outputstep            = outputStep;
         this.earth                 = earth;
         this.groundLocation        = groundLocation;
@@ -111,6 +109,7 @@ public class Scenario implements ScenarioComponent {
         this.controlsMargins       = controlsMargins;
         this.controlsViolations    = controlsViolations;
         this.maneuversOutput       = maneuversOutput;
+        this.cycleDuration         = 0.0;
     }
 
     /** Add a cycle component.
@@ -121,6 +120,11 @@ public class Scenario implements ScenarioComponent {
      */
     public void addComponent(final ScenarioComponent component) {
         components.add(component);
+    }
+
+    /** {@inheritDoc} */
+    public void setCycleDuration(final double cycleDuration) {
+        this.cycleDuration = cycleDuration;
     }
 
     /** {@inheritDoc} */

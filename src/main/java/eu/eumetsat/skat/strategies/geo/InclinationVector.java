@@ -124,15 +124,17 @@ public class InclinationVector extends AbstractSKControl {
      * @param referenceHy ordinate of reference inclination vector
      * @param limitInclination limit inclination angle
      * @param samplingStep step to use for sampling throughout propagation
+     * @param horizon time horizon duration
      */
     public InclinationVector(final String name, final String controlledName, final int controlledIndex,
                              final TunableManeuver model, final double firstOffset,
                              final int maxManeuvers, final int orbitsSeparation,
                              final double referenceHx, final double referenceHy,
-                             final double limitInclination, final double samplingStep) {
+                             final double limitInclination, final double samplingStep, final double horizon) {
 
         super(name, model, controlledName, controlledIndex, null, -1,
-              0.0, innerRadius(referenceHx, referenceHy, limitInclination));
+              0.0, innerRadius(referenceHx, referenceHy, limitInclination),
+              horizon * Constants.JULIAN_DAY);
 
         this.stephandler      = new Handler();
         this.firstOffset      = firstOffset;

@@ -14,7 +14,6 @@ simulation       = {
     solar_activity_strength = AVERAGE;
     start_date              = 2011-10-23T00:00:00.000;
     end_date                = 2015-01-01T00:00:00.000;
-    cycle_duration          = 28.0;
     output_step             = 10800.0;
     random_seed             = 156325253;
     ground_location         = {
@@ -119,6 +118,7 @@ scenario         = [
                 east_longitude              = -56.8;
                 west_longitude              = -57.2;
                 sampling                    = 10800.0;
+                time_horizon                = 28.0;
             },
             {
                 type                        = ECCENTRICITY_CIRCLE;
@@ -130,6 +130,7 @@ scenario         = [
                 max_radius                  = 10.0e-5;
                 sampling                    = 3600;
                 single_burn                 =  true;
+                time_horizon                = 28.0;
             }
         ]
     },
@@ -163,6 +164,7 @@ scenario         = [
                 east_longitude              = -55.8;
                 west_longitude              = -56.2;
                 sampling                    = 10800.0;
+                time_horizon                = 28.0;
             },
             {
                 type                        = ECCENTRICITY_CIRCLE;
@@ -174,6 +176,7 @@ scenario         = [
                 max_radius                  = 10.0e-5;
                 sampling                    = 3600;
                 single_burn                 =  true;
+                time_horizon                = 28.0;
             }
         ]
     },
@@ -207,6 +210,7 @@ scenario         = [
                 east_longitude              = -57.8;
                 west_longitude              = -58.2;
                 sampling                    = 10800.0;
+                time_horizon                = 28.0;
             },
             {
                 type                        = ECCENTRICITY_CIRCLE;
@@ -218,6 +222,7 @@ scenario         = [
                 max_radius                  = 10.0e-5;
                 sampling                    = 3600;
                 single_burn                 =  true;
+                time_horizon                = 28.0;
             }
         ]
     },

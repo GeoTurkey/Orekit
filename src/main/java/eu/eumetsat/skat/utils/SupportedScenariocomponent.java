@@ -9,7 +9,6 @@ import org.apache.commons.math.linear.RealMatrix;
 import org.orekit.errors.OrekitException;
 import org.orekit.orbits.OrbitType;
 import org.orekit.orbits.PositionAngle;
-import org.orekit.utils.Constants;
 
 import eu.eumetsat.skat.Skat;
 import eu.eumetsat.skat.control.ControlLoop;
@@ -35,8 +34,8 @@ public enum SupportedScenariocomponent {
         public ScenarioComponent parse(final SkatFileParser parser, final Tree node, final Skat skat)
             throws OrekitException, SkatException {
             final Tree scenarioNode = parser.getValue(node, ParameterKey.SCENARIO);
-            final Scenario scenario = new Scenario(skat.getCycleDuration() * Constants.JULIAN_DAY,
-                                                   skat.getOutputStep(), skat.getEarth(), skat.getSun(),
+            final Scenario scenario = new Scenario(skat.getOutputStep(),
+                                                   skat.getEarth(), skat.getSun(),
                                                    skat.getGroundLocation(),
                                                    skat.getMonitorablesMono(), skat.getMonitorablesDuo(),
                                                    skat.getManeuversMonitorables(),
@@ -50,6 +49,7 @@ public enum SupportedScenariocomponent {
                                                                          SupportedScenariocomponent.class);
                 scenario.addComponent(component.parse(parser, componentNode, skat));
             }
+            scenario.setCycleDuration(skat.getCycleDuration());
             return scenario;
         }
     },
@@ -107,8 +107,7 @@ public enum SupportedScenariocomponent {
             // set up control loop
             final int maxIter = parser.getInt(node, ParameterKey.COMPONENT_CONTROL_LOOP_MAX_ITER);
             final ControlLoop loop = new ControlLoop(spacecraftIndex, firstCycle, lastCycle,
-                                                     skat.getManeuversModelsPool(), maxIter, propagator,
-                                                     skat.getCycleDuration());
+                                                     skat.getManeuversModelsPool(), maxIter, propagator);
 
             // control laws
             final Tree controlsNode = parser.getValue(node, ParameterKey.COMPONENT_CONTROL_LOOP_CONTROLS);

@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.commons.math.util.FastMath;
 import org.orekit.errors.OrekitException;
 import org.orekit.forces.maneuvers.ConstantThrustManeuver;
 import org.orekit.forces.maneuvers.ImpulseManeuver;
@@ -30,19 +31,8 @@ import eu.eumetsat.skat.utils.SupportedPropagator.PropagatorRandomizer;
 
 
 /**
- * Control loop between {@link SKParameter control parameters} and {@link
- * SKControl station-keeping controls}.
- * <p>
- * This loop is mainly an optimization loop that adjusts the control parameters
- * in order to minimize an objective function J defined as:<br>
- *   J = &sum;(((control<sub>i</sub>.{@link SKControl#getAchievedValue() getAchievedValue()}
- *             - control<sub>i</sub>.{@link SKControl#getTargetValue() getTargetValue()})
- *             / scale<sub>i</sub>)<sup>2</sup>)<br>
- * the sum being computed across all scaled controls.
- * </p>
- * @see TunableManeuver
- * @see SKParameter
- * @see SKControl
+ * Control loop for {@link SKControl station-keeping controls}.
+ * 
  * @author Luc Maisonobe
  */
 public class ControlLoop implements ScenarioComponent {
@@ -56,9 +46,6 @@ public class ControlLoop implements ScenarioComponent {
     /** Orbit propagator randomizer. */
     private final PropagatorRandomizer randomizer;
 
-    /** Cycle duration. */
-    private final double cycleDuration;
-
     /** First cycle this loop should control. */
     private final int firstCycle;
 
@@ -70,6 +57,9 @@ public class ControlLoop implements ScenarioComponent {
 
     /** Station-keeping control laws. */
     private final List<SKControl> controls;
+
+    /** Cycle duration. */
+    private double cycleDuration;
 
     /** Simple constructor.
      * <p>
@@ -83,12 +73,10 @@ public class ControlLoop implements ScenarioComponent {
      * @param tunables tunable maneuvers (for all rolling cycles)
      * @param maxIter maximal number of iterations
      * @param randomizer orbit propagator randomizer
-     * @param cycleDuration Cycle duration
      */
     public ControlLoop(final int spacecraftIndex, final int firstCycle, final int lastCycle,
                        final TunableManeuver[] tunables, final int maxIter,
-                       final PropagatorRandomizer randomizer,
-                       final double cycleDuration) {
+                       final PropagatorRandomizer randomizer) {
         this.spacecraftIndex = spacecraftIndex;
         this.firstCycle      = firstCycle;
         this.lastCycle       = lastCycle;
@@ -96,7 +84,7 @@ public class ControlLoop implements ScenarioComponent {
         this.randomizer      = randomizer;
         this.tunables        = tunables.clone();
         this.controls        = new ArrayList<SKControl>();
-        this.cycleDuration   = cycleDuration;
+        this.cycleDuration   = 0.0;
     }
 
     /** Add a control law .
@@ -104,6 +92,7 @@ public class ControlLoop implements ScenarioComponent {
      */
     public void addControl(final SKControl controlLaw) {
         controls.add(controlLaw);
+        cycleDuration = FastMath.max(cycleDuration, controlLaw.getTimeHorizon());
     }
 
     /** {@inheritDoc} */
@@ -249,7 +238,7 @@ public class ControlLoop implements ScenarioComponent {
         }
 
         // perform propagation
-        final double propagationDuration = cycleDuration * Constants.JULIAN_DAY;
+        final double propagationDuration = cycleDuration;
         final AbsoluteDate endDate = initialState.getDate().shiftedBy(propagationDuration);
         propagator.propagate(endDate);
 
@@ -301,7 +290,7 @@ public class ControlLoop implements ScenarioComponent {
         }
 
         // perform propagation
-        propagator.propagate(start.shiftedBy(cycleDuration * Constants.JULIAN_DAY));
+        propagator.propagate(start.shiftedBy(cycleDuration));
 
     }
 
