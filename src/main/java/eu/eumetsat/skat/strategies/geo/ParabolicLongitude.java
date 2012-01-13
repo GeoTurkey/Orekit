@@ -23,6 +23,7 @@ import org.orekit.propagation.events.EventDetector;
 import org.orekit.propagation.sampling.OrekitStepHandler;
 import org.orekit.propagation.sampling.OrekitStepInterpolator;
 import org.orekit.time.AbsoluteDate;
+import org.orekit.utils.Constants;
 
 import eu.eumetsat.skat.control.AbstractSKControl;
 import eu.eumetsat.skat.strategies.ScheduledManeuver;
@@ -150,6 +151,7 @@ public class ParabolicLongitude extends AbstractSKControl {
      * @param lEast longitude slot Eastward boundary
      * @param lWest longitude slot Westward boundary
      * @param samplingStep step to use for sampling throughout propagation
+     * @param horizon time horizon duration
      * @param earth Earth model to use to compute longitudes
      * @exception SkatException if longitudes limits are not sorted properly
      */
@@ -158,10 +160,12 @@ public class ParabolicLongitude extends AbstractSKControl {
                               final TunableManeuver model, final double firstOffset,
                               final int maxManeuvers, final int orbitsSeparation,
                               final double lEast, final double lWest,
-                              final double samplingStep, final BodyShape earth)
+                              final double samplingStep, final double horizon,
+                              final BodyShape earth)
         throws SkatException {
         super(name, model, controlledName, controlledIndex, null, -1,
-              FastMath.toDegrees(lWest), FastMath.toDegrees(MathUtils.normalizeAngle(lEast, lWest)));
+              FastMath.toDegrees(lWest), FastMath.toDegrees(MathUtils.normalizeAngle(lEast, lWest)),
+              horizon * Constants.JULIAN_DAY);
         if (getMin() >= getMax()) {
             throw new SkatException(SkatMessages.UNSORTED_LONGITUDES,
                                     FastMath.toDegrees(getMin()), FastMath.toDegrees(getMax()));

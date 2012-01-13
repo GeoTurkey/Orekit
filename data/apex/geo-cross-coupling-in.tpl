@@ -6,7 +6,6 @@ simulation       = {
     solar_activity_strength = AVERAGE;
     start_date              = 2011-10-23T00:00:00.000;
     end_date                = 2012-10-21T00:00:00.000;
-    cycle_duration          = 14.0;
     output_step             = 43200.0;
     random_seed             = 156325253;
     ground_location         = {
@@ -107,7 +106,7 @@ scenario         = [
                 reference_hy                = -1.5e-5;
                 limit_inclination_angle     =  0.2;
                 sampling                    = 3600;
-                
+                time_horizon                = 14.0;
             }
         ]
     },
@@ -148,6 +147,7 @@ scenario         = [
                 east_longitude              = -56.9;
                 west_longitude              = -57.1;
                 sampling                    = 10800.0;
+                time_horizon                = 14.0;
             }
         ]
     },

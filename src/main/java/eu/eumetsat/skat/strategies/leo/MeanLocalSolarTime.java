@@ -138,16 +138,18 @@ public class MeanLocalSolarTime extends AbstractSKControl {
      * specified latitude from south to north
      * @param solarTime target solar time (in fractional hour, i.e 9h30 = 9.5)
      * @param solarTimetolerance solar time tolerance (in hours)
+     * @param horizon time horizon duration
      * @exception OrekitException if the UTC-TAI correction cannot be loaded
      */
     public MeanLocalSolarTime(final String name, final String controlledName, final int controlledIndex,
                               final TunableManeuver model, final double firstOffset,
                               final int maxManeuvers, final int orbitsSeparation,
                               final BodyShape earth, final double latitude, final boolean ascending,
-                              final double solarTime, final double solarTimetolerance)
+                              final double solarTime, final double solarTimetolerance, final double horizon)
         throws OrekitException {
         super(name, model, controlledName, controlledIndex, null, -1,
-              solarTime - solarTimetolerance, solarTime + solarTimetolerance);
+              solarTime - solarTimetolerance, solarTime + solarTimetolerance,
+              horizon * Constants.JULIAN_DAY);
         this.firstOffset      = firstOffset;
         this.maxManeuvers     = maxManeuvers;
         this.orbitsSeparation = orbitsSeparation;

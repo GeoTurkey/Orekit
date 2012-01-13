@@ -36,6 +36,7 @@ public enum SupportedControlLaw {
             throws OrekitException, SkatException {
             final String name           = parser.getString(node, ParameterKey.CONTROL_NAME);
             final double sampling       = parser.getDouble(node, ParameterKey.CONTROL_SAMPLING);
+            final double horizon        = parser.getDouble(node, ParameterKey.CONTROL_HORIZON);
             final TunableManeuver model = skat.getManeuver(parser.getString(node, ParameterKey.CONTROL_MANEUVER_NAME));
             final int maxManeuvers      = parser.getInt(node,    ParameterKey.CONTROL_MAX_MANEUVERS);
             final int orbitsSeparation  = parser.getInt(node,    ParameterKey.CONTROL_MANEUVERS_ORBITS_SEPARATION);
@@ -44,7 +45,7 @@ public enum SupportedControlLaw {
             final double lWest          = parser.getAngle(node,  ParameterKey.CONTROL_PARABOLIC_LONGITUDE_WEST);
             return new ParabolicLongitude(name, controlled, skat.getSpacecraftIndex(controlled),
                                           model, firstOffset, maxManeuvers, orbitsSeparation,
-                                          lEast, lWest, sampling, skat.getEarth());
+                                          lEast, lWest, sampling, horizon, skat.getEarth());
         }
 
     },
@@ -58,6 +59,7 @@ public enum SupportedControlLaw {
             throws OrekitException, SkatException {
             final String name           = parser.getString(node, ParameterKey.CONTROL_NAME);
             final double sampling       = parser.getDouble(node, ParameterKey.CONTROL_SAMPLING);
+            final double horizon        = parser.getDouble(node, ParameterKey.CONTROL_HORIZON);
             final TunableManeuver model = skat.getManeuver(parser.getString(node, ParameterKey.CONTROL_MANEUVER_NAME));
             final double centerX        = parser.getDouble(node, ParameterKey.CONTROL_ECCENTRICITY_CIRCLE_CENTER_X);
             final double centerY        = parser.getDouble(node, ParameterKey.CONTROL_ECCENTRICITY_CIRCLE_CENTER_Y);
@@ -66,7 +68,7 @@ public enum SupportedControlLaw {
             final boolean singleBurn    = parser.getBoolean(node, ParameterKey.CONTROL_ECCENTRICITY_CIRCLE_SINGLE_BURN);
             return new EccentricityCircle(name, controlled, skat.getSpacecraftIndex(controlled),
                                           model, centerX, centerY, meanRadius, maxRadius, singleBurn,
-                                          skat.getSun(), sampling);
+                                          skat.getSun(), sampling, horizon);
         }
 
     },
@@ -80,6 +82,7 @@ public enum SupportedControlLaw {
             throws OrekitException, SkatException {
             final String name             = parser.getString(node, ParameterKey.CONTROL_NAME);
             final double sampling         = parser.getDouble(node, ParameterKey.CONTROL_SAMPLING);
+            final double horizon          = parser.getDouble(node, ParameterKey.CONTROL_HORIZON);
             final TunableManeuver model   = skat.getManeuver(parser.getString(node, ParameterKey.CONTROL_MANEUVER_NAME));
             final int maxManeuvers        = parser.getInt(node,    ParameterKey.CONTROL_MAX_MANEUVERS);
             final int orbitsSeparation    = parser.getInt(node,    ParameterKey.CONTROL_MANEUVERS_ORBITS_SEPARATION);
@@ -89,7 +92,7 @@ public enum SupportedControlLaw {
             final double limitInclination = parser.getAngle(node, ParameterKey.CONTROL_INCLINATION_LIMIT_INCLINATION_ANGLE);
             return new InclinationVector(name, controlled, skat.getSpacecraftIndex(controlled),
                                          model, firstOffset, maxManeuvers, orbitsSeparation,
-                                         referenceHx, referenceHy, limitInclination, sampling);
+                                         referenceHx, referenceHy, limitInclination, sampling, horizon);
         }
 
     },
@@ -102,6 +105,7 @@ public enum SupportedControlLaw {
                                final String controlled, final Skat skat)
             throws OrekitException, SkatException {
             final String name             = parser.getString(node, ParameterKey.CONTROL_NAME);
+            final double horizon          = parser.getDouble(node, ParameterKey.CONTROL_HORIZON);
             final TunableManeuver model   = skat.getManeuver(parser.getString(node, ParameterKey.CONTROL_MANEUVER_NAME));
             final int maxManeuvers        = parser.getInt(node,    ParameterKey.CONTROL_MAX_MANEUVERS);
             final int orbitsSeparation    = parser.getInt(node,    ParameterKey.CONTROL_MANEUVERS_ORBITS_SEPARATION);
@@ -111,7 +115,7 @@ public enum SupportedControlLaw {
             final File gridFile = new File(new File(parser.getInputName()).getParent(), fileName);
             return new GroundTrackGrid(name, controlled, skat.getSpacecraftIndex(controlled),
                                        model, firstOffset, maxManeuvers, orbitsSeparation,
-                                       skat.getEarth(), readGridFile(gridFile), maxDistance);
+                                       skat.getEarth(), readGridFile(gridFile), maxDistance, horizon);
         }
 
         /** Read a grid file.
@@ -157,6 +161,7 @@ public enum SupportedControlLaw {
                                final String controlled, final Skat skat)
             throws OrekitException, SkatException {
             final String name               = parser.getString(node,  ParameterKey.CONTROL_NAME);
+            final double horizon          = parser.getDouble(node, ParameterKey.CONTROL_HORIZON);
             final TunableManeuver model     = skat.getManeuver(parser.getString(node, ParameterKey.CONTROL_MANEUVER_NAME));
             final int maxManeuvers          = parser.getInt(node,     ParameterKey.CONTROL_MAX_MANEUVERS);
             final int orbitsSeparation      = parser.getInt(node,     ParameterKey.CONTROL_MANEUVERS_ORBITS_SEPARATION);
@@ -166,8 +171,8 @@ public enum SupportedControlLaw {
             final double solarTime          = parser.getDouble(node,  ParameterKey.CONTROL_SOLAR_TIME_SOLAR_TIME);
             final double solarTimeTolerance = parser.getDouble(node,  ParameterKey.CONTROL_SOLAR_TIME_SOLAR_TIME_TOLERANCE) / 60.0;
             return new MeanLocalSolarTime(name, controlled, skat.getSpacecraftIndex(controlled),
-                                          model, firstOffset, maxManeuvers, orbitsSeparation,
-                                          skat.getEarth(), latitude, ascending, solarTime, solarTimeTolerance);
+                                          model, firstOffset, maxManeuvers, orbitsSeparation, skat.getEarth(),
+                                          latitude, ascending, solarTime, solarTimeTolerance, horizon);
         }
 
     };

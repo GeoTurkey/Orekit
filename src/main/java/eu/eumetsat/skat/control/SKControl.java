@@ -20,7 +20,6 @@ import eu.eumetsat.skat.utils.SkatException;
  * Station-keeping controls can be for example to ensure that spacecraft
  * remains within its allowed slot with as large margins as possible.
  * </p>
- * @see SKParameter
  * @author Luc Maisonobe
  */
 public interface SKControl {
@@ -53,6 +52,17 @@ public interface SKControl {
      */
     double getMax();
 
+    /** Check if the control limits have been exceeded.
+     * @return a positive value if there are some margins, a negative value if
+     * limits have been violated
+     */
+    double getMargins();
+
+    /** Get the time horizon for the control.
+     * @return the time horizon duration
+     */
+    double getTimeHorizon();
+
     /** Initialize one run of the control law.
      * <p>
      * This method is called at the start of each run with a set
@@ -74,12 +84,6 @@ public interface SKControl {
                        Propagator propagator, List<ScheduledManeuver> fixedManeuvers,
                        AbsoluteDate start, AbsoluteDate end)
         throws OrekitException, SkatException;
-
-    /** Check if the control limits have been exceeded.
-     * @return a positive value if there are some margins, a negative value if
-     * limits have been violated
-     */
-    double getMargins();
 
     /** Tune the maneuvers to improve control law fulfillment.
      * @param maneuvers existing set of maneuvers

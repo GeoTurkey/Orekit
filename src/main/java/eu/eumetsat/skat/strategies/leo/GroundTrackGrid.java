@@ -111,13 +111,16 @@ public class GroundTrackGrid extends AbstractSKControl {
      * @param earth Earth model
      * @param grid grid points
      * @param maxDistance maximal cross distance to ground track allowed
+     * @param horizon time horizon duration
      */
     public GroundTrackGrid(final String name, final String controlledName, final int controlledIndex,
                            final TunableManeuver model, final double firstOffset,
                            final int maxManeuvers, final int orbitsSeparation,
-                           final OneAxisEllipsoid earth, final List<GridPoint> grid, final double maxDistance)
+                           final OneAxisEllipsoid earth, final List<GridPoint> grid,
+                           final double maxDistance, final double horizon)
         throws SkatException {
-        super(name, model, controlledName, controlledIndex, null, -1, -maxDistance, maxDistance);
+        super(name, model, controlledName, controlledIndex, null, -1, -maxDistance, maxDistance,
+              horizon * Constants.JULIAN_DAY);
 
         this.firstOffset      = firstOffset;
         this.maxManeuvers     = maxManeuvers;
