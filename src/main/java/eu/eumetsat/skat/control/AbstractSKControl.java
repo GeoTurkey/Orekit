@@ -196,7 +196,8 @@ public abstract class AbstractSKControl implements SKControl {
         AbsoluteDate freeIntervalEnd   = last;
         AbsoluteDate previousDate      = last;
         for (final AbsoluteDate currentDate : sortedDates) {
-            if (currentDate.durationFrom(previousDate) > freeIntervalEnd.durationFrom(freeIntervalStart)) {
+            if (previousDate.compareTo(last) >= 0 &&
+                currentDate.durationFrom(previousDate) > freeIntervalEnd.durationFrom(freeIntervalStart)) {
                 freeIntervalStart = previousDate;
                 freeIntervalEnd   = currentDate;
             }
