@@ -32,7 +32,7 @@ import org.orekit.utils.Constants;
 /** Greenwich Mean Of Date Frame.
  * <p> This frame is linked to MoD frame and applies directly the mean sidereal
  * time according to IAU-82 model. It does <em>not</em> apply nutation. This frame
- * is useful only to define ground track grids which remain independant of short
+ * is useful only to define ground track grids which remain independent of short
  * periodic variations from nutation.</p>
  * <p> Its parent frame is the {@link MODFrame}.</p>
  * @author Luc Maisonobe
