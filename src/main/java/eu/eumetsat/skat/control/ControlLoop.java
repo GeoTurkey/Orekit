@@ -19,7 +19,6 @@ import org.orekit.propagation.events.EventDetector;
 import org.orekit.propagation.numerical.NumericalPropagator;
 import org.orekit.propagation.sampling.OrekitStepHandlerMultiplexer;
 import org.orekit.time.AbsoluteDate;
-import org.orekit.utils.Constants;
 
 import eu.eumetsat.skat.scenario.ScenarioComponent;
 import eu.eumetsat.skat.scenario.ScenarioState;
