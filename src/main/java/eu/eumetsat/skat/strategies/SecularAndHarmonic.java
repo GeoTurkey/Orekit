@@ -18,6 +18,7 @@ package eu.eumetsat.skat.strategies;
 
 import org.apache.commons.math.analysis.ParametricUnivariateFunction;
 import org.apache.commons.math.optimization.fitting.CurveFitter;
+import org.apache.commons.math.optimization.fitting.PolynomialFitter;
 import org.apache.commons.math.optimization.general.LevenbergMarquardtOptimizer;
 import org.apache.commons.math.util.FastMath;
 import org.orekit.time.AbsoluteDate;
@@ -90,7 +91,7 @@ public class SecularAndHarmonic {
         double amplitude = 0;
         for (int i = 0; i < pulsations.length; ++i) {
             amplitude += FastMath.hypot(fitted[secularDegree + 2 * i + 1],
-                                    fitted[secularDegree + 2 * i + 2]);
+                                        fitted[secularDegree + 2 * i + 2]);
         }
         return amplitude;
     }
@@ -145,7 +146,7 @@ public class SecularAndHarmonic {
      */
     public double osculatingValue(final AbsoluteDate date) {
         return truncatedValue(secularDegree, pulsations.length,
-                         date.durationFrom(reference), fitted);
+                              date.durationFrom(reference), fitted);
     }
 
     /** Get fitted osculating derivative.
@@ -159,7 +160,7 @@ public class SecularAndHarmonic {
 
     /** Get mean value, truncated to first components.
      * @param date current date
-     * @param degree degree of polynomial secular part
+     * @param degree degree of polynomial secular part to consider
      * @param harmonics number of harmonics terms to consider
      * @return mean value at current date
      */
@@ -169,12 +170,45 @@ public class SecularAndHarmonic {
 
     /** Get mean derivative, truncated to first components.
      * @param date current date
-     * @param degree degree of polynomial secular part
+     * @param degree degree of polynomial secular part to consider
      * @param harmonics number of harmonics terms to consider
      * @return mean derivative at current date
      */
     public double meanDerivative(final AbsoluteDate date, final int degree, final int harmonics) {
         return truncatedDerivative(degree, harmonics, date.durationFrom(reference), fitted);
+    }
+
+    /** Approximate an already fitted model to polynomial only terms.
+     * <p>
+     * This method is mainly used in order to combine the large amplitude long
+     * periods with the secular part as a new approximate polynomial model over
+     * some time range. This should be used rather than simply extracting the
+     * polynomial coefficients from {@link #getFittedParameters()} when some
+     * periodic terms amplitudes are large (for example Sun resonance effects
+     * on local solar time in sun synchronous orbits). In theses cases, the pure
+     * polynomial secular part in the coefficients may be far from the mean model.
+     * </p>
+     * @param combinedDegree desired degree for the combined polynomial
+     * @param combinedReference desired reference date for the combined polynomial
+     * @param meanDegree degree of polynomial secular part to consider
+     * @param meanHarmonics number of harmonics terms to consider
+     * @param start start date of the approximation time range
+     * @param end end date of the approximation time range
+     * @param step sampling step
+     * @return coefficients of the approximate polynomial (in increasing degree order),
+     * using the same {@link #getReferenceDate() reference date} as the instance
+     */
+    public double[] approximateAsPolynomialOnly(final int combinedDegree, final AbsoluteDate combinedReference,
+                                                final int meanDegree, final int meanHarmonics,
+                                                final AbsoluteDate start, final AbsoluteDate end,
+                                                final double step) {
+        final PolynomialFitter fitter = new PolynomialFitter(combinedDegree,
+                                                             new LevenbergMarquardtOptimizer());
+        for (AbsoluteDate date = start; date.compareTo(end) < 0; date = date.shiftedBy(step)) {
+            fitter.addObservedPoint(date.durationFrom(combinedReference),
+                                    meanValue(date, meanDegree, meanHarmonics));
+        }
+        return fitter.fit();
     }
 
     /** Get value truncated to first components.
@@ -224,7 +258,7 @@ public class SecularAndHarmonic {
         double tN = 1.0;
         for (int i = 1; i <= degree; ++i) {
             derivative += i * parameters[i] * tN;
-            tN    *= time;
+            tN         *= time;
         }
 
         // harmonic part
