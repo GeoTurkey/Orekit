@@ -68,7 +68,6 @@ initial_states   = [
             hy                 = -0.0015674;
             longitude_argument =  0.153225665;
         }
-
     }
 ];
 # Array of scenario components
@@ -117,8 +116,8 @@ scenario         = [
                 offset_first_maneuver       = 172800;
                 max_maneuvers               = 3;
                 maneuvers_orbits_separation = 1;
-                east_longitude              = -56.9;
-                west_longitude              = -57.1;
+                east_longitude              = -56.8;
+                west_longitude              = -57.2;
                 sampling                    = 10800.0;
             },
             {
@@ -127,9 +126,10 @@ scenario         = [
                 maneuver_name               = "E/W";
                 center_x                    =  0.0;
                 center_y                    =  0.0;
-                radius                      =  6.0e-5;
+                mean_radius                 =  6.0e-5;
+                max_radius                  = 10.0e-5;
                 sampling                    = 3600;
-                
+                single_burn                 =  true;
             }
         ]
     },
@@ -160,8 +160,8 @@ scenario         = [
                 offset_first_maneuver       = 172800;
                 max_maneuvers               = 3;
                 maneuvers_orbits_separation = 1;
-                east_longitude              = -55.9;
-                west_longitude              = -56.1;
+                east_longitude              = -55.8;
+                west_longitude              = -56.2;
                 sampling                    = 10800.0;
             },
             {
@@ -170,9 +170,10 @@ scenario         = [
                 maneuver_name               = "E/W";
                 center_x                    =  0.0;
                 center_y                    =  0.0;
-                radius                      =  6.0e-5;
+                mean_radius                 =  6.0e-5;
+                max_radius                  = 10.0e-5;
                 sampling                    = 3600;
-                
+                single_burn                 =  true;
             }
         ]
     },
@@ -183,7 +184,7 @@ scenario         = [
         first_cycle              = 27;
         last_cycle               = 999;
         max_iterations           = 100;
-       propagator  = {
+        propagator  = {
             method                 = NUMERICAL;
             min_step               = 1.0;
             max_step               = 900.0;
@@ -203,8 +204,8 @@ scenario         = [
                 offset_first_maneuver       = 172800;
                 max_maneuvers               = 3;
                 maneuvers_orbits_separation = 1;
-                east_longitude              = -57.9;
-                west_longitude              = -58.1;
+                east_longitude              = -57.8;
+                west_longitude              = -58.2;
                 sampling                    = 10800.0;
             },
             {
@@ -213,9 +214,10 @@ scenario         = [
                 maneuver_name               = "E/W";
                 center_x                    =  0.0;
                 center_y                    =  0.0;
-                radius                      =  6.0e-5;
+                mean_radius                 =  6.0e-5;
+                max_radius                  = 10.0e-5;
                 sampling                    = 3600;
-                
+                single_burn                 =  true;
             }
         ]
     },
