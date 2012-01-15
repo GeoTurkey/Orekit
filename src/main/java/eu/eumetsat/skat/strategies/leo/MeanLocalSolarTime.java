@@ -33,7 +33,7 @@ import eu.eumetsat.skat.utils.SkatException;
 /**
  * Station-keeping control for mean solar time in sun synchronous Low Earth Orbits.
  * <p>
- * The mean solar time at a specific latitude crossinf evolves as a quadratic model
+ * The mean solar time at a specific latitude crossing evolves as a quadratic model
  * of time with medium periods at one day and one half day. The coefficients of this
  * model depend on semi major axis and inclination, since the main effect of
  * J<sub>2</sub> is a secular drift of ascending node with short periodic effects
