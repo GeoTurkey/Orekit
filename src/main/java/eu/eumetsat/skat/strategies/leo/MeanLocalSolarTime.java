@@ -136,6 +136,9 @@ public class MeanLocalSolarTime extends AbstractSKControl {
     /** Indicator for compensating long burns inefficiency. */
     private boolean compensateLongBurn;
 
+    /** Indicator for side targeting. */
+    private boolean forceReset;
+
     /** Simple constructor.
      * @param name name of the control law
      * @param controlledName name of the controlled spacecraft
@@ -210,6 +213,10 @@ public class MeanLocalSolarTime extends AbstractSKControl {
         this.cycleEnd    = end;
         resetMarginsChecks();
         crossings.clear();
+
+        if (iteration == 0) {
+            forceReset = false;
+        }
 
         // select a long maneuver-free interval for fitting
         freeInterval = getManeuverFreeInterval(maneuvers, fixedManeuvers, start, end);
@@ -329,8 +336,11 @@ public class MeanLocalSolarTime extends AbstractSKControl {
                                                                   nodeState.getDate(), freeInterval[1], period);
 
         double newHdot;
-        if ((mst[2] < 0 && mst[0] > hMax) || (mst[2] > 0 && mst[0] < hMin)) {
+        if (forceReset || (mst[2] < 0 && mst[0] > hMax) || (mst[2] > 0 && mst[0] < hMin)) {
             // the start point is already on the wrong side of the window
+
+            // make sure once we select this option, we stick to it for all iterations
+            forceReset = true;
 
             // the current cycle is already bad, we set up a target to start a new cycle
             // at time horizon with good initial conditions, and reach this target by changing hDot(t0)

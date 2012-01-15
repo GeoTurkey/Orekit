@@ -106,6 +106,12 @@ public class GroundTrackGrid extends AbstractSKControl {
     /** Cycle end. */
     private AbsoluteDate cycleEnd;
 
+    /** Safety margin on longitude error window. */
+    private final double safetyMargin;
+
+    /** Indicator for side targeting. */
+    private boolean forceReset;
+
     /** Simple constructor.
      * <p>
      * The number of days per phasing cycle is approximate in the sense it is
@@ -145,6 +151,7 @@ public class GroundTrackGrid extends AbstractSKControl {
         this.mu               = mu;
         this.j2               = j2;
         this.fittedDL         = new double[3];
+        this.safetyMargin     = 0.1 * maxDistance;
 
         // store the grid in chronological order
         this.grid             = grid.toArray(new GridPoint[grid.size()]);
@@ -204,6 +211,8 @@ public class GroundTrackGrid extends AbstractSKControl {
         this.cycleEnd       = end;
 
         if (iteration == 0) {
+
+            forceReset = false;
 
             // select a long maneuver-free interval for fitting
             double period = phasingDuration / errorModels.get(0).getCount();
@@ -323,12 +332,16 @@ public class GroundTrackGrid extends AbstractSKControl {
                                              final BoundedPropagator reference)
         throws OrekitException {
 
-        final double dlMax = getMax() / earth.getEquatorialRadius();
+        final double dlMax    = getMax() / earth.getEquatorialRadius();
+        final double dlSafety = (getMax() - safetyMargin) / earth.getEquatorialRadius();
 
         // which depends on current state
         final double newDLdot;
-        if ((fittedDL[2] < 0 && fittedDL[0] > dlMax) || (fittedDL[2] > 0 && fittedDL[0] < -dlMax)) {
+        if (forceReset || (fittedDL[2] < 0 && fittedDL[0] > dlMax) || (fittedDL[2] > 0 && fittedDL[0] < -dlMax)) {
             // the start point is already on the wrong side of the window
+
+            // make sure once we select this option, we stick to it for all iterations
+            forceReset = true;
 
             // the current cycle is already bad, we set up a target to start a new cycle
             // at time horizon with good initial conditions, and reach this target by changing dlDot(t0)
@@ -350,7 +363,9 @@ public class GroundTrackGrid extends AbstractSKControl {
                 // longitude error exits the window limit before next cycle
 
                 // we target a future longitude error peak osculating window boundary
-                final double targetDL = FastMath.copySign(dlMax, -fittedDL[2]);
+                // (taking a safety margin into account if possible)
+                double targetDL = FastMath.copySign(FastMath.abs(fittedDL[0]) >= dlSafety ? dlMax : dlSafety,
+                                                    -fittedDL[2]);
                 newDLdot = FastMath.copySign(FastMath.sqrt(4 * fittedDL[2] * (fittedDL[0] - targetDL)),
                                              (tPeak > 0) ? fittedDL[1] : -fittedDL[1]);
 
