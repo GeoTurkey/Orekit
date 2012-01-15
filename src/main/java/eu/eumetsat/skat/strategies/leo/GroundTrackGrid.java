@@ -13,18 +13,20 @@ import org.apache.commons.math.util.Precision;
 import org.orekit.bodies.GeodeticPoint;
 import org.orekit.bodies.OneAxisEllipsoid;
 import org.orekit.errors.OrekitException;
+import org.orekit.forces.maneuvers.SmallManeuverAnalyticalModel;
 import org.orekit.propagation.BoundedPropagator;
 import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
-import org.orekit.propagation.analytical.ManeuverAdapterPropagator;
+import org.orekit.propagation.analytical.AdapterPropagator;
+import org.orekit.propagation.analytical.J2DifferentialEffect;
 import org.orekit.propagation.events.EventDetector;
 import org.orekit.propagation.sampling.OrekitStepHandler;
 import org.orekit.time.AbsoluteDate;
 import org.orekit.utils.Constants;
+import org.orekit.utils.SecularAndHarmonic;
 
 import eu.eumetsat.skat.control.AbstractSKControl;
 import eu.eumetsat.skat.strategies.ScheduledManeuver;
-import eu.eumetsat.skat.strategies.SecularAndHarmonic;
 import eu.eumetsat.skat.strategies.TunableManeuver;
 import eu.eumetsat.skat.utils.SkatException;
 import eu.eumetsat.skat.utils.SkatMessages;
@@ -68,6 +70,15 @@ public class GroundTrackGrid extends AbstractSKControl {
     /** Earth model. */
     private final OneAxisEllipsoid earth;
 
+    /** Reference radius of the Earth for the potential model. */
+    private final double referenceRadius;
+
+    /** Central attraction coefficient. */
+    private double mu;
+
+    /** Un-normalized zonal coefficient. */
+    private double j2;
+
     /** Reference grid points in Earth frame. */
     private final GridPoint[] grid;
 
@@ -93,7 +104,7 @@ public class GroundTrackGrid extends AbstractSKControl {
     private int iteration;
 
     /** Cycle end. */
-    private AbsoluteDate end;
+    private AbsoluteDate cycleEnd;
 
     /** Simple constructor.
      * <p>
@@ -109,6 +120,9 @@ public class GroundTrackGrid extends AbstractSKControl {
      * @param maxManeuvers maximum number of maneuvers to set up in one cycle
      * @param orbitsSeparation minimum time between split parts in number of orbits
      * @param earth Earth model
+     * @param referenceRadius reference radius of the Earth for the potential model (m)
+     * @param mu central attraction coefficient (m<sup>3</sup>/s<sup>2</sup>)
+     * @param j2 un-normalized zonal coefficient (about +1.08e-3 for Earth)
      * @param grid grid points
      * @param maxDistance maximal cross distance to ground track allowed
      * @param horizon time horizon duration
@@ -116,8 +130,9 @@ public class GroundTrackGrid extends AbstractSKControl {
     public GroundTrackGrid(final String name, final String controlledName, final int controlledIndex,
                            final TunableManeuver model, final double firstOffset,
                            final int maxManeuvers, final int orbitsSeparation,
-                           final OneAxisEllipsoid earth, final List<GridPoint> grid,
-                           final double maxDistance, final double horizon)
+                           final OneAxisEllipsoid earth,
+                           final double referenceRadius, final double mu, final double j2,
+                           final List<GridPoint> grid, final double maxDistance, final double horizon)
         throws SkatException {
         super(name, model, controlledName, controlledIndex, null, -1, -maxDistance, maxDistance,
               horizon * Constants.JULIAN_DAY);
@@ -126,6 +141,9 @@ public class GroundTrackGrid extends AbstractSKControl {
         this.maxManeuvers     = maxManeuvers;
         this.orbitsSeparation = orbitsSeparation;
         this.earth            = earth;
+        this.referenceRadius  = referenceRadius;
+        this.mu               = mu;
+        this.j2               = j2;
         this.fittedDL         = new double[3];
 
         // store the grid in chronological order
@@ -183,7 +201,7 @@ public class GroundTrackGrid extends AbstractSKControl {
 
         resetMarginsChecks();
         this.iteration = iteration;
-        this.end       = end;
+        this.cycleEnd       = end;
 
         if (iteration == 0) {
 
@@ -192,6 +210,11 @@ public class GroundTrackGrid extends AbstractSKControl {
             final AbsoluteDate[] freeInterval = getManeuverFreeInterval(maneuvers, fixedManeuvers,
                                                                         start.shiftedBy(period),
                                                                         end.shiftedBy(-period));
+            if (freeInterval[1].durationFrom(freeInterval[0]) < period) {
+                // if cycle is too short, assume limits are not violated
+                checkMargins(0.5 * (getMin() + getMax()));
+                return;
+            }
 
             // find the first crossing of one of the grid latitudes
             final double stepSize = period / 100;
@@ -309,7 +332,7 @@ public class GroundTrackGrid extends AbstractSKControl {
 
             // the current cycle is already bad, we set up a target to start a new cycle
             // at time horizon with good initial conditions, and reach this target by changing dlDot(t0)
-            final double targetT  = end.durationFrom(fitStart.getDate()) + firstOffset;
+            final double targetT  = cycleEnd.durationFrom(fitStart.getDate()) + firstOffset;
             final double targetDL = FastMath.copySign(dlMax, fittedDL[2]);
             newDLdot = (targetDL - fittedDL[0]) / targetT - fittedDL[2] * targetT;
 
@@ -318,7 +341,7 @@ public class GroundTrackGrid extends AbstractSKControl {
 
             final double tPeak   = -0.5 * fittedDL[1] / fittedDL[2];
             final double dlPeak  = fittedDL[0] + 0.5 * fittedDL[1] * tPeak;
-            final double finalT  = end.durationFrom(fitStart.getDate()) + firstOffset;
+            final double finalT  = cycleEnd.durationFrom(fitStart.getDate()) + firstOffset;
             final double finalDL = fittedDL[0] + finalT * (fittedDL[1] + finalT * fittedDL[2]);
 
             final boolean intermediateExit = tPeak > 0 && tPeak < finalT && FastMath.abs(dlPeak) > dlMax;
@@ -344,7 +367,7 @@ public class GroundTrackGrid extends AbstractSKControl {
         final double deltaA  = (newDLdot - fittedDL[1]) / dlDotDa;
 
         final ScheduledManeuver[] tuned;
-        final ManeuverAdapterPropagator adapterPropagator = new ManeuverAdapterPropagator(reference);
+        final AdapterPropagator adapterPropagator = new AdapterPropagator(reference);
         if (iteration == 0) {
             // we need to first define the number of maneuvers and their initial settings
 
@@ -354,21 +377,22 @@ public class GroundTrackGrid extends AbstractSKControl {
             final double totalDeltaV  = thrustSignVelocity(fitStart) *
                                         FastMath.sqrt(mu * (2 / a - 1 / (a + deltaA))) - FastMath.sqrt(mu / a);
 
+            // in order to avoid tempering eccentricity too much,
+            // we use a (n+1/2) orbits between maneuvers, where n is an integer
+            final double separation = (orbitsSeparation + 0.5) * fitStart.getKeplerianPeriod();
+
             // compute the number of maneuvers required
             final TunableManeuver model = getModel();
             final double limitDV = (totalDeltaV < 0) ? model.getDVInf() : model.getDVSup();
-            final int    nMan    = FastMath.min(maxManeuvers,
-                                                (int) FastMath.ceil(FastMath.abs(totalDeltaV / limitDV)));
-            final double deltaV  = FastMath.max(model.getDVInf(),
-                                                FastMath.min(model.getDVSup(), totalDeltaV / nMan));
+            int nMan = FastMath.min(maxManeuvers, (int) FastMath.ceil(FastMath.abs(totalDeltaV / limitDV)));
+            while (fitStart.getDate().shiftedBy(firstOffset + (nMan - 1) * separation).getDate().compareTo(cycleEnd) >= 0) {
+                --nMan;
+            }
+            final double deltaV = FastMath.max(model.getDVInf(), FastMath.min(model.getDVSup(), totalDeltaV / nMan));
 
             tuned = new ScheduledManeuver[tunables.length + nMan];
             System.arraycopy(tunables, 0, tuned, 0, tunables.length);
             changeTrajectory(tuned, 0, tunables.length, adapterPropagator);
-
-            // in order to avoid tempering eccentricity too much,
-            // we use a (n+1/2) orbits between maneuvers, where n is an integer
-            final double separation = (orbitsSeparation + 0.5) * fitStart.getKeplerianPeriod();
 
             // add the new maneuvers
             for (int i = 0; i < nMan; ++i) {
@@ -398,7 +422,13 @@ public class GroundTrackGrid extends AbstractSKControl {
 
         // finalize propagator
         for (final ScheduledManeuver maneuver : tuned) {
-            adapterPropagator.addManeuver(maneuver.getDate(), maneuver.getDeltaV(), maneuver.getIsp());
+            final SpacecraftState state = maneuver.getStateBefore();
+            AdapterPropagator.DifferentialEffect directEffect =
+                    new SmallManeuverAnalyticalModel(state, maneuver.getDeltaV(), maneuver.getIsp());
+            AdapterPropagator.DifferentialEffect resultingEffect =
+                    new J2DifferentialEffect(state, directEffect, false, referenceRadius, mu, j2);
+            adapterPropagator.addEffect(directEffect);
+            adapterPropagator.addEffect(resultingEffect);
         }
 
         return tuned;

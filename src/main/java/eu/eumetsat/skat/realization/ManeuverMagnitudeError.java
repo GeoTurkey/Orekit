@@ -7,6 +7,7 @@ import java.util.List;
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math.random.RandomGenerator;
 import org.orekit.errors.OrekitException;
+import org.orekit.forces.maneuvers.SmallManeuverAnalyticalModel;
 import org.orekit.time.AbsoluteDate;
 
 import eu.eumetsat.skat.scenario.ScenarioComponent;
@@ -110,12 +111,12 @@ public class ManeuverMagnitudeError implements ScenarioComponent {
                                                                       maneuver.getThrust(),
                                                                       maneuver.getIsp(), maneuver.getTrajectory(),
                                                                       false);
-                    maneuver.getTrajectory().addManeuver(maneuver.getDate(),
-                                                         maneuver.getDeltaV().negate(),
-                                                         maneuver.getIsp());
-                    maneuver.getTrajectory().addManeuver(m.getDate(),
-                                                         m.getDeltaV(),
-                                                         m.getIsp());
+                    maneuver.getTrajectory().addEffect(new SmallManeuverAnalyticalModel(maneuver.getStateBefore(),
+                                                                                        maneuver.getDeltaV().negate(),
+                                                                                        maneuver.getIsp()));
+                    m.getTrajectory().addEffect(new SmallManeuverAnalyticalModel(m.getStateBefore(),
+                                                                                 m.getDeltaV(),
+                                                                                 m.getIsp()));
                     modified.add(m);
                 } else {
                     // the maneuver is immune to the error

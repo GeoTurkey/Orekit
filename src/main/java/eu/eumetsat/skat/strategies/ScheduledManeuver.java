@@ -5,7 +5,7 @@ import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math.util.FastMath;
 import org.orekit.errors.PropagationException;
 import org.orekit.propagation.SpacecraftState;
-import org.orekit.propagation.analytical.ManeuverAdapterPropagator;
+import org.orekit.propagation.analytical.AdapterPropagator;
 import org.orekit.time.AbsoluteDate;
 import org.orekit.utils.Constants;
 
@@ -34,7 +34,7 @@ public class ScheduledManeuver {
     private final double isp;
 
     /** Trajectory to which this maneuver belongs. */
-    private final ManeuverAdapterPropagator trajectory;
+    private final AdapterPropagator trajectory;
 
     /** Indicator for replanned maneuvers. */
     private final boolean replanned;
@@ -50,7 +50,7 @@ public class ScheduledManeuver {
      */
     public ScheduledManeuver(final TunableManeuver model,
                              final AbsoluteDate date, final Vector3D deltaV,
-                             final double thrust, final double isp, final ManeuverAdapterPropagator trajectory,
+                             final double thrust, final double isp, final AdapterPropagator trajectory,
                              final boolean replanned) {
         this.model      = model;
         this.date       = date;
@@ -124,7 +124,7 @@ public class ScheduledManeuver {
     /** Get the trajectory to which this maneuver belongs.
      * @return trajectory
      */
-    public ManeuverAdapterPropagator getTrajectory() {
+    public AdapterPropagator getTrajectory() {
         return trajectory;
     }
 

@@ -12,6 +12,7 @@ import org.antlr.runtime.tree.Tree;
 import org.apache.commons.math.exception.util.LocalizedFormats;
 import org.apache.commons.math.util.FastMath;
 import org.orekit.errors.OrekitException;
+import org.orekit.forces.gravity.potential.PotentialCoefficientsProvider;
 
 import eu.eumetsat.skat.Skat;
 import eu.eumetsat.skat.control.SKControl;
@@ -113,9 +114,11 @@ public enum SupportedControlLaw {
             final double maxDistance      = parser.getDouble(node, ParameterKey.CONTROL_GROUND_TRACK_MAX_CROSS_TRACK_DISTANCE);
             final String fileName         = parser.getString(node, ParameterKey.CONTROL_GROUND_TRACK_GRID_FILE);
             final File gridFile = new File(new File(parser.getInputName()).getParent(), fileName);
+            final PotentialCoefficientsProvider gravityField = skat.getgravityField();
             return new GroundTrackGrid(name, controlled, skat.getSpacecraftIndex(controlled),
-                                       model, firstOffset, maxManeuvers, orbitsSeparation,
-                                       skat.getEarth(), readGridFile(gridFile), maxDistance, horizon);
+                                       model, firstOffset, maxManeuvers, orbitsSeparation, skat.getEarth(),
+                                       gravityField.getAe(), gravityField.getMu(), gravityField.getJ(false, 2)[2],
+                                       readGridFile(gridFile), maxDistance, horizon);
         }
 
         /** Read a grid file.
@@ -170,8 +173,10 @@ public enum SupportedControlLaw {
             final boolean ascending         = parser.getBoolean(node, ParameterKey.CONTROL_SOLAR_TIME_ASCENDING);
             final double solarTime          = parser.getDouble(node,  ParameterKey.CONTROL_SOLAR_TIME_SOLAR_TIME);
             final double solarTimeTolerance = parser.getDouble(node,  ParameterKey.CONTROL_SOLAR_TIME_SOLAR_TIME_TOLERANCE) / 60.0;
+            final PotentialCoefficientsProvider gravityField = skat.getgravityField();
             return new MeanLocalSolarTime(name, controlled, skat.getSpacecraftIndex(controlled),
                                           model, firstOffset, maxManeuvers, orbitsSeparation, skat.getEarth(),
+                                          gravityField.getAe(), gravityField.getMu(), gravityField.getJ(false, 2)[2],
                                           latitude, ascending, solarTime, solarTimeTolerance, horizon);
         }
 

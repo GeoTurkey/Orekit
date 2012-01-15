@@ -10,6 +10,7 @@ import org.apache.commons.math.util.MathUtils;
 import org.orekit.bodies.BodyShape;
 import org.orekit.errors.OrekitException;
 import org.orekit.errors.PropagationException;
+import org.orekit.forces.maneuvers.SmallManeuverAnalyticalModel;
 import org.orekit.frames.Frame;
 import org.orekit.frames.Transform;
 import org.orekit.orbits.EquinoctialOrbit;
@@ -18,16 +19,16 @@ import org.orekit.orbits.PositionAngle;
 import org.orekit.propagation.BoundedPropagator;
 import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
-import org.orekit.propagation.analytical.ManeuverAdapterPropagator;
+import org.orekit.propagation.analytical.AdapterPropagator;
 import org.orekit.propagation.events.EventDetector;
 import org.orekit.propagation.sampling.OrekitStepHandler;
 import org.orekit.propagation.sampling.OrekitStepInterpolator;
 import org.orekit.time.AbsoluteDate;
 import org.orekit.utils.Constants;
+import org.orekit.utils.SecularAndHarmonic;
 
 import eu.eumetsat.skat.control.AbstractSKControl;
 import eu.eumetsat.skat.strategies.ScheduledManeuver;
-import eu.eumetsat.skat.strategies.SecularAndHarmonic;
 import eu.eumetsat.skat.strategies.TunableManeuver;
 import eu.eumetsat.skat.utils.SkatException;
 import eu.eumetsat.skat.utils.SkatMessages;
@@ -240,7 +241,7 @@ public class ParabolicLongitude extends AbstractSKControl {
         final double tEndMt0     = end.durationFrom(fitStart.getDate()) + firstOffset;
 
         final ScheduledManeuver[] tuned;
-        final ManeuverAdapterPropagator adapterPropagator = new ManeuverAdapterPropagator(reference);
+        final AdapterPropagator adapterPropagator = new AdapterPropagator(reference);
         if (iteration == 0) {
             // we need to first define the number of maneuvers and their initial settings
 
@@ -308,7 +309,9 @@ public class ParabolicLongitude extends AbstractSKControl {
 
         // finalize propagator
         for (final ScheduledManeuver maneuver : tuned) {
-            adapterPropagator.addManeuver(maneuver.getDate(), maneuver.getDeltaV(), maneuver.getIsp());
+            adapterPropagator.addEffect(new SmallManeuverAnalyticalModel(maneuver.getStateBefore(),
+                                                                         maneuver.getDeltaV(),
+                                                                         maneuver.getIsp()));
         }
 
         return tuned;

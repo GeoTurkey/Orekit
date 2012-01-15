@@ -9,10 +9,11 @@ import org.apache.commons.math.util.FastMath;
 import org.orekit.bodies.CelestialBody;
 import org.orekit.bodies.OneAxisEllipsoid;
 import org.orekit.errors.OrekitException;
+import org.orekit.forces.maneuvers.SmallManeuverAnalyticalModel;
 import org.orekit.frames.Frame;
 import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
-import org.orekit.propagation.analytical.ManeuverAdapterPropagator;
+import org.orekit.propagation.analytical.AdapterPropagator;
 import org.orekit.propagation.events.EclipseDetector;
 import org.orekit.time.AbsoluteDate;
 import org.orekit.utils.Constants;
@@ -120,7 +121,7 @@ public class ManeuverEclipseConstraint implements ScenarioComponent {
                     // find the closest eclipse
                     final double period         = state.getKeplerianPeriod();
                     final EclipseSelector selector = new EclipseSelector(state.getFrame(), centralDate);
-                    final Propagator tmpPropagator = new ManeuverAdapterPropagator(maneuver.getTrajectory());
+                    final Propagator tmpPropagator = new AdapterPropagator(maneuver.getTrajectory());
                     tmpPropagator.addEventDetector(selector);
                     tmpPropagator.propagate(burnStart.shiftedBy(-1.5 * period), burnEnd.shiftedBy(1.5 * period));
                     if ((selector.getEntry() == null) || (selector.getExit() == null)) {
@@ -152,9 +153,9 @@ public class ManeuverEclipseConstraint implements ScenarioComponent {
                     final AbsoluteDate firstPartDate = centralDate.shiftedBy(offset);
 
                     // remove the original maneuver from the trajectory
-                    maneuver.getTrajectory().addManeuver(maneuver.getDate(),
-                                                         maneuver.getDeltaV().negate(),
-                                                         maneuver.getIsp());
+                    maneuver.getTrajectory().addEffect(new SmallManeuverAnalyticalModel(maneuver.getStateBefore(),
+                                                                                        maneuver.getDeltaV().negate(),
+                                                                                        maneuver.getIsp()));
 
                     // add the various parts of the split maneuver
                     for (int j = 0; j < nbParts; ++j) {
@@ -163,7 +164,9 @@ public class ManeuverEclipseConstraint implements ScenarioComponent {
                                                                           maneuver.getThrust(),
                                                                           maneuver.getIsp(), maneuver.getTrajectory(),
                                                                           false);
-                        m.getTrajectory().addManeuver(m.getDate(), m.getDeltaV(), m.getIsp());
+                        m.getTrajectory().addEffect(new SmallManeuverAnalyticalModel(m.getStateBefore(),
+                                                                                     m.getDeltaV(),
+                                                                                     m.getIsp()));
                         modified.add(m);
                     }
 

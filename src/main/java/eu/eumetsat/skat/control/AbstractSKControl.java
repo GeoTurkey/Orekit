@@ -9,7 +9,6 @@ import java.util.TreeSet;
 import org.apache.commons.math.analysis.UnivariateFunction;
 import org.apache.commons.math.analysis.solvers.BaseUnivariateRealSolver;
 import org.apache.commons.math.analysis.solvers.BracketingNthOrderBrentSolver;
-import org.apache.commons.math.analysis.solvers.UnivariateRealSolverUtils;
 import org.apache.commons.math.exception.NoBracketingException;
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math.util.FastMath;
@@ -18,7 +17,7 @@ import org.orekit.bodies.GeodeticPoint;
 import org.orekit.errors.OrekitException;
 import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
-import org.orekit.propagation.analytical.ManeuverAdapterPropagator;
+import org.orekit.propagation.analytical.AdapterPropagator;
 import org.orekit.time.AbsoluteDate;
 import org.orekit.utils.PVCoordinates;
 
@@ -255,7 +254,7 @@ public abstract class AbstractSKControl implements SKControl {
      */
     protected void changeTrajectory(final ScheduledManeuver[] maneuvers,
                                     final int from, final int to,
-                                    final ManeuverAdapterPropagator adapterPropagator) {
+                                    final AdapterPropagator adapterPropagator) {
         for (int i = from; i < to; ++i) {
             maneuvers[i] = new ScheduledManeuver(maneuvers[i].getModel(), maneuvers[i].getDate(),
                                                  maneuvers[i].getDeltaV(), maneuvers[i].getThrust(),
@@ -272,7 +271,7 @@ public abstract class AbstractSKControl implements SKControl {
      */
     protected void distributeDV(final double dV, final double dT,
                                 final ScheduledManeuver[] maneuvers,
-                                final ManeuverAdapterPropagator adapterPropagator) {
+                                final AdapterPropagator adapterPropagator) {
 
         final double inf = model.getDVInf();
         final double sup = model.getDVSup();
@@ -396,26 +395,102 @@ public abstract class AbstractSKControl implements SKControl {
                 span = shift;
             }
 
-            while (!UnivariateRealSolverUtils.isBracketing(latitudeFunction, -span, span)) {
+            double earliestPositive = Double.POSITIVE_INFINITY;
+            double latestPositive   = Double.NEGATIVE_INFINITY;
+            double earliestNegative = Double.POSITIVE_INFINITY;
+            double latestNegative   = Double.NEGATIVE_INFINITY;
+            do {
+                final double mValue = latitudeFunction.value(-span);
+                final double pValue = latitudeFunction.value(+span);
+                if (mValue <= 0) {
+                    earliestNegative = FastMath.min(earliestNegative, -span);
+                    latestNegative   = FastMath.max(latestNegative,   -span);
+                } else {
+                    earliestPositive = FastMath.min(earliestPositive, -span);
+                    latestPositive   = FastMath.max(latestPositive,   -span);
 
-                if (2 * span > maxShift) {
-                    // let the Apache Commons Math exception be thrown
-                    UnivariateRealSolverUtils.verifyBracketing(latitudeFunction, -span, span);
-                } else if (guessDate.shiftedBy(2 * span).compareTo(endDate) > 0) {
-                    // Out of range :
-                    return null;
+                }
+                if (pValue <= 0) {
+                    earliestNegative = FastMath.min(earliestNegative, +span);
+                    latestNegative   = FastMath.max(latestNegative,   +span);
+                } else {
+                    earliestPositive = FastMath.min(earliestPositive, +span);
+                    latestPositive   = FastMath.max(latestPositive,   +span);
+
                 }
 
-                // expand the search interval
-                span *= 2;
+                if ((Double.isInfinite(earliestNegative) && Double.isInfinite(latestNegative)) ||
+                    (Double.isInfinite(earliestPositive) && Double.isInfinite(latestPositive))) {
 
-            }
+                    if (guessDate.shiftedBy(2 * span).compareTo(endDate) > 0) {
+                        // out of range
+                        return null;
+                    } else {
+                        // expand the search interval
+                        span *= 2;
+                    }
 
-            // find the encounter in the bracketed interval
-            final BaseUnivariateRealSolver<UnivariateFunction> solver =
-                    new BracketingNthOrderBrentSolver(0.1, 5);
-            final double dt = solver.solve(1000, latitudeFunction,-span, span);
-            return propagator.propagate(guessDate.shiftedBy(dt));
+                } else {
+
+                    // find the latitude crossing in the bracketed interval
+                    final BaseUnivariateRealSolver<UnivariateFunction> solver =
+                            new BracketingNthOrderBrentSolver(0.1, 5);
+                    final double dEnEp = FastMath.abs(earliestPositive - earliestNegative);
+                    final double dEnLp = FastMath.abs(latestPositive   - earliestNegative);
+                    final double dLnEp = FastMath.abs(earliestPositive - latestNegative);
+                    final double dLnLp = FastMath.abs(latestPositive   - latestNegative);
+                    final double selectedNegative;
+                    final double selectedPositive;
+                    if (dEnEp < dEnLp) {
+                        if (dEnEp < dLnEp) {
+                            if (dEnEp < dLnLp) {
+                                selectedNegative = earliestNegative;
+                                selectedPositive = earliestPositive;
+                            } else {
+                                selectedNegative = latestNegative;
+                                selectedPositive = latestPositive;
+                            }
+                        } else {
+                            if (dLnEp < dLnLp) {
+                                selectedNegative = latestNegative;
+                                selectedPositive = earliestPositive;
+                            } else {
+                                selectedNegative = latestNegative;
+                                selectedPositive = latestPositive;
+                            }
+                        }
+                    } else {
+                        if (dEnLp < dLnEp) {
+                            if (dEnLp < dLnLp) {
+                                selectedNegative = earliestNegative;
+                                selectedPositive = latestPositive;
+                            } else {
+                                selectedNegative = latestNegative;
+                                selectedPositive = latestPositive;
+                            }
+                        } else {
+                            if (dLnEp < dLnLp) {
+                                selectedNegative = latestNegative;
+                                selectedPositive = earliestPositive;
+                            } else {
+                                selectedNegative = latestNegative;
+                                selectedPositive = latestPositive;
+                            }
+                        }
+                    }
+                    final double dt = (selectedNegative <= selectedPositive) ?
+                            solver.solve(1000, latitudeFunction, selectedNegative, selectedPositive) :
+                            solver.solve(1000, latitudeFunction, selectedPositive, selectedNegative);
+
+                    return propagator.propagate(guessDate.shiftedBy(dt));
+
+                }
+
+            } while (2 * span < maxShift);
+
+            // no bracketing found
+            throw new NoBracketingException(-span, span,
+                                            latitudeFunction.value(-span), latitudeFunction.value(+span));
 
         } catch (OrekitWrapperException owe) {
             throw owe.getWrappedException();

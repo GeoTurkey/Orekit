@@ -1,8 +1,6 @@
 /* Copyright 2011 Eumetsat */
 package eu.eumetsat.skat.strategies.leo;
 
-import java.io.IOException;
-import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,22 +9,21 @@ import org.apache.commons.math.util.FastMath;
 import org.apache.commons.math.util.MathUtils;
 import org.orekit.bodies.BodyShape;
 import org.orekit.errors.OrekitException;
-import org.orekit.orbits.CircularOrbit;
-import org.orekit.orbits.OrbitType;
-import org.orekit.orbits.PositionAngle;
+import org.orekit.forces.maneuvers.SmallManeuverAnalyticalModel;
 import org.orekit.propagation.BoundedPropagator;
 import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
-import org.orekit.propagation.analytical.ManeuverAdapterPropagator;
+import org.orekit.propagation.analytical.AdapterPropagator;
+import org.orekit.propagation.analytical.J2DifferentialEffect;
 import org.orekit.propagation.events.EventDetector;
 import org.orekit.propagation.sampling.OrekitStepHandler;
 import org.orekit.time.AbsoluteDate;
 import org.orekit.time.TimeScalesFactory;
 import org.orekit.utils.Constants;
+import org.orekit.utils.SecularAndHarmonic;
 
 import eu.eumetsat.skat.control.AbstractSKControl;
 import eu.eumetsat.skat.strategies.ScheduledManeuver;
-import eu.eumetsat.skat.strategies.SecularAndHarmonic;
 import eu.eumetsat.skat.strategies.TunableManeuver;
 import eu.eumetsat.skat.utils.SkatException;
 
@@ -97,6 +94,15 @@ public class MeanLocalSolarTime extends AbstractSKControl {
     /** Earth model. */
     private BodyShape earth;
 
+    /** Reference radius of the Earth for the potential model. */
+    private final double referenceRadius;
+
+    /** Central attraction coefficient. */
+    private double mu;
+
+    /** Un-normalized zonal coefficient. */
+    private double j2;
+
     /** Indicator for ascending crossing of latitude. */
     private boolean ascending;
 
@@ -105,12 +111,14 @@ public class MeanLocalSolarTime extends AbstractSKControl {
 
     /** Mean solar time model. */
     private SecularAndHarmonic mstModel;
-    private SecularAndHarmonic iModel;
-    private SecularAndHarmonic aModel;
-    private SecularAndHarmonic raanModel;
-    private double iRef;
+
+    /** Start of current cycle. */
     private AbsoluteDate cycleStart;
+
+    /** End of current cycle. */
     private AbsoluteDate cycleEnd;
+
+    /** Maneuver-free interval. */
     private AbsoluteDate[] freeInterval;
 
     /** Propagator. */
@@ -119,11 +127,9 @@ public class MeanLocalSolarTime extends AbstractSKControl {
     /** Dates of latitude crossings. */
     private final List<AbsoluteDate> crossings;
 
-    private PrintStream out;
-    private double[] fittedH0;
-    private double[] fittedHN1;
-    private double[] fittedHN2;
-    private double previousdeltaI;
+    /** Safety margin on mean solar time window. */
+    private final double safetyMargin;
+
     /** Simple constructor.
      * @param name name of the control law
      * @param controlledName name of the controlled spacecraft
@@ -139,14 +145,18 @@ public class MeanLocalSolarTime extends AbstractSKControl {
      * @param solarTime target solar time (in fractional hour, i.e 9h30 = 9.5)
      * @param solarTimetolerance solar time tolerance (in hours)
      * @param horizon time horizon duration
+     * @param referenceRadius reference radius of the Earth for the potential model (m)
+     * @param mu central attraction coefficient (m<sup>3</sup>/s<sup>2</sup>)
+     * @param j2 un-normalized zonal coefficient (about +1.08e-3 for Earth)
      * @exception OrekitException if the UTC-TAI correction cannot be loaded
      */
     public MeanLocalSolarTime(final String name, final String controlledName, final int controlledIndex,
                               final TunableManeuver model, final double firstOffset,
-                              final int maxManeuvers, final int orbitsSeparation,
-                              final BodyShape earth, final double latitude, final boolean ascending,
+                              final int maxManeuvers, final int orbitsSeparation, final BodyShape earth,
+                              final double referenceRadius, final double mu, final double j2,
+                              final double latitude, final boolean ascending,
                               final double solarTime, final double solarTimetolerance, final double horizon)
-        throws OrekitException {
+       throws OrekitException {
         super(name, model, controlledName, controlledIndex, null, -1,
               solarTime - solarTimetolerance, solarTime + solarTimetolerance,
               horizon * Constants.JULIAN_DAY);
@@ -155,30 +165,18 @@ public class MeanLocalSolarTime extends AbstractSKControl {
         this.orbitsSeparation = orbitsSeparation;
         this.latitude         = latitude;
         this.earth            = earth;
+        this.referenceRadius  = referenceRadius;
+        this.mu               = mu;
+        this.j2               = j2;
         this.ascending        = ascending;
         this.gmod             = new GMODFrame();
-        this.iRef             = Double.NaN;
+        this.safetyMargin     = 0.1 * solarTimetolerance;
 
         mstModel = new SecularAndHarmonic(2,
                                           new double[] {
                                               SUN_PULSATION, 2 * SUN_PULSATION,
                                               BASE_PULSATION, 2 * BASE_PULSATION
                                           });
-        iModel = new SecularAndHarmonic(2,
-                                        new double[] {
-                                            SUN_PULSATION, 2 * SUN_PULSATION,
-                                            BASE_PULSATION, 2 * BASE_PULSATION
-                                        });
-        aModel = new SecularAndHarmonic(2,
-                                        new double[] {
-                                            SUN_PULSATION, 2 * SUN_PULSATION,
-                                            BASE_PULSATION, 2 * BASE_PULSATION
-                                        });
-        raanModel = new SecularAndHarmonic(2,
-                                        new double[] {
-                                            SUN_PULSATION, 2 * SUN_PULSATION,
-                                            BASE_PULSATION, 2 * BASE_PULSATION
-                                        });
 
         // rough order of magnitudes values for initialization purposes
         mstModel.resetFitting(AbsoluteDate.J2000_EPOCH,
@@ -186,30 +184,8 @@ public class MeanLocalSolarTime extends AbstractSKControl {
                                   solarTime, -1.0e-10, -1.0e-17,
                                   1.0e-3, 1.0e-3, 1.0e-5, 1.0e-5, 1.0e-5, 1.0e-5, 1.0e-5, 1.0e-5
                               });
-        iModel.resetFitting(AbsoluteDate.J2000_EPOCH,
-                            new double[] {
-                                0.5 * FastMath.PI, -1.0e-10, -1.0e-17,
-                                1.0e-3, 1.0e-3, 1.0e-5, 1.0e-5, 1.0e-5, 1.0e-5, 1.0e-5, 1.0e-5
-                            });
-        aModel.resetFitting(AbsoluteDate.J2000_EPOCH,
-                            new double[] {
-                                7200000, -1.0e-10, -1.0e-17,
-                                1.0e-3, 1.0e-3, 1.0e-5, 1.0e-5, 1.0e-5, 1.0e-5, 1.0e-5, 1.0e-5
-                            });
-        raanModel.resetFitting(AbsoluteDate.J2000_EPOCH,
-                            new double[] {
-                                0.5 * FastMath.PI, -1.0e-10, -1.0e-17,
-                                1.0e-3, 1.0e-3, 1.0e-5, 1.0e-5, 1.0e-5, 1.0e-5, 1.0e-5, 1.0e-5
-                            });
 
         crossings = new ArrayList<AbsoluteDate>();
-
-        try {
-            // TODO remove this trace
-            out = new PrintStream("/home/luc/x.dat");
-        } catch (IOException ioe) {
-            throw new RuntimeException(ioe);
-        }
 
     }
 
@@ -224,29 +200,25 @@ public class MeanLocalSolarTime extends AbstractSKControl {
         this.cycleStart  = start;
         this.cycleEnd    = end;
         resetMarginsChecks();
-        if (Double.isNaN(iRef)) {
-            // rough initialization, will be updated with proper value later
-            iRef = propagator.getInitialState().getI();
-        }
+        crossings.clear();
 
         // select a long maneuver-free interval for fitting
         freeInterval = getManeuverFreeInterval(maneuvers, fixedManeuvers, start, end);
+        double period   = propagator.getInitialState().getKeplerianPeriod();
+        if (freeInterval[1].durationFrom(freeInterval[0]) < period) {
+            // if cycle is too short, assume limits are not violated
+            checkMargins(0.5 * (getMin() + getMax()));
+            return;
+        }
 
         // fit the mean solar time model
-        crossings.clear();
-
-        double period   = propagator.getInitialState().getKeplerianPeriod();
         double stepSize = period / 100;
         SpacecraftState crossing =
                 findFirstCrossing(latitude, ascending, earth, freeInterval[0], freeInterval[1], stepSize, propagator);
+        double mst = meanSolarTime(crossing);
         mstModel.resetFitting(freeInterval[0], mstModel.getFittedParameters());
-        mstModel.addPoint(crossing.getDate(), meanSolarTime(crossing));
-        iModel.resetFitting(freeInterval[0], iModel.getFittedParameters());
-        iModel.addPoint(crossing.getDate(), crossing.getI());
-        aModel.resetFitting(freeInterval[0], aModel.getFittedParameters());
-        aModel.addPoint(crossing.getDate(), crossing.getA());
-        raanModel.resetFitting(freeInterval[0], aModel.getFittedParameters());
-        raanModel.addPoint(crossing.getDate(), ((CircularOrbit) crossing.getOrbit()).getRightAscensionOfAscendingNode());
+        mstModel.addPoint(crossing.getDate(), mst);
+        checkMargins(mst);
 
         // find all other latitude crossings from regular schedule
         while (crossing != null && crossing.getDate().shiftedBy(period).compareTo(freeInterval[1]) < 0) {
@@ -258,12 +230,9 @@ public class MeanLocalSolarTime extends AbstractSKControl {
 
                 // Store current point
                 crossings.add(crossing.getDate());
-                mstModel.addPoint(crossing.getDate(), meanSolarTime(crossing));
-                CircularOrbit c = (CircularOrbit) OrbitType.CIRCULAR.convertType(crossing.getOrbit());
-                iModel.addPoint(crossing.getDate(), c.getI());
-                aModel.addPoint(crossing.getDate(), c.getA());
-                out.println(crossing.getDate() + " " + meanSolarTime(crossing));
-                raanModel.addPoint(crossing.getDate(), ((CircularOrbit) crossing.getOrbit()).getRightAscensionOfAscendingNode());
+                mst = meanSolarTime(crossing);
+                mstModel.addPoint(crossing.getDate(), mst);
+                checkMargins(mst);
 
                 // use the same time separation to pinpoint next crossing
                 period = crossing.getDate().durationFrom(previous);
@@ -272,19 +241,6 @@ public class MeanLocalSolarTime extends AbstractSKControl {
 
         }
         mstModel.fit();
-        iModel.fit();
-        aModel.fit();
-        raanModel.fit();
-
-        if (iteration == 0) {
-            fittedH0 = mstModel.getFittedParameters();
-            fittedHN1 = fittedH0;
-            fittedHN2 = fittedH0;
-        } else {
-            fittedHN1 = fittedHN2;
-            fittedHN2 = mstModel.getFittedParameters();            
-        }
-        out.println("&");
 
     }
 
@@ -307,48 +263,6 @@ public class MeanLocalSolarTime extends AbstractSKControl {
         return 12.0 * (1.0 + dAlpha / FastMath.PI);
 
     }
-//
-//    /** Update the reference inclination.
-//     */
-//    private void updateIRef() {
-//
-//        UnivariateFunction meanHdot = new UnivariateFunction() {
-//            public double value(double x) {
-//                AbsoluteDate date = mstModel.getReferenceDate().shiftedBy(x);
-//                return mstModel.meanDerivative(date, 2, 2);
-//            }
-//        };
-//
-//        // find the date at which hDot = 0
-//        double[] fittedH = mstModel.getFittedParameters();
-//        System.out.println("# " + fittedH[0] + " + " + fittedH[1] + " * $t + " + fittedH[2] + " * $t * $t + " +
-//                fittedH[3] + " * cos($t * " + SUN_PULSATION       + ") + " +
-//                fittedH[4] + " * sin($t * " + SUN_PULSATION       + ") + " +
-//                fittedH[5] + " * cos($t * " + (2 * SUN_PULSATION) + ") + " +
-//                fittedH[6] + " * sin($t * " + (2 * SUN_PULSATION) + ")");
-//        double xA = -0.5 * fittedH[1] / fittedH[2];
-//        double yA = meanHdot.value(xA);
-//        double xRoot = Double.NaN;
-//        if (Precision.equals(yA, 0.0, 1)) {
-//            // we have already found the date at which hDot = 0
-//            xRoot = xA;
-//        } else {
-//            // try to bracket the root
-//            for (int i = 0; Double.isNaN(xRoot) && i < 100; ++i) {
-//                double xB = xA - (2 << (i + 2)) * yA / fittedH[2];
-//                double yB = meanHdot.value(xB);
-//                if (yA * yB <= 0) {
-//                    // we have bracketed the root
-//                    UnivariateRealSolver solver = new BracketingNthOrderBrentSolver(1.0e-3, 5);
-//                    xRoot = solver.solve(1000, meanHdot, FastMath.min(xA, xB), FastMath.max(xA, xB));
-//                }
-//            }
-//        }
-//
-//        // the reference inclination is the inclination when hDot = 0
-//        iRef = iModel.meanValue(mstModel.getReferenceDate().shiftedBy(xRoot), 2, 2);
-//
-//    }
 
     /** {@inheritDoc} */
     public ScheduledManeuver[] tuneManeuvers(final ScheduledManeuver[] tunables,
@@ -369,12 +283,12 @@ public class MeanLocalSolarTime extends AbstractSKControl {
                 if (crossingMst <= hMin || crossingMst >= hMax) {
                     // find the first available node that is in eclipse for maneuver
                     final double stepSize = period / 100;
-                    AbsoluteDate search = crossings.get(i).shiftedBy(-2 * period);
+                    AbsoluteDate search = crossings.get(i).shiftedBy(Constants.JULIAN_DAY);
                     if (search.durationFrom(cycleStart) <= period) {
                         search = cycleStart.shiftedBy(period);
                     }
                     nodeState = findLatitudeCrossing(latitude, earth, search, freeInterval[1],
-                                                     stepSize, period / 8, propagator);
+                                                     stepSize, period, propagator);
                     final double nodeMst = meanSolarTime(nodeState);
                     if (nodeMst >= 6.0 && nodeMst <= 18.0) {
                         // wrong node, it is under Sun light, select the next one
@@ -402,50 +316,8 @@ public class MeanLocalSolarTime extends AbstractSKControl {
         // simplify mean model to a single quadratic (this includes the
         // 6 months long period, which may be larger than the pure secular terms
         // at some times)
-        final double[] mst =
-                mstModel.approximateAsPolynomialOnly(2, nodeState.getDate(), 2, 2, nodeState.getDate(), freeInterval[1], period);
-        double[] fittedH = mstModel.getFittedParameters();
-        System.out.println("# x = ($t + " + mstModel.getReferenceDate().durationFrom(AbsoluteDate.JULIAN_EPOCH) + ") / 86400");
-        System.out.println("# mean h = " + fittedH[0] + " + " + fittedH[1] + " * $t + " + fittedH[2] + " * $t * $t + " +
-                fittedH[3] + " * cos($t * " + SUN_PULSATION       + ") + " +
-                fittedH[4] + " * sin($t * " + SUN_PULSATION       + ") + " +
-                fittedH[5] + " * cos($t * " + (2 * SUN_PULSATION) + ") + " +
-                fittedH[6] + " * sin($t * " + (2 * SUN_PULSATION) + ")");
-        System.out.println("# x = ($t + " + nodeState.getDate().durationFrom(AbsoluteDate.JULIAN_EPOCH) + ") / 86400");
-        System.out.println("# simplified h = " + mst[0] + " + " + mst[1] + " * $t + " + mst[2] + " * $t * $t");
-        final double[] pi =
-                iModel.approximateAsPolynomialOnly(2, nodeState.getDate(), 2, 2, nodeState.getDate(), freeInterval[1], period);
-        double[] fittedI = iModel.getFittedParameters();
-        System.out.println("# x = ($t + " + mstModel.getReferenceDate().durationFrom(AbsoluteDate.JULIAN_EPOCH) + ") / 86400");
-        System.out.println("# mean i = " + fittedI[0] + " + " + fittedI[1] + " * $t + " + fittedI[2] + " * $t * $t + " +
-                fittedI[3] + " * cos($t * " + SUN_PULSATION       + ") + " +
-                fittedI[4] + " * sin($t * " + SUN_PULSATION       + ") + " +
-                fittedI[5] + " * cos($t * " + (2 * SUN_PULSATION) + ") + " +
-                fittedI[6] + " * sin($t * " + (2 * SUN_PULSATION) + ")");
-        System.out.println("# x = ($t + " + nodeState.getDate().durationFrom(AbsoluteDate.JULIAN_EPOCH) + ") / 86400");
-        System.out.println("# simplified i = " + pi[0] + " + " + pi[1] + " * $t + " + pi[2] + " * $t * $t");
-        final double[] pa =
-                aModel.approximateAsPolynomialOnly(2, nodeState.getDate(), 2, 2, nodeState.getDate(), freeInterval[1], period);
-        double[] fittedA = aModel.getFittedParameters();
-        System.out.println("# x = ($t + " + mstModel.getReferenceDate().durationFrom(AbsoluteDate.JULIAN_EPOCH) + ") / 86400");
-        System.out.println("# mean a = " + fittedA[0] + " + " + fittedA[1] + " * $t + " + fittedA[2] + " * $t * $t + " +
-                fittedA[3] + " * cos($t * " + SUN_PULSATION       + ") + " +
-                fittedA[4] + " * sin($t * " + SUN_PULSATION       + ") + " +
-                fittedA[5] + " * cos($t * " + (2 * SUN_PULSATION) + ") + " +
-                fittedA[6] + " * sin($t * " + (2 * SUN_PULSATION) + ")");
-        System.out.println("# x = ($t + " + nodeState.getDate().durationFrom(AbsoluteDate.JULIAN_EPOCH) + ") / 86400");
-        System.out.println("# simplified a = " + pa[0] + " + " + pa[1] + " * $t + " + pa[2] + " * $t * $t");
-        final double[] pr =
-                raanModel.approximateAsPolynomialOnly(2, nodeState.getDate(), 2, 2, nodeState.getDate(), freeInterval[1], period);
-        double[] fittedR = raanModel.getFittedParameters();
-        System.out.println("# x = ($t + " + mstModel.getReferenceDate().durationFrom(AbsoluteDate.JULIAN_EPOCH) + ") / 86400");
-        System.out.println("# mean raan = " + fittedR[0] + " + " + fittedR[1] + " * $t + " + fittedR[2] + " * $t * $t + " +
-                fittedR[3] + " * cos($t * " + SUN_PULSATION       + ") + " +
-                fittedR[4] + " * sin($t * " + SUN_PULSATION       + ") + " +
-                fittedR[5] + " * cos($t * " + (2 * SUN_PULSATION) + ") + " +
-                fittedR[6] + " * sin($t * " + (2 * SUN_PULSATION) + ")");
-        System.out.println("# x = ($t + " + nodeState.getDate().durationFrom(AbsoluteDate.JULIAN_EPOCH) + ") / 86400");
-        System.out.println("# simplified raan = " + pr[0] + " + " + pr[1] + " * $t + " + pr[2] + " * $t * $t");
+        final double[] mst = mstModel.approximateAsPolynomialOnly(2, nodeState.getDate(), 2, 2,
+                                                                  nodeState.getDate(), freeInterval[1], period);
 
         double newHdot;
         if ((mst[2] < 0 && mst[0] > hMax) || (mst[2] > 0 && mst[0] < hMin)) {
@@ -454,7 +326,7 @@ public class MeanLocalSolarTime extends AbstractSKControl {
             // the current cycle is already bad, we set up a target to start a new cycle
             // at time horizon with good initial conditions, and reach this target by changing hDot(t0)
             final double targetT = cycleEnd.durationFrom(nodeState.getDate()) + firstOffset;
-            final double targetH = (mst[2] < 0) ? hMin : hMax;
+            final double targetH = (mst[2] < 0) ? (hMin + safetyMargin) : (hMax - safetyMargin);
             newHdot = (targetH - mst[0]) / targetT - mst[2] * targetT;
 
         } else {
@@ -467,10 +339,22 @@ public class MeanLocalSolarTime extends AbstractSKControl {
             final boolean intermediateExit = tPeak > 0 && tPeak < finalT && (hPeak > hMax || hPeak < hMin);
             final boolean finalExit        = finalH >= hMax || finalH <= hMin;
             if (intermediateExit || finalExit) {
-                // mean solar time exits the window limit near a parabola peak
+                // mean solar time exits the window limits
 
                 // we target a future mean solar time peak osculating window boundary
-                final double targetH = (mst[2] <= 0) ? hMax : hMin;
+                // (taking a safety margin into account if possible)
+                double targetH;
+                if (mst[2] <= 0) {
+                    targetH = hMax - safetyMargin;
+                    if (mst[0] >= targetH) {
+                        targetH = hMax;
+                    }
+                } else {
+                    targetH = hMin + safetyMargin;
+                    if (mst[0] <= targetH) {
+                        targetH = hMin;
+                    }
+                }
                 newHdot = FastMath.copySign(FastMath.sqrt(4 * mst[2] * (mst[0] - targetH)),
                                             (tPeak > 0) ? mst[1] : -mst[1]);
 
@@ -491,19 +375,14 @@ public class MeanLocalSolarTime extends AbstractSKControl {
         // hDot = raanDot - alphaDot. Raan time derivative due to J2 is proportional to cos(i),
         // so hDot = k cos(i) - alphaDot (with both k and cos(i) negative for sun synchronous
         // orbits so hDot is close to zero) and hence dhDot / di = -k sin (i) = -(alphaDot + hDot) tan(i)
-        final double meanI      = iModel.meanValue(nodeState.getDate(), 2, 2);
-        final double meanA      = aModel.meanValue(nodeState.getDate(), 2, 2);
-        final double meanR      = raanModel.meanValue(nodeState.getDate(), 2, 2);
-        final double dhRadDotDi = -(2 * FastMath.PI / Constants.JULIAN_YEAR + mst[1]) * FastMath.tan(meanI);
+        final double dhRadDotDi = -(2 * FastMath.PI / Constants.JULIAN_YEAR + mst[1]) * FastMath.tan(nodeState.getI());
         final double dhDotDi    = 12 * dhRadDotDi / FastMath.PI;
 
         // compute inclination offset needed to achieve station-keeping target
         final double deltaI = (newHdot - mst[1]) / dhDotDi;
-        System.out.println(" newHdot = " + newHdot + ", mst[1] = " + mst[1] + ", deltaHDot = " + (newHdot - mst[1]) +
-                           ", mean I = " + meanI + ", mean a = " + meanA + ", mean Omega = " + meanR + ", deltaI = " + deltaI);
 
         final ScheduledManeuver[] tuned;
-        final ManeuverAdapterPropagator adapterPropagator = new ManeuverAdapterPropagator(reference);
+        final AdapterPropagator adapterPropagator = new AdapterPropagator(reference);
         if (iteration == 0) {
             // we need to first define the number of maneuvers and their initial settings
 
@@ -513,18 +392,19 @@ public class MeanLocalSolarTime extends AbstractSKControl {
                                         v.getNorm() * deltaI;
 
             // compute the number of maneuvers required
+            final double separation = orbitsSeparation * nodeState.getKeplerianPeriod();
             final TunableManeuver model = getModel();
             final double limitDV = (totalDeltaV < 0) ? model.getDVInf() : model.getDVSup();
-            final int    nMan    = FastMath.min(maxManeuvers,
-                                                (int) FastMath.ceil(FastMath.abs(totalDeltaV / limitDV)));
-            final double deltaV  = FastMath.max(model.getDVInf(),
-                                                FastMath.min(model.getDVSup(), totalDeltaV / nMan));
+            int nMan = FastMath.min(maxManeuvers, (int) FastMath.ceil(FastMath.abs(totalDeltaV / limitDV)));
+            while (nodeState.getDate().shiftedBy((nMan - 1) * separation).getDate().compareTo(cycleEnd) >= 0) {
+                --nMan;
+            }
+            final double deltaV = FastMath.max(model.getDVInf(), FastMath.min(model.getDVSup(), totalDeltaV / nMan));
 
             tuned = new ScheduledManeuver[tunables.length + nMan];
             System.arraycopy(tunables, 0, tuned, 0, tunables.length);
             changeTrajectory(tuned, 0, tunables.length, adapterPropagator);
 
-            final double separation = orbitsSeparation * nodeState.getKeplerianPeriod();
 
             // add the new maneuvers
             for (int i = 0; i < nMan; ++i) {
@@ -552,7 +432,13 @@ public class MeanLocalSolarTime extends AbstractSKControl {
 
         // finalize propagator
         for (final ScheduledManeuver maneuver : tuned) {
-            adapterPropagator.addManeuver(maneuver.getDate(), maneuver.getDeltaV(), maneuver.getIsp());
+            final SpacecraftState state = maneuver.getStateBefore();
+            AdapterPropagator.DifferentialEffect directEffect =
+                    new SmallManeuverAnalyticalModel(state, maneuver.getDeltaV(), maneuver.getIsp());
+            AdapterPropagator.DifferentialEffect resultingEffect =
+                    new J2DifferentialEffect(state, directEffect, false, referenceRadius, mu, j2);
+            adapterPropagator.addEffect(directEffect);
+            adapterPropagator.addEffect(resultingEffect);
         }
 
         return tuned;

@@ -13,7 +13,7 @@ import org.orekit.forces.maneuvers.ImpulseManeuver;
 import org.orekit.propagation.BoundedPropagator;
 import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
-import org.orekit.propagation.analytical.ManeuverAdapterPropagator;
+import org.orekit.propagation.analytical.AdapterPropagator;
 import org.orekit.propagation.events.DateDetector;
 import org.orekit.propagation.events.EventDetector;
 import org.orekit.propagation.numerical.NumericalPropagator;
@@ -140,9 +140,9 @@ public class ControlLoop implements ScenarioComponent {
             for (int iter = 0; iter < maxIter && !converged; ++iter) {
 
                 // compute the control laws
-                final ManeuverAdapterPropagator propagator;
+                final AdapterPropagator propagator;
                 if (maneuvers.length == 0) {
-                    propagator = new ManeuverAdapterPropagator(reference);
+                    propagator = new AdapterPropagator(reference);
                 } else {
                     propagator = maneuvers[0].getTrajectory();
                 }

@@ -9,22 +9,23 @@ import org.apache.commons.math.util.MathUtils;
 import org.orekit.bodies.CelestialBody;
 import org.orekit.errors.OrekitException;
 import org.orekit.errors.PropagationException;
+import org.orekit.forces.maneuvers.SmallManeuverAnalyticalModel;
 import org.orekit.orbits.EquinoctialOrbit;
 import org.orekit.orbits.OrbitType;
 import org.orekit.propagation.BoundedPropagator;
 import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
-import org.orekit.propagation.analytical.ManeuverAdapterPropagator;
+import org.orekit.propagation.analytical.AdapterPropagator;
 import org.orekit.propagation.events.EventDetector;
 import org.orekit.propagation.sampling.OrekitStepHandler;
 import org.orekit.propagation.sampling.OrekitStepInterpolator;
 import org.orekit.time.AbsoluteDate;
 import org.orekit.utils.Constants;
 import org.orekit.utils.PVCoordinates;
+import org.orekit.utils.SecularAndHarmonic;
 
 import eu.eumetsat.skat.control.AbstractSKControl;
 import eu.eumetsat.skat.strategies.ScheduledManeuver;
-import eu.eumetsat.skat.strategies.SecularAndHarmonic;
 import eu.eumetsat.skat.strategies.TunableManeuver;
 
 /**
@@ -232,7 +233,7 @@ public class EccentricityCircle extends AbstractSKControl {
             final double dV  = 0.5 * FastMath.hypot(deX, deY) * vs;
 
             final ScheduledManeuver[] tuned;
-            final ManeuverAdapterPropagator adapterPropagator = new ManeuverAdapterPropagator(reference);
+            final AdapterPropagator adapterPropagator = new AdapterPropagator(reference);
 
             // try to select two in-plane maneuvers we can adjust
             final int[] indices = selectManeuversPair(tunables);
@@ -312,13 +313,17 @@ public class EccentricityCircle extends AbstractSKControl {
             final ScheduledManeuver m0 = new ScheduledManeuver(model, t0, new Vector3D(trimmed[0], model.getDirection()),
                                                                model.getCurrentThrust(), model.getCurrentISP(),
                                                                adapterPropagator, false);
-            adapterPropagator.addManeuver(m0.getDate(), m0.getDeltaV(), m0.getIsp());
+            adapterPropagator.addEffect(new SmallManeuverAnalyticalModel(m0.getStateBefore(),
+                                                                         m0.getDeltaV(),
+                                                                         m0.getIsp()));
             tuned[indices[0]] = m0;
 
             final ScheduledManeuver m1 = new ScheduledManeuver(model, t1, new Vector3D(trimmed[1], model.getDirection()),
                                                                model.getCurrentThrust(), model.getCurrentISP(),
                                                                adapterPropagator, false);
-            adapterPropagator.addManeuver(m1.getDate(), m1.getDeltaV(), m1.getIsp());
+            adapterPropagator.addEffect(new SmallManeuverAnalyticalModel(m1.getStateBefore(),
+                                                                         m1.getDeltaV(),
+                                                                         m1.getIsp()));
             tuned[indices[1]] = m1;
 
 
@@ -331,7 +336,9 @@ public class EccentricityCircle extends AbstractSKControl {
                                                   tuned[i].getIsp(), adapterPropagator,
                                                   tuned[i].isReplanned());
                     tuned[i] = maneuver;
-                    adapterPropagator.addManeuver(maneuver.getDate(), maneuver.getDeltaV(), maneuver.getIsp());
+                    adapterPropagator.addEffect(new SmallManeuverAnalyticalModel(maneuver.getStateBefore(),
+                                                                                 maneuver.getDeltaV(),
+                                                                                 maneuver.getIsp()));
                 }
             }
 
