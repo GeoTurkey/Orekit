@@ -3,13 +3,10 @@ package eu.eumetsat.skat.realization;
 
 import java.util.List;
 
-import org.apache.commons.math.util.FastMath;
 import org.orekit.errors.OrekitException;
 import org.orekit.forces.ForceModel;
 import org.orekit.forces.maneuvers.ConstantThrustManeuver;
 import org.orekit.forces.maneuvers.ImpulseManeuver;
-import org.orekit.orbits.CircularOrbit;
-import org.orekit.orbits.OrbitType;
 import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
 import org.orekit.propagation.events.DateDetector;
@@ -46,9 +43,6 @@ public class Propagation implements ScenarioComponent {
     /**  Truncation delay after maneuver. */
     private final double truncationManeuverDelay;
 
-    /** Indicator for compensating long burns inefficiency. */
-    private boolean compensateLongBurn;
-
     /** Cycle end date. */
     private AbsoluteDate cycleEnd;
 
@@ -57,16 +51,13 @@ public class Propagation implements ScenarioComponent {
      * @param randomizers orbit propagator randomizers to use for each spacecraft
      * @param truncationManeuverName name of the maneuver triggering cycle truncation (may be null)
      * @param truncationManeuverDelay truncation delay after maneuver
-     * @param compensateLongBurn if true, long burn inefficiency should be compensated
      */
     public Propagation(final int[] spacecraftIndices, final PropagatorRandomizer[] randomizers,
-                       final String truncationManeuverName, final double truncationManeuverDelay,
-                       final boolean compensateLongBurn) {
+                       final String truncationManeuverName, final double truncationManeuverDelay) {
         this.spacecraftIndices       = spacecraftIndices.clone();
         this.randomizers             = randomizers.clone();
         this.truncationManeuverName  = truncationManeuverName;
         this.truncationManeuverDelay = truncationManeuverDelay;
-        this.compensateLongBurn      = compensateLongBurn;
     }
 
     /** {@inheritDoc} */
@@ -117,24 +108,6 @@ public class Propagation implements ScenarioComponent {
             for (final ScheduledManeuver maneuver : performed) {
                 if (maneuver.getDeltaV().getNorm() > 1.0e-10) {
                     final double nominalDuration = maneuver.getDuration(maneuver.getStateBefore().getMass());
-                    final double inefficiency;
-                    if (compensateLongBurn) {
-                        // this is a long out of plane maneuver, we adapt Isp to reflect
-                        // the fact more mass will be consumed to achieve the same velocity increment
-
-                        final SpacecraftState startState = maneuver.getState(-0.5 * nominalDuration);
-                        final CircularOrbit startOrbit   = (CircularOrbit) (OrbitType.CIRCULAR.convertType(startState.getOrbit()));
-                        final double alphaS              = startOrbit.getAlphaV();
-
-                        final SpacecraftState endState   = maneuver.getState(+0.5 * nominalDuration);
-                        final CircularOrbit endOrbit     = (CircularOrbit) (OrbitType.CIRCULAR.convertType(endState.getOrbit()));
-                        final double alphaE              = endOrbit.getAlphaV();
-
-                        inefficiency = (FastMath.sin(alphaE) - FastMath.sin(alphaS)) / (alphaE - alphaS);
-
-                    } else {
-                        inefficiency = 1.0;
-                    }
                     if (propagator instanceof NumericalPropagator) {
                         final ForceModel ctm = new ConstantThrustManeuver(maneuver.getDate().shiftedBy(-0.5 * nominalDuration),
                                                                           nominalDuration,
@@ -145,7 +118,7 @@ public class Propagation implements ScenarioComponent {
                     } else {
                         propagator.addEventDetector(new ImpulseManeuver(new DateDetector(maneuver.getDate()),
                                                                         maneuver.getDeltaV(),
-                                                                        inefficiency * maneuver.getIsp()));
+                                                                        maneuver.getIsp()));
                     }
                 }
             }

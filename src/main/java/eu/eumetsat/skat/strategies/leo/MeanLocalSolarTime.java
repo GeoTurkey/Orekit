@@ -9,7 +9,10 @@ import org.apache.commons.math.util.FastMath;
 import org.apache.commons.math.util.MathUtils;
 import org.orekit.bodies.BodyShape;
 import org.orekit.errors.OrekitException;
+import org.orekit.errors.PropagationException;
 import org.orekit.forces.maneuvers.SmallManeuverAnalyticalModel;
+import org.orekit.orbits.CircularOrbit;
+import org.orekit.orbits.OrbitType;
 import org.orekit.propagation.BoundedPropagator;
 import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
@@ -130,6 +133,9 @@ public class MeanLocalSolarTime extends AbstractSKControl {
     /** Safety margin on mean solar time window. */
     private final double safetyMargin;
 
+    /** Indicator for compensating long burns inefficiency. */
+    private boolean compensateLongBurn;
+
     /** Simple constructor.
      * @param name name of the control law
      * @param controlledName name of the controlled spacecraft
@@ -139,15 +145,16 @@ public class MeanLocalSolarTime extends AbstractSKControl {
      * @param maxManeuvers maximum number of maneuvers to set up in one cycle
      * @param orbitsSeparation minimum time between split parts in number of orbits
      * @param earth Earth model
+     * @param referenceRadius reference radius of the Earth for the potential model (m)
+     * @param mu central attraction coefficient (m<sup>3</sup>/s<sup>2</sup>)
+     * @param j2 un-normalized zonal coefficient (about +1.08e-3 for Earth)
      * @param latitude latitude at which solar time should be computed
      * @param ascending if true, solar time is computed when crossing the
      * specified latitude from south to north
      * @param solarTime target solar time (in fractional hour, i.e 9h30 = 9.5)
      * @param solarTimetolerance solar time tolerance (in hours)
      * @param horizon time horizon duration
-     * @param referenceRadius reference radius of the Earth for the potential model (m)
-     * @param mu central attraction coefficient (m<sup>3</sup>/s<sup>2</sup>)
-     * @param j2 un-normalized zonal coefficient (about +1.08e-3 for Earth)
+     * @param compensateLongBurn if true, long burn inefficiency should be compensated
      * @exception OrekitException if the UTC-TAI correction cannot be loaded
      */
     public MeanLocalSolarTime(final String name, final String controlledName, final int controlledIndex,
@@ -155,22 +162,24 @@ public class MeanLocalSolarTime extends AbstractSKControl {
                               final int maxManeuvers, final int orbitsSeparation, final BodyShape earth,
                               final double referenceRadius, final double mu, final double j2,
                               final double latitude, final boolean ascending,
-                              final double solarTime, final double solarTimetolerance, final double horizon)
+                              final double solarTime, final double solarTimetolerance, final double horizon,
+                              final boolean compensateLongBurn)
        throws OrekitException {
         super(name, model, controlledName, controlledIndex, null, -1,
               solarTime - solarTimetolerance, solarTime + solarTimetolerance,
               horizon * Constants.JULIAN_DAY);
-        this.firstOffset      = firstOffset;
-        this.maxManeuvers     = maxManeuvers;
-        this.orbitsSeparation = orbitsSeparation;
-        this.latitude         = latitude;
-        this.earth            = earth;
-        this.referenceRadius  = referenceRadius;
-        this.mu               = mu;
-        this.j2               = j2;
-        this.ascending        = ascending;
-        this.gmod             = new GMODFrame();
-        this.safetyMargin     = 0.1 * solarTimetolerance;
+        this.firstOffset        = firstOffset;
+        this.maxManeuvers       = maxManeuvers;
+        this.orbitsSeparation   = orbitsSeparation;
+        this.latitude           = latitude;
+        this.earth              = earth;
+        this.referenceRadius    = referenceRadius;
+        this.mu                 = mu;
+        this.j2                 = j2;
+        this.ascending          = ascending;
+        this.gmod               = new GMODFrame();
+        this.safetyMargin       = 0.1 * solarTimetolerance;
+        this.compensateLongBurn = compensateLongBurn;
 
         mstModel = new SecularAndHarmonic(2,
                                           new double[] {
@@ -430,6 +439,14 @@ public class MeanLocalSolarTime extends AbstractSKControl {
 
         }
 
+        if (compensateLongBurn) {
+            for (int i = 0; i < tuned.length; ++i) {
+                if (tuned[i].getName().equals(getModel().getName())) {
+                    tuned[i] = longBurnCompensation(tuned[i]);
+                }
+            }
+        }
+
         // finalize propagator
         for (final ScheduledManeuver maneuver : tuned) {
             final SpacecraftState state = maneuver.getStateBefore();
@@ -453,6 +470,32 @@ public class MeanLocalSolarTime extends AbstractSKControl {
     /** {@inheritDoc} */
     public OrekitStepHandler getStepHandler() {
         return null;
+    }
+
+    /** Compensate inefficiency of long burns.
+     * @param maneuver maneuver to compensate
+     * @return compensated maneuver (Isp reduced to get same dV with more consumed mass)
+     * @throws PropagationException if state cannot be propagated around maneuvera
+     */
+    private ScheduledManeuver longBurnCompensation(final ScheduledManeuver maneuver)
+        throws PropagationException {
+        // this is a long out of plane maneuver, we adapt Isp to reflect
+        // the fact more mass will be consumed to achieve the same velocity increment
+        final double nominalDuration = maneuver.getDuration(maneuver.getStateBefore().getMass());
+
+        final SpacecraftState startState = maneuver.getState(-0.5 * nominalDuration);
+        final CircularOrbit startOrbit   = (CircularOrbit) (OrbitType.CIRCULAR.convertType(startState.getOrbit()));
+        final double alphaS              = startOrbit.getAlphaV();
+
+        final SpacecraftState endState   = maneuver.getState(+0.5 * nominalDuration);
+        final CircularOrbit endOrbit     = (CircularOrbit) (OrbitType.CIRCULAR.convertType(endState.getOrbit()));
+        final double alphaE              = endOrbit.getAlphaV();
+
+        final double reductionFactor = (FastMath.sin(alphaE) - FastMath.sin(alphaS)) / (alphaE - alphaS);
+        return new ScheduledManeuver(maneuver.getModel(), maneuver.getDate(),
+                                     maneuver.getDeltaV(), maneuver.getThrust(),
+                                     reductionFactor * getModel().getCurrentISP(),
+                                     maneuver.getTrajectory(), maneuver.isReplanned());
     }
 
 }

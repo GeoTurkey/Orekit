@@ -238,13 +238,9 @@ public enum SupportedScenariocomponent {
                         parser.getDouble(node, ParameterKey.COMPONENT_PROPAGATION_TRUNCATION_MANEUVER_DELAY);
             }
 
-            // check if long burn inefficiency should be compensated
-            final boolean compensateLongBurn = parser.getBoolean(node, ParameterKey.COMPONENT_PROPAGATION_LONG_BURN_COMPENSATION);
-
             // build the component
-            Propagation propagation = new Propagation(indices, randomizers,
-                                                      truncationManeuverName, truncationManeuverDelay,
-                                                      compensateLongBurn);
+            Propagation propagation =
+                    new Propagation(indices, randomizers, truncationManeuverName, truncationManeuverDelay);
 
             // notify the Skat application this component manages the specified spacecrafts
             for (final int index : indices) {

@@ -107,6 +107,7 @@ public enum ParameterKey {
     CONTROL_SOLAR_TIME_ASCENDING("ascending"),
     CONTROL_SOLAR_TIME_SOLAR_TIME("solar_time"),
     CONTROL_SOLAR_TIME_SOLAR_TIME_TOLERANCE("solar_time_tolerance"),
+    CONTROL_SOLAR_TIME_LONG_BURN_COMPENSATION("long_burn_compensation"),
     // Ground track grid
     CONTROL_GROUND_TRACK_FIRST_OFFSET("offset_first_maneuver"),
     CONTROL_GROUND_TRACK_GRID_FILE("grid_file"),
@@ -148,7 +149,6 @@ public enum ParameterKey {
 
     COMPONENT_PROPAGATION_PROPAGATOR("propagator"),
     COMPONENT_PROPAGATION_METHOD("method"),
-    COMPONENT_PROPAGATION_LONG_BURN_COMPENSATION("long_burn_compensation"),
     COMPONENT_PROPAGATION_TRUNCATION_MANEUVER_NAME("truncation_maneuver_name"),
     COMPONENT_PROPAGATION_TRUNCATION_MANEUVER_DELAY("truncation_maneuver_delay"),
 

@@ -163,21 +163,22 @@ public enum SupportedControlLaw {
         public SKControl parse(final SkatFileParser parser, final Tree node,
                                final String controlled, final Skat skat)
             throws OrekitException, SkatException {
-            final String name               = parser.getString(node,  ParameterKey.CONTROL_NAME);
-            final double horizon          = parser.getDouble(node, ParameterKey.CONTROL_HORIZON);
-            final TunableManeuver model     = skat.getManeuver(parser.getString(node, ParameterKey.CONTROL_MANEUVER_NAME));
-            final int maxManeuvers          = parser.getInt(node,     ParameterKey.CONTROL_MAX_MANEUVERS);
-            final int orbitsSeparation      = parser.getInt(node,     ParameterKey.CONTROL_MANEUVERS_ORBITS_SEPARATION);
-            final double firstOffset        = parser.getDouble(node,  ParameterKey.CONTROL_SOLAR_TIME_FIRST_OFFSET);
-            final double latitude           = parser.getAngle(node,   ParameterKey.CONTROL_SOLAR_TIME_LATITUDE);
-            final boolean ascending         = parser.getBoolean(node, ParameterKey.CONTROL_SOLAR_TIME_ASCENDING);
-            final double solarTime          = parser.getDouble(node,  ParameterKey.CONTROL_SOLAR_TIME_SOLAR_TIME);
-            final double solarTimeTolerance = parser.getDouble(node,  ParameterKey.CONTROL_SOLAR_TIME_SOLAR_TIME_TOLERANCE) / 60.0;
+            final String name                = parser.getString(node,  ParameterKey.CONTROL_NAME);
+            final double horizon             = parser.getDouble(node, ParameterKey.CONTROL_HORIZON);
+            final TunableManeuver model      = skat.getManeuver(parser.getString(node, ParameterKey.CONTROL_MANEUVER_NAME));
+            final int maxManeuvers           = parser.getInt(node,     ParameterKey.CONTROL_MAX_MANEUVERS);
+            final int orbitsSeparation       = parser.getInt(node,     ParameterKey.CONTROL_MANEUVERS_ORBITS_SEPARATION);
+            final double firstOffset         = parser.getDouble(node,  ParameterKey.CONTROL_SOLAR_TIME_FIRST_OFFSET);
+            final double latitude            = parser.getAngle(node,   ParameterKey.CONTROL_SOLAR_TIME_LATITUDE);
+            final boolean ascending          = parser.getBoolean(node, ParameterKey.CONTROL_SOLAR_TIME_ASCENDING);
+            final double solarTime           = parser.getDouble(node,  ParameterKey.CONTROL_SOLAR_TIME_SOLAR_TIME);
+            final double solarTimeTolerance  = parser.getDouble(node,  ParameterKey.CONTROL_SOLAR_TIME_SOLAR_TIME_TOLERANCE) / 60.0;
+            final boolean compensateLongBurn = parser.getBoolean(node, ParameterKey.CONTROL_SOLAR_TIME_LONG_BURN_COMPENSATION);
             final PotentialCoefficientsProvider gravityField = skat.getgravityField();
             return new MeanLocalSolarTime(name, controlled, skat.getSpacecraftIndex(controlled),
                                           model, firstOffset, maxManeuvers, orbitsSeparation, skat.getEarth(),
                                           gravityField.getAe(), gravityField.getMu(), gravityField.getJ(false, 2)[2],
-                                          latitude, ascending, solarTime, solarTimeTolerance, horizon);
+                                          latitude, ascending, solarTime, solarTimeTolerance, horizon, compensateLongBurn);
         }
 
     };

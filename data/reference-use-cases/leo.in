@@ -100,16 +100,17 @@ scenario         = [
             third_bodies           = [ SUN, MOON ];
         };
         controls    = [
-            #{
-            #    type                        = GROUND_TRACK_GRID;
-            #    name                        = "ground track grid";
-            #    maneuver_name               = "in-plane";
-            #    max_maneuvers               = 6;
-            #    maneuvers_orbits_separation = 5;
-            #    offset_first_maneuver       = 172800;
-            #    grid_file                   = "metop.grd";
-            #    max_cross_track_distance    =  2000.0;
-            #},
+            {
+                type                        = GROUND_TRACK_GRID;
+                name                        = "ground track grid";
+                maneuver_name               = "in-plane";
+                max_maneuvers               = 6;
+                maneuvers_orbits_separation = 5;
+                offset_first_maneuver       = 172800;
+                time_horizon                = 90;
+                grid_file                   = "metop.grd";
+                max_cross_track_distance    =  2000.0;
+            },
             {
                 type                        = MEAN_LOCAL_SOLAR_TIME;
                 name                        = "mean local solar time (MST)";
@@ -122,13 +123,13 @@ scenario         = [
                 ascending                   = false;
                 solar_time                  = 9.5;   # solar time in fractional hours
                 solar_time_tolerance        = 2;     # tolerance in minutes
+                long_burn_compensation      = true;
             }
         ];
     },
     {
         component                  = PROPAGATION;
         managed_spacecrafts        = [ "Metop" ];
-        long_burn_compensation     = false;
         propagator                 = {
             method                 = NUMERICAL;
             min_step               = 0.1;
