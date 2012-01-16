@@ -107,7 +107,7 @@ scenario         = [
                 max_maneuvers               = 6;
                 maneuvers_orbits_separation = 5;
                 offset_first_maneuver       = 172800;
-                time_horizon                = 90;
+                time_horizon                = 45;
                 grid_file                   = "metop.grd";
                 max_cross_track_distance    =  2000.0;
             },
@@ -128,8 +128,10 @@ scenario         = [
         ];
     },
     {
-        component                  = PROPAGATION;
-        managed_spacecrafts        = [ "Metop" ];
+        component                     = PROPAGATION;
+        managed_spacecrafts           = [ "Metop" ];
+        truncation_maneuver_name      = "in-plane";
+        truncation_maneuver_delay     = 2592000;
         propagator                 = {
             method                 = NUMERICAL;
             min_step               = 0.1;
@@ -140,6 +142,7 @@ scenario         = [
             drag_cross_section     = 40.0;
             drag_coefficient       = 2.;
             third_bodies           = [ SUN, MOON ];
+
         }
     }
 ];

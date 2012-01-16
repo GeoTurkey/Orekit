@@ -177,7 +177,7 @@ public class Scenario implements ScenarioComponent {
 
                     // monitor maneuver at cycle start
                     SimpleMonitorable monitorable = maneuversMonitorables.get(name);
-                    monitorable.setSampledValue(iterationTarget,
+                    monitorable.setSampledValue(states[0].getRealState().getDate(),
                                                 new double[] {
                                                    states[i].getManeuversNumber(name),
                                                    states[i].getManeuversCycleDV(name),

@@ -146,8 +146,7 @@ public class ControlLoop implements ScenarioComponent {
                 } else {
                     propagator = maneuvers[0].getTrajectory();
                 }
-                runCycle(iter, maneuvers, propagator, original.getManeuvers(),
-                         reference.getMinDate(), reference.getMaxDate());
+                runCycle(iter, maneuvers, propagator, original.getManeuvers(), reference.getMinDate());
 
                 // prepare maneuver update
                 ScheduledManeuver[] tuned = maneuvers.clone();
@@ -251,18 +250,18 @@ public class ControlLoop implements ScenarioComponent {
      * @param propagator propagator to use (already takes the maneuvers into account)
      * @param fixedManeuvers list of maneuvers already fixed for the cycle
      * @param start start of the simulation
-     * @param end end of the simulation
      * @exception OrekitException if the propagation cannot be performed
      * @exception SkatException if run cannot be initialized
      */
     public void runCycle(final int iteration, final ScheduledManeuver[] maneuvers,
                          final Propagator propagator, final List<ScheduledManeuver> fixedManeuvers,
-                         final AbsoluteDate start, final AbsoluteDate end)
+                         final AbsoluteDate start)
         throws OrekitException, SkatException {
 
         // prepare run
         for (final SKControl control : controls) {
-            control.initializeRun(iteration, maneuvers, propagator, fixedManeuvers, start, end);
+            control.initializeRun(iteration, maneuvers, propagator, fixedManeuvers, start,
+                                  start.shiftedBy(control.getTimeHorizon()));
         }
 
         // get the detectors associated with control laws
