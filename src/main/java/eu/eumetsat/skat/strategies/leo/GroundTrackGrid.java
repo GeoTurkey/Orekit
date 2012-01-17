@@ -300,28 +300,33 @@ public class GroundTrackGrid extends AbstractSKControl {
             if (grid[index].getLatitude() >= -switchLatitude && grid[index].getLatitude() <= switchLatitude) {
                 // intermediate latitude, we find the crossing latitude-wise
                 crossing = latitudeCrossing(grid[index].getLatitude(), earth, date, end, 0.1 * gap, gap, propagator);
-            } else {
-                // extreme latitude, we find the crossing longitude-wise
-                crossing = longitudeCrossing(grid[index].getLongitude(), earth, date, end, 0.1 * gap, gap, propagator);
-            }
-            if (crossing != null) {
-                Vector3D position = crossing.getPVCoordinates(earth.getBodyFrame()).getPosition();
-                final GeodeticPoint gp = earth.transform(position, earth.getBodyFrame(), crossing.getDate());
+                if (crossing != null) {
+                    Vector3D position = crossing.getPVCoordinates(earth.getBodyFrame()).getPosition();
+                    final GeodeticPoint gp = earth.transform(position, earth.getBodyFrame(), crossing.getDate());
 
-                double dl = MathUtils.normalizeAngle(gp.getLongitude() - grid[index].getLongitude(), 0);
-                checkMargins(dl * FastMath.hypot(position.getX(), position.getY()));
+                    double dl = MathUtils.normalizeAngle(gp.getLongitude() - grid[index].getLongitude(), 0);
+                    checkMargins(dl * FastMath.hypot(position.getX(), position.getY()));
 
-                for (final ErrorModel errorModel : errorModels) {
-                    if (errorModel.matches(grid[index].getLatitude(), grid[index].isAscending())) {
-                        errorModel.addPoint(crossing.getDate(), dl);
+                    for (final ErrorModel errorModel : errorModels) {
+                        if (errorModel.matches(grid[index].getLatitude(), grid[index].isAscending())) {
+                            errorModel.addPoint(crossing.getDate(), dl);
+                        }
                     }
+
+                    // go to next grid point
+                    index = nextIndex;
+                    date  = crossing.getDate().shiftedBy(gap);
+
+                } else {
+                    date = null;
                 }
+            } else {
+                // extreme latitude, we cannot use this point for in-plane control
 
                 // go to next grid point
                 index = nextIndex;
-                date  = crossing.getDate().shiftedBy(gap);
-            } else {
-                date = null;
+                date  = date.shiftedBy(gap);
+
             }
 
         }
