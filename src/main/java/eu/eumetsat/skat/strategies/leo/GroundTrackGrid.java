@@ -58,6 +58,9 @@ public class GroundTrackGrid extends AbstractSKControl {
     /** Threshold under which latitudes are considered equal. */
     private static final double EPSILON_LATITUDE = 1.0e-3;
 
+    /** Limit for switching between latitude/longitude crossings. */
+    private static final double SWITCH_LIMIT = FastMath.toRadians(5.0);
+
     /** Maximum number of maneuvers to set up in one cycle. */
     private final int maxManeuvers;
 
@@ -74,10 +77,10 @@ public class GroundTrackGrid extends AbstractSKControl {
     private final double referenceRadius;
 
     /** Central attraction coefficient. */
-    private double mu;
+    private final double mu;
 
     /** Un-normalized zonal coefficient. */
-    private double j2;
+    private final double j2;
 
     /** Reference grid points in Earth frame. */
     private final GridPoint[] grid;
@@ -164,7 +167,7 @@ public class GroundTrackGrid extends AbstractSKControl {
 
         });
 
-        // extract the limited set of independent latitudes/directions from the grid
+        // extract the limited set of independent point/directions from the grid
         errorModels = new ArrayList<ErrorModel>();
         for (final GridPoint point : this.grid) {
             ErrorModel found = null;
@@ -174,10 +177,10 @@ public class GroundTrackGrid extends AbstractSKControl {
                 }
             }
             if (found == null) {
-                // this is a new latitude/direction pair, store it
+                // this is a new point/direction pair, store it
                 errorModels.add(new ErrorModel(point));
             } else {
-                // this is an already known latitude/direction pair
+                // this is an already known point/direction pair
                 found.addGridPoint(point);
             }
         }
@@ -210,6 +213,9 @@ public class GroundTrackGrid extends AbstractSKControl {
         this.iteration = iteration;
         this.cycleEnd       = end;
 
+        // limit latitude for switching between latitude and longitude crossings
+        final double switchLatitude = propagator.getInitialState().getI() - SWITCH_LIMIT;
+
         if (iteration == 0) {
 
             forceReset = false;
@@ -230,12 +236,14 @@ public class GroundTrackGrid extends AbstractSKControl {
             SpacecraftState firstCrossing = null;
             boolean firstAscending = true;
             for (final ErrorModel errorModel : errorModels) {
-                final SpacecraftState crossing = findFirstCrossing(errorModel.getLatitude(), errorModel.isAscending(),
-                                                                   earth, freeInterval[0], freeInterval[1],
-                                                                   stepSize, propagator);
-                if (firstCrossing == null || crossing.getDate().compareTo(firstCrossing.getDate()) < 0) {
-                    firstCrossing  = crossing;
-                    firstAscending = errorModel.isAscending();
+                if (errorModel.getLatitude() >= -switchLatitude && errorModel.getLatitude() <= switchLatitude) {
+                    final SpacecraftState crossing = firstLatitudeCrossing(errorModel.getLatitude(), errorModel.isAscending(),
+                                                                           earth, freeInterval[0], freeInterval[1],
+                                                                           stepSize, propagator);
+                    if (firstCrossing == null || crossing.getDate().compareTo(firstCrossing.getDate()) < 0) {
+                        firstCrossing  = crossing;
+                        firstAscending = errorModel.isAscending();
+                    }
                 }
             }
             if (firstCrossing == null) {
@@ -282,37 +290,48 @@ public class GroundTrackGrid extends AbstractSKControl {
 
             int nextIndex = (index + 1) % grid.length;
 
-            // find the latitude crossing for the current grid point
+            // find the reference point crossing for the current grid point
             double gap = grid[nextIndex].getTimeOffset() - grid[index].getTimeOffset();
             if (nextIndex == 0) {
                 // wrap point from end of phasing cycle to start of next phasing cycle
                 gap += phasingDuration;
-           }
-            SpacecraftState crossing = findLatitudeCrossing(grid[index].getLatitude(), earth, date, end,
-                                                            0.1 * gap, gap, propagator);
-            if (crossing != null) {
-                Vector3D position = crossing.getPVCoordinates(earth.getBodyFrame()).getPosition();
-                final GeodeticPoint gp = earth.transform(position, earth.getBodyFrame(), crossing.getDate());
+            }
+            final SpacecraftState crossing;
+            if (grid[index].getLatitude() >= -switchLatitude && grid[index].getLatitude() <= switchLatitude) {
+                // intermediate latitude, we find the crossing latitude-wise
+                crossing = latitudeCrossing(grid[index].getLatitude(), earth, date, end, 0.1 * gap, gap, propagator);
+                if (crossing != null) {
+                    Vector3D position = crossing.getPVCoordinates(earth.getBodyFrame()).getPosition();
+                    final GeodeticPoint gp = earth.transform(position, earth.getBodyFrame(), crossing.getDate());
 
-                double dl = MathUtils.normalizeAngle(gp.getLongitude() - grid[index].getLongitude(), 0);
-                checkMargins(dl * FastMath.hypot(position.getX(), position.getY()));
+                    double dl = MathUtils.normalizeAngle(gp.getLongitude() - grid[index].getLongitude(), 0);
+                    checkMargins(dl * FastMath.hypot(position.getX(), position.getY()));
 
-                for (final ErrorModel errorModel : errorModels) {
-                    if (errorModel.matches(grid[index].getLatitude(), grid[index].isAscending())) {
-                        errorModel.addPoint(crossing.getDate(), dl);
+                    for (final ErrorModel errorModel : errorModels) {
+                        if (errorModel.matches(grid[index].getLatitude(), grid[index].isAscending())) {
+                            errorModel.addPoint(crossing.getDate(), dl);
+                        }
                     }
+
+                    // go to next grid point
+                    index = nextIndex;
+                    date  = crossing.getDate().shiftedBy(gap);
+
+                } else {
+                    date = null;
                 }
+            } else {
+                // extreme latitude, we cannot use this point for in-plane control
 
                 // go to next grid point
                 index = nextIndex;
-                date  = crossing.getDate().shiftedBy(gap);
-            } else {
-                date = null;
+                date  = date.shiftedBy(gap);
+
             }
 
         }
 
-        // fit all latitude/direction specific models and compute a mean model
+        // fit all point/direction specific models and compute a mean model
         Arrays.fill(fittedDL, 0);
         for (final ErrorModel errorModel : errorModels) {
             errorModel.fit();

@@ -12,6 +12,7 @@ import org.apache.commons.math.analysis.solvers.BracketingNthOrderBrentSolver;
 import org.apache.commons.math.exception.NoBracketingException;
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math.util.FastMath;
+import org.apache.commons.math.util.MathUtils;
 import org.orekit.bodies.BodyShape;
 import org.orekit.bodies.GeodeticPoint;
 import org.orekit.errors.OrekitException;
@@ -328,11 +329,12 @@ public abstract class AbstractSKControl implements SKControl {
      * @return first crossing
      * @exception OrekitException if state cannot be propagated
      * @exception SkatException if latitude is never crossed
+     * @see #latitudeCrossing(double, BodyShape, AbsoluteDate, AbsoluteDate, double, double, Propagator)
      */
-    protected SpacecraftState findFirstCrossing(final double latitude, final boolean ascending,
-                                                final BodyShape earth,
-                                                final AbsoluteDate searchStart, final AbsoluteDate end,
-                                                final double stepSize, final Propagator propagator)
+    protected SpacecraftState firstLatitudeCrossing(final double latitude, final boolean ascending,
+                                                    final BodyShape earth,
+                                                    final AbsoluteDate searchStart, final AbsoluteDate end,
+                                                    final double stepSize, final Propagator propagator)
         throws OrekitException, SkatException {
 
         double previousLatitude = Double.NaN;
@@ -341,8 +343,8 @@ public abstract class AbstractSKControl implements SKControl {
             final double currentLatitude = earth.transform(pv.getPosition(), earth.getBodyFrame(), date).getLatitude();
             if (((previousLatitude <= latitude) && (currentLatitude >= latitude) &&  ascending) ||
                 ((previousLatitude >= latitude) && (currentLatitude <= latitude) && !ascending)) {
-                return findLatitudeCrossing(latitude, earth, date.shiftedBy(-0.5 * stepSize), end,
-                                            0.5 * stepSize, 2 * stepSize, propagator);
+                return latitudeCrossing(latitude, earth, date.shiftedBy(-0.5 * stepSize), end,
+                                        0.5 * stepSize, 2 * stepSize, propagator);
             }
             previousLatitude = currentLatitude;
         }
@@ -351,10 +353,9 @@ public abstract class AbstractSKControl implements SKControl {
                                 FastMath.toDegrees(latitude), searchStart, end);
 
     }
-    
-    
+
     /**
-     * Find the state at which the reference latitude is crossed.
+     * Find the state at which a reference latitude is crossed.
      * @param latitude latitude to search for
      * @param earth Earth model
      * @param guessDate guess date for the crossing
@@ -365,29 +366,93 @@ public abstract class AbstractSKControl implements SKControl {
      * @return state at latitude crossing time
      * @throws OrekitException if state cannot be propagated
      * @throws NoBracketingException if latitude cannot be bracketed in the search interval
+     * @see #firstLatitudeCrossing(double, boolean, BodyShape, AbsoluteDate, AbsoluteDate, double, Propagator)
      */
-    protected SpacecraftState findLatitudeCrossing(final double latitude, final BodyShape earth,
-                                                   final AbsoluteDate guessDate, final AbsoluteDate endDate,
-                                                   final double shift, final double maxShift,
-                                                   final Propagator propagator)
+    protected SpacecraftState latitudeCrossing(final double latitude, final BodyShape earth,
+                                               final AbsoluteDate guessDate, final AbsoluteDate endDate,
+                                               final double shift, final double maxShift,
+                                               final Propagator propagator)
+        throws OrekitException, NoBracketingException {
+
+        // function evaluating to 0 at latitude crossings
+        final UnivariateFunction latitudeFunction = new UnivariateFunction() {
+            /** {@inheritDoc} */
+            public double value(double x) throws OrekitWrapperException {
+                try {
+                    final SpacecraftState state = propagator.propagate(guessDate.shiftedBy(x));
+                    final Vector3D position = state.getPVCoordinates(earth.getBodyFrame()).getPosition();
+                    final GeodeticPoint point = earth.transform(position, earth.getBodyFrame(), state.getDate());
+                    return point.getLatitude() - latitude;
+                } catch (OrekitException oe) {
+                    throw new OrekitWrapperException(oe);
+                }
+            }
+        };
+
+        // find the latitude crossing
+        return findZero(latitudeFunction, guessDate, endDate, shift, maxShift, propagator);
+
+    }
+
+    /**
+     * Find the state at which a reference longitude is crossed.
+     * @param longitude longitude to search for
+     * @param earth Earth model
+     * @param guessDate guess date for the crossing
+     * @param endDate maximal date not to overtake
+     * @param shift shift value used to evaluate the longitude function bracketing around the guess date  
+     * @param maxShift maximum value that the shift value can take
+     * @param propagator propagator used
+     * @return state at longitude crossing time
+     * @throws OrekitException if state cannot be propagated
+     * @throws NoBracketingException if longitude cannot be bracketed in the search interval
+     * @see #latitudeCrossing(double, boolean, BodyShape, AbsoluteDate, AbsoluteDate, double, Propagator)
+     */
+    protected SpacecraftState longitudeCrossing(final double longitude, final BodyShape earth,
+                                                final AbsoluteDate guessDate, final AbsoluteDate endDate,
+                                                final double shift, final double maxShift,
+                                                final Propagator propagator)
+        throws OrekitException, NoBracketingException {
+
+        // function evaluating to 0 at longitude crossings
+        final UnivariateFunction longitudeFunction = new UnivariateFunction() {
+            /** {@inheritDoc} */
+            public double value(double x) throws OrekitWrapperException {
+                try {
+                    final SpacecraftState state = propagator.propagate(guessDate.shiftedBy(x));
+                    final Vector3D position = state.getPVCoordinates(earth.getBodyFrame()).getPosition();
+                    final GeodeticPoint point = earth.transform(position, earth.getBodyFrame(), state.getDate());
+                    return MathUtils.normalizeAngle(point.getLongitude() - longitude, 0);
+                } catch (OrekitException oe) {
+                    throw new OrekitWrapperException(oe);
+                }
+            }
+        };
+
+        // find the longitude crossing
+        return findZero(longitudeFunction, guessDate, endDate, shift, maxShift, propagator);
+
+    }
+
+    /**
+     * Find the state at which a function becomes zero.
+     * @param function function to check
+     * @param guessDate guess date for the crossing
+     * @param endDate maximal date not to overtake
+     * @param shift shift value used to evaluate the function bracketing around the guess date  
+     * @param maxShift maximum value that the shift value can take
+     * @param propagator propagator used
+     * @return state at function zero time
+     * @throws OrekitException if state cannot be propagated
+     * @throws NoBracketingException if function cannot be bracketed in the search interval
+     */
+    private SpacecraftState findZero(final UnivariateFunction function,
+                                     final AbsoluteDate guessDate, final AbsoluteDate endDate,
+                                     final double shift, final double maxShift,
+                                     final Propagator propagator)
         throws OrekitException, NoBracketingException {
 
         try {
-
-            // function evaluating to 0 at latitude crossings
-            final UnivariateFunction latitudeFunction = new UnivariateFunction() {
-                /** {@inheritDoc} */
-                public double value(double x) throws OrekitWrapperException {
-                    try {
-                        final SpacecraftState state = propagator.propagate(guessDate.shiftedBy(x));
-                        final Vector3D position = state.getPVCoordinates(earth.getBodyFrame()).getPosition();
-                        final GeodeticPoint point = earth.transform(position, earth.getBodyFrame(), state.getDate());
-                        return point.getLatitude() - latitude;
-                    } catch (OrekitException oe) {
-                        throw new OrekitWrapperException(oe);
-                    }
-                }
-            };
 
             // try to bracket the encounter
             double span;
@@ -403,8 +468,8 @@ public abstract class AbstractSKControl implements SKControl {
             double earliestNegative = Double.POSITIVE_INFINITY;
             double latestNegative   = Double.NEGATIVE_INFINITY;
             do {
-                final double mValue = latitudeFunction.value(-span);
-                final double pValue = latitudeFunction.value(+span);
+                final double mValue = function.value(-span);
+                final double pValue = function.value(+span);
                 if (mValue <= 0) {
                     earliestNegative = FastMath.min(earliestNegative, -span);
                     latestNegative   = FastMath.max(latestNegative,   -span);
@@ -482,8 +547,8 @@ public abstract class AbstractSKControl implements SKControl {
                         }
                     }
                     final double dt = (selectedNegative <= selectedPositive) ?
-                            solver.solve(1000, latitudeFunction, selectedNegative, selectedPositive) :
-                            solver.solve(1000, latitudeFunction, selectedPositive, selectedNegative);
+                            solver.solve(1000, function, selectedNegative, selectedPositive) :
+                            solver.solve(1000, function, selectedPositive, selectedNegative);
 
                     return propagator.propagate(guessDate.shiftedBy(dt));
 
@@ -492,8 +557,7 @@ public abstract class AbstractSKControl implements SKControl {
             } while (2 * span < maxShift);
 
             // no bracketing found
-            throw new NoBracketingException(-span, span,
-                                            latitudeFunction.value(-span), latitudeFunction.value(+span));
+            throw new NoBracketingException(-span, span, function.value(-span), function.value(+span));
 
         } catch (OrekitWrapperException owe) {
             throw owe.getWrappedException();

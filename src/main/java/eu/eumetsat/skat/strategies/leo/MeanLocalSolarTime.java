@@ -230,7 +230,7 @@ public class MeanLocalSolarTime extends AbstractSKControl {
         // fit the mean solar time model
         double stepSize = period / 100;
         SpacecraftState crossing =
-                findFirstCrossing(latitude, ascending, earth, freeInterval[0], freeInterval[1], stepSize, propagator);
+                firstLatitudeCrossing(latitude, ascending, earth, freeInterval[0], freeInterval[1], stepSize, propagator);
         double mst = meanSolarTime(crossing);
         mstModel.resetFitting(freeInterval[0], mstModel.getFittedParameters());
         mstModel.addPoint(crossing.getDate(), mst);
@@ -240,8 +240,8 @@ public class MeanLocalSolarTime extends AbstractSKControl {
         while (crossing != null && crossing.getDate().shiftedBy(period).compareTo(freeInterval[1]) < 0) {
 
             final AbsoluteDate previous = crossing.getDate();
-            crossing = findLatitudeCrossing(latitude, earth, previous.shiftedBy(period),
-                                            freeInterval[1], stepSize, period / 8, propagator);
+            crossing = latitudeCrossing(latitude, earth, previous.shiftedBy(period),
+                                        freeInterval[1], stepSize, period / 8, propagator);
             if (crossing != null) {
 
                 // Store current point
@@ -303,19 +303,19 @@ public class MeanLocalSolarTime extends AbstractSKControl {
                     if (search.durationFrom(cycleStart) <= period) {
                         search = cycleStart.shiftedBy(period);
                     }
-                    nodeState = findLatitudeCrossing(latitude, earth, search, freeInterval[1],
-                                                     stepSize, period, propagator);
+                    nodeState = latitudeCrossing(latitude, earth, search, freeInterval[1],
+                                                 stepSize, period, propagator);
                     final double nodeMst = meanSolarTime(nodeState);
                     if (nodeMst >= 6.0 && nodeMst <= 18.0) {
                         // wrong node, it is under Sun light, select the next one
-                        nodeState = findLatitudeCrossing(latitude, earth, nodeState.getDate().shiftedBy(0.5 * period),
-                                                         freeInterval[1], stepSize, period / 8, propagator);
+                        nodeState = latitudeCrossing(latitude, earth, nodeState.getDate().shiftedBy(0.5 * period),
+                                                     freeInterval[1], stepSize, period / 8, propagator);
                     }
 
                     // ensure maneuvers separation requirements
                     while (nodeState.getDate().durationFrom(freeInterval[0]) < firstOffset) {
-                        nodeState = findLatitudeCrossing(latitude, earth, nodeState.getDate().shiftedBy(0.5 * period),
-                                                         freeInterval[1], stepSize, period / 8, propagator);
+                        nodeState = latitudeCrossing(latitude, earth, nodeState.getDate().shiftedBy(0.5 * period),
+                                                     freeInterval[1], stepSize, period / 8, propagator);
                     }
 
                 }
