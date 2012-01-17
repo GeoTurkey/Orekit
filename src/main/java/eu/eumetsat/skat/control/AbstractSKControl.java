@@ -214,6 +214,9 @@ public abstract class AbstractSKControl implements SKControl {
         }
 
         // prevent propagating after end date
+        if (freeIntervalStart.compareTo(end) >= 0) {
+            freeIntervalStart = end;
+        }
         if (freeIntervalEnd.compareTo(end) >= 0) {
             freeIntervalEnd = end;
         }

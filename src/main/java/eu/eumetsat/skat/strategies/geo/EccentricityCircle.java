@@ -483,6 +483,9 @@ public class EccentricityCircle extends AbstractSKControl {
                         checkMargins(FastMath.hypot(orbit.getEquinoctialEx() - centerX,
                                                     orbit.getEquinoctialEy() - centerY));
 
+                    } else {
+                        // if step is too short, assume limits are not violated
+                        checkMargins(0.5 * (getMin() + getMax()));
                     }
 
                 }

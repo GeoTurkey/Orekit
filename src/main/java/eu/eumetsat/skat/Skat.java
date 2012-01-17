@@ -288,7 +288,6 @@ public class Skat {
         MarshallSolarActivityFutureEstimation msafe = new MarshallSolarActivityFutureEstimation(supportedNames, strengthLevel);
         DataProvidersManager.getInstance().feed(msafe.getSupportedNames(), msafe);
         atmosphere = new DTM2000(msafe, sun, earth);
-//      atmosphere = new HarrisPriester(sun, earth);
 
         startDate     = parser.getDate(simulationNode, ParameterKey.SIMULATION_START_DATE, utc);
         generator     = new Well19937a(parser.getInt(simulationNode, ParameterKey.SIMULATION_RANDOM_SEED));

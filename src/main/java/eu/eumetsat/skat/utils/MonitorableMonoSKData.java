@@ -7,6 +7,7 @@ import java.util.Set;
 
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math.util.FastMath;
+import org.apache.commons.math.util.MathUtils;
 import org.orekit.bodies.BodyShape;
 import org.orekit.bodies.GeodeticPoint;
 import org.orekit.errors.OrekitException;
@@ -194,7 +195,8 @@ public enum MonitorableMonoSKData implements MonitorableMono {
         @Override
         protected void extractData(final ScenarioState state, double[] data)
             throws OrekitException {
-                data[0] = FastMath.toDegrees(getKeplerianOrbit(state).getRightAscensionOfAscendingNode());
+            final double raan = getKeplerianOrbit(state).getRightAscensionOfAscendingNode();
+            data[0] = FastMath.toDegrees(MathUtils.normalizeAngle(raan, 0.0));
         }
 
     },
