@@ -189,6 +189,7 @@ public class InclinationVector extends AbstractSKControl {
         throws PropagationException {
 
         this.iteration = iteration;
+        resetMarginsChecks();
 
         // select a long maneuver-free interval for fitting
         final AbsoluteDate[] freeInterval = getManeuverFreeInterval(maneuvers, fixedManeuvers, start, end);
@@ -358,7 +359,7 @@ public class InclinationVector extends AbstractSKControl {
 
         /** {@inheritDoc} */
         public void init(final SpacecraftState s0, final AbsoluteDate t) {
-            resetMarginsChecks();
+//            resetMarginsChecks();
         }
 
         /** {@inheritDoc} */
@@ -385,7 +386,7 @@ public class InclinationVector extends AbstractSKControl {
                         checkMargins(date, radius);
                     } else {
                         // if step is too short, assume limits are not violated
-                        checkMargins(date, 0.5 * (getMin() + getMax()));
+                        checkMargins(date, 0.0);
                     }
 
                 }

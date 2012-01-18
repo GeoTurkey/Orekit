@@ -178,6 +178,8 @@ public class EccentricityCircle extends AbstractSKControl {
                               final AbsoluteDate start, final AbsoluteDate end)
         throws OrekitException {
 
+        resetMarginsChecks();
+
         // select a long maneuver-free interval for fitting
         final AbsoluteDate[] freeInterval = getManeuverFreeInterval(maneuvers, fixedManeuvers, start, end);
 
@@ -455,7 +457,7 @@ public class EccentricityCircle extends AbstractSKControl {
 
         /** {@inheritDoc} */
         public void init(final SpacecraftState s0, final AbsoluteDate t) {
-            resetMarginsChecks();
+//            resetMarginsChecks();
         }
 
         /** {@inheritDoc} */
@@ -486,7 +488,7 @@ public class EccentricityCircle extends AbstractSKControl {
 
                     } else {
                         // if step is too short, assume limits are not violated
-                        checkMargins(date, 0.5 * (getMin() + getMax()));
+                        checkMargins(date, 0.0);
                     }
 
                 }

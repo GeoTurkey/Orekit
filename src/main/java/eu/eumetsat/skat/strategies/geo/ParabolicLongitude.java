@@ -191,6 +191,7 @@ public class ParabolicLongitude extends AbstractSKControl {
         this.iteration = iteration;
         this.start     = start;
         this.end       = end;
+        resetMarginsChecks();
 
         // select a long maneuver-free interval for fitting
         final AbsoluteDate[] freeInterval = getManeuverFreeInterval(maneuvers, fixedManeuvers, start, end);
@@ -355,7 +356,7 @@ public class ParabolicLongitude extends AbstractSKControl {
 
         /** {@inheritDoc} */
         public void init(final SpacecraftState s0, final AbsoluteDate t) {
-            resetMarginsChecks();
+//            resetMarginsChecks();
             dateSample.clear();
             longitudeSample.clear();
         }
