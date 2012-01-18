@@ -101,8 +101,8 @@ scenario         = [
         };
         controls    = [
             {
-                type                        = GROUND_TRACK_GRID;
-                name                        = "ground track grid";
+                type                        = IN_PLANE_GROUND_TRACK_GRID;
+                name                        = "in plane ground track grid";
                 maneuver_name               = "in-plane";
                 max_maneuvers               = 6;
                 maneuvers_orbits_separation = 5;
@@ -111,18 +111,30 @@ scenario         = [
                 grid_file                   = "metop.grd";
                 max_cross_track_distance    =  2000.0;
             },
+            #{
+            #    type                        = MEAN_LOCAL_SOLAR_TIME;
+            #    name                        = "mean local solar time (MST)";
+            #    maneuver_name               = "out-of-plane";
+            #    max_maneuvers               = 6;
+            #    offset_first_maneuver       = 86400;
+            #    maneuvers_orbits_separation = 5;
+            #    time_horizon                = 90;
+            #    latitude                    = 0.;
+            #    ascending                   = false;
+            #    solar_time                  = 9.5;   # solar time in fractional hours
+            #    solar_time_tolerance        = 2;     # tolerance in minutes
+            #    long_burn_compensation      = true;
+            #},
             {
-                type                        = MEAN_LOCAL_SOLAR_TIME;
-                name                        = "mean local solar time (MST)";
+                type                        = OUT_OF_PLANE_GROUND_TRACK_GRID;
+                name                        = "out of plane ground track grid";
                 maneuver_name               = "out-of-plane";
                 max_maneuvers               = 6;
                 offset_first_maneuver       = 86400;
                 maneuvers_orbits_separation = 5;
                 time_horizon                = 90;
-                latitude                    = 0.;
-                ascending                   = false;
-                solar_time                  = 9.5;   # solar time in fractional hours
-                solar_time_tolerance        = 2;     # tolerance in minutes
+                grid_file                   = "metop.grd";
+                max_cross_track_distance    =  2000.0;
                 long_burn_compensation      = true;
             }
         ];

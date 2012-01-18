@@ -11,6 +11,7 @@ import java.util.Scanner;
 import org.antlr.runtime.tree.Tree;
 import org.apache.commons.math.exception.util.LocalizedFormats;
 import org.apache.commons.math.util.FastMath;
+import org.orekit.bodies.OneAxisEllipsoid;
 import org.orekit.errors.OrekitException;
 import org.orekit.forces.gravity.potential.PotentialCoefficientsProvider;
 
@@ -21,8 +22,9 @@ import eu.eumetsat.skat.strategies.geo.EccentricityCircle;
 import eu.eumetsat.skat.strategies.geo.InclinationVector;
 import eu.eumetsat.skat.strategies.geo.ParabolicLongitude;
 import eu.eumetsat.skat.strategies.leo.GridPoint;
-import eu.eumetsat.skat.strategies.leo.GroundTrackGrid;
+import eu.eumetsat.skat.strategies.leo.InPlaneGroundTrackGrid;
 import eu.eumetsat.skat.strategies.leo.MeanLocalSolarTime;
+import eu.eumetsat.skat.strategies.leo.OutOfPlaneGroundTrackGrid;
 
 /** Enumerate for parsing the supported scenario components.
  */
@@ -98,8 +100,8 @@ public enum SupportedControlLaw {
 
     },
 
-    /** Constant for ground track grid control law. */
-    GROUND_TRACK_GRID() {
+    /** Constant for in-plane ground track grid control law. */
+    IN_PLANE_GROUND_TRACK_GRID() {
 
         /** {@inheritDoc} */
         public SKControl parse(final SkatFileParser parser, final Tree node,
@@ -110,48 +112,43 @@ public enum SupportedControlLaw {
             final TunableManeuver model   = skat.getManeuver(parser.getString(node, ParameterKey.CONTROL_MANEUVER_NAME));
             final int maxManeuvers        = parser.getInt(node,    ParameterKey.CONTROL_MAX_MANEUVERS);
             final int orbitsSeparation    = parser.getInt(node,    ParameterKey.CONTROL_MANEUVERS_ORBITS_SEPARATION);
-            final double firstOffset      = parser.getDouble(node, ParameterKey.CONTROL_GROUND_TRACK_FIRST_OFFSET);
-            final double maxDistance      = parser.getDouble(node, ParameterKey.CONTROL_GROUND_TRACK_MAX_CROSS_TRACK_DISTANCE);
-            final String fileName         = parser.getString(node, ParameterKey.CONTROL_GROUND_TRACK_GRID_FILE);
+            final double firstOffset      = parser.getDouble(node, ParameterKey.CONTROL_IN_PLANE_GROUND_TRACK_FIRST_OFFSET);
+            final double maxDistance      = parser.getDouble(node, ParameterKey.CONTROL_IN_PLANE_GROUND_TRACK_MAX_CROSS_TRACK_DISTANCE);
+            final String fileName         = parser.getString(node, ParameterKey.CONTROL_IN_PLANE_GROUND_TRACK_GRID_FILE);
             final File gridFile = new File(new File(parser.getInputName()).getParent(), fileName);
             final PotentialCoefficientsProvider gravityField = skat.getgravityField();
-            return new GroundTrackGrid(name, controlled, skat.getSpacecraftIndex(controlled),
-                                       model, firstOffset, maxManeuvers, orbitsSeparation, skat.getEarth(),
-                                       gravityField.getAe(), gravityField.getMu(), gravityField.getJ(false, 2)[2],
-                                       readGridFile(gridFile), maxDistance, horizon);
+            return new InPlaneGroundTrackGrid(name, controlled, skat.getSpacecraftIndex(controlled),
+                                              model, firstOffset, maxManeuvers, orbitsSeparation, skat.getEarth(),
+                                              gravityField.getAe(), gravityField.getMu(), gravityField.getJ(false, 2)[2],
+                                              readGridFile(gridFile, skat.getEarth()), maxDistance, horizon);
         }
 
-        /** Read a grid file.
-         * @param gridFile grid file name
-         * @return list of grid points
-         * @exception SkatException if file cannot be read
-         */
-        private List<GridPoint> readGridFile(final File gridFile) throws SkatException {
-            try {
+    },
 
-                if (! gridFile.exists()) {
-                    throw new SkatException(SkatMessages.UNABLE_TO_FIND_RESOURCE, gridFile.getAbsolutePath());
-                }
-                final Scanner scanner = new Scanner(gridFile).useLocale(Locale.US);
+    /** Constant for out-of-plane ground track grid control law. */
+    OUT_OF_PLANE_GROUND_TRACK_GRID() {
 
-                List<GridPoint> grid = new ArrayList<GridPoint>();
-
-                while (scanner.hasNextDouble()) {
-
-                    // read one grid point per line
-                    final double  timeOffset = scanner.nextDouble();
-                    final double  latitude   = FastMath.toRadians(scanner.nextDouble());
-                    final double  longitude  = FastMath.toRadians(scanner.nextDouble());
-                    final boolean ascending  = scanner.nextBoolean();
-                    grid.add(new GridPoint(timeOffset, latitude, longitude, ascending));
-
-                }
-
-                return grid;
-
-            } catch (IOException ioe) {
-                throw new SkatException(ioe, LocalizedFormats.SIMPLE_MESSAGE, ioe.getLocalizedMessage());
-            }
+        /** {@inheritDoc} */
+        public SKControl parse(final SkatFileParser parser, final Tree node,
+                               final String controlled, final Skat skat)
+            throws OrekitException, SkatException {
+            final String name             = parser.getString(node, ParameterKey.CONTROL_NAME);
+            final double horizon          = parser.getDouble(node, ParameterKey.CONTROL_HORIZON);
+            final TunableManeuver model   = skat.getManeuver(parser.getString(node, ParameterKey.CONTROL_MANEUVER_NAME));
+            final int maxManeuvers        = parser.getInt(node,    ParameterKey.CONTROL_MAX_MANEUVERS);
+            final int orbitsSeparation    = parser.getInt(node,    ParameterKey.CONTROL_MANEUVERS_ORBITS_SEPARATION);
+            final double firstOffset      = parser.getDouble(node, ParameterKey.CONTROL_OUT_OF_PLANE_GROUND_TRACK_FIRST_OFFSET);
+            final double maxDistance      = parser.getDouble(node, ParameterKey.CONTROL_OUT_OF_PLANE_GROUND_TRACK_MAX_CROSS_TRACK_DISTANCE);
+            final String fileName         = parser.getString(node, ParameterKey.CONTROL_OUT_OF_PLANE_GROUND_TRACK_GRID_FILE);
+            final boolean compensateLongBurn = parser.getBoolean(node, ParameterKey.CONTROL_OUT_OF_PLANE_GROUND_TRACK_GRID_BURN_COMPENSATION);
+            final File gridFile = new File(new File(parser.getInputName()).getParent(), fileName);
+            final PotentialCoefficientsProvider gravityField = skat.getgravityField();
+            return new OutOfPlaneGroundTrackGrid(name, controlled, skat.getSpacecraftIndex(controlled),
+                                                 model, firstOffset, maxManeuvers, orbitsSeparation,
+                                                 skat.getEarth(), skat.getSun(),
+                                                 gravityField.getAe(), gravityField.getMu(), gravityField.getJ(false, 2)[2],
+                                                 readGridFile(gridFile, skat.getEarth()), maxDistance, horizon,
+                                                 compensateLongBurn);
         }
 
     },
@@ -195,5 +192,40 @@ public enum SupportedControlLaw {
     public abstract SKControl parse(final SkatFileParser parser, final Tree node,
                                     final String controlled, final Skat skat)
         throws OrekitException, SkatException;
+
+    /** Read a grid file.
+     * @param gridFile grid file name
+     * @param earth Earth model
+     * @return list of grid points
+     * @exception SkatException if file cannot be read
+     */
+    protected List<GridPoint> readGridFile(final File gridFile, final OneAxisEllipsoid earth)
+        throws SkatException {
+        try {
+
+            if (! gridFile.exists()) {
+                throw new SkatException(SkatMessages.UNABLE_TO_FIND_RESOURCE, gridFile.getAbsolutePath());
+            }
+            final Scanner scanner = new Scanner(gridFile).useLocale(Locale.US);
+
+            List<GridPoint> grid = new ArrayList<GridPoint>();
+
+            while (scanner.hasNextDouble()) {
+
+                // read one grid point per line
+                final double  timeOffset = scanner.nextDouble();
+                final double  latitude   = FastMath.toRadians(scanner.nextDouble());
+                final double  longitude  = FastMath.toRadians(scanner.nextDouble());
+                final boolean ascending  = scanner.nextBoolean();
+                grid.add(new GridPoint(timeOffset, latitude, longitude, earth, ascending));
+
+            }
+
+            return grid;
+
+        } catch (IOException ioe) {
+            throw new SkatException(ioe, LocalizedFormats.SIMPLE_MESSAGE, ioe.getLocalizedMessage());
+        }
+    }
 
 }

@@ -1,6 +1,10 @@
 /* Copyright 2011 Eumetsat */
 package eu.eumetsat.skat.strategies.leo;
 
+import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
+import org.orekit.bodies.GeodeticPoint;
+import org.orekit.bodies.OneAxisEllipsoid;
+
 
 /**
  * Reference grid point for phased Low Earth Orbit.
@@ -14,11 +18,11 @@ public class GridPoint {
     /** Time offset since some arbitrary cycle reference. */
     private final double timeOffset;
 
-    /** Latitude. */
-    private final double latitude;
+    /** Point as a geodetic point. */
+    private final GeodeticPoint geodetic;
 
-    /** Longitude. */
-    private final double longitude;
+    /** Point as a Cartesian point. */
+    private final Vector3D cartesian;
 
     /** If true, reference point is considered when crossing the specified latitude from South to North. */
     private boolean ascending;
@@ -27,14 +31,15 @@ public class GridPoint {
      * @param timeOffset time offset since some arbitrary cycle reference
      * @param latitude latitude
      * @param longitude longitude
+     * @param earth Earth model
      * @param ascending if true, reference point is considered when crossing
      * the specified latitude from south to north
      */
     public GridPoint(final double timeOffset, final double latitude, final double longitude,
-                     final boolean ascending) {
+                     final OneAxisEllipsoid earth, final boolean ascending) {
         this.timeOffset = timeOffset;
-        this.latitude   = latitude;
-        this.longitude  = longitude;
+        this.geodetic   = new GeodeticPoint(latitude, longitude, 0.0);
+        this.cartesian  = earth.transform(geodetic);
         this.ascending  = ascending;
     }
 
@@ -45,18 +50,18 @@ public class GridPoint {
         return timeOffset;
     }
 
-    /** Get latitude.
-     * @return latitude
+    /** Get point at Earth surface.
+     * @return point at Earth surface
      */
-    public double getLatitude() {
-        return latitude;
+    public GeodeticPoint getGeodeticPoint() {
+        return geodetic;
     }
 
-    /** Get longitude.
-     * @return longitude
+    /** Get point at Earth surface.
+     * @return point at Earth surface
      */
-    public double getLongitude() {
-        return longitude;
+    public Vector3D getCartesianPoint() {
+        return cartesian;
     }
 
     /** Get ascending indicator.

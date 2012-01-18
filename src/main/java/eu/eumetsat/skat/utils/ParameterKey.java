@@ -108,10 +108,15 @@ public enum ParameterKey {
     CONTROL_SOLAR_TIME_SOLAR_TIME("solar_time"),
     CONTROL_SOLAR_TIME_SOLAR_TIME_TOLERANCE("solar_time_tolerance"),
     CONTROL_SOLAR_TIME_LONG_BURN_COMPENSATION("long_burn_compensation"),
-    // Ground track grid
-    CONTROL_GROUND_TRACK_FIRST_OFFSET("offset_first_maneuver"),
-    CONTROL_GROUND_TRACK_GRID_FILE("grid_file"),
-    CONTROL_GROUND_TRACK_MAX_CROSS_TRACK_DISTANCE("max_cross_track_distance"),
+    // In-plane ground track grid
+    CONTROL_IN_PLANE_GROUND_TRACK_FIRST_OFFSET("offset_first_maneuver"),
+    CONTROL_IN_PLANE_GROUND_TRACK_GRID_FILE("grid_file"),
+    CONTROL_IN_PLANE_GROUND_TRACK_MAX_CROSS_TRACK_DISTANCE("max_cross_track_distance"),
+    // Out-of-plane ground track grid
+    CONTROL_OUT_OF_PLANE_GROUND_TRACK_FIRST_OFFSET("offset_first_maneuver"),
+    CONTROL_OUT_OF_PLANE_GROUND_TRACK_GRID_FILE("grid_file"),
+    CONTROL_OUT_OF_PLANE_GROUND_TRACK_MAX_CROSS_TRACK_DISTANCE("max_cross_track_distance"),
+    CONTROL_OUT_OF_PLANE_GROUND_TRACK_GRID_BURN_COMPENSATION("long_burn_compensation"),
 
     // Maneuvers 
     MANEUVERS_NAME("name"),

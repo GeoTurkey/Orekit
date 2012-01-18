@@ -62,7 +62,8 @@ public enum SkatMessages implements Localizable {
     NO_CONVERGENCE("no convergence after {0} iterations on control law(s): {1}"),
     LATITUDE_NEVER_CROSSED("latitude {0} is never crossed in the search interval from {1} to {2}"),
     NO_GRID_POINTS("no grid points read"),
-    GRID_POINTS_NUMBER_MISMATCH("inconsistent grid points numbers: {0} points at latitude {1} but {2} points at latitude {3}");
+    GRID_POINTS_NUMBER_MISMATCH("inconsistent grid points numbers: {0} points at latitude {1} but {2} points at latitude {3}"),
+    GRID_ON_EQUATORIAL_ORBIT("ground track grid cannot be used on equatorial orbits");
 
     // CHECKSTYLE: resume JavadocVariable check
 
