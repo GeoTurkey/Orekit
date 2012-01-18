@@ -231,7 +231,7 @@ public class GroundTrackGrid extends AbstractSKControl {
                                                                         end.shiftedBy(-period));
             if (freeInterval[1].durationFrom(freeInterval[0]) < period) {
                 // if cycle is too short, assume limits are not violated
-                checkMargins(0.5 * (getMin() + getMax()));
+                checkMargins(freeInterval[0], 0.5 * (getMin() + getMax()));
                 return;
             }
 
@@ -309,7 +309,7 @@ public class GroundTrackGrid extends AbstractSKControl {
                     final GeodeticPoint gp = earth.transform(position, earth.getBodyFrame(), crossing.getDate());
 
                     double dl = MathUtils.normalizeAngle(gp.getLongitude() - grid[index].getLongitude(), 0);
-                    checkMargins(dl * FastMath.hypot(position.getX(), position.getY()));
+                    checkMargins(crossing.getDate(), dl * FastMath.hypot(position.getX(), position.getY()));
 
                     for (final ErrorModel errorModel : errorModels) {
                         if (errorModel.matches(grid[index].getLatitude(), grid[index].isAscending())) {

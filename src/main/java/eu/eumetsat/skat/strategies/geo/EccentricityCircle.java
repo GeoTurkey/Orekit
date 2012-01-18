@@ -480,12 +480,13 @@ public class EccentricityCircle extends AbstractSKControl {
                         final EquinoctialOrbit orbit = (EquinoctialOrbit) OrbitType.EQUINOCTIAL.convertType(state.getOrbit());
 
                         // check limits
-                        checkMargins(FastMath.hypot(orbit.getEquinoctialEx() - centerX,
+                        checkMargins(date,
+                                     FastMath.hypot(orbit.getEquinoctialEx() - centerX,
                                                     orbit.getEquinoctialEy() - centerY));
 
                     } else {
                         // if step is too short, assume limits are not violated
-                        checkMargins(0.5 * (getMin() + getMax()));
+                        checkMargins(date, 0.5 * (getMin() + getMax()));
                     }
 
                 }

@@ -58,6 +58,11 @@ public interface SKControl {
      */
     double getMargins();
 
+    /** Get the monitored value.
+     * @return monitored value
+     */
+    double getMonitoredValue(AbsoluteDate date);
+
     /** Get the time horizon for the control.
      * @return the time horizon duration
      */

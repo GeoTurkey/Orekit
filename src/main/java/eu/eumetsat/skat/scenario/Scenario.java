@@ -62,8 +62,8 @@ public class Scenario implements ScenarioComponent {
     /** Maneuvers monitorables. */
     private final Map<String, SimpleMonitorable> maneuversMonitorables;
 
-    /** Map for control laws residuals monitoring. */
-    private Map<SKControl, SimpleMonitorable> controlsMargins;
+    /** Map for control laws values monitoring. */
+    private Map<SKControl, SimpleMonitorable> controlsValues;
 
     /** Map for control laws violations monitoring. */
     private Map<SKControl, SimpleMonitorable> controlsViolations;
@@ -86,7 +86,7 @@ public class Scenario implements ScenarioComponent {
      * @param monitorablesMono list of monitorables for mono-spacecraft
      * @param monitorablesDuo list of monitorables for duo-spacecrafts
      * @param maneuversMonitorables maneuvers monitorables
-     * @param controlsMargins map for control laws residuals monitoring
+     * @param controlsValues map for control laws values monitoring
      * @param controlsViolations map for control laws violations monitoring
      * @param maneuversOutput maneuves output stream
      */
@@ -96,7 +96,7 @@ public class Scenario implements ScenarioComponent {
                     final List<MonitorableMonoSKData> monitorablesMono,
                     final List<MonitorableDuoSKData> monitorablesDuo,
                     final Map<String, SimpleMonitorable> maneuversMonitorables,
-                    final Map<SKControl, SimpleMonitorable> controlsMargins,
+                    final Map<SKControl, SimpleMonitorable> controlsValues,
                     final Map<SKControl, SimpleMonitorable> controlsViolations,
                     final PrintStream maneuversOutput) {
         this.components            = new ArrayList<ScenarioComponent>();
@@ -106,7 +106,7 @@ public class Scenario implements ScenarioComponent {
         this.monitorablesMono      = monitorablesMono;
         this.monitorablesDuo       = monitorablesDuo;
         this.maneuversMonitorables = maneuversMonitorables;
-        this.controlsMargins       = controlsMargins;
+        this.controlsValues        = controlsValues;
         this.controlsViolations    = controlsViolations;
         this.maneuversOutput       = maneuversOutput;
         this.cycleDuration         = 0.0;
@@ -207,7 +207,7 @@ public class Scenario implements ScenarioComponent {
 
         // monitor control laws margins and violations
         Set<SKControl> controls = new HashSet<SKControl>();
-        controls.addAll(controlsMargins.keySet());
+        controls.addAll(controlsValues.keySet());
         controls.addAll(controlsViolations.keySet());
         for (int i = 0; i < states.length; ++i) {
 
@@ -245,11 +245,6 @@ public class Scenario implements ScenarioComponent {
 
         }
 
-        for (final Map.Entry<SKControl, SimpleMonitorable> entry : controlsMargins.entrySet()) {
-            final double value = entry.getKey().getMargins();
-            entry.getValue().setSampledValue(tMin, new double[] { value });
-        }
-
         for (final Map.Entry<SKControl, SimpleMonitorable> entry : controlsViolations.entrySet()) {
             double[] v = entry.getValue().getValue(-1).clone();
             if (entry.getKey().getMargins() < 0) {
@@ -273,6 +268,10 @@ public class Scenario implements ScenarioComponent {
             }
             for (final MonitorableDuoSKData monitorable : monitorablesDuo) {
                 monitorable.update(date, states, earth, groundLocation);
+            }
+            for (final Map.Entry<SKControl, SimpleMonitorable> entry : controlsValues.entrySet()) {
+                final double value = entry.getKey().getMonitoredValue(date);
+                entry.getValue().setSampledValue(date, new double[] { value });
             }
 
             // go to next step, adjusting the last step to be slightly before the limit

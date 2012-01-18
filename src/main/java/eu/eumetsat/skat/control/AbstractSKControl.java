@@ -20,6 +20,8 @@ import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
 import org.orekit.propagation.analytical.AdapterPropagator;
 import org.orekit.time.AbsoluteDate;
+import org.orekit.time.ChronologicalComparator;
+import org.orekit.time.TimeStamped;
 import org.orekit.utils.PVCoordinates;
 
 import eu.eumetsat.skat.strategies.ScheduledManeuver;
@@ -65,6 +67,9 @@ public abstract class AbstractSKControl implements SKControl {
     /** Indicator of constraint violation during the cycle. */
     private double margins;
 
+    /** Log of control law values throughout current cycle. */
+    private SortedSet<TimeStamped> values;
+
     /** Simple constructor.
      * @param name name of the control law
      * @param model in-plane maneuver model
@@ -89,6 +94,7 @@ public abstract class AbstractSKControl implements SKControl {
         this.min             = min;
         this.max             = max;
         this.horizon         = horizon;
+        this.values          = new TreeSet<TimeStamped>(new ChronologicalComparator());
     }
 
     /** {@inheritDoc} */
@@ -127,6 +133,7 @@ public abstract class AbstractSKControl implements SKControl {
      */
     protected void resetMarginsChecks() {
         margins = Double.POSITIVE_INFINITY;
+        values.clear();
     }
 
     /** {@inheritDoc} */
@@ -150,14 +157,29 @@ public abstract class AbstractSKControl implements SKControl {
     }
 
     /** {@inheritDoc} */
+    public double getMonitoredValue(final AbsoluteDate date) {
+        if (values.isEmpty()) {
+            return 0;
+        } else if (date.compareTo(values.first().getDate()) <= 0) {
+            return ((DateValue) values.first()).getValue();
+        } else if (date.compareTo(values.last().getDate()) >= 0) {
+            return ((DateValue) values.last()).getValue();
+        } else {
+            return ((DateValue) values.tailSet(date).first()).getValue();
+        }
+    }
+
+    /** {@inheritDoc} */
     public double getTimeHorizon() {
         return horizon;
     }
 
     /** Check if control limits are exceeded.
+     * @param date current date
      * @param value current value of the control law
      */
-    protected void checkMargins(final double value) {
+    protected void checkMargins(final AbsoluteDate date, final double value) {
+        values.add(new DateValue(date, value));
         if (isConstrained()) {
             margins = FastMath.min(margins, FastMath.min(value - min, max - value));
         } else {
@@ -564,5 +586,57 @@ public abstract class AbstractSKControl implements SKControl {
         }
 
     }
-    
+
+    /** Inner container for date/value pairs. */
+    private static class DateValue implements TimeStamped, Comparable<DateValue> {
+
+        /** Date. */
+        private final AbsoluteDate date;
+
+        /** Value. */
+        private final double value;
+
+        /** Simple constructor.
+         * @param date current date
+         * @param value current value
+         */
+        public DateValue(final AbsoluteDate date, final double value) {
+            this.date  = date;
+            this.value = value;
+        }
+
+        /** {@inheritDoc} */
+        public AbsoluteDate getDate() {
+            return date;
+        }
+
+        /** Get the current value.
+         * @return current value
+         */
+        public double getValue() {
+            return value;
+        }
+
+        /** {@inheritDoc} */
+        public int compareTo(final DateValue other) {
+            return date.compareTo(other.date);
+        }
+
+        /** {@inheritDoc} */
+        public boolean equals(final Object other) {
+
+            if (other == this) {
+                // first fast check
+                return true;
+            }
+
+            if ((other != null) && (other instanceof DateValue)) {
+                return date.equals(((DateValue) other).date);
+            }
+
+            return false;
+
+        }
+
+    }
 }

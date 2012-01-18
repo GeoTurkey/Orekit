@@ -383,7 +383,7 @@ public class ParabolicLongitude extends AbstractSKControl {
                     final double meanLongitude  = getMeanLongitude(state);
 
                     // check the limits
-                    checkMargins(FastMath.toDegrees(geogLongitude));
+                    checkMargins(date, FastMath.toDegrees(geogLongitude));
 
                     // add point to sample
                     final double dt = date.durationFrom(fitStart.getDate());

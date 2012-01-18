@@ -223,7 +223,7 @@ public class MeanLocalSolarTime extends AbstractSKControl {
         double period   = propagator.getInitialState().getKeplerianPeriod();
         if (freeInterval[1].durationFrom(freeInterval[0]) < period) {
             // if cycle is too short, assume limits are not violated
-            checkMargins(0.5 * (getMin() + getMax()));
+            checkMargins(freeInterval[0], 0.5 * (getMin() + getMax()));
             return;
         }
 
@@ -234,7 +234,7 @@ public class MeanLocalSolarTime extends AbstractSKControl {
         double mst = meanSolarTime(crossing);
         mstModel.resetFitting(freeInterval[0], mstModel.getFittedParameters());
         mstModel.addPoint(crossing.getDate(), mst);
-        checkMargins(mst);
+        checkMargins(crossing.getDate(), mst);
 
         // find all other latitude crossings from regular schedule
         while (crossing != null && crossing.getDate().shiftedBy(period).compareTo(freeInterval[1]) < 0) {
@@ -248,7 +248,7 @@ public class MeanLocalSolarTime extends AbstractSKControl {
                 crossings.add(crossing.getDate());
                 mst = meanSolarTime(crossing);
                 mstModel.addPoint(crossing.getDate(), mst);
-                checkMargins(mst);
+                checkMargins(crossing.getDate(), mst);
 
                 // use the same time separation to pinpoint next crossing
                 period = crossing.getDate().durationFrom(previous);

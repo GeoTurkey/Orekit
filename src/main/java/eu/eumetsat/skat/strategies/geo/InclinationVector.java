@@ -382,10 +382,10 @@ public class InclinationVector extends AbstractSKControl {
 
                         // check limit circle violations
                         final double radius = FastMath.hypot(state.getHx() - referenceHx, state.getHy() - referenceHy);
-                        checkMargins(radius);
+                        checkMargins(date, radius);
                     } else {
                         // if step is too short, assume limits are not violated
-                        checkMargins(0.5 * (getMin() + getMax()));
+                        checkMargins(date, 0.5 * (getMin() + getMax()));
                     }
 
                 }

@@ -39,7 +39,7 @@ public enum SupportedScenariocomponent {
                                                    skat.getGroundLocation(),
                                                    skat.getMonitorablesMono(), skat.getMonitorablesDuo(),
                                                    skat.getManeuversMonitorables(),
-                                                   skat.getControlLawsMarginsMap(),
+                                                   skat.getControlLawsValuesMap(),
                                                    skat.getControlLawsViolationsMap(),
                                                    skat.getManeuversOutput());
             for (int j = 0; j < parser.getElementsNumber(scenarioNode); ++j) {
