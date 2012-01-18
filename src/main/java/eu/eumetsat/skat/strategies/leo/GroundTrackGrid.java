@@ -214,7 +214,11 @@ public class GroundTrackGrid extends AbstractSKControl {
         this.cycleEnd       = end;
 
         // limit latitude for switching between latitude and longitude crossings
-        final double switchLatitude = propagator.getInitialState().getI() - SWITCH_LIMIT;
+        double maxLatitude = propagator.getInitialState().getI();
+        if (maxLatitude > 0.5 * FastMath.PI) {
+            maxLatitude = FastMath.PI - maxLatitude;
+        }
+        final double switchLatitude = FastMath.max(maxLatitude - SWITCH_LIMIT, 0);
 
         if (iteration == 0) {
 
