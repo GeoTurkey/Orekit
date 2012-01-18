@@ -314,7 +314,7 @@ public class MeanLocalSolarTime extends AbstractSKControl {
 
                     // ensure maneuvers separation requirements
                     while (nodeState.getDate().durationFrom(freeInterval[0]) < firstOffset) {
-                        nodeState = latitudeCrossing(latitude, earth, nodeState.getDate().shiftedBy(0.5 * period),
+                        nodeState = latitudeCrossing(latitude, earth, nodeState.getDate().shiftedBy(period),
                                                      freeInterval[1], stepSize, period / 8, propagator);
                     }
 
