@@ -101,7 +101,9 @@ public class InPlaneGroundTrackGrid extends AbstractGroundTrackGrid {
                               final AbsoluteDate start, final AbsoluteDate end)
         throws OrekitException, SkatException {
 
-        baseInitializeRun(iteration, maneuvers, propagator, fixedManeuvers, start, end);
+        if (!baseInitializeRun(iteration, maneuvers, propagator, fixedManeuvers, start, end)) {
+            checkMargins(start, 0);
+        }
         if (iteration == 0) {
             forceReset = false;
         }
@@ -142,7 +144,8 @@ public class InPlaneGroundTrackGrid extends AbstractGroundTrackGrid {
         for (final ErrorModel errorModel : errorModels) {
             errorModel.fit();
             final double[] f = errorModel.approximateAsPolynomialOnly(2, fitStart.getDate(), 2, 2,
-                                                                      fitStart.getDate(), end,
+                                                                      fitStart.getDate(),
+                                                                      freeInterval[1],
                                                                       fitStart.getKeplerianPeriod());
             for (int i = 0; i < fittedDL.length; ++i) {
                 fittedDL[i] += f[i];

@@ -107,7 +107,9 @@ public class OutOfPlaneGroundTrackGrid extends AbstractGroundTrackGrid {
                               final AbsoluteDate start, final AbsoluteDate end)
         throws OrekitException, SkatException {
 
-        baseInitializeRun(iteration, maneuvers, propagator, fixedManeuvers, start, end);
+        if (!baseInitializeRun(iteration, maneuvers, propagator, fixedManeuvers, start, end)) {
+            checkMargins(start, 0.0);
+        }
 
         if (iteration == 0) {
 

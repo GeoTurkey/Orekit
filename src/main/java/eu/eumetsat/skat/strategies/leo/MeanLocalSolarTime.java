@@ -219,16 +219,26 @@ public class MeanLocalSolarTime extends AbstractSKControl {
         }
 
         // select a long maneuver-free interval for fitting
-        freeInterval = getManeuverFreeInterval(maneuvers, fixedManeuvers, start, end);
+        freeInterval    = getManeuverFreeInterval(maneuvers, fixedManeuvers, start, end);
         double period   = propagator.getInitialState().getKeplerianPeriod();
+        double stepSize = period / 100.0;
         if (freeInterval[1].durationFrom(freeInterval[0]) < period) {
-            // if cycle is too short, assume limits are not violated
-            checkMargins(freeInterval[0], 0.5 * (getMin() + getMax()));
+            // if free interval is too short, use only one checking value
+            AbsoluteDate t1 = start.shiftedBy(FastMath.max(0, freeInterval[0].durationFrom(start) - period));
+            AbsoluteDate t2 = t1.shiftedBy(2 * period);
+            if (t2.compareTo(start) >= getTimeHorizon()) {
+                t2 = start.shiftedBy(getTimeHorizon());
+            }
+            SpacecraftState crossing =
+                    firstLatitudeCrossing(latitude, ascending, earth, t1, t2, stepSize, propagator);
+            double mst = meanSolarTime(crossing);
+            mstModel.resetFitting(freeInterval[0], mstModel.getFittedParameters());
+            mstModel.addPoint(crossing.getDate(), mst);
+            checkMargins(crossing.getDate(), mst);
             return;
         }
 
         // fit the mean solar time model
-        double stepSize = period / 100;
         SpacecraftState crossing =
                 firstLatitudeCrossing(latitude, ascending, earth, freeInterval[0], freeInterval[1], stepSize, propagator);
         double mst = meanSolarTime(crossing);

@@ -215,12 +215,13 @@ public abstract class AbstractGroundTrackGrid extends AbstractSKControl {
      * @param fixedManeuvers list of maneuvers already fixed for the cycle
      * @param start start date of the propagation
      * @param end end date of the propagation
+     * @return true if grid crossings have been computed
      * @exception OrekitException if something weird occurs with the propagator
      * @exception SkatException if initialization fails
      */
-    protected void baseInitializeRun(final int iteration, final ScheduledManeuver[] maneuvers,
-                                     final Propagator propagator, final List<ScheduledManeuver> fixedManeuvers,
-                                     final AbsoluteDate start, final AbsoluteDate end)
+    protected boolean baseInitializeRun(final int iteration, final ScheduledManeuver[] maneuvers,
+                                        final Propagator propagator, final List<ScheduledManeuver> fixedManeuvers,
+                                        final AbsoluteDate start, final AbsoluteDate end)
         throws OrekitException, SkatException {
 
         resetMarginsChecks();
@@ -241,9 +242,8 @@ public abstract class AbstractGroundTrackGrid extends AbstractSKControl {
             freeInterval = getManeuverFreeInterval(maneuvers, fixedManeuvers,
                                                    start.shiftedBy(period), end.shiftedBy(-period));
             if (freeInterval[1].durationFrom(freeInterval[0]) < period) {
-                // if cycle is too short, assume limits are not violated
-                checkMargins(freeInterval[0], 0.5 * (getMin() + getMax()));
-                return;
+                // free interval is too short
+                return false;
             }
 
             // find the first crossing of one of the grid latitudes
@@ -331,6 +331,8 @@ public abstract class AbstractGroundTrackGrid extends AbstractSKControl {
             }
 
         }
+
+        return true;
 
     }
 
