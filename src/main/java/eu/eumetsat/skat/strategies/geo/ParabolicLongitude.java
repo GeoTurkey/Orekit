@@ -196,13 +196,21 @@ public class ParabolicLongitude extends AbstractSKControl {
         // select a long maneuver-free interval for fitting
         final AbsoluteDate[] freeInterval = getManeuverFreeInterval(maneuvers, fixedManeuvers, start, end);
 
-        fitStart = propagator.propagate(freeInterval[0]);
+        if (iteration == 0) {
+            AbsoluteDate fitStartDate = freeInterval[0].shiftedBy(firstOffset);
+            if (fitStartDate.compareTo(freeInterval[1]) > 0) {
+                fitStartDate  = freeInterval[1];
+            }
+            fitStart = propagator.propagate(fitStartDate);
+        } else {
+            fitStart = propagator.propagate(fitStart.getDate());
+        }
 
         // fit linear model to semi-major axis and quadratic model to mean longitude
         SecularAndHarmonic aModel = new SecularAndHarmonic(1, new double[0]);
         SecularAndHarmonic lModel = new SecularAndHarmonic(2, new double[0]);
-        aModel.resetFitting(freeInterval[0], fitStart.getA(), 0.0);
-        lModel.resetFitting(freeInterval[0], center, 0.0, 0.0);
+        aModel.resetFitting(fitStart.getDate(), fitStart.getA(), 0.0);
+        lModel.resetFitting(fitStart.getDate(), center, 0.0, 0.0);
         for (AbsoluteDate date = freeInterval[0]; date.compareTo(freeInterval[1]) < 0; date = date.shiftedBy(samplingStep)) {
             final SpacecraftState  state = propagator.propagate(date);
             final double meanLongitude = getMeanLongitude(state);
@@ -277,7 +285,7 @@ public class ParabolicLongitude extends AbstractSKControl {
             // add the new maneuvers
             for (int i = 0; i < nMan; ++i) {
                 tuned[tunables.length + i] =
-                        new ScheduledManeuver(model, fitStart.getDate().shiftedBy(firstOffset + i * separation),
+                        new ScheduledManeuver(model, fitStart.getDate().shiftedBy(i * separation),
                                               new Vector3D(deltaV, model.getDirection()),
                                               model.getCurrentThrust(), model.getCurrentISP(),
                                               adapterPropagator, false);
@@ -356,7 +364,6 @@ public class ParabolicLongitude extends AbstractSKControl {
 
         /** {@inheritDoc} */
         public void init(final SpacecraftState s0, final AbsoluteDate t) {
-//            resetMarginsChecks();
             dateSample.clear();
             longitudeSample.clear();
         }
