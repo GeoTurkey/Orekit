@@ -224,14 +224,16 @@ public class Scenario implements ScenarioComponent {
             propagator.clearEventsDetectors();
 
             for (final SKControl controlLaw : controls) {
-                final List<ScheduledManeuver> maneuvers = states[i].getManeuvers();
-                if (maneuvers == null) {
-                    controlLaw.initializeRun(0, new ScheduledManeuver[0], propagator,
-                                             new ArrayList<ScheduledManeuver>(), tMin, tMax);
-                } else {
-                    controlLaw.initializeRun(0, maneuvers.toArray(new ScheduledManeuver[maneuvers.size()]),
-                                             propagator, new ArrayList<ScheduledManeuver>(), tMin, tMax);
+                final List<ScheduledManeuver> maneuvers = new ArrayList<ScheduledManeuver>();
+                if (states[i].getManeuvers() != null) {
+                    for (final ScheduledManeuver m : states[i].getManeuvers()) {
+                        if (m.getDate().compareTo(tMin) >= 0 && m.getDate().compareTo(tMax) < 0) {
+                            maneuvers.add(m);
+                        }
+                    }
                 }
+                controlLaw.initializeRun(0, maneuvers.toArray(new ScheduledManeuver[maneuvers.size()]),
+                                         propagator, new ArrayList<ScheduledManeuver>(), tMin, tMax);
             }
 
             final OrekitStepHandlerMultiplexer multiplexer = new OrekitStepHandlerMultiplexer();
