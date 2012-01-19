@@ -5,6 +5,7 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -167,25 +168,33 @@ public class Scenario implements ScenarioComponent {
             performMonitoring(states);
 
             // prepare next cycle
+            Map<String, Integer> maneuverNb = new HashMap<String, Integer>();
+            Map<String, Double>  maneuverDV = new HashMap<String, Double>();
             for (int i = 0; i < states.length; ++i) {
                 states[i] = states[i].updateCyclesNumber(states[i].getCyclesNumber() + 1);
-                for (final String name : states[i].getManeuversNames()) {
-                    states[i] = states[i].updateManeuverStats(name,
-                                                              states[i].getManeuversNumber(name),
-                                                              0.0,
-                                                              states[i].getManeuversTotalDV(name));
+                for (String name : states[i].getManeuversNames()) {
+                    final int    manNb = states[i].getManeuversNumber(name);
+                    final double manDV = states[i].getManeuversTotalDV(name);
+                    states[i] = states[i].updateManeuverStats(name, manNb, 0.0, manDV);
 
-                    // monitor maneuver at cycle start
-                    SimpleMonitorable monitorable = maneuversMonitorables.get(name);
-                    monitorable.setSampledValue(states[i].getRealState().getDate(),
-                                                new double[] {
-                                                   states[i].getManeuversNumber(name),
-                                                   states[i].getManeuversCycleDV(name),
-                                                   states[i].getManeuversTotalDV(name)
-                                                });
+                    final Integer nb = maneuverNb.get(name);
+                    final Double  dv = maneuverDV.get(name);
+                    if (nb == null || nb < manNb) {
+                        maneuverNb.put(name, manNb);
+                    }
+                    if (dv == null || dv < manDV) {
+                        maneuverDV.put(name, manDV);
+                    }
                 }
                 states[i] = states[i].updateEstimatedState(null);
                 states[i] = states[i].updateManeuvers(new ArrayList<ScheduledManeuver>());
+            }
+            
+            // monitor maneuvers at cycle start
+            for (final String name : states[0].getManeuversNames()) {
+                SimpleMonitorable monitorable = maneuversMonitorables.get(name);
+                monitorable.setSampledValue(states[0].getRealState().getDate(),
+                                            new double[] {maneuverNb.get(name), 0.0, maneuverDV.get(name)});
             }
 
         } while (cycleEnd.durationFrom(iterationTarget) > 1.0);

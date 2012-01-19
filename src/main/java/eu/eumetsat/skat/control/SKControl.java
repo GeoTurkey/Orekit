@@ -11,6 +11,7 @@ import org.orekit.propagation.sampling.OrekitStepHandler;
 import org.orekit.time.AbsoluteDate;
 
 import eu.eumetsat.skat.strategies.ScheduledManeuver;
+import eu.eumetsat.skat.strategies.TunableManeuver;
 import eu.eumetsat.skat.utils.SkatException;
 
 
@@ -63,10 +64,15 @@ public interface SKControl {
      */
     double getMonitoredValue(AbsoluteDate date);
 
-    /** Get the time horizon for the control.
+    /** Get the time horizon for the control law.
      * @return the time horizon duration
      */
     double getTimeHorizon();
+
+    /** Get the maneuver model for the control law.
+     * @return maneuver model
+     */
+    TunableManeuver getModel();
 
     /** Initialize one run of the control law.
      * <p>

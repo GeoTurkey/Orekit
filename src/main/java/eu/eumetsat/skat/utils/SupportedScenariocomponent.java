@@ -106,8 +106,7 @@ public enum SupportedScenariocomponent {
 
             // set up control loop
             final int maxIter = parser.getInt(node, ParameterKey.COMPONENT_CONTROL_LOOP_MAX_ITER);
-            final ControlLoop loop = new ControlLoop(spacecraftIndex, firstCycle, lastCycle,
-                                                     skat.getManeuversModelsPool(), maxIter, propagator);
+            final ControlLoop loop = new ControlLoop(spacecraftIndex, firstCycle, lastCycle, maxIter, propagator);
 
             // control laws
             final Tree controlsNode = parser.getValue(node, ParameterKey.COMPONENT_CONTROL_LOOP_CONTROLS);

@@ -52,7 +52,7 @@ public class ControlLoop implements ScenarioComponent {
     private final int lastCycle;
 
     /** Tunable maneuvers. */
-    private final TunableManeuver[] tunables;
+    private final Set<TunableManeuver> tunables;
 
     /** Station-keeping control laws. */
     private final List<SKControl> controls;
@@ -62,26 +62,23 @@ public class ControlLoop implements ScenarioComponent {
 
     /** Simple constructor.
      * <p>
-     * Creates an empty control loop, with neither controls nor control parameters.
-     * They must be added later on by {@link #addControl(double, SKControl)}
-     * and {@link #addTunableManeuver(TunableManeuver)}.
+     * Creates an empty control loop with no control law.
+     * They must be added later on by {@link #addControl(SKControl)}.
      * </p>
      * @param spacecraftIndex index of the spacecraft controlled by this component
      * @param firstCycle first cycle this loop should control
      * @param lastCycle last cycle this loop should control
-     * @param tunables tunable maneuvers (for all rolling cycles)
      * @param maxIter maximal number of iterations
      * @param randomizer orbit propagator randomizer
      */
     public ControlLoop(final int spacecraftIndex, final int firstCycle, final int lastCycle,
-                       final TunableManeuver[] tunables, final int maxIter,
-                       final PropagatorRandomizer randomizer) {
+                       final int maxIter, final PropagatorRandomizer randomizer) {
         this.spacecraftIndex = spacecraftIndex;
         this.firstCycle      = firstCycle;
         this.lastCycle       = lastCycle;
         this.maxIter         = maxIter;
         this.randomizer      = randomizer;
-        this.tunables        = tunables.clone();
+        this.tunables        = new HashSet<TunableManeuver>();
         this.controls        = new ArrayList<SKControl>();
         this.cycleDuration   = 0.0;
     }
@@ -91,6 +88,7 @@ public class ControlLoop implements ScenarioComponent {
      */
     public void addControl(final SKControl controlLaw) {
         controls.add(controlLaw);
+        tunables.add(controlLaw.getModel());
         cycleDuration = FastMath.max(cycleDuration, controlLaw.getTimeHorizon());
     }
 
@@ -101,13 +99,7 @@ public class ControlLoop implements ScenarioComponent {
 
     /** {@inheritDoc}
      * <p>
-     * Optimize the control parameters to achieve the controls.
-     * </p>
-     * <p>
-     * At the end of the optimization the {@link
-     * #addTunableManeuver(TunableManeuver) maneuvers} values
-     * will be set to the optimal values that best fulfill the {@link
-     * #addControl(double, SKControl) station keeping controls}.
+     * Adjust maneuvers to achieve the controls.
      * </p>
      */
     public ScenarioState[] updateStates(final ScenarioState[] originals)
@@ -118,14 +110,13 @@ public class ControlLoop implements ScenarioComponent {
 
         if ((original.getCyclesNumber() >= firstCycle) && (original.getCyclesNumber() <= lastCycle)) {
 
+            if (original.getEstimatedState() == null) {
+                throw new SkatException(SkatMessages.NO_ESTIMATED_STATE,
+                                        original.getName(), original.getCyclesNumber());
+            }
+
             // set the reference consumed mass for maneuvers
-            for (int i = 0; i < tunables.length; ++i) {
-                final TunableManeuver tunable = tunables[i];
-                SpacecraftState estimated = original.getEstimatedState();
-                if (estimated == null) {
-                    throw new SkatException(SkatMessages.NO_ESTIMATED_STATE,
-                                            original.getName(), original.getCyclesNumber());
-                }
+            for (TunableManeuver tunable: tunables) {
                 tunable.setReferenceConsumedMass(original.getBOLMass() -
                                                  original.getEstimatedState().getMass());
             }

@@ -102,9 +102,7 @@ public abstract class AbstractSKControl implements SKControl {
         return name;
     }
 
-    /** Get the maneuver model.
-     * @return maneuver model
-     */
+    /** {@inheritDoc} */
     public TunableManeuver getModel() {
         return model;
     }
