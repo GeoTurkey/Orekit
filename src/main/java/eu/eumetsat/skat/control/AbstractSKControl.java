@@ -348,6 +348,7 @@ public abstract class AbstractSKControl implements SKControl {
      */
     protected void clearHistory() {
         history.clear();
+        repetition = 0;
     }
 
     /** Add a quadratic fit to the history
