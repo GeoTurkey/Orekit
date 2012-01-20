@@ -73,18 +73,24 @@ public class Propagation implements ScenarioComponent {
     public ScenarioState[] updateStates(final ScenarioState[] originals)
         throws OrekitException, SkatException {
 
-        // truncate cycle if needed
+        // truncate cycle if needed after last maneuver of some type (as they may appear in groups)
+        ScheduledManeuver latestManeuver = null;
         if (truncationManeuverName != null) {
             for (int i = 0; i < spacecraftIndices.length; ++i) {
                 final int index = spacecraftIndices[i];
                 for (final ScheduledManeuver maneuver : originals[index].getManeuvers()) {
-                    if (maneuver.getName().equals(truncationManeuverName)) {
-                        final AbsoluteDate truncationDate = maneuver.getDate().shiftedBy(truncationManeuverDelay);
-                        if (cycleEnd.compareTo(truncationDate) > 0) {
-                            cycleEnd = truncationDate;
-                        }
+                    if (maneuver.getName().equals(truncationManeuverName) &&
+                        (latestManeuver == null || maneuver.getDate().compareTo(latestManeuver.getDate()) > 0)) {
+                        latestManeuver = maneuver;
                     }
                 }
+            }
+        }
+        if (latestManeuver != null) {
+            final AbsoluteDate truncationDate =
+                    latestManeuver.getDate().shiftedBy(truncationManeuverDelay);
+            if (cycleEnd.compareTo(truncationDate) > 0) {
+                cycleEnd = truncationDate;
             }
         }
 
