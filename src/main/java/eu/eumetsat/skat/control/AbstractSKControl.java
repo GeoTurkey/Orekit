@@ -70,6 +70,12 @@ public abstract class AbstractSKControl implements SKControl {
     /** Log of control law values throughout current cycle. */
     private SortedSet<TimeStamped> values;
 
+    /** History of fitting quadratics. */
+    private final List<double[]> history;
+
+    /** Loop detection indicator. */
+    private int repetition;
+
     /** Simple constructor.
      * @param name name of the control law
      * @param model in-plane maneuver model
@@ -95,6 +101,7 @@ public abstract class AbstractSKControl implements SKControl {
         this.max             = max;
         this.horizon         = horizon;
         this.values          = new TreeSet<TimeStamped>(new ChronologicalComparator());
+        this.history         = new ArrayList<double[]>();
     }
 
     /** {@inheritDoc} */
@@ -335,6 +342,72 @@ public abstract class AbstractSKControl implements SKControl {
 
         }
 
+    }
+
+    /** Clear the history of quadratic fittings.
+     */
+    protected void clearHistory() {
+        history.clear();
+    }
+
+    /** Add a quadratic fit to the history
+     * @param quadratic parameters of a quadratic fit to add
+     * @param start start of the fit interval
+     * @param end end of the fit interval
+     */
+    protected void addQuadraticFit(final double[] quadratic, final double start, final double end) {
+
+        // check for loops
+        boolean loopDetected = false;
+        final double referenceValue = getMax(quadratic[0], quadratic[1], quadratic[2], start, end);
+        for (final double[] old : history) {
+            final double maxDelta = getMax(old[0] - quadratic[0], old[1] - quadratic[1], old[2] - quadratic[2],
+                                           start, end);
+            if (maxDelta < 1.0e-6 * referenceValue) {
+                // we have found again a quadratic we have already seen
+                loopDetected = true;
+            }
+        }
+
+        if (loopDetected) {
+            ++repetition;
+        }
+
+        history.add(quadratic.clone());
+
+    }
+
+    /** Get the maximal absolute value of a quadratic over an interval.
+     * @param a0 constant term of the quadratic
+     * @param a1 slope term of the quadratic
+     * @param a2 acceleration term of the quadratic
+     * @param start start of the interval
+     * @param end end of the interval
+     * @return maximal absolute value of the quadratic
+     */
+    private double getMax(final double a0, final double a1, final double a2, final double start, final double end) {
+
+        // absolute value at start
+        double max = FastMath.abs(a0 + a1 * start + a2 * start * start);
+
+        // absolute value at end
+        max = FastMath.max(max, FastMath.abs(a0 + a1 * end + a2 * end * end));
+
+        final double tPeak = -a1 / (2 * a2);
+        if (tPeak > start && tPeak < end) {
+            // absolute value at peak
+            max = FastMath.max(max, FastMath.abs(a0 + a1 * tPeak + a2 * tPeak * tPeak));
+        }
+
+        return max;
+
+    }
+
+    /** Check if a loop has been found in the successive quadratic fits.
+     * @return true if a loop has been found
+     */
+    protected boolean loopDetected() {
+        return repetition > 10;
     }
 
     /** 

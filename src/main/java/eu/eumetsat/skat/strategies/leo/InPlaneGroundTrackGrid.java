@@ -90,8 +90,8 @@ public class InPlaneGroundTrackGrid extends AbstractGroundTrackGrid {
         super(name, controlledName, controlledIndex, model, firstOffset, maxManeuvers, orbitsSeparation,
               earth, referenceRadius, mu, j2, grid, maxDistance, horizon);
 
-        this.fittedDL         = new double[3];
-        this.safetyMargin     = 0.1 * maxDistance;
+        this.fittedDL     = new double[3];
+        this.safetyMargin = 0.1 * maxDistance;
 
     }
 
@@ -106,6 +106,7 @@ public class InPlaneGroundTrackGrid extends AbstractGroundTrackGrid {
         }
         if (iteration == 0) {
             forceReset = false;
+            clearHistory();
         }
 
         // fit longitude offsets to parabolic models
@@ -155,6 +156,8 @@ public class InPlaneGroundTrackGrid extends AbstractGroundTrackGrid {
             fittedDL[i] /= errorModels.size();
         }
 
+        addQuadraticFit(fittedDL, 0, freeInterval[1].durationFrom(fitStart.getDate()));
+
     }
 
     /** {@inheritDoc} */
@@ -164,6 +167,11 @@ public class InPlaneGroundTrackGrid extends AbstractGroundTrackGrid {
 
         final double dlMax    = getMax() / earth.getEquatorialRadius();
         final double dlSafety = (getMax() - safetyMargin) / earth.getEquatorialRadius();
+
+        if (loopDetected()) {
+            // we are stuck in a convergence loop, we cannot improve the current solution
+            return tunables;
+        }
 
         // which depends on current state
         final double newDLdot;
@@ -178,6 +186,8 @@ public class InPlaneGroundTrackGrid extends AbstractGroundTrackGrid {
             final double targetT  = cycleEnd.durationFrom(fitStart.getDate()) + firstOffset;
             final double targetDL = FastMath.copySign(dlMax, fittedDL[2]);
             newDLdot = (targetDL - fittedDL[0]) / targetT - fittedDL[2] * targetT;
+            System.out.print(iteration + " targetT = " + targetT + ", targetDL = " + targetDL +
+                               ", newDLdot = " + newDLdot);
 
         } else {
             // the start point is on the right side of the window
@@ -199,6 +209,11 @@ public class InPlaneGroundTrackGrid extends AbstractGroundTrackGrid {
                 newDLdot = FastMath.copySign(FastMath.sqrt(4 * fittedDL[2] * (fittedDL[0] - targetDL)),
                                              (tPeak > 0) ? fittedDL[1] : -fittedDL[1]);
 
+                System.out.println(fittedDL[0] + " + " + fittedDL[1] + " * $t + " + fittedDL[2] + " * $t * $t");
+                System.out.print(iteration + " tPeak = " + tPeak + ", dlPeak = " + dlPeak +
+                                 ", finalT = " + finalT + ", finalDL = " + finalDL +
+                                 ", finalExit = " + finalExit + ", intermediateExit = " + intermediateExit +
+                                 ", newDLdot = " + newDLdot);
             } else {
                 // longitude error stays within bounds up to next cycle,
                 // we don't change anything on the maneuvers
@@ -221,6 +236,7 @@ public class InPlaneGroundTrackGrid extends AbstractGroundTrackGrid {
             final double a            = fitStart.getA();
             final double totalDeltaV  = thrustSignVelocity(fitStart) *
                                         FastMath.sqrt(mu * (2 / a - 1 / (a + deltaA))) - FastMath.sqrt(mu / a);
+            System.out.println(" -> totalDV = " + totalDeltaV);
 
             // in order to avoid tempering eccentricity too much,
             // we use a (n+1/2) orbits between maneuvers, where n is an integer
@@ -257,6 +273,7 @@ public class InPlaneGroundTrackGrid extends AbstractGroundTrackGrid {
             final double a            = fitStart.getA();
             final double deltaVChange = thrustSignVelocity(fitStart) *
                                         FastMath.sqrt(mu * (2 / a - 1 / (a + deltaA))) - FastMath.sqrt(mu / a);
+            System.out.println(" -> deltaVChange = " + deltaVChange);
 
             // distribute the change over all maneuvers
             tuned = tunables.clone();
