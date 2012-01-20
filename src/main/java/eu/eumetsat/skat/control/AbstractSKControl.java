@@ -301,7 +301,8 @@ public abstract class AbstractSKControl implements SKControl {
         final double sup = model.getDVSup();
 
         double remaining = dV;
-        while (FastMath.abs(remaining) > model.getEliminationThreshold()) {
+        final double epsilon = FastMath.max(model.getEliminationThreshold(), 100. * FastMath.ulp(1.0));
+        while (FastMath.abs(remaining) > epsilon) {
 
             // identify the maneuvers that can be changed
             final List<Integer> nonSaturated = new ArrayList<Integer>(maneuvers.length);
