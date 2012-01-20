@@ -197,6 +197,7 @@ public class ParabolicLongitude extends AbstractSKControl {
         final AbsoluteDate[] freeInterval = getManeuverFreeInterval(maneuvers, fixedManeuvers, start, end);
 
         if (iteration == 0) {
+            clearHistory();
             AbsoluteDate fitStartDate = freeInterval[0].shiftedBy(firstOffset);
             if (fitStartDate.compareTo(freeInterval[1]) > 0) {
                 fitStartDate  = freeInterval[1];
@@ -231,12 +232,18 @@ public class ParabolicLongitude extends AbstractSKControl {
         dlDotDa = 2 * quadratic[2] / aDot;
         a0Mas   = quadratic[1] / dlDotDa;
 
+        addQuadraticFit(quadratic, 0, freeInterval[1].durationFrom(fitStart.getDate()));
     }
 
     /** {@inheritDoc} */
     public ScheduledManeuver[] tuneManeuvers(final ScheduledManeuver[] tunables,
                                              final BoundedPropagator reference)
         throws OrekitException {
+
+        if (loopDetected()) {
+            // we are stuck in a convergence loop, we cannot improve the current solution
+            return tunables;
+        }
 
         // longitude excursion when the cycle is centered from tPeak - cycleDuration/2
         // to tPeak + cycleDuration/2 where tPeak is the date at which peak longitude
