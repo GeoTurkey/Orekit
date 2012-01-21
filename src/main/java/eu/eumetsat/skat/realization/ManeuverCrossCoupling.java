@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.apache.commons.math.geometry.euclidean.threed.Rotation;
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
+import org.apache.commons.math.random.RandomGenerator;
 import org.apache.commons.math.util.FastMath;
 import org.orekit.errors.OrekitException;
 import org.orekit.forces.maneuvers.SmallManeuverAnalyticalModel;
@@ -43,8 +44,16 @@ public class ManeuverCrossCoupling implements ScenarioComponent {
     /** Name of maneuvers to which this component applies. */
     private final String name;
 
-    /** Coupling rotation. */
-    private final Rotation coupling;
+    /** Coupling components. */
+    private final Vector3D nominalDirection;
+    private final Vector3D couplingDirection;
+    private final double couplingRatio;
+
+    /** Standard deviation of the multiplying uncertainty factor. */
+    private final double standardDeviation;
+
+    /** Random generator to use for evaluating the uncertainty factor. */
+    private final RandomGenerator generator;
 
     /** Simple constructor.
      * @param spacecraftIndices indices of the spacecrafts managed by this component
@@ -53,15 +62,17 @@ public class ManeuverCrossCoupling implements ScenarioComponent {
      * @param couplingDirection coupling direction in spacecraft frame
      * @param couplingRatio ratio of the coupling along coupling axis
      * (must be between -1 and 1)
+     * @param standardDeviation standard deviation of the multiplying uncertainty factor
+     * (for example 0.05 for a 5% uncertainty)
+     * @param generator random generator to use for evaluating the uncertainty factor
      * @exception IllegalArgumentException if coupling ratio is not between -1 and 1
      * or if coupling direction is aligned with nominal thrust direction
      */
     public ManeuverCrossCoupling(final int[] spacecraftIndices, final String name,
                                  final Vector3D nominalDirection, final Vector3D couplingDirection,
-                                 final double couplingRatio)
+                                 final double couplingRatio, final double standardDeviation,
+                                 final RandomGenerator generator)
         throws IllegalArgumentException {
-        this.spacecraftIndices  = spacecraftIndices.clone();
-        this.name               = name;
         if (couplingRatio < -1 || couplingRatio > 1) {
             throw SkatException.createIllegalArgumentException(SkatMessages.WRONG_COUPLING,
                                                                couplingRatio);
@@ -72,8 +83,13 @@ public class ManeuverCrossCoupling implements ScenarioComponent {
                                                                couplingDirection.getY(),
                                                                couplingDirection.getZ());
         }
-        this.coupling = new Rotation(Vector3D.crossProduct(nominalDirection, couplingDirection),
-                                     FastMath.asin(couplingRatio));
+        this.spacecraftIndices = spacecraftIndices.clone();
+        this.name              = name;
+        this.couplingDirection = couplingDirection;
+        this.nominalDirection  = nominalDirection;
+        this.couplingRatio     = couplingRatio;
+        this.standardDeviation = standardDeviation;
+        this.generator         = generator;
     }
 
     /** {@inheritDoc} */
@@ -103,7 +119,10 @@ public class ManeuverCrossCoupling implements ScenarioComponent {
             // modify the maneuvers
             for (final ScheduledManeuver maneuver : rawManeuvers) {
                 if (maneuver.getName().equals(name)) {
-                    // the maneuver is affected by the coupling
+                    // the maneuver is affected by the coupling with some uncertainty
+                    final double errorFactor  = 1.0 + standardDeviation * generator.nextGaussian();
+                    final Rotation coupling   = new Rotation(Vector3D.crossProduct(nominalDirection, couplingDirection),
+                                                             FastMath.asin(errorFactor * couplingRatio));
                     final ScheduledManeuver m = new ScheduledManeuver(maneuver.getModel(), maneuver.getDate(),
                                                                       coupling.applyTo(maneuver.getDeltaV()),
                                                                       maneuver.getThrust(),
