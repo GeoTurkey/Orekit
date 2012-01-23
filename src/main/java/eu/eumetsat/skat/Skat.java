@@ -131,6 +131,9 @@ public class Skat {
     /** Simulation start date. */
     private final AbsoluteDate startDate;
 
+    /** Simulation end date. */
+    private final AbsoluteDate endDate;
+
     /** Output step. */
     private final double outputStep;
 
@@ -441,7 +444,7 @@ public class Skat {
 
         // set up scenario components
         scenario = (Scenario) SupportedScenariocomponent.SCENARIO.parse(parser, root, this);
-        scenario.setCycleEnd(parser.getDate(simulationNode, ParameterKey.SIMULATION_END_DATE, utc));
+        endDate = parser.getDate(simulationNode, ParameterKey.SIMULATION_END_DATE, utc);
 
         // check that every spacecraft is managed by at least one propagation component
         for (int i = 0; i < managed.length; ++i) {
@@ -702,19 +705,22 @@ public class Skat {
             propagationComponents.add(propagation);
         }
 
-        // set up empty maneuvers lists
+        // set up state for initial propagation
         ScenarioState[] initialStates = new ScenarioState[configuredStates.length];
         for (int i = 0; i < initialStates.length; ++i) {
             initialStates[i] = configuredStates[i].updateManeuvers(new ArrayList<ScheduledManeuver>());
+            initialStates[i] = initialStates[i].updateTargetCycleEnd(startDate);
         }
 
         // propagate all spacecrafts state to simulation start date
         for (final Propagation propagation : propagationComponents) {
-            propagation.setCycleEnd(startDate);
             initialStates = propagation.updateStates(initialStates);
         }
 
         // perform the complete simulation
+        for (int i = 0; i < initialStates.length; ++i) {
+            initialStates[i] = initialStates[i].updateTargetCycleEnd(endDate);
+        }
         final ScenarioState[] finalStates = scenario.updateStates(initialStates);
 
         dumpOutput(finalStates);
@@ -756,7 +762,7 @@ public class Skat {
                 finalOutput.println(formatIndent(3 * baseIndent) + "{");
                 finalOutput.println(formatIndent(4 * baseIndent) +
                                     formatKey(keysWidth - 2 * baseIndent, ParameterKey.INITIAL_STATE_MANEUVER_NAME) +
-                                    "= " + name + ";");
+                                    "= \"" + name + "\";");
                 finalOutput.println(formatIndent(4 * baseIndent) +
                                     formatKey(keysWidth - 2 * baseIndent, ParameterKey.INITIAL_STATE_MANEUVER_NUMBER) +
                                     "= " + state.getManeuversNumber(name) + ";");

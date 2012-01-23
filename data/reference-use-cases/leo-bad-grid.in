@@ -1,6 +1,10 @@
-# General simulation parameters
+# This test case shows control dependency to both grid parameters and control laws
+# it is based on a custom grid which is fair only at the very beginning of the simulation
+# but becomes quickly bad as inclination changes and is not controlled tightly enough
+# by the mean solar time
+
 simulation       = {
-    output_base_name = "leo";
+    output_base_name = "leo-bad-grid";
     inertial_frame   = "EME2000";
     earth_frame      = "GTOD without EOP";
     start_date       = 2012-04-25T00:00:00.000;
@@ -115,7 +119,7 @@ scenario         = [
                 maneuvers_orbits_separation = 5;
                 offset_first_maneuver       = 172800;
                 time_horizon                = 45;
-                grid_file                   = "metop.grd";
+                grid_file                   = "bad-grid.grd";
                 max_cross_track_distance    =  2000.0;
             },
             {
@@ -131,19 +135,7 @@ scenario         = [
                 solar_time                  = 9.5;   # solar time in fractional hours
                 solar_time_tolerance        = 2;     # tolerance in minutes
                 long_burn_compensation      = true;
-            },
-            #{
-            #    type                        = OUT_OF_PLANE_GROUND_TRACK_GRID;
-            #    name                        = "out of plane ground track grid";
-            #    maneuver_name               = "out-of-plane";
-            #    max_maneuvers               = 6;
-            #    offset_first_maneuver       = 86400;
-            #    maneuvers_orbits_separation = 5;
-            #    time_horizon                = 90;
-            #    grid_file                   = "metop.grd";
-            #    max_cross_track_distance    =  2000.0;
-            #    long_burn_compensation      = true;
-            #}
+            }
         ];
     },
     {

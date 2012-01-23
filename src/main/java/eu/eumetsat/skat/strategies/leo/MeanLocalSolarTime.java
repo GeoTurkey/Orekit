@@ -313,19 +313,21 @@ public class MeanLocalSolarTime extends AbstractSKControl {
                     if (search.durationFrom(cycleStart) <= period) {
                         search = cycleStart.shiftedBy(period);
                     }
-                    nodeState = latitudeCrossing(latitude, earth, search, freeInterval[1],
-                                                 stepSize, period, propagator);
-                    final double nodeMst = meanSolarTime(nodeState);
-                    if (nodeMst >= 6.0 && nodeMst <= 18.0) {
-                        // wrong node, it is under Sun light, select the next one
-                        nodeState = latitudeCrossing(latitude, earth, nodeState.getDate().shiftedBy(0.5 * period),
-                                                     freeInterval[1], stepSize, period / 8, propagator);
-                    }
+                    if (cycleEnd.durationFrom(search) >= period) {
+                        nodeState = latitudeCrossing(latitude, earth, search, freeInterval[1],
+                                                     stepSize, period, propagator);
+                        final double nodeMst = meanSolarTime(nodeState);
+                        if (nodeMst >= 6.0 && nodeMst <= 18.0) {
+                            // wrong node, it is under Sun light, select the next one
+                            nodeState = latitudeCrossing(latitude, earth, nodeState.getDate().shiftedBy(0.5 * period),
+                                                         freeInterval[1], stepSize, period / 8, propagator);
+                        }
 
-                    // ensure maneuvers separation requirements
-                    while (nodeState.getDate().durationFrom(freeInterval[0]) < firstOffset) {
-                        nodeState = latitudeCrossing(latitude, earth, nodeState.getDate().shiftedBy(period),
-                                                     freeInterval[1], stepSize, period / 8, propagator);
+                        // ensure maneuvers separation requirements
+                        while (nodeState.getDate().durationFrom(freeInterval[0]) < firstOffset) {
+                            nodeState = latitudeCrossing(latitude, earth, nodeState.getDate().shiftedBy(period),
+                                                         freeInterval[1], stepSize, period / 8, propagator);
+                        }
                     }
 
                 }

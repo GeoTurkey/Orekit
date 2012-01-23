@@ -10,7 +10,6 @@ import org.apache.commons.math.random.RandomGenerator;
 import org.apache.commons.math.util.FastMath;
 import org.orekit.errors.OrekitException;
 import org.orekit.forces.maneuvers.SmallManeuverAnalyticalModel;
-import org.orekit.time.AbsoluteDate;
 
 import eu.eumetsat.skat.scenario.ScenarioComponent;
 import eu.eumetsat.skat.scenario.ScenarioState;
@@ -90,11 +89,6 @@ public class ManeuverCrossCoupling implements ScenarioComponent {
         this.couplingRatio     = couplingRatio;
         this.standardDeviation = standardDeviation;
         this.generator         = generator;
-    }
-
-    /** {@inheritDoc} */
-    public void setCycleEnd(final AbsoluteDate cycleEnd) {
-        // nothing to do here
     }
 
     /** {@inheritDoc} */

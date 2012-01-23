@@ -8,7 +8,6 @@ import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math.random.RandomGenerator;
 import org.orekit.errors.OrekitException;
 import org.orekit.forces.maneuvers.SmallManeuverAnalyticalModel;
-import org.orekit.time.AbsoluteDate;
 
 import eu.eumetsat.skat.scenario.ScenarioComponent;
 import eu.eumetsat.skat.scenario.ScenarioState;
@@ -75,11 +74,6 @@ public class ManeuverMagnitudeError implements ScenarioComponent {
         this.name               = name;
         this.standardDeviation  = standardDeviation;
         this.generator          = generator;
-    }
-
-    /** {@inheritDoc} */
-    public void setCycleEnd(final AbsoluteDate cycleEnd) {
-        // nothing to do here
     }
 
     /** {@inheritDoc} */

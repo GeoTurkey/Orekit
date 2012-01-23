@@ -48,9 +48,6 @@ public class Scenario implements ScenarioComponent {
     /** Earth model. */
     private final BodyShape earth;
 
-    /** Cycle end date. */
-    private AbsoluteDate cycleEnd;
-
     /** Reference ground location. */
     private TopocentricFrame groundLocation;
 
@@ -123,14 +120,11 @@ public class Scenario implements ScenarioComponent {
         components.add(component);
     }
 
-    /** {@inheritDoc} */
+    /** Set the cycle duration.
+     * @param cycleDuration cycle duration
+     */
     public void setCycleDuration(final double cycleDuration) {
         this.cycleDuration = cycleDuration;
-    }
-
-    /** {@inheritDoc} */
-    public void setCycleEnd(final AbsoluteDate cycleEnd) {
-        this.cycleEnd = cycleEnd;
     }
 
     /** {@inheritDoc}
@@ -142,15 +136,26 @@ public class Scenario implements ScenarioComponent {
     public ScenarioState[] updateStates(final ScenarioState[] originals)
         throws OrekitException, SkatException {
 
-        ScenarioState[] states = originals.clone();
-        AbsoluteDate iterationTarget;
-        do {
+        final AbsoluteDate cycleEnd = originals[0].getTargetCycleEnd();
 
-            // set target date for iteration using cycle duration
-            final AbsoluteDate startDate = states[0].getRealState().getDate();
-            iterationTarget = startDate.shiftedBy(cycleDuration);
+        ScenarioState[] states = originals.clone();
+        AbsoluteDate startDate = AbsoluteDate.FUTURE_INFINITY;
+        for (final ScenarioState state : states) {
+            if (state.getRealState().getDate().compareTo(startDate) < 0) {
+                startDate = state.getRealState().getDate();
+            }
+        }
+
+        while (cycleEnd.durationFrom(startDate) > 1.0) {
+
+            // initial setting target date for iteration using cycle duration
+            // (this will be updated by control loop)
+            AbsoluteDate iterationTarget = startDate.shiftedBy(cycleDuration);
             if (iterationTarget.compareTo(cycleEnd) > 0) {
                 iterationTarget = cycleEnd;
+            }
+            for (int i = 0; i < states.length; ++i) {
+                states[i] = states[i].updateTargetCycleEnd(iterationTarget);
             }
 
             final TimeScale utc = TimeScalesFactory.getUTC();
@@ -161,7 +166,6 @@ public class Scenario implements ScenarioComponent {
 
             // run all components of the scenario in order
             for (final ScenarioComponent component : components) {
-                component.setCycleEnd(iterationTarget);
                 states = component.updateStates(states);
             }
 
@@ -170,7 +174,11 @@ public class Scenario implements ScenarioComponent {
             // prepare next cycle
             Map<String, Integer> maneuverNb = new HashMap<String, Integer>();
             Map<String, Double>  maneuverDV = new HashMap<String, Double>();
+            startDate = iterationTarget;
             for (int i = 0; i < states.length; ++i) {
+                if (states[i].getRealState().getDate().compareTo(startDate) < 0) {
+                    startDate = states[i].getRealState().getDate();
+                }
                 states[i] = states[i].updateCyclesNumber(states[i].getCyclesNumber() + 1);
                 for (String name : states[i].getManeuversNames()) {
                     final int    manNb = states[i].getManeuversNumber(name);
@@ -197,7 +205,7 @@ public class Scenario implements ScenarioComponent {
                                             new double[] {maneuverNb.get(name), 0.0, maneuverDV.get(name)});
             }
 
-        } while (cycleEnd.durationFrom(iterationTarget) > 1.0);
+        }
 
         return states;
 

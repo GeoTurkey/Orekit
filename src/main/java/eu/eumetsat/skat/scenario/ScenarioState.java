@@ -10,6 +10,8 @@ import org.orekit.bodies.BodyShape;
 import org.orekit.frames.Frame;
 import org.orekit.propagation.BoundedPropagator;
 import org.orekit.propagation.SpacecraftState;
+import org.orekit.time.AbsoluteDate;
+import org.orekit.utils.Constants;
 
 import eu.eumetsat.skat.strategies.ScheduledManeuver;
 
@@ -45,6 +47,9 @@ public class ScenarioState {
     /** Cycles number. */
     private final int cyclesNumber;
 
+    /** Target cycle end. */
+    private final AbsoluteDate targetCycleEnd;
+
     /** Real state. */
     private final SpacecraftState realState;
 
@@ -66,7 +71,7 @@ public class ScenarioState {
      * @param earth Earth model
      * @param bolMass spacecraft mass at Begin Of Life
      * @param cyclesNumber cycle number
-     * @param maneuversStats maneuvers statistics
+     * @param targetCycleEnd target cycle end
      * @param realState real state at cycle start
      * @param estimatedState estimated state at cycle start
      * @param performedEphemeris performed ephemeris throughout cycle
@@ -75,6 +80,7 @@ public class ScenarioState {
      */
     private ScenarioState(final String name, final Frame inertialFrame, BodyShape earth,
                           final double bolMass, final int cyclesNumber,
+                          final AbsoluteDate targetCycleEnd,
                           final SpacecraftState realState,
                           final SpacecraftState estimatedState,
                           final BoundedPropagator performedEphemeris,
@@ -85,6 +91,7 @@ public class ScenarioState {
         this.earth              = earth;
         this.bolMass            = bolMass;
         this.cyclesNumber       = cyclesNumber;
+        this.targetCycleEnd     = targetCycleEnd;
         this.realState          = realState;
         this.estimatedState     = estimatedState;
         this.performedEphemeris = performedEphemeris;
@@ -104,6 +111,7 @@ public class ScenarioState {
                          final double bolMass, final int cyclesNumber,
                          final SpacecraftState realState) {
         this(name, inertialFrame, earth, bolMass, cyclesNumber,
+             realState.getDate().shiftedBy(Constants.JULIAN_CENTURY),
              realState, null, null, null, new HashMap<String, ManeuverStats>());
     }
 
@@ -151,8 +159,28 @@ public class ScenarioState {
      */
     public ScenarioState updateCyclesNumber(final int cyclesNumber) {
         return new ScenarioState(name, inertialFrame, earth, bolMass, cyclesNumber,
-                                 realState, estimatedState, performedEphemeris,
-                                 maneuvers, maneuversStats);
+                                 targetCycleEnd, realState, estimatedState,
+                                 performedEphemeris, maneuvers, maneuversStats);
+    }
+
+    /** Get the target cycle end.
+     * @return target cycle end
+     */
+    public AbsoluteDate getTargetCycleEnd() {
+        return targetCycleEnd;
+    }
+
+    /** Update the target cycle end.
+     * <p>
+     * The instance is not changed, a new instance is created
+     * </p>
+     * @param targetCycleEnd target cycle end
+     * @return updated state
+     */
+    public ScenarioState updateTargetCycleEnd(final AbsoluteDate targetCycleEnd) {
+        return new ScenarioState(name, inertialFrame, earth, bolMass, cyclesNumber,
+                                 targetCycleEnd, realState, estimatedState,
+                                 performedEphemeris, maneuvers, maneuversStats);
     }
 
     /** Get the name of all maneuvers.
@@ -202,8 +230,8 @@ public class ScenarioState {
                 new HashMap<String, ScenarioState.ManeuverStats>(maneuversStats);
         updatedMap.put(maneuverName, new ManeuverStats(number, cycleDV, totalDV));
         return new ScenarioState(name, inertialFrame, earth, bolMass, cyclesNumber,
-                                 realState, estimatedState, performedEphemeris,
-                                 maneuvers, updatedMap);
+                                 targetCycleEnd, realState, estimatedState,
+                                 performedEphemeris, maneuvers, updatedMap);
     }
 
     /** Get the real state.
@@ -222,8 +250,8 @@ public class ScenarioState {
      */
     public ScenarioState updateRealState(final SpacecraftState state) {
         return new ScenarioState(name, inertialFrame, earth, bolMass, cyclesNumber,
-                                 state, estimatedState, performedEphemeris,
-                                 maneuvers, maneuversStats);
+                                 targetCycleEnd, state, estimatedState,
+                                 performedEphemeris, maneuvers, maneuversStats);
     }
 
     /** Get the estimated state.
@@ -242,8 +270,8 @@ public class ScenarioState {
      */
     public ScenarioState updateEstimatedState(final SpacecraftState state) {
         return new ScenarioState(name, inertialFrame, earth, bolMass, cyclesNumber,
-                                 realState, state, performedEphemeris,
-                                 maneuvers, maneuversStats);
+                                 targetCycleEnd, realState, state,
+                                 performedEphemeris, maneuvers, maneuversStats);
     }
 
     /** Get the performed ephemeris throughout cycle.
@@ -262,8 +290,8 @@ public class ScenarioState {
      */
     public ScenarioState updatePerformedEphemeris(final BoundedPropagator ephemeris) {
         return new ScenarioState(name, inertialFrame, earth, bolMass, cyclesNumber,
-                                 realState, estimatedState, ephemeris,
-                                 maneuvers, maneuversStats);
+                                 targetCycleEnd, realState, estimatedState,
+                                 ephemeris, maneuvers, maneuversStats);
     }
 
     /** Get the scheduled maneuvers.
@@ -282,8 +310,8 @@ public class ScenarioState {
      */
     public ScenarioState updateManeuvers(final List<ScheduledManeuver> maneuvers) {
         return new ScenarioState(name, inertialFrame, earth, bolMass, cyclesNumber,
-                                 realState, estimatedState, performedEphemeris,
-                                 maneuvers, maneuversStats);
+                                 targetCycleEnd, realState, estimatedState,
+                                 performedEphemeris, maneuvers, maneuversStats);
     }
 
     /** Inner class for maneuvers statistics. */

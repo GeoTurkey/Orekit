@@ -9,7 +9,6 @@ import org.apache.commons.math.random.RandomGenerator;
 import org.orekit.errors.OrekitException;
 import org.orekit.forces.maneuvers.SmallManeuverAnalyticalModel;
 import org.orekit.propagation.SpacecraftState;
-import org.orekit.time.AbsoluteDate;
 
 import eu.eumetsat.skat.scenario.ScenarioComponent;
 import eu.eumetsat.skat.scenario.ScenarioState;
@@ -64,11 +63,6 @@ public class MissedManeuver implements ScenarioComponent {
         this.missThreshold    = missThreshold;
         this.orbitsSeparation = orbitsSeparation;
         this.generator        = generator;
-    }
-
-    /** {@inheritDoc} */
-    public void setCycleEnd(final AbsoluteDate cycleEnd) {
-        // nothing to do here
     }
 
     /** {@inheritDoc} */
