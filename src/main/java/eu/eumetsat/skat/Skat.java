@@ -762,7 +762,7 @@ public class Skat {
                 finalOutput.println(formatIndent(3 * baseIndent) + "{");
                 finalOutput.println(formatIndent(4 * baseIndent) +
                                     formatKey(keysWidth - 2 * baseIndent, ParameterKey.INITIAL_STATE_MANEUVER_NAME) +
-                                    "= " + name + ";");
+                                    "= \"" + name + "\";");
                 finalOutput.println(formatIndent(4 * baseIndent) +
                                     formatKey(keysWidth - 2 * baseIndent, ParameterKey.INITIAL_STATE_MANEUVER_NUMBER) +
                                     "= " + state.getManeuversNumber(name) + ";");
