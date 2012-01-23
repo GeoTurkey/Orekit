@@ -172,14 +172,7 @@ public class InclinationVector extends AbstractSKControl {
     private static double innerRadius(final double refHx, final double refHy, final double limitInclination) {
         final double offCenter = FastMath.hypot(refHx, refHy);
         final double maxRadius = FastMath.tan(limitInclination / 2.);
-        if (offCenter == 0.0) {
-            return maxRadius;
-        } else {
-            final double ratio = maxRadius / offCenter;
-            final double oscHx = ratio * refHx;
-            final double oscHy = ratio * refHy;
-            return FastMath.hypot(oscHx - refHx, oscHy - refHy);
-        }
+        return (maxRadius - offCenter);
     }
 
     /** {@inheritDoc} */

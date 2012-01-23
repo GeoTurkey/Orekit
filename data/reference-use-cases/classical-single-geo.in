@@ -21,9 +21,9 @@ simulation       = {
             isp_curve             = [ [ 315, 0.0 ], [ 300, 600.0 ] ];
             dv_inf                = -0.3;
             dv_sup                =  0.3;
-            dv_convergence        =  0.0001;
+            dv_convergence        =  0.005;
             dt_convergence        =  300.0;
-            elimination_threshold = 0.01;
+            elimination_threshold =  0.01;
         },
         {
             name                  = "N/S";
@@ -32,9 +32,9 @@ simulation       = {
             isp_curve             = [ [ 315, 0.0 ], [ 300, 600.0 ] ];
             dv_inf                = -15.0;
             dv_sup                =  15.0;
-            dv_convergence        =  0.0001;
+            dv_convergence        =  0.05;
             dt_convergence        =  300.0;
-            elimination_threshold = 0.1;
+            elimination_threshold =  0.1;
         }
     ]
 };
@@ -124,6 +124,7 @@ scenario         = [
         nominal_direction   = [ 0.0, 1.0, 0.0 ];
         coupling_direction  = [ 1.0, 0.0, 0.0 ];
         coupling_ratio      = 0.002;
+        standard_deviation  = 0.02;
     },
     {
         component           = MANEUVER_MAGNITUDE_ERROR;

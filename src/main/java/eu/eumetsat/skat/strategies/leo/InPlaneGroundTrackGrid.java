@@ -101,17 +101,17 @@ public class InPlaneGroundTrackGrid extends AbstractGroundTrackGrid {
                               final AbsoluteDate start, final AbsoluteDate end)
         throws OrekitException, SkatException {
 
-        if (!baseInitializeRun(iteration, maneuvers, propagator, fixedManeuvers, start, end)) {
-            checkMargins(start, 0);
-        }
+        baseInitializeRun(iteration, maneuvers, propagator, fixedManeuvers, start, end);
         if (iteration == 0) {
             forceReset = false;
             clearHistory();
         }
 
         // fit longitude offsets to parabolic models
-        for (final ErrorModel errorModel : errorModels) {
-            errorModel.resetFitting(fitStart.getDate(), errorModel.getFittedParameters());
+        if (fitStart != null) {
+            for (final ErrorModel errorModel : errorModels) {
+                errorModel.resetFitting(fitStart.getDate(), errorModel.getFittedParameters());
+            }
         }
         for (final Crossing crossing : crossings) {
             if (isIntermediateLatitude(crossing.getGridPoint().getGeodeticPoint().getLatitude())) {
@@ -130,33 +130,41 @@ public class InPlaneGroundTrackGrid extends AbstractGroundTrackGrid {
                 final double distance = Vector3D.distance(subSat, crossing.getGridPoint().getCartesianPoint());
                 checkMargins(state.getDate(), FastMath.copySign(distance, deltaL));
 
-                for (final ErrorModel errorModel : errorModels) {
-                    if (errorModel.matches(crossing.getGridPoint().getGeodeticPoint().getLatitude(),
-                                           crossing.getGridPoint().isAscending())) {
-                        errorModel.addPoint(crossing.getDate(), deltaL);
+                if (fitStart != null &&
+                    state.getDate().compareTo(freeInterval[0]) >= 0 &&
+                    state.getDate().compareTo(freeInterval[1]) <= 0) {
+                    for (final ErrorModel errorModel : errorModels) {
+                        if (errorModel.matches(crossing.getGridPoint().getGeodeticPoint().getLatitude(),
+                                               crossing.getGridPoint().isAscending())) {
+                            errorModel.addPoint(crossing.getDate(), deltaL);
+                        }
                     }
                 }
 
             }
         }
 
-        // fit all point/direction specific models and compute a mean model
-        Arrays.fill(fittedDL, 0);
-        for (final ErrorModel errorModel : errorModels) {
-            errorModel.fit();
-            final double[] f = errorModel.approximateAsPolynomialOnly(2, fitStart.getDate(), 2, 2,
-                                                                      fitStart.getDate(),
-                                                                      freeInterval[1],
-                                                                      fitStart.getKeplerianPeriod());
-            for (int i = 0; i < fittedDL.length; ++i) {
-                fittedDL[i] += f[i];
-            }
-        }
-        for (int i = 0; i < fittedDL.length; ++i) {
-            fittedDL[i] /= errorModels.size();
-        }
+        if (fitStart != null) {
 
-        addQuadraticFit(fittedDL, 0, freeInterval[1].durationFrom(fitStart.getDate()));
+            // fit all point/direction specific models and compute a mean model
+            Arrays.fill(fittedDL, 0);
+            for (final ErrorModel errorModel : errorModels) {
+                errorModel.fit();
+                final double[] f = errorModel.approximateAsPolynomialOnly(2, fitStart.getDate(), 2, 2,
+                                                                          fitStart.getDate(),
+                                                                          freeInterval[1],
+                                                                          fitStart.getKeplerianPeriod());
+                for (int i = 0; i < fittedDL.length; ++i) {
+                    fittedDL[i] += f[i];
+                }
+            }
+            for (int i = 0; i < fittedDL.length; ++i) {
+                fittedDL[i] /= errorModels.size();
+            }
+
+            addQuadraticFit(fittedDL, 0, freeInterval[1].durationFrom(fitStart.getDate()));
+
+        }
 
     }
 
@@ -167,6 +175,11 @@ public class InPlaneGroundTrackGrid extends AbstractGroundTrackGrid {
 
         final double dlMax    = getMax() / earth.getEquatorialRadius();
         final double dlSafety = (getMax() - safetyMargin) / earth.getEquatorialRadius();
+
+        if (fitStart == null) {
+            // the cycle was too short for fitting crossing points
+            return tunables;
+        }
 
         if (loopDetected()) {
             // we are stuck in a convergence loop, we cannot improve the current solution
@@ -186,8 +199,6 @@ public class InPlaneGroundTrackGrid extends AbstractGroundTrackGrid {
             final double targetT  = cycleEnd.durationFrom(fitStart.getDate()) + firstOffset;
             final double targetDL = FastMath.copySign(dlMax, fittedDL[2]);
             newDLdot = (targetDL - fittedDL[0]) / targetT - fittedDL[2] * targetT;
-            System.out.print(iteration + " targetT = " + targetT + ", targetDL = " + targetDL +
-                               ", newDLdot = " + newDLdot);
 
         } else {
             // the start point is on the right side of the window
@@ -209,11 +220,6 @@ public class InPlaneGroundTrackGrid extends AbstractGroundTrackGrid {
                 newDLdot = FastMath.copySign(FastMath.sqrt(4 * fittedDL[2] * (fittedDL[0] - targetDL)),
                                              (tPeak > 0) ? fittedDL[1] : -fittedDL[1]);
 
-                System.out.println(fittedDL[0] + " + " + fittedDL[1] + " * $t + " + fittedDL[2] + " * $t * $t");
-                System.out.print(iteration + " tPeak = " + tPeak + ", dlPeak = " + dlPeak +
-                                 ", finalT = " + finalT + ", finalDL = " + finalDL +
-                                 ", finalExit = " + finalExit + ", intermediateExit = " + intermediateExit +
-                                 ", newDLdot = " + newDLdot);
             } else {
                 // longitude error stays within bounds up to next cycle,
                 // we don't change anything on the maneuvers
@@ -236,7 +242,6 @@ public class InPlaneGroundTrackGrid extends AbstractGroundTrackGrid {
             final double a            = fitStart.getA();
             final double totalDeltaV  = thrustSignVelocity(fitStart) *
                                         FastMath.sqrt(mu * (2 / a - 1 / (a + deltaA))) - FastMath.sqrt(mu / a);
-            System.out.println(" -> totalDV = " + totalDeltaV);
 
             // in order to avoid tempering eccentricity too much,
             // we use a (n+1/2) orbits between maneuvers, where n is an integer
@@ -273,7 +278,6 @@ public class InPlaneGroundTrackGrid extends AbstractGroundTrackGrid {
             final double a            = fitStart.getA();
             final double deltaVChange = thrustSignVelocity(fitStart) *
                                         FastMath.sqrt(mu * (2 / a - 1 / (a + deltaA))) - FastMath.sqrt(mu / a);
-            System.out.println(" -> deltaVChange = " + deltaVChange);
 
             // distribute the change over all maneuvers
             tuned = tunables.clone();

@@ -182,8 +182,12 @@ public enum SupportedScenariocomponent {
                     parser.getVector(node, ParameterKey.COMPONENT_CROSS_COUPLING_COUPLING_DIRECTION);
             final double couplingRatio =
                     parser.getDouble(node, ParameterKey.COMPONENT_CROSS_COUPLING_RATIO);
+            final double standardDeviation =
+                    parser.containsKey(node, ParameterKey.COMPONENT_CROSS_COUPLING_STANDARD_DEVIATION) ?
+                    parser.getDouble(node, ParameterKey.COMPONENT_CROSS_COUPLING_STANDARD_DEVIATION) : 0.0;
             return new ManeuverCrossCoupling(getIndices(parser, node, skat), name,
-                                             nominalDirection, couplingDirection, couplingRatio);
+                                             nominalDirection, couplingDirection, couplingRatio,
+                                             standardDeviation, skat.getGenerator());
         }
     },
 

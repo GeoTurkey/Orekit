@@ -107,9 +107,7 @@ public class OutOfPlaneGroundTrackGrid extends AbstractGroundTrackGrid {
                               final AbsoluteDate start, final AbsoluteDate end)
         throws OrekitException, SkatException {
 
-        if (!baseInitializeRun(iteration, maneuvers, propagator, fixedManeuvers, start, end)) {
-            checkMargins(start, 0.0);
-        }
+        baseInitializeRun(iteration, maneuvers, propagator, fixedManeuvers, start, end);
 
         if (iteration == 0) {
 
@@ -143,8 +141,10 @@ public class OutOfPlaneGroundTrackGrid extends AbstractGroundTrackGrid {
         }
 
         // fit longitude offsets to parabolic models
-        for (final ErrorModel errorModel : errorModels) {
-            errorModel.resetFitting(nodeState.getDate(), errorModel.getFittedParameters());
+        if (fitStart != null) {
+            for (final ErrorModel errorModel : errorModels) {
+                errorModel.resetFitting(nodeState.getDate(), errorModel.getFittedParameters());
+            }
         }
         for (final Crossing crossing : crossings) {
 
@@ -165,10 +165,14 @@ public class OutOfPlaneGroundTrackGrid extends AbstractGroundTrackGrid {
                 final double distance = Vector3D.distance(subSat, crossing.getGridPoint().getCartesianPoint());
                 checkMargins(state.getDate(), FastMath.copySign(distance, deltaL));
 
-                for (final ErrorModel errorModel : errorModels) {
-                    if (errorModel.matches(crossing.getGridPoint().getGeodeticPoint().getLatitude(),
-                                           crossing.getGridPoint().isAscending())) {
-                        errorModel.addPoint(crossing.getDate(), deltaL);
+                if (fitStart != null &&
+                    state.getDate().compareTo(freeInterval[0]) >= 0 &&
+                    state.getDate().compareTo(freeInterval[1]) <= 0) {
+                    for (final ErrorModel errorModel : errorModels) {
+                        if (errorModel.matches(crossing.getGridPoint().getGeodeticPoint().getLatitude(),
+                                               crossing.getGridPoint().isAscending())) {
+                            errorModel.addPoint(crossing.getDate(), deltaL);
+                        }
                     }
                 }
 
@@ -176,23 +180,25 @@ public class OutOfPlaneGroundTrackGrid extends AbstractGroundTrackGrid {
 
         }
 
-        // fit all point/direction specific models and compute a mean model
-        Arrays.fill(fitted, 0);
-        int n = 0;
-        for (final ErrorModel errorModel : errorModels) {
-            if (FastMath.abs(errorModel.getLatitude()) >= SWITCH_LIMIT) {
-                errorModel.fit();
-                final double[] f = errorModel.approximateAsPolynomialOnly(2, nodeState.getDate(), 2, 2,
-                                                                          nodeState.getDate(), end,
-                                                                          fitStart.getKeplerianPeriod());
-                for (int i = 0; i < fitted.length; ++i) {
-                    fitted[i] += f[i];
+        if (fitStart != null) {
+            // fit all point/direction specific models and compute a mean model
+            Arrays.fill(fitted, 0);
+            int n = 0;
+            for (final ErrorModel errorModel : errorModels) {
+                if (FastMath.abs(errorModel.getLatitude()) >= SWITCH_LIMIT) {
+                    errorModel.fit();
+                    final double[] f = errorModel.approximateAsPolynomialOnly(2, nodeState.getDate(), 2, 2,
+                                                                              nodeState.getDate(), end,
+                                                                              fitStart.getKeplerianPeriod());
+                    for (int i = 0; i < fitted.length; ++i) {
+                        fitted[i] += f[i];
+                    }
+                    ++n;
                 }
-                ++n;
             }
-        }
-        for (int i = 0; i < fitted.length; ++i) {
-            fitted[i] /= n;
+            for (int i = 0; i < fitted.length; ++i) {
+                fitted[i] /= n;
+            }
         }
 
         if (getMargins() > 0) {

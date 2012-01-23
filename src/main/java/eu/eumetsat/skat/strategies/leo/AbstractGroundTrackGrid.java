@@ -215,13 +215,12 @@ public abstract class AbstractGroundTrackGrid extends AbstractSKControl {
      * @param fixedManeuvers list of maneuvers already fixed for the cycle
      * @param start start date of the propagation
      * @param end end date of the propagation
-     * @return true if grid crossings have been computed
      * @exception OrekitException if something weird occurs with the propagator
      * @exception SkatException if initialization fails
      */
-    protected boolean baseInitializeRun(final int iteration, final ScheduledManeuver[] maneuvers,
-                                        final Propagator propagator, final List<ScheduledManeuver> fixedManeuvers,
-                                        final AbsoluteDate start, final AbsoluteDate end)
+    protected void baseInitializeRun(final int iteration, final ScheduledManeuver[] maneuvers,
+                                     final Propagator propagator, final List<ScheduledManeuver> fixedManeuvers,
+                                     final AbsoluteDate start, final AbsoluteDate end)
         throws OrekitException, SkatException {
 
         resetMarginsChecks();
@@ -235,16 +234,12 @@ public abstract class AbstractGroundTrackGrid extends AbstractSKControl {
         }
         switchLatitude = FastMath.max(maxLatitude - SWITCH_LIMIT, 0);
 
+        double period = phasingDuration / errorModels.get(0).getCount();
         if (iteration == 0) {
 
             // select a long maneuver-free interval for fitting
-            double period = phasingDuration / errorModels.get(0).getCount();
             freeInterval = getManeuverFreeInterval(maneuvers, fixedManeuvers,
                                                    start.shiftedBy(period), end.shiftedBy(-period));
-            if (freeInterval[1].durationFrom(freeInterval[0]) < period) {
-                // free interval is too short
-                return false;
-            }
 
             // find the first crossing of one of the grid latitudes
             final double stepSize = period / 100;
@@ -253,7 +248,7 @@ public abstract class AbstractGroundTrackGrid extends AbstractSKControl {
             for (final ErrorModel errorModel : errorModels) {
                 if (isIntermediateLatitude(errorModel.getLatitude())) {
                     final SpacecraftState crossing = firstLatitudeCrossing(errorModel.getLatitude(), errorModel.isAscending(),
-                                                                           earth, freeInterval[0], freeInterval[1],
+                                                                           earth, start.shiftedBy(period), end.shiftedBy(-period),
                                                                            stepSize, propagator);
                     if (firstCrossing == null || crossing.getDate().compareTo(firstCrossing.getDate()) < 0) {
                         firstCrossing  = crossing;
@@ -264,7 +259,7 @@ public abstract class AbstractGroundTrackGrid extends AbstractSKControl {
             if (firstCrossing == null) {
                 throw new SkatException(SkatMessages.LATITUDE_NEVER_CROSSED,
                                         FastMath.toDegrees(errorModels.get(0).getLatitude()),
-                                        freeInterval[0], freeInterval[1]);
+                                        start.shiftedBy(period), end.shiftedBy(-period));
             }
 
             // identify the grid point corresponding to this first crossing
@@ -287,21 +282,20 @@ public abstract class AbstractGroundTrackGrid extends AbstractSKControl {
                 // this should never happen
                 throw new SkatException(SkatMessages.LATITUDE_NEVER_CROSSED,
                                         FastMath.toDegrees(errorModels.get(0).getLatitude()),
-                                        freeInterval[0], freeInterval[1]);
+                                        start.shiftedBy(period), end.shiftedBy(-period));
             }
 
             // set up grid reference date
             gridReference = firstCrossing.getDate().shiftedBy(-grid[firstEncounter].getTimeOffset());
-            fitStart      = firstCrossing;
 
         }
 
         // prepare fitting
         int index = firstEncounter;
-        fitStart = propagator.propagate(gridReference.shiftedBy(grid[index].getTimeOffset()));
         crossings.clear();
-        AbsoluteDate date  = fitStart.getDate();
-        while (date != null && date.compareTo(end) < 0) {
+        fitStart = null;
+        AbsoluteDate date  = gridReference.shiftedBy(grid[index].getTimeOffset());
+        while (date != null && date.compareTo(end.shiftedBy(-period)) < 0) {
 
             int nextIndex = (index + 1) % grid.length;
 
@@ -323,6 +317,11 @@ public abstract class AbstractGroundTrackGrid extends AbstractSKControl {
             }
 
             if (crossing != null) {
+                if (fitStart == null &&
+                    crossing.getDate().compareTo(freeInterval[0]) >= 0 &&
+                    crossing.getDate().compareTo(freeInterval[1]) <= 0) {
+                    fitStart = crossing;
+                }
                 crossings.add(new Crossing(crossing, grid[index]));
                 index = nextIndex;
                 date  = crossing.getDate().shiftedBy(gap);
@@ -331,8 +330,6 @@ public abstract class AbstractGroundTrackGrid extends AbstractSKControl {
             }
 
         }
-
-        return true;
 
     }
 
