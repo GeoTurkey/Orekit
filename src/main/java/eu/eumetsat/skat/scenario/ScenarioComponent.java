@@ -2,7 +2,6 @@
 package eu.eumetsat.skat.scenario;
 
 import org.orekit.errors.OrekitException;
-import org.orekit.time.AbsoluteDate;
 
 import eu.eumetsat.skat.utils.SkatException;
 
@@ -18,11 +17,6 @@ import eu.eumetsat.skat.utils.SkatException;
  * @author Luc Maisonobe
  */
 public interface ScenarioComponent {
-
-    /** Set the end date for current cycle.
-     * @param cycleEnd end date for current cycle
-     */
-    void setCycleEnd(AbsoluteDate cycleEnd);
 
     /** Update a scenario state by applying component process.
      * @param originals original states of the scenario

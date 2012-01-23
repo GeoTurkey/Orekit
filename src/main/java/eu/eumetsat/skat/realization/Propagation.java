@@ -43,9 +43,6 @@ public class Propagation implements ScenarioComponent {
     /**  Truncation delay after maneuver. */
     private final double truncationManeuverDelay;
 
-    /** Cycle end date. */
-    private AbsoluteDate cycleEnd;
-
     /** Simple constructor.
      * @param spacecraftIndices indices of the spacecrafts managed by this component
      * @param randomizers orbit propagator randomizers to use for each spacecraft
@@ -60,11 +57,6 @@ public class Propagation implements ScenarioComponent {
         this.truncationManeuverDelay = truncationManeuverDelay;
     }
 
-    /** {@inheritDoc} */
-    public void setCycleEnd(final AbsoluteDate cycleEnd) {
-        this.cycleEnd = cycleEnd;
-    }
-
     public Propagator getPropagator(int i, SpacecraftState s) throws OrekitException {
         return randomizers[i].getPropagator(s);
     }
@@ -72,6 +64,14 @@ public class Propagation implements ScenarioComponent {
     /** {@inheritDoc} */
     public ScenarioState[] updateStates(final ScenarioState[] originals)
         throws OrekitException, SkatException {
+
+        // retrieve date for end of cycle
+        AbsoluteDate cycleEnd = AbsoluteDate.FUTURE_INFINITY;
+        for (final ScenarioState state : originals) {
+            if (state.getTargetCycleEnd().compareTo(cycleEnd) < 0) {
+                cycleEnd = state.getTargetCycleEnd();
+            }
+        }
 
         // truncate cycle if needed after last maneuver of some type (as they may appear in groups)
         ScheduledManeuver latestManeuver = null;

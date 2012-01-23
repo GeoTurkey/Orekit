@@ -84,11 +84,6 @@ public class ManeuverEclipseConstraint implements ScenarioComponent {
     }
 
     /** {@inheritDoc} */
-    public void setCycleEnd(final AbsoluteDate cycleEnd) {
-        // nothing to do here
-    }
-
-    /** {@inheritDoc} */
     public ScenarioState[] updateStates(final ScenarioState[] originals)
         throws OrekitException, SkatException {
 

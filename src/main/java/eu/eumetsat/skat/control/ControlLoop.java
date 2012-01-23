@@ -57,8 +57,11 @@ public class ControlLoop implements ScenarioComponent {
     /** Station-keeping control laws. */
     private final List<SKControl> controls;
 
-    /** Cycle duration. */
-    private double cycleDuration;
+    /** Earliest time horizon across all control laws. */
+    private double minTimeHorizon;
+
+    /** Latest time horizon across all control laws. */
+    private double maxTimeHorizon;
 
     /** Simple constructor.
      * <p>
@@ -80,7 +83,8 @@ public class ControlLoop implements ScenarioComponent {
         this.randomizer      = randomizer;
         this.tunables        = new HashSet<TunableManeuver>();
         this.controls        = new ArrayList<SKControl>();
-        this.cycleDuration   = 0.0;
+        this.minTimeHorizon  = Double.POSITIVE_INFINITY;
+        this.maxTimeHorizon  = Double.NEGATIVE_INFINITY;
     }
 
     /** Add a control law .
@@ -89,12 +93,8 @@ public class ControlLoop implements ScenarioComponent {
     public void addControl(final SKControl controlLaw) {
         controls.add(controlLaw);
         tunables.add(controlLaw.getModel());
-        cycleDuration = FastMath.max(cycleDuration, controlLaw.getTimeHorizon());
-    }
-
-    /** {@inheritDoc} */
-    public void setCycleEnd(final AbsoluteDate cycleEnd) {
-        // nothing to do here (we handle several cycles at once, not only the current one)
+        minTimeHorizon = FastMath.min(minTimeHorizon, controlLaw.getTimeHorizon());
+        maxTimeHorizon = FastMath.max(maxTimeHorizon, controlLaw.getTimeHorizon());
     }
 
     /** {@inheritDoc}
@@ -114,6 +114,8 @@ public class ControlLoop implements ScenarioComponent {
                 throw new SkatException(SkatMessages.NO_ESTIMATED_STATE,
                                         original.getName(), original.getCyclesNumber());
             }
+            updated[spacecraftIndex] =
+                    original.updateTargetCycleEnd(original.getEstimatedState().getDate().shiftedBy(minTimeHorizon));
 
             // set the reference consumed mass for maneuvers
             for (TunableManeuver tunable: tunables) {
@@ -183,7 +185,7 @@ public class ControlLoop implements ScenarioComponent {
             }
 
             // build the updated scenario state
-            updated[spacecraftIndex] = original.updateManeuvers(theoreticalManeuvers);
+            updated[spacecraftIndex] = updated[spacecraftIndex].updateManeuvers(theoreticalManeuvers);
 
         }
 
@@ -227,8 +229,7 @@ public class ControlLoop implements ScenarioComponent {
         }
 
         // perform propagation
-        final double propagationDuration = cycleDuration;
-        final AbsoluteDate endDate = initialState.getDate().shiftedBy(propagationDuration);
+        final AbsoluteDate endDate = initialState.getDate().shiftedBy(maxTimeHorizon);
         propagator.propagate(endDate);
 
         return propagator.getGeneratedEphemeris();
@@ -279,7 +280,7 @@ public class ControlLoop implements ScenarioComponent {
         }
 
         // perform propagation
-        propagator.propagate(start.shiftedBy(cycleDuration));
+        propagator.propagate(start.shiftedBy(maxTimeHorizon));
 
     }
 
