@@ -232,7 +232,7 @@ public enum SupportedPropagator {
 
                     // create propagator
                     final DSSTPropagator dsstPropagator =
-                            new DSSTPropagator(integrator, initialState.getOrbit(),
+                            new DSSTPropagator(integrator, initialState.getOrbit(), true, 10 * maxStep,
                                                new LofOffset(initialState.getFrame(), LOFType.VNC));
 
                     // add the fixed force models
