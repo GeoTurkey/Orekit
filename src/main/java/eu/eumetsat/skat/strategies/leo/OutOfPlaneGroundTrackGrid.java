@@ -1,19 +1,15 @@
 /* Copyright 2011 Eumetsat */
 package eu.eumetsat.skat.strategies.leo;
 
-import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math.util.FastMath;
-import org.apache.commons.math.util.MathUtils;
 import org.orekit.bodies.CelestialBody;
-import org.orekit.bodies.GeodeticPoint;
 import org.orekit.bodies.OneAxisEllipsoid;
 import org.orekit.errors.OrekitException;
 import org.orekit.errors.PropagationException;
 import org.orekit.forces.maneuvers.SmallManeuverAnalyticalModel;
-import org.orekit.frames.Transform;
 import org.orekit.orbits.CircularOrbit;
 import org.orekit.orbits.OrbitType;
 import org.orekit.propagation.BoundedPropagator;
@@ -42,9 +38,6 @@ import eu.eumetsat.skat.utils.SkatException;
  * @author Luc Maisonobe
  */
 public class OutOfPlaneGroundTrackGrid extends AbstractGroundTrackGrid {
-
-    /** Mean fitting parameters. */
-    private final double[] fitted;
 
     /** Reference state at first node in eclipse. */
     private SpacecraftState nodeState;
@@ -95,7 +88,6 @@ public class OutOfPlaneGroundTrackGrid extends AbstractGroundTrackGrid {
         super(name, controlledName, controlledIndex, model, firstOffset, maxManeuvers, orbitsSeparation,
               earth, referenceRadius, mu, j2, grid, maxDistance, horizon);
         this.sun                = sun;
-        this.fitted             = new double[3];
         this.safetyMargin       = 0.1 * maxDistance / earth.getEquatorialRadius();
         this.compensateLongBurn = compensateLongBurn;
 
@@ -118,88 +110,28 @@ public class OutOfPlaneGroundTrackGrid extends AbstractGroundTrackGrid {
             for (int i = 0; nodeState == null && i < crossings.size(); ++i) {
 
                 // find the first available node that is in eclipse for maneuver
-                double period = propagator.getInitialState().getKeplerianPeriod();
-                final double stepSize = period / 100;
+                final double stepSize = meanPeriod / 100;
                 nodeState = firstLatitudeCrossing(0.0, true, earth, freeInterval[0], freeInterval[1],
                                                   stepSize, propagator);
                 Vector3D satPos = nodeState.getPVCoordinates().getPosition();
                 Vector3D sunPos = sun.getPVCoordinates(nodeState.getDate(), nodeState.getFrame()).getPosition();
                 if (Vector3D.dotProduct(satPos, sunPos) > 0) {
                     // wrong node, it is under Sun light, select the next one
-                    nodeState = latitudeCrossing(0.0, earth, nodeState.getDate().shiftedBy(0.5 * period),
-                                                 freeInterval[1], stepSize, period / 8, propagator);
+                    nodeState = latitudeCrossing(0.0, earth, nodeState.getDate().shiftedBy(0.5 * meanPeriod),
+                                                 freeInterval[1], stepSize, meanPeriod / 8, propagator);
                 }
 
                 // ensure maneuvers separation requirements
                 while (nodeState.getDate().durationFrom(freeInterval[0]) < firstOffset) {
-                    nodeState = latitudeCrossing(0.0, earth, nodeState.getDate().shiftedBy(period),
-                                                 freeInterval[1], stepSize, period / 8, propagator);
+                    nodeState = latitudeCrossing(0.0, earth, nodeState.getDate().shiftedBy(meanPeriod),
+                                                 freeInterval[1], stepSize, meanPeriod / 8, propagator);
                 }
 
             }
 
         }
 
-        // fit longitude offsets to parabolic models
-        if (fitStart != null) {
-            for (final ErrorModel errorModel : errorModels) {
-                errorModel.resetFitting(nodeState.getDate(), errorModel.getFittedParameters());
-            }
-        }
-        for (final Crossing crossing : crossings) {
-
-            if (FastMath.abs(crossing.getGridPoint().getGeodeticPoint().getLatitude()) >= SWITCH_LIMIT) {
-
-                // find current point and reference point in Earth frame
-                final SpacecraftState state = crossing.getState();
-                final Transform transform   = state.getFrame().getTransformTo(earth.getBodyFrame(), state.getDate());
-                final Vector3D current      = transform.transformPosition(state.getPVCoordinates().getPosition());
-                final GeodeticPoint gp      = earth.transform(current, earth.getBodyFrame(), state.getDate());
-
-                final double l1     = gp.getLongitude();
-                final double l2     = crossing.getGridPoint().getGeodeticPoint().getLongitude();
-                final double deltaL = MathUtils.normalizeAngle(l1 - l2, 0.0);
-
-                // check the distances
-                final Vector3D subSat = earth.transform(new GeodeticPoint(gp.getLatitude(), gp.getLongitude(), 0.0));
-                final double distance = Vector3D.distance(subSat, crossing.getGridPoint().getCartesianPoint());
-                checkMargins(state.getDate(), FastMath.copySign(distance, deltaL));
-
-                if (fitStart != null &&
-                    state.getDate().compareTo(freeInterval[0]) >= 0 &&
-                    state.getDate().compareTo(freeInterval[1]) <= 0) {
-                    for (final ErrorModel errorModel : errorModels) {
-                        if (errorModel.matches(crossing.getGridPoint().getGeodeticPoint().getLatitude(),
-                                               crossing.getGridPoint().isAscending())) {
-                            errorModel.addPoint(crossing.getDate(), deltaL);
-                        }
-                    }
-                }
-
-            }
-
-        }
-
-        if (fitStart != null) {
-            // fit all point/direction specific models and compute a mean model
-            Arrays.fill(fitted, 0);
-            int n = 0;
-            for (final ErrorModel errorModel : errorModels) {
-                if (FastMath.abs(errorModel.getLatitude()) >= SWITCH_LIMIT) {
-                    errorModel.fit();
-                    final double[] f = errorModel.approximateAsPolynomialOnly(2, nodeState.getDate(), 2, 2,
-                                                                              nodeState.getDate(), end,
-                                                                              fitStart.getKeplerianPeriod());
-                    for (int i = 0; i < fitted.length; ++i) {
-                        fitted[i] += f[i];
-                    }
-                    ++n;
-                }
-            }
-            for (int i = 0; i < fitted.length; ++i) {
-                fitted[i] /= n;
-            }
-        }
+        fitOffsets();
 
         if (getMargins() > 0) {
             // there are some margins, don't perform any maneuvers
@@ -213,53 +145,53 @@ public class OutOfPlaneGroundTrackGrid extends AbstractGroundTrackGrid {
                                              final BoundedPropagator reference)
         throws OrekitException {
 
-        final double dlMax    = getMax() / earth.getEquatorialRadius();
+        final double diMax = getMax() / earth.getEquatorialRadius();
         if (nodeState == null) {
             // no maneuvers needed
             return tunables;
         }
 
-        double newHdot;
-        if (forceReset || (fitted[2] < 0 && fitted[0] > dlMax) || (fitted[2] > 0 && fitted[0] < -dlMax)) {
+        double newIdot;
+        if (forceReset || (fittedDI[2] < 0 && fittedDI[0] > diMax) || (fittedDI[2] > 0 && fittedDI[0] < -diMax)) {
             // the start point is already on the wrong side of the window
 
             // make sure once we select this option, we stick to it for all iterations
             forceReset = true;
 
             // the current cycle is already bad, we set up a target to start a new cycle
-            // at time horizon with good initial conditions, and reach this target by changing hDot(t0)
+            // at time horizon with good initial conditions, and reach this target by changing iDot(t0)
             final double targetT = cycleEnd.durationFrom(nodeState.getDate()) + firstOffset;
-            final double targetH = (fitted[2] < 0) ? (-dlMax + safetyMargin) : (dlMax - safetyMargin);
-            newHdot = (targetH - fitted[0]) / targetT - fitted[2] * targetT;
+            final double targetI = (fittedDI[2] < 0) ? (-diMax + safetyMargin) : (diMax - safetyMargin);
+            newIdot = (targetI - fittedDI[0]) / targetT - fittedDI[2] * targetT;
 
         } else {
             // the start point is on the right side of the window
-            final double tPeak   = -0.5 * fitted[1] / fitted[2];
-            final double hPeak   = fitted[0] + 0.5 * fitted[1] * tPeak;
+            final double tPeak   = -0.5 * fittedDI[1] / fittedDI[2];
+            final double iPeak   = fittedDI[0] + 0.5 * fittedDI[1] * tPeak;
             final double finalT = cycleEnd.durationFrom(nodeState.getDate()) + firstOffset;
-            final double finalH = fitted[0] + finalT * (fitted[1] + finalT * fitted[2]);
+            final double finalI = fittedDI[0] + finalT * (fittedDI[1] + finalT * fittedDI[2]);
 
-            final boolean intermediateExit = tPeak > 0 && tPeak < finalT && (hPeak > dlMax || hPeak < -dlMax);
-            final boolean finalExit        = finalH >= dlMax || finalH <= -dlMax;
+            final boolean intermediateExit = tPeak > 0 && tPeak < finalT && (iPeak > diMax || iPeak < -diMax);
+            final boolean finalExit        = finalI >= diMax || finalI <= -diMax;
             if (intermediateExit || finalExit) {
                 // longitude offset exits the window limits
 
                 // we target a future longitude offset peak osculating window boundary
                 // (taking a safety margin into account if possible)
-                double targetH;
-                if (fitted[2] <= 0) {
-                    targetH = dlMax - safetyMargin;
-                    if (fitted[0] >= targetH) {
-                        targetH = dlMax;
+                double targetI;
+                if (fittedDI[2] <= 0) {
+                    targetI = diMax - safetyMargin;
+                    if (fittedDI[0] >= targetI) {
+                        targetI = diMax;
                     }
                 } else {
-                    targetH = -dlMax + safetyMargin;
-                    if (fitted[0] <= targetH) {
-                        targetH = -dlMax;
+                    targetI = -diMax + safetyMargin;
+                    if (fittedDI[0] <= targetI) {
+                        targetI = -diMax;
                     }
                 }
-                newHdot = FastMath.copySign(FastMath.sqrt(4 * fitted[2] * (fitted[0] - targetH)),
-                                            (tPeak > 0) ? fitted[1] : -fitted[1]);
+                newIdot = FastMath.copySign(FastMath.sqrt(4 * fittedDI[2] * (fittedDI[0] - targetI)),
+                                            (tPeak > 0) ? fittedDI[1] : -fittedDI[1]);
 
             } else {
                 // longitude offset stays within bounds up to next cycle,
@@ -278,11 +210,11 @@ public class OutOfPlaneGroundTrackGrid extends AbstractGroundTrackGrid {
         // hDot = raanDot - alphaDot. Raan time derivative due to J2 is proportional to cos(i),
         // so hDot = k cos(i) - alphaDot (with both k and cos(i) negative for sun synchronous
         // orbits so hDot is close to zero) and hence dhDot / di = -k sin (i) = -(alphaDot + hDot) tan(i)
-        final double dhRadDotDi = -(2 * FastMath.PI / Constants.JULIAN_YEAR + fitted[1]) * FastMath.tan(nodeState.getI());
+        final double dhRadDotDi = -(2 * FastMath.PI / Constants.JULIAN_YEAR + fittedDI[1]) * FastMath.tan(nodeState.getI());
         final double dhDotDi    = 12 * dhRadDotDi / FastMath.PI;
 
         // compute inclination offset needed to achieve station-keeping target
-        final double deltaI = (newHdot - fitted[1]) / dhDotDi;
+        final double deltaI = (newIdot - fittedDI[1]) / dhDotDi;
 
         final ScheduledManeuver[] tuned;
         final AdapterPropagator adapterPropagator = new AdapterPropagator(reference);
@@ -295,7 +227,7 @@ public class OutOfPlaneGroundTrackGrid extends AbstractGroundTrackGrid {
                                         v.getNorm() * deltaI;
 
             // compute the number of maneuvers required
-            final double separation = orbitsSeparation * nodeState.getKeplerianPeriod();
+            final double separation = orbitsSeparation * meanPeriod;
             final TunableManeuver model = getModel();
             final double limitDV = (totalDeltaV < 0) ? model.getDVInf() : model.getDVSup();
             int nMan = FastMath.min(maxManeuvers, (int) FastMath.ceil(FastMath.abs(totalDeltaV / limitDV)));

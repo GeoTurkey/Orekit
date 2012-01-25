@@ -6,12 +6,16 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 
+import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math.util.FastMath;
 import org.apache.commons.math.util.MathUtils;
 import org.apache.commons.math.util.Precision;
 import org.orekit.bodies.GeodeticPoint;
 import org.orekit.bodies.OneAxisEllipsoid;
 import org.orekit.errors.OrekitException;
+import org.orekit.frames.Transform;
+import org.orekit.orbits.CircularOrbit;
+import org.orekit.orbits.OrbitType;
 import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
 import org.orekit.propagation.events.EventDetector;
@@ -83,8 +87,11 @@ public abstract class AbstractGroundTrackGrid extends AbstractSKControl {
     /** Un-normalized zonal coefficient. */
     protected final double j2;
 
-    /** Error models for each reference latitude. */
-    protected final List<ErrorModel> errorModels;
+    /** Error models for longitude at each reference latitude. */
+    protected final List<ErrorModel> longitudeModels;
+
+    /** Error models for inclination at each reference latitude. */
+    protected final List<ErrorModel> inclinationModels;
 
     /** States at crossing points. */
     protected final List<Crossing> crossings;
@@ -99,7 +106,10 @@ public abstract class AbstractGroundTrackGrid extends AbstractSKControl {
     protected AbsoluteDate gridReference;
 
     /** Phasing duration (interval between two grids. */
-    protected double phasingDuration;
+    protected final double phasingDuration;
+
+    /** Mean period. */
+    protected final double meanPeriod;
 
     /** Iteration number. */
     protected int iteration;
@@ -109,6 +119,12 @@ public abstract class AbstractGroundTrackGrid extends AbstractSKControl {
 
     /** Maneuver-free interval. */
     protected AbsoluteDate[] freeInterval;
+
+    /** Mean fitting parameters for ascending node error. */
+    protected final double[] fittedDN;
+
+    /** Mean fitting parameters for inclination error. */
+    protected final double[] fittedDI;
 
     /** Simple constructor.
      * <p>
@@ -149,6 +165,8 @@ public abstract class AbstractGroundTrackGrid extends AbstractSKControl {
         this.mu               = mu;
         this.j2               = j2;
         this.crossings        = new ArrayList<Crossing>();
+        this.fittedDN         = new double[3];
+        this.fittedDI          = new double[3];
 
         // store the grid in chronological order
         this.grid             = grid.toArray(new GridPoint[grid.size()]);
@@ -162,29 +180,56 @@ public abstract class AbstractGroundTrackGrid extends AbstractSKControl {
         });
 
         // extract the limited set of independent point/directions from the grid
-        errorModels = new ArrayList<ErrorModel>();
-        for (final GridPoint point : this.grid) {
-            ErrorModel found = null;
-            for (final ErrorModel errorModel : errorModels) {
-                if (errorModel.matches(point.getGeodeticPoint().getLatitude(), point.isAscending())) {
-                    found = errorModel;
+        longitudeModels   = createErrorModels(true, false);
+        inclinationModels = createErrorModels(false, true);
+
+        // phasing is reached one orbit after last
+        final ErrorModel m0 = longitudeModels.get(0);
+        phasingDuration = (m0.getCount() * m0.getTimeSpan()) / (m0.getCount() - 1);
+        meanPeriod      = phasingDuration / m0.getCount();
+
+    }
+
+    /** Create a list of error models.
+     * @param ignoreExtremeLatitude if true, points close to extreme latitude should be avoided
+     * @param ignoreEquatorialLatitude if true, points close to equatorial latitude should be avoided
+     * @return list of error models
+     * @exception SkatException if there are no grid points
+     */
+    private List<ErrorModel> createErrorModels(final boolean ignoreExtremeLatitude,
+                                               final boolean ignoreEquatorialLatitude)
+        throws SkatException {
+
+        List<ErrorModel> models   = new ArrayList<ErrorModel>();
+
+        for (final GridPoint point : grid) {
+            final boolean avoidedExtreme    = isExtremeLatitude(point.getGeodeticPoint().getLatitude()) &&
+                                              ignoreExtremeLatitude;
+            final boolean avoidedEquatorial = isEquatorialLatitude(point.getGeodeticPoint().getLatitude()) &&
+                                              ignoreEquatorialLatitude;
+            if (!(avoidedExtreme || avoidedEquatorial)) {
+                ErrorModel found = null;
+                for (final ErrorModel errorModel : models) {
+                    if (errorModel.matches(point.getGeodeticPoint().getLatitude(), point.isAscending())) {
+                        found = errorModel;
+                    }
                 }
-            }
-            if (found == null) {
-                // this is a new point/direction pair, store it
-                errorModels.add(new ErrorModel(point));
-            } else {
-                // this is an already known point/direction pair
-                found.addGridPoint(point);
+                if (found == null) {
+                    // this is a new point/direction pair, store it
+                    models.add(new ErrorModel(point));
+                } else {
+                    // this is an already known point/direction pair
+                    found.addGridPoint(point);
+                }
             }
         }
 
         // safety checks
-        if (errorModels.isEmpty()) {
+        if (models.isEmpty()) {
             throw new SkatException(SkatMessages.NO_GRID_POINTS);
         }
-        final ErrorModel m0 = errorModels.get(0);
-        for (final ErrorModel errorModel : errorModels) {
+        final ErrorModel m0 = models.get(0);
+        for (final ErrorModel errorModel : models) {
             if (errorModel.getCount() != m0.getCount()) {
                 throw new SkatException(SkatMessages.GRID_POINTS_NUMBER_MISMATCH,
                                         m0.getCount(), m0.getLatitude(),
@@ -196,8 +241,7 @@ public abstract class AbstractGroundTrackGrid extends AbstractSKControl {
                                     1.0e-3, 1.0e-3, 1.0e-5, 1.0e-5, 1.0e-5, 1.0e-5, 1.0e-5, 1.0e-5);
         }
 
-        // phasing is reached one orbit after last
-        phasingDuration = (m0.getCount() * m0.getTimeSpan()) / (m0.getCount() - 1);
+        return models;
 
     }
 
@@ -234,32 +278,29 @@ public abstract class AbstractGroundTrackGrid extends AbstractSKControl {
         }
         switchLatitude = FastMath.max(maxLatitude - SWITCH_LIMIT, 0);
 
-        double period = phasingDuration / errorModels.get(0).getCount();
         if (iteration == 0) {
 
             // select a long maneuver-free interval for fitting
             freeInterval = getManeuverFreeInterval(maneuvers, fixedManeuvers,
-                                                   start.shiftedBy(period), end.shiftedBy(-period));
+                                                   start.shiftedBy(meanPeriod), end.shiftedBy(-meanPeriod));
 
             // find the first crossing of one of the grid latitudes
-            final double stepSize = period / 100;
+            final double stepSize = meanPeriod / 100;
             SpacecraftState firstCrossing = null;
             boolean firstAscending = true;
-            for (final ErrorModel errorModel : errorModels) {
-                if (isIntermediateLatitude(errorModel.getLatitude())) {
-                    final SpacecraftState crossing = firstLatitudeCrossing(errorModel.getLatitude(), errorModel.isAscending(),
-                                                                           earth, start.shiftedBy(period), end.shiftedBy(-period),
-                                                                           stepSize, propagator);
-                    if (firstCrossing == null || crossing.getDate().compareTo(firstCrossing.getDate()) < 0) {
-                        firstCrossing  = crossing;
-                        firstAscending = errorModel.isAscending();
-                    }
+            for (final ErrorModel errorModel : longitudeModels) {
+                final SpacecraftState crossing = firstLatitudeCrossing(errorModel.getLatitude(), errorModel.isAscending(),
+                                                                       earth, start.shiftedBy(meanPeriod), end.shiftedBy(-meanPeriod),
+                                                                       stepSize, propagator);
+                if (firstCrossing == null || crossing.getDate().compareTo(firstCrossing.getDate()) < 0) {
+                    firstCrossing  = crossing;
+                    firstAscending = errorModel.isAscending();
                 }
             }
             if (firstCrossing == null) {
                 throw new SkatException(SkatMessages.LATITUDE_NEVER_CROSSED,
-                                        FastMath.toDegrees(errorModels.get(0).getLatitude()),
-                                        start.shiftedBy(period), end.shiftedBy(-period));
+                                        FastMath.toDegrees(longitudeModels.get(0).getLatitude()),
+                                        start.shiftedBy(meanPeriod), end.shiftedBy(-meanPeriod));
             }
 
             // identify the grid point corresponding to this first crossing
@@ -281,8 +322,8 @@ public abstract class AbstractGroundTrackGrid extends AbstractSKControl {
             if (firstEncounter < 0) {
                 // this should never happen
                 throw new SkatException(SkatMessages.LATITUDE_NEVER_CROSSED,
-                                        FastMath.toDegrees(errorModels.get(0).getLatitude()),
-                                        start.shiftedBy(period), end.shiftedBy(-period));
+                                        FastMath.toDegrees(longitudeModels.get(0).getLatitude()),
+                                        start.shiftedBy(meanPeriod), end.shiftedBy(-meanPeriod));
             }
 
             // set up grid reference date
@@ -295,7 +336,7 @@ public abstract class AbstractGroundTrackGrid extends AbstractSKControl {
         crossings.clear();
         fitStart = null;
         AbsoluteDate date  = gridReference.shiftedBy(grid[index].getTimeOffset());
-        while (date != null && date.compareTo(end.shiftedBy(-period)) < 0) {
+        while (date != null && date.compareTo(end.shiftedBy(-meanPeriod)) < 0) {
 
             int nextIndex = (index + 1) % grid.length;
 
@@ -307,13 +348,14 @@ public abstract class AbstractGroundTrackGrid extends AbstractSKControl {
             }
 
             final SpacecraftState crossing;
-            if (isIntermediateLatitude(grid[index].getGeodeticPoint().getLatitude())) {
+            if (isExtremeLatitude(grid[index].getGeodeticPoint().getLatitude())) {
+                // extreme latitude, we find the crossing longitude-wise
+                crossing = longitudeCrossing(grid[index].getGeodeticPoint().getLongitude(), earth, date, end,
+                                             0.1 * gap, gap, propagator);
+            } else {
                 // intermediate latitude, we find the crossing latitude-wise
                 crossing = latitudeCrossing(grid[index].getGeodeticPoint().getLatitude(), earth, date, end,
                                             0.1 * gap, gap, propagator);
-            } else {
-                crossing = longitudeCrossing(grid[index].getGeodeticPoint().getLongitude(), earth, date, end,
-                                             0.1 * gap, gap, propagator);                
             }
 
             if (crossing != null) {
@@ -333,11 +375,281 @@ public abstract class AbstractGroundTrackGrid extends AbstractSKControl {
 
     }
 
-    /** Check if a latitude is an intermediate one or an extreme one.
-     * @return true if latitude is an intermediate latitude
+    /** Fit longitude and inclination offsets.
+     * @exception OrekitException if states cannot be converted to Earth frame
      */
-    protected boolean isIntermediateLatitude(final double latitude) {
-        return latitude >= -switchLatitude && latitude <= switchLatitude;
+    protected void fitOffsets()
+        throws OrekitException {
+
+        // first pass
+        Arrays.fill(fittedDN, 0.0);
+        Arrays.fill(fittedDI, 0.0);
+        fitNodeOffsets();
+        fitInclinationOffsets();
+        System.out.println("# ($t + " + fitStart.getDate().durationFrom(AbsoluteDate.JULIAN_EPOCH) + ") / 86400");
+        System.out.println("# raan(t) first pass = " + fittedDN[0] + " + " + fittedDN[1] + " * $t + " + fittedDN[2] + " * $t * $t");
+        System.out.println("# i(t) first pass = " + fittedDI[0] + " + " + fittedDI[1] + " * $t + " + fittedDI[2] + " * $t * $t");
+
+        // second pass, using the coupling between inclination and node fits
+        fitNodeOffsets();
+        fitInclinationOffsets();
+
+        System.out.println("# raan(t) second pass = " + fittedDN[0] + " + " + fittedDN[1] + " * $t + " + fittedDN[2] + " * $t * $t");
+        System.out.println("# i(t) second pass = " + fittedDI[0] + " + " + fittedDI[1] + " * $t + " + fittedDI[2] + " * $t * $t");
+        // check the margins
+        for (final Crossing crossing : crossings) {
+            final SpacecraftState state = crossing.getState();
+            final Vector3D current      = state.getPVCoordinates().getPosition();
+            final double dt             = crossing.getDate().durationFrom(fitStart.getDate());
+            final double deltaN         = fittedDN[0] + dt * (fittedDN[1] + dt * fittedDN[2]);
+            final GeodeticPoint gp      = earth.transform(current, state.getFrame(), state.getDate());
+            final Vector3D subSat       = earth.transform(new GeodeticPoint(gp.getLatitude(), gp.getLongitude(), 0.0));
+            final double distance       = Vector3D.distance(subSat, crossing.getGridPoint().getCartesianPoint());
+            checkMargins(state.getDate(), FastMath.copySign(distance, deltaN));
+        }
+
+    }
+
+    /** Fit longitude offsets.
+     * @exception OrekitException if states cannot be converted to Earth frame
+     */
+    private void fitNodeOffsets()
+        throws OrekitException {
+
+        // fit longitude offsets to parabolic models
+        if (fitStart != null) {
+            for (final ErrorModel errorModel : longitudeModels) {
+                errorModel.resetFitting(fitStart.getDate(), errorModel.getFittedParameters());
+            }
+        }
+
+        final double referenceI = fitStart.getI() + fittedDI[0];
+
+        for (final Crossing crossing : crossings) {
+            if (!isExtremeLatitude(crossing.getGridPoint().getGeodeticPoint().getLatitude())) {
+                // non-extreme latitude point, we can use its longitude as an indicator for offset
+
+                // ascending node for current point
+                final SpacecraftState state = crossing.getState();
+                final Vector3D current      = state.getPVCoordinates().getPosition();
+                final double dt             = crossing.getDate().durationFrom(fitStart.getDate());
+                final double deltaI         = fittedDI[0] + dt * (fittedDI[1] + dt * fittedDI[2]);
+                final double currentNode    = computeNode(current.normalize(), referenceI + deltaI,
+                                                          crossing.getGridPoint().isAscending());
+
+                // ascending node for reference grid point
+                final Transform transform   = earth.getBodyFrame().getTransformTo(state.getFrame(), state.getDate());
+                final Vector3D reference    = transform.transformPosition(crossing.getGridPoint().getCartesianPoint());
+                final double referenceNode  = computeNode(reference.normalize(), referenceI,
+                                                          crossing.getGridPoint().isAscending());
+
+                final double deltaN = MathUtils.normalizeAngle(currentNode - referenceNode, 0.0);
+
+                if (fitStart != null &&
+                    state.getDate().compareTo(freeInterval[0]) >= 0 &&
+                    state.getDate().compareTo(freeInterval[1]) <= 0) {
+                    for (final ErrorModel errorModel : longitudeModels) {
+                        if (errorModel.matches(crossing.getGridPoint().getGeodeticPoint().getLatitude(),
+                                               crossing.getGridPoint().isAscending())) {
+                            errorModel.addPoint(crossing.getDate(), deltaN);
+                        }
+                    }
+                }
+
+            }
+        }
+
+        if (fitStart != null) {
+
+            // fit all point/direction specific models and compute a mean model
+            Arrays.fill(fittedDN, 0);
+            for (final ErrorModel errorModel : longitudeModels) {
+                errorModel.fit();
+                final double[] f = errorModel.approximateAsPolynomialOnly(2, fitStart.getDate(), 2, 2,
+                                                                          fitStart.getDate(),
+                                                                          freeInterval[1],
+                                                                          meanPeriod);
+                for (int i = 0; i < fittedDN.length; ++i) {
+                    fittedDN[i] += f[i];
+                }
+            }
+            for (int i = 0; i < fittedDN.length; ++i) {
+                fittedDN[i] /= longitudeModels.size();
+            }
+
+            addQuadraticFit(fittedDN, 0, freeInterval[1].durationFrom(fitStart.getDate()));
+
+        }
+
+    }
+
+    /** Compute right ascension of ascending node.
+     * <p>
+     * The direction cosines or spacecraft in an inertial frames can be computed as:
+     * <pre>
+     *  x = cos(Omega) cos(alpha) - sin(Omega) cos(i) sin(alpha)
+     *  y = sin(Omega) cos(alpha) + cos(Omega) cos(i) sin(alpha)
+     *  z = sin(i) sin(alpha)
+     * </pre>
+     * so if we know these direction cosines (x, y, z) and inclination i, we
+     * can deduce alpha from third equation (z) :
+     * sin(alpha) = z/sin(i), cos(alpha) = sign(zDot) * sqrt[1 - sin^2(alpha)]
+     * once we know cos(alpha) and sin(alpha), we can compute:
+     * <pre>
+     * cos(alpha) x + cos(i) sin(alpha) y = cos(Omega) [cos^2(alpha) + cos^2(i) sin^2(alpha)]
+     * cos(alpha) y - cos(i) sin(alpha) x = sin(Omega) [cos^2(alpha) + cos^2(i) sin^2(alpha)]
+     * </pre>
+     * hence we deduce Omega from (x, y, z) and an assumed value for i
+     *</p>
+     * @param direction normalized point direction in inertial frame
+     * @param i assumed inclination
+     * @param ascending if true, spacecraft is moving in the South/North direction
+     * @return right ascension of ascending node
+     */
+    private double computeNode(final Vector3D direction, final double i, final boolean ascending) {
+
+        final double cosI = FastMath.cos(i);
+        final double sinI = FastMath.sin(i);
+
+        // compute true latitude argument trigonometric functions
+        final double sinAlpha = direction.getZ() / sinI;
+        final double cosAlpha  = (ascending ? +1 : -1) * FastMath.sqrt(1 - sinAlpha * sinAlpha);
+
+        // compute ascending node
+        final double cosISinAlpha = cosI * sinAlpha;
+        final double u = cosAlpha * direction.getX() + cosISinAlpha * direction.getY();
+        final double v = cosAlpha * direction.getY() - cosISinAlpha * direction.getX();
+
+        return FastMath.atan2(v, u);
+
+    }
+
+    /** Fit inclination offsets.
+     * @exception OrekitException if states cannot be converted to Earth frame
+     */
+    private void fitInclinationOffsets()
+        throws OrekitException {
+
+        if (fitStart != null) {
+            for (final ErrorModel errorModel : inclinationModels) {
+                errorModel.resetFitting(fitStart.getDate(), errorModel.getFittedParameters());
+            }
+        }
+
+        final CircularOrbit orbit = (CircularOrbit) OrbitType.CIRCULAR.convertType(fitStart.getOrbit());
+        final double referenceN = orbit.getRightAscensionOfAscendingNode() + fittedDN[0];
+
+        for (final Crossing crossing : crossings) {
+
+            if (!isEquatorialLatitude(crossing.getGridPoint().getGeodeticPoint().getLatitude())) {
+                // non-equatorial latitude point, we can use its longitude as an indicator for offset
+
+                // find current point and reference point in inertial frame
+                final SpacecraftState state = crossing.getState();
+                final Vector3D current      = state.getPVCoordinates().getPosition();
+
+                // inclination for current point
+                final double dt           = crossing.getDate().durationFrom(fitStart.getDate());
+                final double deltaN       = fittedDN[0] + dt * (fittedDN[1] + dt * fittedDN[2]);
+                final double currentI     = computeInclination(current.normalize(), referenceN + deltaN);
+
+                // inclination for reference grid point
+                final Transform transform = earth.getBodyFrame().getTransformTo(state.getFrame(), state.getDate());
+                final Vector3D reference  = transform.transformPosition(crossing.getGridPoint().getCartesianPoint());
+                final double referenceI   = computeInclination(reference.normalize(), referenceN);
+
+                final double deltaI = currentI - referenceI;
+
+                if (fitStart != null &&
+                        state.getDate().compareTo(freeInterval[0]) >= 0 &&
+                        state.getDate().compareTo(freeInterval[1]) <= 0) {
+                    for (final ErrorModel errorModel : inclinationModels) {
+                        if (errorModel.matches(crossing.getGridPoint().getGeodeticPoint().getLatitude(),
+                                               crossing.getGridPoint().isAscending())) {
+                            errorModel.addPoint(crossing.getDate(), deltaI);
+                        }
+                    }
+                }
+
+            }
+
+        }
+
+        if (fitStart != null) {
+            // fit all point/direction specific models and compute a mean model
+            Arrays.fill(fittedDI, 0);
+            int n = 0;
+            for (final ErrorModel errorModel : inclinationModels) {
+                if (!isEquatorialLatitude(errorModel.getLatitude())) {
+                    errorModel.fit();
+                    final double[] f = errorModel.approximateAsPolynomialOnly(2, fitStart.getDate(), 2, 2,
+                                                                              fitStart.getDate(), freeInterval[1],
+                                                                              meanPeriod);
+                    for (int i = 0; i < fittedDI.length; ++i) {
+                        fittedDI[i] += f[i];
+                    }
+                    ++n;
+                }
+            }
+            for (int i = 0; i < fittedDI.length; ++i) {
+                fittedDI[i] /= n;
+            }
+        }
+
+    }
+
+    /** Compute inclination.
+     * <p>
+     * The direction cosines or spacecraft in an inertial frames can be computed as:
+     * <pre>
+     *  x = cos(Omega) cos(alpha) - sin(Omega) cos(i) sin(alpha)
+     *  y = sin(Omega) cos(alpha) + cos(Omega) cos(i) sin(alpha)
+     *  z = sin(i) sin(alpha)
+     * </pre>
+     * so if we know these direction cosines (x, y, z) and ascending node Omega, we
+     * can compute an intermediate rotated system:
+     * <pre>
+     *  u = cos(Omega) x + sin(Omega) y = cos(alpha)
+     *  v = cos(Omega) y - sin(Omega) x = cos(i) sin(alpha)
+     * </pre>
+     * solving this system gives:
+     * cos(alpha) = u, sin(alpha) = sign(z) * sqrt[1 - cos^2(alpha)]
+     * once we know sin(alpha), we can compute:
+     * <pre>
+     * cos(i) = v / sin(alpha)
+     * </pre>
+     * hence we deduce i from (x, y, z) and an assumed value for Omega
+     *</p>
+     * @param direction normalized point direction in inertial frame
+     * @param omega assumed right ascension of ascending node
+     * @return inclination
+     */
+    private double computeInclination(final Vector3D direction, final double omega) {
+
+        final double cosOmega = FastMath.cos(omega);
+        final double sinOmega = FastMath.sin(omega);
+
+        // compute latitude argument
+        final double u = cosOmega * direction.getX() + sinOmega * direction.getY();
+        final double v = cosOmega * direction.getY() - sinOmega * direction.getX();
+        final double sinAlpha = FastMath.copySign(FastMath.sqrt(1 - u * u), direction.getZ());
+
+        return FastMath.acos(v / sinAlpha);
+
+    }
+
+    /** Check if a latitude is an intermediate one or an extreme one.
+     * @return true if latitude is an extreme latitude
+     */
+    private boolean isExtremeLatitude(final double latitude) {
+        return latitude < -switchLatitude || latitude > switchLatitude;
+    }
+
+    /** Check if a latitude is close to equator.
+     * @return true if latitude is close to equator
+     */
+    private boolean isEquatorialLatitude(final double latitude) {
+        return latitude >= -SWITCH_LIMIT && latitude <= SWITCH_LIMIT;
     }
 
     /** {@inheritDoc} */
@@ -351,7 +663,7 @@ public abstract class AbstractGroundTrackGrid extends AbstractSKControl {
     }
 
     /** Inner class for grid error models. */
-    protected static class ErrorModel extends SecularAndHarmonic {
+    private static class ErrorModel extends SecularAndHarmonic {
 
         /** Medium period model pulsation. */
         private static final double BASE_PULSATION = 2.0 * FastMath.PI / Constants.JULIAN_DAY;

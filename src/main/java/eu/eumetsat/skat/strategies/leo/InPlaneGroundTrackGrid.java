@@ -1,17 +1,13 @@
 /* Copyright 2011 Eumetsat */
 package eu.eumetsat.skat.strategies.leo;
 
-import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math.util.FastMath;
-import org.apache.commons.math.util.MathUtils;
-import org.orekit.bodies.GeodeticPoint;
 import org.orekit.bodies.OneAxisEllipsoid;
 import org.orekit.errors.OrekitException;
 import org.orekit.forces.maneuvers.SmallManeuverAnalyticalModel;
-import org.orekit.frames.Transform;
 import org.orekit.propagation.BoundedPropagator;
 import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
@@ -50,9 +46,6 @@ import eu.eumetsat.skat.utils.SkatException;
  */
 public class InPlaneGroundTrackGrid extends AbstractGroundTrackGrid {
 
-    /** Mean fitting parameters for longitude error. */
-    private final double[] fittedDL;
-
     /** Safety margin on longitude error window. */
     private final double safetyMargin;
 
@@ -89,10 +82,7 @@ public class InPlaneGroundTrackGrid extends AbstractGroundTrackGrid {
         throws SkatException {
         super(name, controlledName, controlledIndex, model, firstOffset, maxManeuvers, orbitsSeparation,
               earth, referenceRadius, mu, j2, grid, maxDistance, horizon);
-
-        this.fittedDL     = new double[3];
         this.safetyMargin = 0.1 * maxDistance;
-
     }
 
     /** {@inheritDoc} */
@@ -107,64 +97,7 @@ public class InPlaneGroundTrackGrid extends AbstractGroundTrackGrid {
             clearHistory();
         }
 
-        // fit longitude offsets to parabolic models
-        if (fitStart != null) {
-            for (final ErrorModel errorModel : errorModels) {
-                errorModel.resetFitting(fitStart.getDate(), errorModel.getFittedParameters());
-            }
-        }
-        for (final Crossing crossing : crossings) {
-            if (isIntermediateLatitude(crossing.getGridPoint().getGeodeticPoint().getLatitude())) {
-                // intermediate latitude point, we can use its longitude as an indicator for offset
-                final SpacecraftState state = crossing.getState();
-                final Transform transform   = state.getFrame().getTransformTo(earth.getBodyFrame(), state.getDate());
-                final Vector3D current      = transform.transformPosition(state.getPVCoordinates().getPosition());
-                final GeodeticPoint gp      = earth.transform(current, earth.getBodyFrame(), state.getDate());
-
-                final double l1     = gp.getLongitude();
-                final double l2     = crossing.getGridPoint().getGeodeticPoint().getLongitude();
-                final double deltaL = MathUtils.normalizeAngle(l1 - l2, 0.0);
-
-                // check the distances
-                final Vector3D subSat = earth.transform(new GeodeticPoint(gp.getLatitude(), gp.getLongitude(), 0.0));
-                final double distance = Vector3D.distance(subSat, crossing.getGridPoint().getCartesianPoint());
-                checkMargins(state.getDate(), FastMath.copySign(distance, deltaL));
-
-                if (fitStart != null &&
-                    state.getDate().compareTo(freeInterval[0]) >= 0 &&
-                    state.getDate().compareTo(freeInterval[1]) <= 0) {
-                    for (final ErrorModel errorModel : errorModels) {
-                        if (errorModel.matches(crossing.getGridPoint().getGeodeticPoint().getLatitude(),
-                                               crossing.getGridPoint().isAscending())) {
-                            errorModel.addPoint(crossing.getDate(), deltaL);
-                        }
-                    }
-                }
-
-            }
-        }
-
-        if (fitStart != null) {
-
-            // fit all point/direction specific models and compute a mean model
-            Arrays.fill(fittedDL, 0);
-            for (final ErrorModel errorModel : errorModels) {
-                errorModel.fit();
-                final double[] f = errorModel.approximateAsPolynomialOnly(2, fitStart.getDate(), 2, 2,
-                                                                          fitStart.getDate(),
-                                                                          freeInterval[1],
-                                                                          fitStart.getKeplerianPeriod());
-                for (int i = 0; i < fittedDL.length; ++i) {
-                    fittedDL[i] += f[i];
-                }
-            }
-            for (int i = 0; i < fittedDL.length; ++i) {
-                fittedDL[i] /= errorModels.size();
-            }
-
-            addQuadraticFit(fittedDL, 0, freeInterval[1].durationFrom(fitStart.getDate()));
-
-        }
+        fitOffsets();
 
     }
 
@@ -188,7 +121,7 @@ public class InPlaneGroundTrackGrid extends AbstractGroundTrackGrid {
 
         // which depends on current state
         final double newDLdot;
-        if (forceReset || (fittedDL[2] < 0 && fittedDL[0] > dlMax) || (fittedDL[2] > 0 && fittedDL[0] < -dlMax)) {
+        if (forceReset || (fittedDN[2] < 0 && fittedDN[0] > dlMax) || (fittedDN[2] > 0 && fittedDN[0] < -dlMax)) {
             // the start point is already on the wrong side of the window
 
             // make sure once we select this option, we stick to it for all iterations
@@ -197,16 +130,16 @@ public class InPlaneGroundTrackGrid extends AbstractGroundTrackGrid {
             // the current cycle is already bad, we set up a target to start a new cycle
             // at time horizon with good initial conditions, and reach this target by changing dlDot(t0)
             final double targetT  = cycleEnd.durationFrom(fitStart.getDate()) + firstOffset;
-            final double targetDL = FastMath.copySign(dlMax, fittedDL[2]);
-            newDLdot = (targetDL - fittedDL[0]) / targetT - fittedDL[2] * targetT;
+            final double targetDL = FastMath.copySign(dlMax, fittedDN[2]);
+            newDLdot = (targetDL - fittedDN[0]) / targetT - fittedDN[2] * targetT;
 
         } else {
             // the start point is on the right side of the window
 
-            final double tPeak   = -0.5 * fittedDL[1] / fittedDL[2];
-            final double dlPeak  = fittedDL[0] + 0.5 * fittedDL[1] * tPeak;
+            final double tPeak   = -0.5 * fittedDN[1] / fittedDN[2];
+            final double dlPeak  = fittedDN[0] + 0.5 * fittedDN[1] * tPeak;
             final double finalT  = cycleEnd.durationFrom(fitStart.getDate()) + firstOffset;
-            final double finalDL = fittedDL[0] + finalT * (fittedDL[1] + finalT * fittedDL[2]);
+            final double finalDL = fittedDN[0] + finalT * (fittedDN[1] + finalT * fittedDN[2]);
 
             final boolean intermediateExit = tPeak > 0 && tPeak < finalT && FastMath.abs(dlPeak) > dlMax;
             final boolean finalExit        = FastMath.abs(finalDL) >= dlMax;
@@ -215,10 +148,10 @@ public class InPlaneGroundTrackGrid extends AbstractGroundTrackGrid {
 
                 // we target a future longitude error peak osculating window boundary
                 // (taking a safety margin into account if possible)
-                double targetDL = FastMath.copySign(FastMath.abs(fittedDL[0]) >= dlSafety ? dlMax : dlSafety,
-                                                    -fittedDL[2]);
-                newDLdot = FastMath.copySign(FastMath.sqrt(4 * fittedDL[2] * (fittedDL[0] - targetDL)),
-                                             (tPeak > 0) ? fittedDL[1] : -fittedDL[1]);
+                double targetDL = FastMath.copySign(FastMath.abs(fittedDN[0]) >= dlSafety ? dlMax : dlSafety,
+                                                    -fittedDN[2]);
+                newDLdot = FastMath.copySign(FastMath.sqrt(4 * fittedDN[2] * (fittedDN[0] - targetDL)),
+                                             (tPeak > 0) ? fittedDN[1] : -fittedDN[1]);
 
             } else {
                 // longitude error stays within bounds up to next cycle,
@@ -230,7 +163,7 @@ public class InPlaneGroundTrackGrid extends AbstractGroundTrackGrid {
 
         // compute semi major axis offset needed to achieve station-keeping target
         final double dlDotDa = -3 * FastMath.PI / (fitStart.getA() * Constants.JULIAN_DAY);
-        final double deltaA  = (newDLdot - fittedDL[1]) / dlDotDa;
+        final double deltaA  = (newDLdot - fittedDN[1]) / dlDotDa;
 
         final ScheduledManeuver[] tuned;
         final AdapterPropagator adapterPropagator = new AdapterPropagator(reference);
@@ -245,7 +178,7 @@ public class InPlaneGroundTrackGrid extends AbstractGroundTrackGrid {
 
             // in order to avoid tempering eccentricity too much,
             // we use a (n+1/2) orbits between maneuvers, where n is an integer
-            final double separation = (orbitsSeparation + 0.5) * fitStart.getKeplerianPeriod();
+            final double separation = (orbitsSeparation + 0.5) * meanPeriod;
 
             // compute the number of maneuvers required
             final TunableManeuver model = getModel();
