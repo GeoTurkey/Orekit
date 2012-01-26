@@ -22,6 +22,7 @@ import org.orekit.propagation.events.EventDetector;
 import org.orekit.propagation.sampling.OrekitStepHandler;
 import org.orekit.time.AbsoluteDate;
 import org.orekit.utils.Constants;
+import org.orekit.utils.PVCoordinates;
 import org.orekit.utils.SecularAndHarmonic;
 
 import eu.eumetsat.skat.control.AbstractSKControl;
@@ -166,7 +167,7 @@ public abstract class AbstractGroundTrackGrid extends AbstractSKControl {
         this.j2               = j2;
         this.crossings        = new ArrayList<Crossing>();
         this.fittedDN         = new double[3];
-        this.fittedDI          = new double[3];
+        this.fittedDI         = new double[2];
 
         // store the grid in chronological order
         this.grid             = grid.toArray(new GridPoint[grid.size()]);
@@ -269,7 +270,7 @@ public abstract class AbstractGroundTrackGrid extends AbstractSKControl {
 
         resetMarginsChecks();
         this.iteration = iteration;
-        this.cycleEnd       = end;
+        this.cycleEnd  = end;
 
         // limit latitude for switching between latitude and longitude crossings
         double maxLatitude = propagator.getInitialState().getI();
@@ -283,6 +284,9 @@ public abstract class AbstractGroundTrackGrid extends AbstractSKControl {
             // select a long maneuver-free interval for fitting
             freeInterval = getManeuverFreeInterval(maneuvers, fixedManeuvers,
                                                    start.shiftedBy(meanPeriod), end.shiftedBy(-meanPeriod));
+            final AbsoluteDate fitDate = freeInterval[0].durationFrom(start) >= firstOffset ?
+                                         freeInterval[0] : start.shiftedBy(firstOffset);
+            fitStart = propagator.propagate(fitDate);
 
             // find the first crossing of one of the grid latitudes
             final double stepSize = meanPeriod / 100;
@@ -334,7 +338,6 @@ public abstract class AbstractGroundTrackGrid extends AbstractSKControl {
         // prepare fitting
         int index = firstEncounter;
         crossings.clear();
-        fitStart = null;
         AbsoluteDate date  = gridReference.shiftedBy(grid[index].getTimeOffset());
         while (date != null && date.compareTo(end.shiftedBy(-meanPeriod)) < 0) {
 
@@ -359,11 +362,6 @@ public abstract class AbstractGroundTrackGrid extends AbstractSKControl {
             }
 
             if (crossing != null) {
-                if (fitStart == null &&
-                    crossing.getDate().compareTo(freeInterval[0]) >= 0 &&
-                    crossing.getDate().compareTo(freeInterval[1]) <= 0) {
-                    fitStart = crossing;
-                }
                 crossings.add(new Crossing(crossing, grid[index]));
                 index = nextIndex;
                 date  = crossing.getDate().shiftedBy(gap);
@@ -373,40 +371,39 @@ public abstract class AbstractGroundTrackGrid extends AbstractSKControl {
 
         }
 
-    }
-
-    /** Fit longitude and inclination offsets.
-     * @exception OrekitException if states cannot be converted to Earth frame
-     */
-    protected void fitOffsets()
-        throws OrekitException {
-
-        // first pass
+        // fit longitude and inclination offsets, first pass
         Arrays.fill(fittedDN, 0.0);
         Arrays.fill(fittedDI, 0.0);
         fitNodeOffsets();
         fitInclinationOffsets();
-        System.out.println("# ($t + " + fitStart.getDate().durationFrom(AbsoluteDate.JULIAN_EPOCH) + ") / 86400");
-        System.out.println("# raan(t) first pass = " + fittedDN[0] + " + " + fittedDN[1] + " * $t + " + fittedDN[2] + " * $t * $t");
-        System.out.println("# i(t) first pass = " + fittedDI[0] + " + " + fittedDI[1] + " * $t + " + fittedDI[2] + " * $t * $t");
+            System.out.println("# ($t + " + fitStart.getDate().durationFrom(AbsoluteDate.JULIAN_EPOCH) + ") / 86400");
+            System.out.println("# raan(t) first pass = " + fittedDN[0] + " + " + fittedDN[1] + " * $t + " + fittedDN[2] + " * $t * $t");
+            System.out.println("# i(t) first pass = " + fittedDI[0] + " + " + fittedDI[1] + " * $t");
 
-        // second pass, using the coupling between inclination and node fits
+        // fit longitude and inclination offsets, second pass, using the coupling between inclination and node fits
         fitNodeOffsets();
         fitInclinationOffsets();
 
-        System.out.println("# raan(t) second pass = " + fittedDN[0] + " + " + fittedDN[1] + " * $t + " + fittedDN[2] + " * $t * $t");
-        System.out.println("# i(t) second pass = " + fittedDI[0] + " + " + fittedDI[1] + " * $t + " + fittedDI[2] + " * $t * $t");
+            System.out.println("# raan(t) second pass = " + fittedDN[0] + " + " + fittedDN[1] + " * $t + " + fittedDN[2] + " * $t * $t");
+            System.out.println("# i(t) second pass = " + fittedDI[0] + " + " + fittedDI[1] + " * $t");
+
         // check the margins
         for (final Crossing crossing : crossings) {
             final SpacecraftState state = crossing.getState();
-            final Vector3D current      = state.getPVCoordinates().getPosition();
-            final double dt             = crossing.getDate().durationFrom(fitStart.getDate());
-            final double deltaN         = fittedDN[0] + dt * (fittedDN[1] + dt * fittedDN[2]);
-            final GeodeticPoint gp      = earth.transform(current, state.getFrame(), state.getDate());
+            final PVCoordinates current = state.getPVCoordinates();
+            final Transform t           = state.getFrame().getTransformTo(earth.getBodyFrame(), state.getDate());
+            final GeodeticPoint gp      = earth.transform(t.transformPosition(current.getPosition()), earth.getBodyFrame(), state.getDate());
             final Vector3D subSat       = earth.transform(new GeodeticPoint(gp.getLatitude(), gp.getLongitude(), 0.0));
-            final double distance       = Vector3D.distance(subSat, crossing.getGridPoint().getCartesianPoint());
-            checkMargins(state.getDate(), FastMath.copySign(distance, deltaN));
+            final Vector3D delta        = subSat.subtract(crossing.getGridPoint().getCartesianPoint());
+            final double dot            = Vector3D.dotProduct(delta, t.transformVector(current.getMomentum()));
+            checkMargins(state.getDate(), FastMath.copySign(delta.getNorm(), dot));
         }
+
+        // preserve fitting history for loop detection purposes
+        if (iteration == 0) {
+            clearHistory();
+        }
+        addQuadraticFit(fittedDN, 0, freeInterval[1].durationFrom(fitStart.getDate()));
 
     }
 
@@ -417,13 +414,11 @@ public abstract class AbstractGroundTrackGrid extends AbstractSKControl {
         throws OrekitException {
 
         // fit longitude offsets to parabolic models
-        if (fitStart != null) {
-            for (final ErrorModel errorModel : longitudeModels) {
-                errorModel.resetFitting(fitStart.getDate(), errorModel.getFittedParameters());
-            }
+        for (final ErrorModel errorModel : longitudeModels) {
+            errorModel.resetFitting(fitStart.getDate(), errorModel.getFittedParameters());
         }
 
-        final double referenceI = fitStart.getI() + fittedDI[0];
+        final double referenceI = fitStart.getI();
 
         for (final Crossing crossing : crossings) {
             if (!isExtremeLatitude(crossing.getGridPoint().getGeodeticPoint().getLatitude())) {
@@ -433,7 +428,7 @@ public abstract class AbstractGroundTrackGrid extends AbstractSKControl {
                 final SpacecraftState state = crossing.getState();
                 final Vector3D current      = state.getPVCoordinates().getPosition();
                 final double dt             = crossing.getDate().durationFrom(fitStart.getDate());
-                final double deltaI         = fittedDI[0] + dt * (fittedDI[1] + dt * fittedDI[2]);
+                final double deltaI         = fittedDI[0] + dt * fittedDI[1];
                 final double currentNode    = computeNode(current.normalize(), referenceI + deltaI,
                                                           crossing.getGridPoint().isAscending());
 
@@ -445,8 +440,7 @@ public abstract class AbstractGroundTrackGrid extends AbstractSKControl {
 
                 final double deltaN = MathUtils.normalizeAngle(currentNode - referenceNode, 0.0);
 
-                if (fitStart != null &&
-                    state.getDate().compareTo(freeInterval[0]) >= 0 &&
+                if (state.getDate().compareTo(freeInterval[0]) >= 0 &&
                     state.getDate().compareTo(freeInterval[1]) <= 0) {
                     for (final ErrorModel errorModel : longitudeModels) {
                         if (errorModel.matches(crossing.getGridPoint().getGeodeticPoint().getLatitude(),
@@ -459,26 +453,19 @@ public abstract class AbstractGroundTrackGrid extends AbstractSKControl {
             }
         }
 
-        if (fitStart != null) {
-
-            // fit all point/direction specific models and compute a mean model
-            Arrays.fill(fittedDN, 0);
-            for (final ErrorModel errorModel : longitudeModels) {
-                errorModel.fit();
-                final double[] f = errorModel.approximateAsPolynomialOnly(2, fitStart.getDate(), 2, 2,
-                                                                          fitStart.getDate(),
-                                                                          freeInterval[1],
-                                                                          meanPeriod);
-                for (int i = 0; i < fittedDN.length; ++i) {
-                    fittedDN[i] += f[i];
-                }
-            }
+        // fit all point/direction specific models and compute a mean model
+        Arrays.fill(fittedDN, 0);
+        for (final ErrorModel errorModel : longitudeModels) {
+            errorModel.fit();
+            final double[] f = errorModel.approximateAsPolynomialOnly(2, fitStart.getDate(), 2, 2,
+                                                                      fitStart.getDate(), freeInterval[1],
+                                                                      meanPeriod);
             for (int i = 0; i < fittedDN.length; ++i) {
-                fittedDN[i] /= longitudeModels.size();
+                fittedDN[i] += f[i];
             }
-
-            addQuadraticFit(fittedDN, 0, freeInterval[1].durationFrom(fitStart.getDate()));
-
+        }
+        for (int i = 0; i < fittedDN.length; ++i) {
+            fittedDN[i] /= longitudeModels.size();
         }
 
     }
@@ -530,14 +517,13 @@ public abstract class AbstractGroundTrackGrid extends AbstractSKControl {
     private void fitInclinationOffsets()
         throws OrekitException {
 
-        if (fitStart != null) {
-            for (final ErrorModel errorModel : inclinationModels) {
-                errorModel.resetFitting(fitStart.getDate(), errorModel.getFittedParameters());
-            }
+        for (final ErrorModel errorModel : inclinationModels) {
+            errorModel.resetFitting(fitStart.getDate(), errorModel.getFittedParameters());
         }
 
         final CircularOrbit orbit = (CircularOrbit) OrbitType.CIRCULAR.convertType(fitStart.getOrbit());
-        final double referenceN = orbit.getRightAscensionOfAscendingNode() + fittedDN[0];
+        final double referenceN0 = orbit.getRightAscensionOfAscendingNode();
+        final double referenceN1 = 2 * FastMath.PI / Constants.JULIAN_YEAR;
 
         for (final Crossing crossing : crossings) {
 
@@ -547,6 +533,7 @@ public abstract class AbstractGroundTrackGrid extends AbstractSKControl {
                 // find current point and reference point in inertial frame
                 final SpacecraftState state = crossing.getState();
                 final Vector3D current      = state.getPVCoordinates().getPosition();
+                final double referenceN     = referenceN0 + referenceN1 * state.getDate().durationFrom(orbit.getDate());
 
                 // inclination for current point
                 final double dt           = crossing.getDate().durationFrom(fitStart.getDate());
@@ -560,9 +547,8 @@ public abstract class AbstractGroundTrackGrid extends AbstractSKControl {
 
                 final double deltaI = currentI - referenceI;
 
-                if (fitStart != null &&
-                        state.getDate().compareTo(freeInterval[0]) >= 0 &&
-                        state.getDate().compareTo(freeInterval[1]) <= 0) {
+                if (state.getDate().compareTo(freeInterval[0]) >= 0 &&
+                    state.getDate().compareTo(freeInterval[1]) <= 0) {
                     for (final ErrorModel errorModel : inclinationModels) {
                         if (errorModel.matches(crossing.getGridPoint().getGeodeticPoint().getLatitude(),
                                                crossing.getGridPoint().isAscending())) {
@@ -575,25 +561,23 @@ public abstract class AbstractGroundTrackGrid extends AbstractSKControl {
 
         }
 
-        if (fitStart != null) {
-            // fit all point/direction specific models and compute a mean model
-            Arrays.fill(fittedDI, 0);
-            int n = 0;
-            for (final ErrorModel errorModel : inclinationModels) {
-                if (!isEquatorialLatitude(errorModel.getLatitude())) {
-                    errorModel.fit();
-                    final double[] f = errorModel.approximateAsPolynomialOnly(2, fitStart.getDate(), 2, 2,
-                                                                              fitStart.getDate(), freeInterval[1],
-                                                                              meanPeriod);
-                    for (int i = 0; i < fittedDI.length; ++i) {
-                        fittedDI[i] += f[i];
-                    }
-                    ++n;
+        // fit all point/direction specific models and compute a mean model
+        Arrays.fill(fittedDI, 0);
+        int n = 0;
+        for (final ErrorModel errorModel : inclinationModels) {
+            if (!isEquatorialLatitude(errorModel.getLatitude())) {
+                errorModel.fit();
+                final double[] f = errorModel.approximateAsPolynomialOnly(1, fitStart.getDate(), 2, 2,
+                                                                          fitStart.getDate(), freeInterval[1],
+                                                                          meanPeriod);
+                for (int i = 0; i < fittedDI.length; ++i) {
+                    fittedDI[i] += f[i];
                 }
+                ++n;
             }
-            for (int i = 0; i < fittedDI.length; ++i) {
-                fittedDI[i] /= n;
-            }
+        }
+        for (int i = 0; i < fittedDI.length; ++i) {
+            fittedDI[i] /= n;
         }
 
     }

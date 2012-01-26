@@ -94,10 +94,7 @@ public class InPlaneGroundTrackGrid extends AbstractGroundTrackGrid {
         baseInitializeRun(iteration, maneuvers, propagator, fixedManeuvers, start, end);
         if (iteration == 0) {
             forceReset = false;
-            clearHistory();
         }
-
-        fitOffsets();
 
     }
 
@@ -108,11 +105,6 @@ public class InPlaneGroundTrackGrid extends AbstractGroundTrackGrid {
 
         final double dlMax    = getMax() / earth.getEquatorialRadius();
         final double dlSafety = (getMax() - safetyMargin) / earth.getEquatorialRadius();
-
-        if (fitStart == null) {
-            // the cycle was too short for fitting crossing points
-            return tunables;
-        }
 
         if (loopDetected()) {
             // we are stuck in a convergence loop, we cannot improve the current solution

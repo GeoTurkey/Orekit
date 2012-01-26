@@ -20,7 +20,6 @@ import org.orekit.propagation.analytical.J2DifferentialEffect;
 import org.orekit.propagation.events.EventDetector;
 import org.orekit.propagation.sampling.OrekitStepHandler;
 import org.orekit.time.AbsoluteDate;
-import org.orekit.utils.Constants;
 
 import eu.eumetsat.skat.strategies.ScheduledManeuver;
 import eu.eumetsat.skat.strategies.TunableManeuver;
@@ -50,9 +49,6 @@ public class OutOfPlaneGroundTrackGrid extends AbstractGroundTrackGrid {
 
     /** Safety margin. */
     private final double safetyMargin;
-
-    /** Indicator for side targeting. */
-    private boolean forceReset;
 
     /** Simple constructor.
      * <p>
@@ -103,39 +99,35 @@ public class OutOfPlaneGroundTrackGrid extends AbstractGroundTrackGrid {
 
         if (iteration == 0) {
 
-            forceReset = false;
-
-            // look for a node at which maneuvers can be performed
             nodeState = null;
-            for (int i = 0; nodeState == null && i < crossings.size(); ++i) {
 
-                // find the first available node that is in eclipse for maneuver
-                final double stepSize = meanPeriod / 100;
-                nodeState = firstLatitudeCrossing(0.0, true, earth, freeInterval[0], freeInterval[1],
-                                                  stepSize, propagator);
-                Vector3D satPos = nodeState.getPVCoordinates().getPosition();
-                Vector3D sunPos = sun.getPVCoordinates(nodeState.getDate(), nodeState.getFrame()).getPosition();
-                if (Vector3D.dotProduct(satPos, sunPos) > 0) {
-                    // wrong node, it is under Sun light, select the next one
-                    nodeState = latitudeCrossing(0.0, earth, nodeState.getDate().shiftedBy(0.5 * meanPeriod),
-                                                 freeInterval[1], stepSize, meanPeriod / 8, propagator);
+            final double diMax = getMax() / earth.getEquatorialRadius();
+            if (FastMath.abs(fittedDI[0] + fittedDI[1] * end.durationFrom(fitStart.getDate())) > diMax) {
+                // inclination error exceeds boundaries
+
+                // look for a node at which maneuvers can be performed
+                for (int i = 0; nodeState == null && i < crossings.size(); ++i) {
+
+                    // find the first available node that is in eclipse for maneuver
+                    final double stepSize = meanPeriod / 100;
+                    nodeState = firstLatitudeCrossing(0.0, true, earth, start.shiftedBy(meanPeriod), end, stepSize, propagator);
+                    Vector3D satPos = nodeState.getPVCoordinates().getPosition();
+                    Vector3D sunPos = sun.getPVCoordinates(nodeState.getDate(), nodeState.getFrame()).getPosition();
+                    if (Vector3D.dotProduct(satPos, sunPos) > 0) {
+                        // wrong node, it is under Sun light, select the next one
+                        nodeState = latitudeCrossing(0.0, earth, nodeState.getDate().shiftedBy(0.5 * meanPeriod),
+                                                     end, stepSize, meanPeriod / 8, propagator);
+                    }
+
+                    // ensure maneuvers separation requirements
+                    while (nodeState.getDate().durationFrom(start) < firstOffset) {
+                        nodeState = latitudeCrossing(0.0, earth, nodeState.getDate().shiftedBy(meanPeriod),
+                                                     end, stepSize, meanPeriod / 8, propagator);
+                    }
+
                 }
-
-                // ensure maneuvers separation requirements
-                while (nodeState.getDate().durationFrom(freeInterval[0]) < firstOffset) {
-                    nodeState = latitudeCrossing(0.0, earth, nodeState.getDate().shiftedBy(meanPeriod),
-                                                 freeInterval[1], stepSize, meanPeriod / 8, propagator);
-                }
-
             }
 
-        }
-
-        fitOffsets();
-
-        if (getMargins() > 0) {
-            // there are some margins, don't perform any maneuvers
-            nodeState = null;
         }
 
     }
@@ -151,72 +143,16 @@ public class OutOfPlaneGroundTrackGrid extends AbstractGroundTrackGrid {
             return tunables;
         }
 
-        double newIdot;
-        if (forceReset || (fittedDI[2] < 0 && fittedDI[0] > diMax) || (fittedDI[2] > 0 && fittedDI[0] < -diMax)) {
-            // the start point is already on the wrong side of the window
-
-            // make sure once we select this option, we stick to it for all iterations
-            forceReset = true;
-
-            // the current cycle is already bad, we set up a target to start a new cycle
-            // at time horizon with good initial conditions, and reach this target by changing iDot(t0)
-            final double targetT = cycleEnd.durationFrom(nodeState.getDate()) + firstOffset;
-            final double targetI = (fittedDI[2] < 0) ? (-diMax + safetyMargin) : (diMax - safetyMargin);
-            newIdot = (targetI - fittedDI[0]) / targetT - fittedDI[2] * targetT;
-
-        } else {
-            // the start point is on the right side of the window
-            final double tPeak   = -0.5 * fittedDI[1] / fittedDI[2];
-            final double iPeak   = fittedDI[0] + 0.5 * fittedDI[1] * tPeak;
-            final double finalT = cycleEnd.durationFrom(nodeState.getDate()) + firstOffset;
-            final double finalI = fittedDI[0] + finalT * (fittedDI[1] + finalT * fittedDI[2]);
-
-            final boolean intermediateExit = tPeak > 0 && tPeak < finalT && (iPeak > diMax || iPeak < -diMax);
-            final boolean finalExit        = finalI >= diMax || finalI <= -diMax;
-            if (intermediateExit || finalExit) {
-                // longitude offset exits the window limits
-
-                // we target a future longitude offset peak osculating window boundary
-                // (taking a safety margin into account if possible)
-                double targetI;
-                if (fittedDI[2] <= 0) {
-                    targetI = diMax - safetyMargin;
-                    if (fittedDI[0] >= targetI) {
-                        targetI = diMax;
-                    }
-                } else {
-                    targetI = -diMax + safetyMargin;
-                    if (fittedDI[0] <= targetI) {
-                        targetI = -diMax;
-                    }
-                }
-                newIdot = FastMath.copySign(FastMath.sqrt(4 * fittedDI[2] * (fittedDI[0] - targetI)),
-                                            (tPeak > 0) ? fittedDI[1] : -fittedDI[1]);
-
-            } else {
-                // longitude offset stays within bounds up to next cycle,
-                // we don't change anything on the maneuvers
-                nodeState = null;
-                return tunables;
-            }
-
+        if (loopDetected()) {
+            // we are stuck in a convergence loop, we cannot improve the current solution
+            return tunables;
         }
 
-        // linearized relationship between hDot and inclination in the neighborhood of maneuver
-        // the solar time h(t) is approximately h(tn) = Omega(tn) + eta - (pi + alpha(tn))
-        // where Omega is spacecraft right ascension of ascending node, eta is right ascension
-        // difference between spacecraft at specified latitude and ascending node, and alpha is
-        // Sun right ascension. Eta and pi are fixed, so we get the time derivative
-        // hDot = raanDot - alphaDot. Raan time derivative due to J2 is proportional to cos(i),
-        // so hDot = k cos(i) - alphaDot (with both k and cos(i) negative for sun synchronous
-        // orbits so hDot is close to zero) and hence dhDot / di = -k sin (i) = -(alphaDot + hDot) tan(i)
-        final double dhRadDotDi = -(2 * FastMath.PI / Constants.JULIAN_YEAR + fittedDI[1]) * FastMath.tan(nodeState.getI());
-        final double dhDotDi    = 12 * dhRadDotDi / FastMath.PI;
+        // we want to start inclination drift from the boundary
+        final double deltaI = FastMath.copySign(diMax - safetyMargin, -fittedDI[1]) -
+                              (fittedDI[0] + fittedDI[1] * nodeState.getDate().durationFrom(fitStart.getDate()));
 
-        // compute inclination offset needed to achieve station-keeping target
-        final double deltaI = (newIdot - fittedDI[1]) / dhDotDi;
-
-        final ScheduledManeuver[] tuned;
+       final ScheduledManeuver[] tuned;
         final AdapterPropagator adapterPropagator = new AdapterPropagator(reference);
         if (iteration == 0) {
             // we need to first define the number of maneuvers and their initial settings
