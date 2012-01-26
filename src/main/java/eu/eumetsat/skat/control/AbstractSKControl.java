@@ -7,7 +7,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 import org.apache.commons.math.analysis.UnivariateFunction;
-import org.apache.commons.math.analysis.solvers.BaseUnivariateRealSolver;
+import org.apache.commons.math.analysis.solvers.BaseUnivariateSolver;
 import org.apache.commons.math.analysis.solvers.BracketingNthOrderBrentSolver;
 import org.apache.commons.math.exception.NoBracketingException;
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
@@ -596,7 +596,7 @@ public abstract class AbstractSKControl implements SKControl {
                 } else {
 
                     // find the latitude crossing in the bracketed interval
-                    final BaseUnivariateRealSolver<UnivariateFunction> solver =
+                    final BaseUnivariateSolver<UnivariateFunction> solver =
                             new BracketingNthOrderBrentSolver(0.1, 5);
                     final double dEnEp = FastMath.abs(earliestPositive - earliestNegative);
                     final double dEnLp = FastMath.abs(latestPositive   - earliestNegative);
