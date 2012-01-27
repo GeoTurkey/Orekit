@@ -221,6 +221,7 @@ public class Scenario implements ScenarioComponent {
 
         AbsoluteDate tMin = states[0].getPerformedEphemeris().getMinDate();
         AbsoluteDate tMax = states[0].getPerformedEphemeris().getMaxDate();
+        final double safetyMargin = 1.0e-3;
 
         // monitor control laws margins and violations
         Set<SKControl> controls = new HashSet<SKControl>();
@@ -231,25 +232,23 @@ public class Scenario implements ScenarioComponent {
             final BoundedPropagator propagator = states[i].getPerformedEphemeris();
             propagator.clearEventsDetectors();
 
-            for (final SKControl controlLaw : controls) {
-                controlLaw.setMonitoring(true);
-                final List<ScheduledManeuver> maneuvers = new ArrayList<ScheduledManeuver>();
-                if (states[i].getManeuvers() != null) {
-                    for (final ScheduledManeuver m : states[i].getManeuvers()) {
-                        if (m.getDate().compareTo(tMin) >= 0 && m.getDate().compareTo(tMax) < 0) {
-                            maneuvers.add(m);
-                        }
-                    }
-                }
-                controlLaw.initializeRun(0, maneuvers.toArray(new ScheduledManeuver[maneuvers.size()]),
-                                         propagator, new ArrayList<ScheduledManeuver>(), tMin, tMax);
-            }
-
             final OrekitStepHandlerMultiplexer multiplexer = new OrekitStepHandlerMultiplexer();
 
-            // register the control law handlers to the propagator
             for (final SKControl controlLaw : controls) {
                 if (i == controlLaw.getControlledSpacecraftIndex()) {
+                    controlLaw.setMonitoring(true);
+                    final List<ScheduledManeuver> maneuvers = new ArrayList<ScheduledManeuver>();
+                    if (states[i].getManeuvers() != null) {
+                        for (final ScheduledManeuver m : states[i].getManeuvers()) {
+                            if (m.getDate().compareTo(tMin) >= 0 && m.getDate().compareTo(tMax) < 0) {
+                                maneuvers.add(m);
+                            }
+                        }
+                    }
+                    controlLaw.initializeRun(0, maneuvers.toArray(new ScheduledManeuver[maneuvers.size()]),
+                                             propagator, new ArrayList<ScheduledManeuver>(), tMin, tMax);
+
+                    // register the control law handlers to the propagator
                     if (controlLaw.getEventDetector() != null) {
                         propagator.addEventDetector(controlLaw.getEventDetector());
                     }
@@ -258,13 +257,14 @@ public class Scenario implements ScenarioComponent {
                     }
                 }
             }
-            propagator.setMasterMode(multiplexer);
 
-            final double safetyMargin = 1.0e-3;
+            propagator.setMasterMode(multiplexer);
             propagator.propagate(tMin.shiftedBy(safetyMargin), tMax.shiftedBy(-safetyMargin));
 
             for (final SKControl controlLaw : controls) {
-                controlLaw.setMonitoring(false);
+                if (i == controlLaw.getControlledSpacecraftIndex()) {
+                    controlLaw.setMonitoring(false);
+                }
             }
 
         }
@@ -279,7 +279,6 @@ public class Scenario implements ScenarioComponent {
         }
 
         // monitor data
-        final double safetyMargin = 1.0e-3;
         AbsoluteDate date = tMin.shiftedBy(safetyMargin);
         while (date.compareTo(tMax) <= 0) {
 
