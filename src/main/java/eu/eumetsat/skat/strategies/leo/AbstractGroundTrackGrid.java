@@ -1,15 +1,10 @@
 /* Copyright 2011 Eumetsat */
 package eu.eumetsat.skat.strategies.leo;
 
-import java.io.IOException;
-import java.io.PrintStream;
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Locale;
 
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math.util.FastMath;
@@ -132,8 +127,6 @@ public abstract class AbstractGroundTrackGrid extends AbstractSKControl {
     /** Mean fitting parameters for inclination error. */
     protected final double[] fittedDI;
 
-    private PrintStream out;
-
     /** Simple constructor.
      * <p>
      * The number of days per phasing cycle is approximate in the sense it is
@@ -176,17 +169,6 @@ public abstract class AbstractGroundTrackGrid extends AbstractSKControl {
         this.fittedDN         = new double[3];
         this.fittedDI         = new double[2];
 
-        System.out.println(getClass().getName());
-        if (getClass().getName().contains("OutOf")) {
-            try {
-                System.out.println("ok");
-            out = new PrintStream("/home/luc/grid.errors");
-            } catch (IOException ioe) {
-                throw new RuntimeException(ioe);
-            }
-        } else {
-            out = null;
-        }
         // store the grid in chronological order
         this.grid             = grid.toArray(new GridPoint[grid.size()]);
         Arrays.sort(this.grid, new Comparator<GridPoint>() {
@@ -458,15 +440,6 @@ public abstract class AbstractGroundTrackGrid extends AbstractSKControl {
                                                           crossing.getGridPoint().isAscending());
 
                 final double deltaN = MathUtils.normalizeAngle(currentNode - referenceNode, 0.0);
-                if (isMonitoring() && out != null) {
-                    DecimalFormat fTime  = new DecimalFormat("0000000.000", new DecimalFormatSymbols(Locale.US));
-                    DecimalFormat fAngle = new DecimalFormat("000.00000",   new DecimalFormatSymbols(Locale.US));
-                        out.println(fTime.format(crossing.getGridPoint().getTimeOffset()) +
-                                    " " + fAngle.format(FastMath.toDegrees(crossing.getGridPoint().getGeodeticPoint().getLatitude())) +
-                                    " " + fAngle.format(FastMath.toDegrees(crossing.getGridPoint().getGeodeticPoint().getLongitude())) +
-                                    " " + fAngle.format(FastMath.toDegrees(earth.transform(current, state.getFrame(), state.getDate()).getLongitude())) +
-                                    " " + crossing.getGridPoint().isAscending());
-                }
 
                 if (state.getDate().compareTo(freeInterval[0]) >= 0 &&
                     state.getDate().compareTo(freeInterval[1]) <= 0) {
