@@ -103,6 +103,12 @@ public class InPlaneGroundTrackGrid extends AbstractGroundTrackGrid {
                                              final BoundedPropagator reference)
         throws OrekitException {
 
+        if (fitStart == null) {
+            // the free maneuvers interval was probably too short, no fitting could be performed
+            // we cannot even know if current orbit is good or not, so we don't control anything
+            return tunables;
+        }
+
         final double dlMax    = getMax() / earth.getEquatorialRadius();
         final double dlSafety = (getMax() - safetyMargin) / earth.getEquatorialRadius();
 

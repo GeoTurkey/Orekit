@@ -284,9 +284,6 @@ public abstract class AbstractGroundTrackGrid extends AbstractSKControl {
             // select a long maneuver-free interval for fitting
             freeInterval = getManeuverFreeInterval(maneuvers, fixedManeuvers,
                                                    start.shiftedBy(meanPeriod), end.shiftedBy(-meanPeriod));
-            final AbsoluteDate fitDate = freeInterval[0].durationFrom(start) >= firstOffset ?
-                                         freeInterval[0] : start.shiftedBy(firstOffset);
-            fitStart = propagator.propagate(fitDate);
 
             // find the first crossing of one of the grid latitudes
             final double stepSize = meanPeriod / 100;
@@ -338,6 +335,7 @@ public abstract class AbstractGroundTrackGrid extends AbstractSKControl {
         // prepare fitting
         int index = firstEncounter;
         crossings.clear();
+        fitStart = null;
         AbsoluteDate date  = gridReference.shiftedBy(grid[index].getTimeOffset());
         while (date != null && date.compareTo(end.shiftedBy(-meanPeriod)) < 0) {
 
@@ -362,6 +360,11 @@ public abstract class AbstractGroundTrackGrid extends AbstractSKControl {
             }
 
             if (crossing != null) {
+                if (fitStart == null &&
+                    crossing.getDate().compareTo(freeInterval[0]) >= 0 &&
+                    crossing.getDate().compareTo(freeInterval[1]) <= 0) {
+                    fitStart = crossing;
+                }
                 crossings.add(new Crossing(crossing, grid[index]));
                 index = nextIndex;
                 date  = crossing.getDate().shiftedBy(gap);
@@ -371,21 +374,25 @@ public abstract class AbstractGroundTrackGrid extends AbstractSKControl {
 
         }
 
-        // fit longitude and inclination offsets, first pass
-        Arrays.fill(fittedDN, 0.0);
-        Arrays.fill(fittedDI, 0.0);
-        fitNodeOffsets();
-        fitInclinationOffsets();
-            System.out.println("# ($t + " + fitStart.getDate().durationFrom(AbsoluteDate.JULIAN_EPOCH) + ") / 86400");
-            System.out.println("# raan(t) first pass = " + fittedDN[0] + " + " + fittedDN[1] + " * $t + " + fittedDN[2] + " * $t * $t");
-            System.out.println("# i(t) first pass = " + fittedDI[0] + " + " + fittedDI[1] + " * $t");
+        if (fitStart != null) {
 
-        // fit longitude and inclination offsets, second pass, using the coupling between inclination and node fits
-        fitNodeOffsets();
-        fitInclinationOffsets();
+            // fit longitude and inclination offsets, first pass
+            Arrays.fill(fittedDN, 0.0);
+            Arrays.fill(fittedDI, 0.0);
+            fitNodeOffsets();
+            fitInclinationOffsets();
 
-            System.out.println("# raan(t) second pass = " + fittedDN[0] + " + " + fittedDN[1] + " * $t + " + fittedDN[2] + " * $t * $t");
-            System.out.println("# i(t) second pass = " + fittedDI[0] + " + " + fittedDI[1] + " * $t");
+            // fit longitude and inclination offsets, second pass, using the coupling between inclination and node fits
+            fitNodeOffsets();
+            fitInclinationOffsets();
+
+            // preserve fitting history for loop detection purposes
+            if (iteration == 0) {
+                clearHistory();
+            }
+            addQuadraticFit(fittedDN, 0, freeInterval[1].durationFrom(fitStart.getDate()));
+
+        }
 
         // check the margins
         for (final Crossing crossing : crossings) {
@@ -398,12 +405,6 @@ public abstract class AbstractGroundTrackGrid extends AbstractSKControl {
             final double dot            = Vector3D.dotProduct(delta, t.transformVector(current.getMomentum()));
             checkMargins(state.getDate(), FastMath.copySign(delta.getNorm(), dot));
         }
-
-        // preserve fitting history for loop detection purposes
-        if (iteration == 0) {
-            clearHistory();
-        }
-        addQuadraticFit(fittedDN, 0, freeInterval[1].durationFrom(fitStart.getDate()));
 
     }
 

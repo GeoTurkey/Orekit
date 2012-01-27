@@ -101,30 +101,32 @@ public class OutOfPlaneGroundTrackGrid extends AbstractGroundTrackGrid {
 
             nodeState = null;
 
-            final double diMax = getMax() / earth.getEquatorialRadius();
-            if (FastMath.abs(fittedDI[0] + fittedDI[1] * end.durationFrom(fitStart.getDate())) > diMax) {
-                // inclination error exceeds boundaries
+            if (fitStart != null) {
+                final double diMax = getMax() / earth.getEquatorialRadius();
+                if (FastMath.abs(fittedDI[0] + fittedDI[1] * end.durationFrom(fitStart.getDate())) > diMax) {
+                    // inclination error exceeds boundaries
 
-                // look for a node at which maneuvers can be performed
-                for (int i = 0; nodeState == null && i < crossings.size(); ++i) {
+                    // look for a node at which maneuvers can be performed
+                    for (int i = 0; nodeState == null && i < crossings.size(); ++i) {
 
-                    // find the first available node that is in eclipse for maneuver
-                    final double stepSize = meanPeriod / 100;
-                    nodeState = firstLatitudeCrossing(0.0, true, earth, start.shiftedBy(meanPeriod), end, stepSize, propagator);
-                    Vector3D satPos = nodeState.getPVCoordinates().getPosition();
-                    Vector3D sunPos = sun.getPVCoordinates(nodeState.getDate(), nodeState.getFrame()).getPosition();
-                    if (Vector3D.dotProduct(satPos, sunPos) > 0) {
-                        // wrong node, it is under Sun light, select the next one
-                        nodeState = latitudeCrossing(0.0, earth, nodeState.getDate().shiftedBy(0.5 * meanPeriod),
-                                                     end, stepSize, meanPeriod / 8, propagator);
+                        // find the first available node that is in eclipse for maneuver
+                        final double stepSize = meanPeriod / 100;
+                        nodeState = firstLatitudeCrossing(0.0, true, earth, start.shiftedBy(meanPeriod), end, stepSize, propagator);
+                        Vector3D satPos = nodeState.getPVCoordinates().getPosition();
+                        Vector3D sunPos = sun.getPVCoordinates(nodeState.getDate(), nodeState.getFrame()).getPosition();
+                        if (Vector3D.dotProduct(satPos, sunPos) > 0) {
+                            // wrong node, it is under Sun light, select the next one
+                            nodeState = latitudeCrossing(0.0, earth, nodeState.getDate().shiftedBy(0.5 * meanPeriod),
+                                                         end, stepSize, meanPeriod / 8, propagator);
+                        }
+
+                        // ensure maneuvers separation requirements
+                        while (nodeState.getDate().durationFrom(start) < firstOffset) {
+                            nodeState = latitudeCrossing(0.0, earth, nodeState.getDate().shiftedBy(meanPeriod),
+                                                         end, stepSize, meanPeriod / 8, propagator);
+                        }
+
                     }
-
-                    // ensure maneuvers separation requirements
-                    while (nodeState.getDate().durationFrom(start) < firstOffset) {
-                        nodeState = latitudeCrossing(0.0, earth, nodeState.getDate().shiftedBy(meanPeriod),
-                                                     end, stepSize, meanPeriod / 8, propagator);
-                    }
-
                 }
             }
 
