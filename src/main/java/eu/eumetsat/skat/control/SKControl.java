@@ -138,4 +138,9 @@ public interface SKControl {
      */
     OrekitStepHandler getStepHandler();
 
+    /** Set the monitoring flag.
+     * @param monitoring if true, the law is in the monitoring phase
+     */
+    void setMonitoring(boolean monitoring);
+
 }

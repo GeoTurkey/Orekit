@@ -232,6 +232,7 @@ public class Scenario implements ScenarioComponent {
             propagator.clearEventsDetectors();
 
             for (final SKControl controlLaw : controls) {
+                controlLaw.setMonitoring(true);
                 final List<ScheduledManeuver> maneuvers = new ArrayList<ScheduledManeuver>();
                 if (states[i].getManeuvers() != null) {
                     for (final ScheduledManeuver m : states[i].getManeuvers()) {
@@ -261,6 +262,10 @@ public class Scenario implements ScenarioComponent {
 
             final double safetyMargin = 1.0e-3;
             propagator.propagate(tMin.shiftedBy(safetyMargin), tMax.shiftedBy(-safetyMargin));
+
+            for (final SKControl controlLaw : controls) {
+                controlLaw.setMonitoring(false);
+            }
 
         }
 

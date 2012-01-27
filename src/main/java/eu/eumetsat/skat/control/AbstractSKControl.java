@@ -76,6 +76,9 @@ public abstract class AbstractSKControl implements SKControl {
     /** Loop detection indicator. */
     private int repetition;
 
+    /** Monitoring indicator. */
+    private boolean monitoring;
+
     /** Simple constructor.
      * @param name name of the control law
      * @param model in-plane maneuver model
@@ -102,6 +105,7 @@ public abstract class AbstractSKControl implements SKControl {
         this.horizon         = horizon;
         this.values          = new TreeSet<TimeStamped>(new ChronologicalComparator());
         this.history         = new ArrayList<double[]>();
+        this.monitoring      = false;
     }
 
     /** {@inheritDoc} */
@@ -159,6 +163,18 @@ public abstract class AbstractSKControl implements SKControl {
     /** {@inheritDoc} */
     public double getMargins() {
         return margins;
+    }
+
+    /** {@inheritDoc} */
+    public void setMonitoring(boolean monitoring) {
+        this.monitoring = monitoring;
+    }
+
+    /** Check if we are in the monitoring phase.
+     * @return true if we are in the monitoring phase
+     */
+    protected boolean isMonitoring() {
+        return monitoring;
     }
 
     /** {@inheritDoc} */
