@@ -23,6 +23,7 @@
       <directory>data/reference-use-cases</directory>  
       <includes>
        <include>*.in</include>
+       <include>*.grd</include>
       </includes>
     </fileSet>
     <fileSet>
