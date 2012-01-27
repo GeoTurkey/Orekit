@@ -53,11 +53,6 @@ public class InPlaneGroundTrackGrid extends AbstractGroundTrackGrid {
     private boolean forceReset;
 
     /** Simple constructor.
-     * <p>
-     * The number of days per phasing cycle is approximate in the sense it is
-     * expressed neither in solar days nor in sidereal days. It is precisely
-     * the number of Earth rotation <em>with respect to the orbital plane</em>.
-     * </p>
      * @param name name of the control law
      * @param controlledName name of the controlled spacecraft
      * @param controlledIndex index of the controlled spacecraft
