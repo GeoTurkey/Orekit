@@ -329,9 +329,6 @@ public class MeanLocalSolarTime extends AbstractSKControl {
             // look for a boundaries violation
             nodeState = null;
             for (int i = 0; nodeState == null && i < crossings.size(); ++i) {
-                if (i == crossings.size() - 1) {
-                    System.out.println(mstModel.meanValue(crossings.get(i), 2, 2));
-                }
                 final double crossingMst = mstModel.meanValue(crossings.get(i), 2, 2);
                 // First case : getting out in the opposite sense of the parabolic natural motion :
                 // act as soon as possible from the exit
@@ -481,7 +478,6 @@ public class MeanLocalSolarTime extends AbstractSKControl {
                 --nMan;
             }
             final double deltaV = FastMath.max(model.getDVInf(), FastMath.min(model.getDVSup(), totalDeltaV / nMan));
-            System.out.println("DELTA V : " + deltaV);
             tuned = new ScheduledManeuver[tunables.length + nMan];
             System.arraycopy(tunables, 0, tuned, 0, tunables.length);
             changeTrajectory(tuned, 0, tunables.length, adapterPropagator);
