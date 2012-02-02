@@ -219,7 +219,10 @@ public class ParabolicLongitude extends AbstractSKControl {
 
         if (iteration == 0) {
             clearHistory();
-            AbsoluteDate fitStartDate = freeInterval[0].shiftedBy(firstOffset);
+            final double delta = orbitsSeparation * propagator.propagate(freeInterval[0]).getKeplerianPeriod();
+            final AbsoluteDate date1 = freeInterval[0].shiftedBy(delta);
+            final AbsoluteDate date2 = start.shiftedBy(firstOffset);
+            AbsoluteDate fitStartDate = (date1.compareTo(date2) > 0) ? date1 : date2;
             if (fitStartDate.compareTo(freeInterval[1]) > 0) {
                 fitStartDate  = freeInterval[1];
             }
