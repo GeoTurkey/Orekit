@@ -90,6 +90,12 @@ import eu.eumetsat.skat.utils.SkatMessages;
  */
 public class ParabolicLongitude extends AbstractSKControl {
 
+    /** Earth pulsation, one day period. */
+    private static final double EARTH_PULSATION = 2.0 * FastMath.PI / Constants.JULIAN_DAY;
+
+    /** Moon pulsation (one Moon synodic period). */
+    private static final double MOON_PULSATION = 2.0 * FastMath.PI / (29.530589 * Constants.JULIAN_DAY);
+
     /** Associated step handler. */
     private final OrekitStepHandler stephandler;
 
@@ -141,6 +147,12 @@ public class ParabolicLongitude extends AbstractSKControl {
     /** Fitted initial longitude. */
     private double l0;
 
+    /** Fitting coefficients for a. */
+    private double[] fittedA;
+
+    /** Fitting coefficients for longitude. */
+    private double[] fittedL;
+
     /** Simple constructor.
      * @param name name of the control law
      * @param controlledName name of the controlled spacecraft
@@ -180,6 +192,15 @@ public class ParabolicLongitude extends AbstractSKControl {
         this.orbitsSeparation = orbitsSeparation;
         this.dateSample       = new ArrayList<Double>();
         this.longitudeSample  = new ArrayList<Double>();
+
+        // rough order of magnitude for initialization purposes only
+        this.fittedA          = new double[] {
+            42165000.0, 0.0, 10.0, 10.0, 10.0, 10.0
+        };
+        this.fittedL          = new double[] {
+            center, 0.0, 0.0, 1.0e-5, 1.0e-5, 1.0e-5, 1.0e-5
+        };
+
     }
 
     /** {@inheritDoc} */
@@ -208,10 +229,18 @@ public class ParabolicLongitude extends AbstractSKControl {
         }
 
         // fit linear model to semi-major axis and quadratic model to mean longitude
-        SecularAndHarmonic aModel = new SecularAndHarmonic(1, new double[0]);
-        SecularAndHarmonic lModel = new SecularAndHarmonic(2, new double[0]);
-        aModel.resetFitting(fitStart.getDate(), fitStart.getA(), 0.0);
-        lModel.resetFitting(fitStart.getDate(), center, 0.0, 0.0);
+        SecularAndHarmonic aModel = new SecularAndHarmonic(1,
+                                                           new double[] {
+                                                               2 * MOON_PULSATION,
+                                                               EARTH_PULSATION
+                                                           });
+        SecularAndHarmonic lModel = new SecularAndHarmonic(2,
+                                                           new double[] {
+                                                               2 * MOON_PULSATION,
+                                                               EARTH_PULSATION
+                                                           });
+        aModel.resetFitting(fitStart.getDate(), fittedA);
+        lModel.resetFitting(fitStart.getDate(), fittedL);
         for (AbsoluteDate date = freeInterval[0]; date.compareTo(freeInterval[1]) < 0; date = date.shiftedBy(samplingStep)) {
             final SpacecraftState  state = propagator.propagate(date);
             final double meanLongitude = getMeanLongitude(state);
@@ -225,14 +254,19 @@ public class ParabolicLongitude extends AbstractSKControl {
         // l(t)      = l(t0) + dlDotDa * [a(t0) - as] * (t - t0) + dlDotDa/2 * aDot * (t - t0)^2
         aModel.fit();
         lModel.fit();
-        final double[] linear = aModel.getFittedParameters();
-        final double[] quadratic = lModel.getFittedParameters();
-        l0      = quadratic[0];
-        aDot    = linear[1];
-        dlDotDa = 2 * quadratic[2] / aDot;
-        a0Mas   = quadratic[1] / dlDotDa;
+        fittedA = aModel.getFittedParameters();
+        final double[] meanA = aModel.approximateAsPolynomialOnly(1, fitStart.getDate(), 1, 1,
+                                                                freeInterval[0],freeInterval[1], samplingStep);
+        fittedL = lModel.getFittedParameters();
+        final double[] meanL = lModel.approximateAsPolynomialOnly(2, fitStart.getDate(), 2, 1,
+                                                                  freeInterval[0],freeInterval[1], samplingStep);
+        l0      = meanL[0];
+        aDot    = meanA[1];
+        dlDotDa = 2 * meanL[2] / aDot;
+        a0Mas   = meanL[1] / dlDotDa;
 
-        addQuadraticFit(quadratic, 0, freeInterval[1].durationFrom(fitStart.getDate()));
+        addQuadraticFit(meanL, 0, freeInterval[1].durationFrom(fitStart.getDate()));
+
     }
 
     /** {@inheritDoc} */
