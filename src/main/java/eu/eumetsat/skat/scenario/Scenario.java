@@ -72,6 +72,9 @@ public class Scenario implements ScenarioComponent {
     /** Cycle duration. */
     private double cycleDuration;
 
+    /** Previous date for maneuvers output. */
+    private AbsoluteDate previous;
+
     /** Simple constructor.
      * <p>
      * Create an empty scenario without any components. Components
@@ -108,6 +111,7 @@ public class Scenario implements ScenarioComponent {
         this.controlsViolations    = controlsViolations;
         this.maneuversOutput       = maneuversOutput;
         this.cycleDuration         = 0.0;
+        this.previous              = null;
     }
 
     /** Add a cycle component.
@@ -319,7 +323,9 @@ public class Scenario implements ScenarioComponent {
     private void updatePendingManeuvers(final AbsoluteDate date, final ScenarioState[] states)
         throws OrekitException, SkatException {
 
-        final AbsoluteDate previous = date.shiftedBy(-outputstep);
+        if (previous == null) {
+            previous = date.shiftedBy(-outputstep);
+        }
 
         for (int i = 0; i < states.length; ++i) {
             if (states[i].getManeuvers() != null) {
@@ -358,6 +364,8 @@ public class Scenario implements ScenarioComponent {
                 }
             }
         }
+        
+        previous = date;
 
     }
 
