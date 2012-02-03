@@ -155,6 +155,10 @@ public enum SupportedPropagator {
 
     /** Constant for Draper Semi-Analytical Satellite Theory (DSST). */
     DSST() {
+        
+        /** Considering DSST input orbit as an osculating one, it will be averaged once only */
+        private int iteration = 0;
+        
         /** {@inheritDoc} */
         public PropagatorRandomizer parse(final SkatFileParser parser, final Tree node,
                                           final Skat skat, final int spacecraftIndex)
@@ -230,9 +234,16 @@ public enum SupportedPropagator {
                             new DormandPrince853Integrator(minStep, maxStep, tolerance[0], tolerance[1]);
                     integrator.setInitialStepSize(FastMath.sqrt(minStep * maxStep));
 
+                    // Initial satellite state is considered to be osculating at first  
+                    boolean osculating = false;
+                    if (iteration == 0){
+                        osculating = true;
+                        iteration++;
+                    }
+                    
                     // create propagator
                     final DSSTPropagator dsstPropagator =
-                            new DSSTPropagator(integrator, initialState.getOrbit(), true, 10 * maxStep,
+                            new DSSTPropagator(integrator, initialState.getOrbit(), osculating, 10 * maxStep,
                                                new LofOffset(initialState.getFrame(), LOFType.VNC));
 
                     // add the fixed force models
