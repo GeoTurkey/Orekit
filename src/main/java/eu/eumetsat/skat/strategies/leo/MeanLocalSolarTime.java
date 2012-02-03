@@ -4,6 +4,7 @@ package eu.eumetsat.skat.strategies.leo;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.math.exception.NoBracketingException;
 import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math.util.FastMath;
 import org.apache.commons.math.util.MathUtils;
@@ -133,7 +134,10 @@ public class MeanLocalSolarTime extends AbstractSKControl {
     /** Indicator for compensating long burns inefficiency. */
     private boolean                  compensateLongBurn;
 
-    /** Indicator for side targeting. */
+    /**
+     * Indicator for side targeting. This case happens when the parabolic curvature is negative and
+     * it's extremum is superior to the maximum value
+     */
     private boolean                  forceReset;
 
     /**
@@ -193,9 +197,9 @@ public class MeanLocalSolarTime extends AbstractSKControl {
                               final double solarTime,
                               final double solarTimetolerance,
                               final double horizon,
-                              final boolean compensateLongBurn)
-                                                               throws OrekitException {
-        super(name, model, controlledName, controlledIndex, null, -1, 
+                              final boolean compensateLongBurn) throws OrekitException {
+        
+        super(name, model, controlledName, controlledIndex, null, -1,
               solarTime - solarTimetolerance, solarTime + solarTimetolerance, horizon * Constants.JULIAN_DAY);
         this.firstOffset = firstOffset;
         this.maxManeuvers = maxManeuvers;
@@ -213,11 +217,10 @@ public class MeanLocalSolarTime extends AbstractSKControl {
         mstModel = new SecularAndHarmonic(2, new double[] { SUN_PULSATION, 2 * SUN_PULSATION, BASE_PULSATION, 2 * BASE_PULSATION });
 
         // rough order of magnitudes values for initialization purposes
-        mstModel.resetFitting(AbsoluteDate.J2000_EPOCH, new double[] { solarTime, -1.0e-10, -1.0e-17, 1.0e-3, 1.0e-3, 1.0e-5, 1.0e-5,
-                        1.0e-5, 1.0e-5, 1.0e-5, 1.0e-5 });
+        mstModel.resetFitting(AbsoluteDate.J2000_EPOCH,
+                              new double[] { solarTime, -1.0e-10, -1.0e-17, 1.0e-3, 1.0e-3, 1.0e-5, 1.0e-5, 1.0e-5, 1.0e-5, 1.0e-5, 1.0e-5 });
 
         crossings = new ArrayList<AbsoluteDate>();
-
     }
 
     /** {@inheritDoc} */
@@ -235,9 +238,6 @@ public class MeanLocalSolarTime extends AbstractSKControl {
         resetMarginsChecks();
         crossings.clear();
 
-        if (iteration == 0) {
-            forceReset = false;
-        }
 
         // select a long maneuver-free interval for fitting
         freeInterval = getManeuverFreeInterval(maneuvers, fixedManeuvers, start, end);
@@ -251,33 +251,36 @@ public class MeanLocalSolarTime extends AbstractSKControl {
                 t2 = start.shiftedBy(getTimeHorizon());
             }
             SpacecraftState crossing = firstLatitudeCrossing(latitude, ascending, earth, t1, t2, stepSize, propagator);
+
             double mst = meanSolarTime(crossing);
             mstModel.resetFitting(freeInterval[0], mstModel.getFittedParameters());
             mstModel.addPoint(crossing.getDate(), mst);
+
             checkMargins(crossing.getDate(), mst);
             return;
         }
 
         // fit the mean solar time model
-        SpacecraftState crossing = firstLatitudeCrossing(latitude, ascending, earth, 
-                                                         freeInterval[0], freeInterval[1], stepSize, propagator);
+        SpacecraftState crossing = firstLatitudeCrossing(latitude, ascending, earth, freeInterval[0], freeInterval[1], stepSize, propagator);
         double mst = meanSolarTime(crossing);
+
         mstModel.resetFitting(freeInterval[0], mstModel.getFittedParameters());
         mstModel.addPoint(crossing.getDate(), mst);
         checkMargins(crossing.getDate(), mst);
+
 
         // find all other latitude crossings from regular schedule
         while (crossing != null && crossing.getDate().shiftedBy(period).compareTo(freeInterval[1]) < 0) {
 
             final AbsoluteDate previous = crossing.getDate();
-            crossing = latitudeCrossing(latitude, earth, previous.shiftedBy(period), freeInterval[1], 
-                                        stepSize, period / 8, propagator);
+            crossing = latitudeCrossing(latitude, earth, previous.shiftedBy(period), freeInterval[1], stepSize, period / 8, propagator);
             if (crossing != null) {
 
                 // Store current point
                 crossings.add(crossing.getDate());
                 mst = meanSolarTime(crossing);
                 mstModel.addPoint(crossing.getDate(), mst);
+
                 checkMargins(crossing.getDate(), mst);
 
                 // use the same time separation to pinpoint next crossing
@@ -287,7 +290,6 @@ public class MeanLocalSolarTime extends AbstractSKControl {
 
         }
         mstModel.fit();
-
     }
 
     /**
@@ -323,69 +325,21 @@ public class MeanLocalSolarTime extends AbstractSKControl {
         // simplify mean model to a single quadratic (this includes the
         // 6 months long period, which may be larger than the pure secular terms
         // at some times). This first evaluation is done on the freeInterval span.
-        double[] mst = mstModel.approximateAsPolynomialOnly(2, freeInterval[0], 2, 2, freeInterval[0], freeInterval[1], period);
+        double[] mst = mstModel.approximateAsPolynomialOnly(2, freeInterval[0], 2, 0, freeInterval[0], freeInterval[1], period);
+
+        // Look for boundaries violation
         if (iteration == 0) {
-
-            // look for a boundaries violation
-            nodeState = null;
-            for (int i = 0; nodeState == null && i < crossings.size(); ++i) {
-                final double crossingMst = mstModel.meanValue(crossings.get(i), 2, 2);
-                // First case : getting out in the opposite sense of the parabolic natural motion :
-                // act as soon as possible from the exit
-                if ((mst[2] < 0 && crossingMst > hMax) || (mst[2] > 0 && crossingMst < hMin)) {
-                    // Find the first available node in the cycle that is in eclipse for maneuver :
-                    // Act as soon as possible from the cycle start.
-                    final double stepSize = period / 100;
-                    AbsoluteDate dateMin = cycleStart.shiftedBy(firstOffset);
-
-                    nodeState = latitudeCrossing(0d, earth, dateMin, freeInterval[1], stepSize, period, propagator);
-
-                    // ensure maneuvers separation requirements
-                    while (nodeState.getDate().compareTo(dateMin) < 0d) {
-                        nodeState = latitudeCrossing(0d, earth, nodeState.getDate().shiftedBy(period), 
-                                                     freeInterval[1], stepSize, period / 8, propagator);
-                    }
-                    final double nodeMst = meanSolarTime(nodeState);
-                    if (nodeMst >= 6.0 && nodeMst <= 18.0) {
-                        // wrong node, it is under Sun light, select the next one
-                        nodeState = latitudeCrossing(0d, earth, nodeState.getDate().shiftedBy(0.5 * period), 
-                                                     freeInterval[1], stepSize, period / 8, propagator);
-
-                    }
-                    // Second case : getting out in the sense of the parabolic natural motion : act
-                    // as close as possible from the exit
-                } else if ((mst[2] > 0 && crossingMst > hMax) || (mst[2] < 0 && crossingMst < hMin)) {
-                    // find the first available node that is in eclipse for maneuver
-                    final double stepSize = period / 100;
-                    AbsoluteDate search = crossings.get(i).shiftedBy(-Constants.JULIAN_DAY);
-                    if (search.durationFrom(cycleStart) <= period) {
-                        search = cycleStart.shiftedBy(period);
-                    }
-                    if (cycleEnd.durationFrom(search) >= period) {
-                        nodeState = latitudeCrossing(0d, earth, search, freeInterval[1], stepSize, period, propagator);
-                        final double nodeMst = meanSolarTime(nodeState);
-                        if (nodeMst >= 6.0 && nodeMst <= 18.0) {
-                            // wrong node, it is under Sun light, select the next one
-                            nodeState = latitudeCrossing(0d, earth, nodeState.getDate().shiftedBy(0.5 * period), freeInterval[1], stepSize, period / 8, propagator);
-                        }
-
-                        // ensure maneuvers separation requirements
-                        while (nodeState.getDate().durationFrom(freeInterval[0]) < firstOffset) {
-                            nodeState = latitudeCrossing(0d, earth, nodeState.getDate().shiftedBy(period), freeInterval[1], stepSize, period / 8, propagator);
-                        }
-                    }
-                }
-            }
-            clearHistory();
+            findBoundariesViolation(hMin, hMax, period, mst);
         }
 
+        // If no violation occurs, nodeState is null
         if (nodeState == null) {
-            // no maneuvers needed
+            // no maneuvers needed : return input tunables
             return tunables;
         }
 
         // Re-estimate the mean solar time evolution model from the nodeState found
-        mst = mstModel.approximateAsPolynomialOnly(2, nodeState.getDate(), 2, 2, nodeState.getDate(), freeInterval[1], period);
+        mst = mstModel.approximateAsPolynomialOnly(2, nodeState.getDate(), 2, 0, nodeState.getDate(), freeInterval[1], period);
         addQuadraticFit(mst, 0, freeInterval[1].durationFrom(nodeState.getDate()));
         if (loopDetected()) {
             // we are stuck in a convergence loop, we cannot improve the solution
@@ -394,13 +348,8 @@ public class MeanLocalSolarTime extends AbstractSKControl {
 
         double newHdot;
 
-        // Get the extremum value :
-        final double tMax = -0.5 * mst[1] / mst[2];
-        final double extremum = mst[0] + 0.5 * mst[1] * tMax;
-
-        if (forceReset || (mst[2] < 0 && extremum > hMax)) {
-            // the start point is already on the wrong side of the window
-
+        // the start point is already on the wrong side of the window
+        if (forceReset || (mst[2] < 0 && mst[0] > hMax) || (mst[2] > 0 && mst[0] < hMin)) {
             // make sure once we select this option, we stick to it for all iterations
             forceReset = true;
 
@@ -408,25 +357,12 @@ public class MeanLocalSolarTime extends AbstractSKControl {
             // at time horizon with good initial conditions, and reach this target by changing
             // hDot(t0)
             final double targetT = cycleEnd.durationFrom(nodeState.getDate()) + firstOffset;
-            final double targetH = hMax - safetyMargin;
-            newHdot = (targetH - mst[0]) / targetT - mst[2] * targetT;
+            final double targetH = mst[2] > 0 ? (hMax - safetyMargin) : (hMin + safetyMargin);
 
-        } else if (forceReset || (mst[2] > 0 && extremum < hMin)) {
-            // the start point is already on the wrong side of the window
-
-            // make sure once we select this option, we stick to it for all iterations
-            forceReset = true;
-
-            // the current cycle is already bad, we set up a target to start a new cycle
-            // at time horizon with good initial conditions, and reach this target by changing
-            // hDot(t0)
-            final double targetT = cycleEnd.durationFrom(nodeState.getDate()) + firstOffset;
-            final double targetH = hMin + safetyMargin;
             newHdot = (targetH - mst[0]) / targetT - mst[2] * targetT;
         } else {
             // the start point is on the right side of the window
             final double tPeak = -0.5 * mst[1] / mst[2];
-            // mean solar time exits the window limits
 
             // we target a future mean solar time peak osculating window boundary
             // (taking a safety margin into account if possible)
@@ -455,16 +391,16 @@ public class MeanLocalSolarTime extends AbstractSKControl {
         // orbits so hDot is close to zero) and hence dhDot / di = -k sin (i) = -(alphaDot + hDot)
         // tan(i)
         final double dhRadDotDi = -(2 * FastMath.PI / Constants.JULIAN_YEAR + mst[1]) * FastMath.tan(nodeState.getI());
+
         final double dhDotDi = 12 * dhRadDotDi / FastMath.PI;
 
         // compute inclination offset needed to achieve station-keeping target
         final double deltaI = (newHdot - mst[1]) / dhDotDi;
 
-        final ScheduledManeuver[] tuned;
+        ScheduledManeuver[] tuned = new ScheduledManeuver[0];
         final AdapterPropagator adapterPropagator = new AdapterPropagator(reference);
         if (iteration == 0) {
             // we need to first define the number of maneuvers and their initial settings
-
             // compute the out of plane maneuver required to get the initial inclination offset
             final Vector3D v = nodeState.getPVCoordinates().getVelocity();
             final double totalDeltaV = thrustSignMomentum(nodeState) * FastMath.signum(v.getZ()) * v.getNorm() * deltaI;
@@ -478,6 +414,7 @@ public class MeanLocalSolarTime extends AbstractSKControl {
                 --nMan;
             }
             final double deltaV = FastMath.max(model.getDVInf(), FastMath.min(model.getDVSup(), totalDeltaV / nMan));
+
             tuned = new ScheduledManeuver[tunables.length + nMan];
             System.arraycopy(tunables, 0, tuned, 0, tunables.length);
             changeTrajectory(tuned, 0, tunables.length, adapterPropagator);
@@ -486,20 +423,52 @@ public class MeanLocalSolarTime extends AbstractSKControl {
             for (int i = 0; i < nMan; ++i) {
                 tuned[tunables.length + i] = new ScheduledManeuver(model, nodeState.getDate().shiftedBy(i * separation), new Vector3D(deltaV, model.getDirection()), model.getCurrentThrust(), model.getCurrentISP(), adapterPropagator, false);
             }
-
         } else {
-
-            // adjust the existing maneuvers
-
+            // This step lets the law able to create some new maneuvers, if first guess was too bad.
             // compute the out of plane maneuver required to get the initial inclination offset
-            final double v = nodeState.getPVCoordinates().getVelocity().getNorm();
-            final double deltaVChange = thrustSignMomentum(nodeState) * v * deltaI;
+            final Vector3D v = nodeState.getPVCoordinates().getVelocity();
 
-            // distribute the change over all maneuvers
-            tuned = tunables.clone();
+            // Compute the change in deltaV :
+            final double deltaVChange = thrustSignMomentum(nodeState) * FastMath.signum(v.getZ()) * v.getNorm() * deltaI;
+
+            // Compute the total deltaV by adding previous created maneuvers law
+            double dvTotal = deltaVChange;
+            int previousManeuversLaw = 0;
+            for (ScheduledManeuver man : tunables) {
+                if (man.getModel().equals(getModel())) {
+                    previousManeuversLaw++;
+                    // Add maneuvers which belong to the current law :
+                    dvTotal += man.getSignedDeltaV();
+                }
+            }
+
+            // compute the new number of maneuvers required
+            final double separation = orbitsSeparation * nodeState.getKeplerianPeriod();
+            final TunableManeuver model = getModel();
+            final double limitDV = (dvTotal < 0) ? model.getDVInf() : model.getDVSup();
+            int nMan = FastMath.min(maxManeuvers, (int) FastMath.ceil(FastMath.abs(dvTotal / limitDV)));
+
+            // Check time boundaries violation
+            while (nodeState.getDate().shiftedBy((nMan - 1) * separation).getDate().compareTo(cycleEnd) >= 0) {
+                --nMan;
+            }
+            final double deltaV = FastMath.max(model.getDVInf(), FastMath.min(model.getDVSup(), dvTotal / nMan));
+            // Create a new maneuvers array :
+            tuned = new ScheduledManeuver[tunables.length + nMan - previousManeuversLaw];
+            // Copy existing planed maneuver (other than maneuver of the current law) into tuned :
+            int previousManeuversOtherLaw = 0;
+            for (int i = 0; i < tunables.length; i++) {
+                if (!tunables[i].getModel().equals(getModel())) {
+                    previousManeuversOtherLaw++;
+                    tuned[i] = tunables[i];
+                }
+            }
+            // add the new maneuvers
+            for (int i = 0; i < nMan; ++i) {
+                tuned[previousManeuversOtherLaw + i] = new ScheduledManeuver(model, nodeState.getDate().shiftedBy(i * separation), new Vector3D(deltaV, model.getDirection()), model.getCurrentThrust(), model.getCurrentISP(), adapterPropagator, false);
+            }
+            // Update the propagator :
             changeTrajectory(tuned, 0, tuned.length, adapterPropagator);
-            distributeDV(deltaVChange, 0.0, tuned, adapterPropagator);
-
         }
 
         if (compensateLongBurn) {
@@ -518,9 +487,79 @@ public class MeanLocalSolarTime extends AbstractSKControl {
             adapterPropagator.addEffect(directEffect);
             adapterPropagator.addEffect(resultingEffect);
         }
-
         return tuned;
 
+    }
+
+    /**
+     * Find if any boundaries violation occurs during cycle
+     * 
+     * @param hMin
+     *            lower boundary
+     * @param hMax
+     *            higher boundary
+     * @param period
+     *            crossing period
+     * @param mst
+     *            mean solar time fitting model
+     * @throws NoBracketingException
+     *             if no node is found
+     * @throws OrekitException
+     *             if an error occurs in the latitude crossing search process
+     */
+    private void findBoundariesViolation(double hMin,
+                                         double hMax,
+                                         double period,
+                                         double[] mst) throws NoBracketingException, OrekitException {
+        // look for a boundaries violation
+        nodeState = null;
+        for (int i = 0; nodeState == null && i < crossings.size(); ++i) {
+            final double crossingMst = mstModel.meanValue(crossings.get(i), 2, 2);
+            // First case : getting out in the opposite sense of the parabolic natural motion :
+            // act as soon as possible from the exit
+            if ((mst[2] < 0 && crossingMst > hMax) || (mst[2] > 0 && crossingMst < hMin)) {
+                // Find the first available node in the cycle that is in eclipse for maneuver :
+                // Act as soon as possible from the cycle start.
+                final double stepSize = period / 100;
+                AbsoluteDate dateMin = cycleStart.shiftedBy(firstOffset);
+
+                nodeState = latitudeCrossing(0d, earth, dateMin, freeInterval[1], stepSize, period, propagator);
+
+                // ensure maneuvers separation requirements
+                while (nodeState.getDate().compareTo(dateMin) < 0d) {
+                    nodeState = latitudeCrossing(0d, earth, nodeState.getDate().shiftedBy(period), freeInterval[1], stepSize, period / 8, propagator);
+                }
+                final double nodeMst = meanSolarTime(nodeState);
+                if (nodeMst >= 6.0 && nodeMst <= 18.0) {
+                    // wrong node, it is under Sun light, select the next one
+                    nodeState = latitudeCrossing(0d, earth, nodeState.getDate().shiftedBy(0.5 * period), freeInterval[1], stepSize, period / 8, propagator);
+
+                }
+                // Second case : getting out in the sense of the parabolic natural motion : act
+                // as close as possible from the exit
+            } else if ((mst[2] > 0 && crossingMst > hMax) || (mst[2] < 0 && crossingMst < hMin)) {
+                // find the first available node that is in eclipse for maneuver
+                final double stepSize = period / 100;
+                AbsoluteDate search = crossings.get(i).shiftedBy(-Constants.JULIAN_DAY);
+                if (search.durationFrom(cycleStart) <= period) {
+                    search = cycleStart.shiftedBy(period);
+                }
+                if (cycleEnd.durationFrom(search) >= period) {
+                    nodeState = latitudeCrossing(0d, earth, search, freeInterval[1], stepSize, period, propagator);
+                    final double nodeMst = meanSolarTime(nodeState);
+                    if (nodeMst >= 6.0 && nodeMst <= 18.0) {
+                        // wrong node, it is under Sun light, select the next one
+                        nodeState = latitudeCrossing(0d, earth, nodeState.getDate().shiftedBy(0.5 * period), freeInterval[1], stepSize, period / 8, propagator);
+                    }
+
+                    // ensure maneuvers separation requirements
+                    while (nodeState.getDate().durationFrom(freeInterval[0]) < firstOffset) {
+                        nodeState = latitudeCrossing(0d, earth, nodeState.getDate().shiftedBy(period), freeInterval[1], stepSize, period / 8, propagator);
+                    }
+                }
+            }
+        }
+        clearHistory();
     }
 
     /** {@inheritDoc} */
