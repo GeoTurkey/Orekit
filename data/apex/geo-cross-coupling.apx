@@ -21,7 +21,7 @@
       <!-- The input data for skat is defined here, it should reference the cross_coupling_NS and
            cross_coupling_EW values that the algorithm configuration above will generate -->
       <command-line name="Station-Keeping Analysis Tool input data definition" >
-        <template>java -jar ../skat-2.0.jar geo-cross-coupling-config.in</template>
+        <template>java -jar ../skat-2.1.jar geo-cross-coupling-config.in</template>
       </command-line>
       <template-file template-path="geo-cross-coupling-in.tpl" data-path="geo-cross-coupling-config.in"/>
     </run-input>

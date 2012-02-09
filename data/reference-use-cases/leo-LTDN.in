@@ -1,0 +1,148 @@
+# General simulation parameters
+simulation = {
+    output_base_name        = "leo-LTDN";
+    inertial_frame          = "MOD without EOP";
+    earth_frame             = "GTOD without EOP";
+    start_date              = 2020-01-07T00:00:00.000;
+    end_date                = 2022-01-06T00:00:00.000;
+    solar_activity_strength = AVERAGE;
+    output_step             = 10000.0;
+    random_seed             = 53732252;
+    maneuvers               = [
+        {
+            name                  = "in-plane";
+            direction             = [ 1.0, 0.0, 0.0 ];
+            thrust                = [ [  20, 0.0],  [  10, 100.0 ] ];
+            isp_curve             = [ [ 200, 0.0 ], [ 180, 100.0 ] ];
+            dv_inf                = -0.2;
+            dv_sup                =  0.2;
+            elimination_threshold =  0.001;
+            dv_convergence        =  0.001;
+            dt_convergence        =  1.0;
+        },
+        {
+            name                  = "out-of-plane";
+            direction             = [ 0.0, 1.0, 0.0 ];
+            thrust                = [ [  40, 0.0],  [  40, 100.0 ] ];
+            isp_curve             = [ [ 300, 0.0 ], [ 300, 100.0 ] ];
+            dv_inf                = -7;
+            dv_sup                =  7;
+            elimination_threshold =  0.1;
+            dv_convergence        =  0.01;
+            dt_convergence        =  100.0;
+        }      
+    ];
+    ground_location = {
+        latitude  = 49.85;
+        longitude =  8.65;
+        altitude  =  0.0;
+    };
+};
+# Array of initial states
+initial_states = [
+    {
+        name         = "Metop";
+        cycle_number = 1;
+        bol_mass     = 4093.0;
+        mass         = 4093.0;
+        orbit        = {
+            orbit_type        = CIRCULAR;
+            date              = 2020-01-07T11:00:00.000;
+            a                 = 7190510.0;
+            ex                = -8.179716689508174E-4;
+            ey                = 0.0020229777884649067;
+            i                 = 98.72;
+            raan              = 69.02907;
+            latitude_argument = 297.7555733388139;
+            angle_type        = MEAN;
+        }
+    }
+];
+# Array of scenario components
+scenario         = [
+    {
+        component           = ORBIT_DETERMINATION;
+        managed_spacecrafts = [ "Metop" ];
+        orbit_type          = CIRCULAR;
+        angle_type          = MEAN;
+        small               = 1.0e-12;
+        correlation         = [
+            [  1.0, 0.0, 0.0, 0.0, 0.0, 0.0 ],
+            [  0.0, 1.0, 0.0, 0.0, 0.0, 0.0 ],
+            [  0.0, 0.0, 1.0, 0.0, 0.0, 0.0 ],
+            [  0.0, 0.0, 0.0, 1.0, 0.0, 0.0 ],
+            [  0.0, 0.0, 0.0, 0.0, 1.0, 0.0 ],
+            [  0.0, 0.0, 0.0, 0.0, 0.0, 1.0 ]
+        ];
+        standard_deviation  = [ 0., 0., 0., 0., 0., 0. ];
+    },
+    {
+        component             = CONTROL_LOOP;
+        controlled_spacecraft = "Metop";
+        first_cycle           = 1;
+        last_cycle            = 999;
+        max_iterations        = 100;
+        propagator            = {
+            method               = NUMERICAL;
+            min_step             = 0.1;
+            max_step             = 200.;
+            position_tolerance   = 1;
+            gravity_field_degree = 8;
+            gravity_field_order  = 8;
+            drag_cross_section   = 40.0;
+            drag_coefficient     = 2;
+            third_bodies         = [ SUN, MOON ];
+        };
+        controls    = [
+            {
+                type                        = IN_PLANE_GROUND_TRACK_GRID;
+                name                        = "in plane ground track grid";
+                maneuver_name               = "in-plane";
+                max_maneuvers               = 6;
+                maneuvers_orbits_separation = 5;
+                offset_first_maneuver       = 172800;
+                time_horizon                = 30;
+                grid_file                   = "metop.grd";
+                max_cross_track_distance    =  5000.0;
+            },
+            {
+                type                        = MEAN_LOCAL_SOLAR_TIME;
+                name                        = "local time at descending node";
+                maneuver_name               = "out-of-plane";
+                max_maneuvers               = 2;
+                offset_first_maneuver       = 86400;
+                maneuvers_orbits_separation = 2;
+                time_horizon                = 180;
+                latitude                    = 0.;
+                ascending                   = false;
+                solar_time                  = 9.5;
+                solar_time_tolerance        = 2;
+                long_burn_compensation      = true;
+            }
+        ];
+    },
+    {
+        component                  = PROPAGATION;
+        managed_spacecrafts        = [ "Metop" ];
+        truncation_maneuver_name   = "out-of-plane";
+        truncation_maneuver_delay  = 86400;
+        propagator                 = {
+            method                 = NUMERICAL;
+            min_step               = 0.1;
+            max_step               = 200.;
+            position_tolerance     = 1.0;
+            gravity_field_degree   = 8;
+            gravity_field_order    = 8;
+            drag_cross_section     = 40.0;
+            drag_coefficient       = 2.;
+            third_bodies           = [ SUN, MOON ];
+        }
+    }
+];
+# Monitored parameters
+monitoring_mono = [
+    SEMI_MAJOR_AXIS,
+    INCLINATION,
+    CIRCULAR_ECCENTRICITY_VECTOR,
+    RIGHT_ASCENSION_ASCENDING_NODE
+]
