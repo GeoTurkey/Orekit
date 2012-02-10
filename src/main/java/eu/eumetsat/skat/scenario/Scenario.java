@@ -128,7 +128,7 @@ public class Scenario implements ScenarioComponent {
      * @param cycleDuration cycle duration
      */
     public void setCycleDuration(final double cycleDuration) {
-        this.cycleDuration = cycleDuration;
+        this.cycleDuration = (cycleDuration == 0.0) ? Double.POSITIVE_INFINITY : cycleDuration;
     }
 
     /** {@inheritDoc}
