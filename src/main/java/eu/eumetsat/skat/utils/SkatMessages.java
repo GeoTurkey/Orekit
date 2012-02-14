@@ -6,7 +6,7 @@ import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 
-import org.apache.commons.math.exception.util.Localizable;
+import org.apache.commons.math3.exception.util.Localizable;
 
 /**
  * Enumeration for localized messages formats.

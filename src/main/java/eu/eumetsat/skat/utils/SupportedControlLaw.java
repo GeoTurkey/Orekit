@@ -9,8 +9,8 @@ import java.util.Locale;
 import java.util.Scanner;
 
 import org.antlr.runtime.tree.Tree;
-import org.apache.commons.math.exception.util.LocalizedFormats;
-import org.apache.commons.math.util.FastMath;
+import org.apache.commons.math3.exception.util.LocalizedFormats;
+import org.apache.commons.math3.util.FastMath;
 import org.orekit.bodies.OneAxisEllipsoid;
 import org.orekit.errors.OrekitException;
 import org.orekit.forces.gravity.potential.PotentialCoefficientsProvider;

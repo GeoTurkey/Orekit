@@ -1,7 +1,7 @@
 /* Copyright 2011 Eumetsat */
 package eu.eumetsat.skat.strategies;
 
-import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
+import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 
 import eu.eumetsat.skat.utils.SkatException;
 import eu.eumetsat.skat.utils.SkatMessages;

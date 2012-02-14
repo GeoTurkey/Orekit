@@ -4,9 +4,9 @@ package eu.eumetsat.skat.strategies.geo;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
-import org.apache.commons.math.util.FastMath;
-import org.apache.commons.math.util.MathUtils;
+import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
+import org.apache.commons.math3.util.FastMath;
+import org.apache.commons.math3.util.MathUtils;
 import org.orekit.bodies.BodyShape;
 import org.orekit.errors.OrekitException;
 import org.orekit.errors.PropagationException;

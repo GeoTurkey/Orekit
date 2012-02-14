@@ -1,8 +1,8 @@
 /* Copyright 2011 Eumetsat */
 package eu.eumetsat.skat.strategies;
 
-import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
-import org.apache.commons.math.util.FastMath;
+import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
+import org.apache.commons.math3.util.FastMath;
 import org.orekit.errors.PropagationException;
 import org.orekit.propagation.SpacecraftState;
 import org.orekit.propagation.analytical.AdapterPropagator;

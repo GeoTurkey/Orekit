@@ -2,10 +2,10 @@
 package eu.eumetsat.skat.utils;
 
 import org.antlr.runtime.tree.Tree;
-import org.apache.commons.math.exception.DimensionMismatchException;
-import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
-import org.apache.commons.math.linear.Array2DRowRealMatrix;
-import org.apache.commons.math.linear.RealMatrix;
+import org.apache.commons.math3.exception.DimensionMismatchException;
+import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.apache.commons.math3.linear.RealMatrix;
 import org.orekit.errors.OrekitException;
 import org.orekit.orbits.OrbitType;
 import org.orekit.orbits.PositionAngle;

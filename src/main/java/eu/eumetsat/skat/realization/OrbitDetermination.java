@@ -1,10 +1,10 @@
 /* Copyright 2011 Eumetsat */
 package eu.eumetsat.skat.realization;
 
-import org.apache.commons.math.linear.RealMatrix;
-import org.apache.commons.math.random.CorrelatedRandomVectorGenerator;
-import org.apache.commons.math.random.GaussianRandomGenerator;
-import org.apache.commons.math.random.RandomGenerator;
+import org.apache.commons.math3.linear.RealMatrix;
+import org.apache.commons.math3.random.CorrelatedRandomVectorGenerator;
+import org.apache.commons.math3.random.GaussianRandomGenerator;
+import org.apache.commons.math3.random.RandomGenerator;
 import org.orekit.errors.OrekitException;
 import org.orekit.orbits.Orbit;
 import org.orekit.orbits.OrbitType;

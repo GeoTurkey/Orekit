@@ -4,8 +4,8 @@ package eu.eumetsat.skat.realization;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
-import org.apache.commons.math.random.RandomGenerator;
+import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
+import org.apache.commons.math3.random.RandomGenerator;
 import org.orekit.errors.OrekitException;
 import org.orekit.forces.maneuvers.SmallManeuverAnalyticalModel;
 import org.orekit.propagation.SpacecraftState;

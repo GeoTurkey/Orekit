@@ -27,11 +27,11 @@ import java.util.regex.Pattern;
 
 import org.antlr.runtime.RecognitionException;
 import org.antlr.runtime.tree.Tree;
-import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
-import org.apache.commons.math.random.RandomGenerator;
-import org.apache.commons.math.random.Well19937a;
-import org.apache.commons.math.util.FastMath;
-import org.apache.commons.math.util.MathUtils;
+import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
+import org.apache.commons.math3.random.RandomGenerator;
+import org.apache.commons.math3.random.Well19937a;
+import org.apache.commons.math3.util.FastMath;
+import org.apache.commons.math3.util.MathUtils;
 import org.orekit.bodies.CelestialBody;
 import org.orekit.bodies.CelestialBodyFactory;
 import org.orekit.bodies.GeodeticPoint;

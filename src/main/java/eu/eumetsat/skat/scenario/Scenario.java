@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 
-import org.apache.commons.math.util.FastMath;
+import org.apache.commons.math3.util.FastMath;
 import org.orekit.bodies.BodyShape;
 import org.orekit.bodies.CelestialBody;
 import org.orekit.errors.OrekitException;

@@ -3,8 +3,8 @@ package eu.eumetsat.skat.strategies.leo;
 
 import java.util.List;
 
-import org.apache.commons.math.geometry.euclidean.threed.Vector3D;
-import org.apache.commons.math.util.FastMath;
+import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
+import org.apache.commons.math3.util.FastMath;
 import org.orekit.bodies.OneAxisEllipsoid;
 import org.orekit.errors.OrekitException;
 import org.orekit.forces.maneuvers.SmallManeuverAnalyticalModel;
