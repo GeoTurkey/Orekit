@@ -352,7 +352,6 @@ public class InclinationVector extends AbstractSKControl {
 
         /** {@inheritDoc} */
         public void init(final SpacecraftState s0, final AbsoluteDate t) {
-//            resetMarginsChecks();
         }
 
         /** {@inheritDoc} */
@@ -370,17 +369,12 @@ public class InclinationVector extends AbstractSKControl {
                 // loop throughout step
                 for (AbsoluteDate date = minDate; date.compareTo(maxDate) < 0; date = date.shiftedBy(samplingStep)) {
 
-                    if (date.compareTo(fitStart.getDate()) >= 0) {
-                        interpolator.setInterpolatedDate(date);
-                        final SpacecraftState state = interpolator.getInterpolatedState();
+                    interpolator.setInterpolatedDate(date);
+                    final SpacecraftState state = interpolator.getInterpolatedState();
 
-                        // check limit circle violations
-                        final double radius = FastMath.hypot(state.getHx() - referenceHx, state.getHy() - referenceHy);
-                        checkMargins(date, radius);
-                    } else {
-                        // if step is too short, assume limits are not violated
-                        checkMargins(date, 0.0);
-                    }
+                    // check limit circle violations
+                    final double radius = FastMath.hypot(state.getHx() - referenceHx, state.getHy() - referenceHy);
+                    checkMargins(date, radius);
 
                 }
 
