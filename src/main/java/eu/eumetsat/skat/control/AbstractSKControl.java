@@ -30,8 +30,6 @@ import eu.eumetsat.skat.utils.OrekitWrapperException;
 import eu.eumetsat.skat.utils.SkatException;
 import eu.eumetsat.skat.utils.SkatMessages;
 
-
-
 /**
  * Base implementation for station-keeping control laws.
  */
@@ -324,8 +322,7 @@ public abstract class AbstractSKControl implements SKControl {
         final double sup = model.getDVSup();
 
         double remaining = dV;
-        final double epsilon = FastMath.max(model.getEliminationThreshold(), 100. * FastMath.ulp(1.0));
-        while (FastMath.abs(remaining) > epsilon) {
+        while (FastMath.abs(remaining) > 1.e-6) {
 
             // identify the maneuvers that can be changed
             final List<Integer> nonSaturated = new ArrayList<Integer>(maneuvers.length);

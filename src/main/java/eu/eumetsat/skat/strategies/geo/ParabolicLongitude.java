@@ -93,7 +93,7 @@ public class ParabolicLongitude extends AbstractSKControl {
     /** Earth pulsation, one day period. */
     private static final double EARTH_PULSATION = 2.0 * FastMath.PI / Constants.JULIAN_DAY;
 
-    /** Moon pulsation (one Moon synodic period). */
+    /** Moon pulsation (synodic period). */
     private static final double MOON_PULSATION = 2.0 * FastMath.PI / (29.530589 * Constants.JULIAN_DAY);
 
     /** Associated step handler. */
@@ -195,10 +195,10 @@ public class ParabolicLongitude extends AbstractSKControl {
 
         // rough order of magnitude for initialization purposes only
         this.fittedA          = new double[] {
-            42165000.0, 0.0, 10.0, 10.0, 10.0, 10.0
+            42165000.0, 0.0, 100.0, 100.0, 1000.0, 1000.0
         };
         this.fittedL          = new double[] {
-            center, 0.0, 0.0, 1.0e-5, 1.0e-5, 1.0e-5, 1.0e-5
+            center, 0.0, 0.0, 1.0e-4, 1.0e-4, 1.0e-4, 1.0e-4
         };
 
     }
@@ -235,12 +235,12 @@ public class ParabolicLongitude extends AbstractSKControl {
         SecularAndHarmonic aModel = new SecularAndHarmonic(1,
                                                            new double[] {
                                                                2 * MOON_PULSATION,
-                                                               EARTH_PULSATION
+                                                               2 * (EARTH_PULSATION - MOON_PULSATION)
                                                            });
         SecularAndHarmonic lModel = new SecularAndHarmonic(2,
                                                            new double[] {
                                                                2 * MOON_PULSATION,
-                                                               EARTH_PULSATION
+                                                               2 * (EARTH_PULSATION - MOON_PULSATION)
                                                            });
         aModel.resetFitting(fitStart.getDate(), fittedA);
         lModel.resetFitting(fitStart.getDate(), fittedL);
@@ -258,11 +258,11 @@ public class ParabolicLongitude extends AbstractSKControl {
         aModel.fit();
         lModel.fit();
         fittedA = aModel.getFittedParameters();
-        final double[] meanA = aModel.approximateAsPolynomialOnly(1, fitStart.getDate(), 1, 1,
-                                                                freeInterval[0],freeInterval[1], samplingStep);
+        final double[] meanA = aModel.approximateAsPolynomialOnly(1, fitStart.getDate(), 1, 0,
+                                                                  freeInterval[0], freeInterval[1], samplingStep);
         fittedL = lModel.getFittedParameters();
-        final double[] meanL = lModel.approximateAsPolynomialOnly(2, fitStart.getDate(), 2, 1,
-                                                                  freeInterval[0],freeInterval[1], samplingStep);
+        final double[] meanL = lModel.approximateAsPolynomialOnly(2, fitStart.getDate(), 2, 0,
+                                                                  freeInterval[0], freeInterval[1], samplingStep);
         l0      = meanL[0];
         aDot    = meanA[1];
         dlDotDa = 2 * meanL[2] / aDot;
@@ -290,8 +290,9 @@ public class ParabolicLongitude extends AbstractSKControl {
 
         // we want to achieve a longitude at next cycle first maneuver which will be
         // exactly at the start of a centered parabola
-        final double lEnd        = center - 0.5 * longitudeExcursion;
-        final double tEndMt0     = end.durationFrom(fitStart.getDate()) + firstOffset;
+        final double lEnd    = center - 0.5 * longitudeExcursion;
+        final double tEndMt0 = end.durationFrom(fitStart.getDate()) + firstOffset;
+//        final double tEndMt0 = cycleDuration;
 
         final ScheduledManeuver[] tuned;
         final AdapterPropagator adapterPropagator = new AdapterPropagator(reference);
