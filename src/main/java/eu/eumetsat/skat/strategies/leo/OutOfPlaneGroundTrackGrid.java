@@ -77,7 +77,7 @@ public class OutOfPlaneGroundTrackGrid extends AbstractGroundTrackGrid {
                                      final boolean compensateLongBurn)
         throws SkatException {
         super(name, controlledName, controlledIndex, model, firstOffset, maxManeuvers, orbitsSeparation,
-              earth, referenceRadius, mu, j2, grid, maxDistance, horizon);
+              earth, referenceRadius, mu, j2, grid, maxDistance, false, horizon);
         this.sun                = sun;
         this.safetyMargin       = 0.1 * maxDistance / earth.getEquatorialRadius();
         this.compensateLongBurn = compensateLongBurn;

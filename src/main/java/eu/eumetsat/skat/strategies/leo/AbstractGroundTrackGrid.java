@@ -58,8 +58,17 @@ public abstract class AbstractGroundTrackGrid extends AbstractSKControl {
     /** Threshold under which latitudes are considered equal. */
     private static final double EPSILON_LATITUDE = 1.0e-3;
 
-    /** Limit for separating latitude regions. */
-    protected static final double SWITCH_LIMIT = FastMath.toRadians(5.0);
+    /** Limit for separating latitudes region. */
+    protected static final double SWITCH_LIMIT = 5.0;
+
+    /** max SSO latitude. */
+    protected static final double MAX_LATITUDE = 81.3;
+
+    /** Limit for separating equatorial latitudes region. */
+    protected static final double EQUATORIAL_LATITUDE = FastMath.toRadians(SWITCH_LIMIT);
+
+    /** Limit for separating extreme latitudes region. */
+    protected static final double EXTREME_LATITUDE = FastMath.toRadians(MAX_LATITUDE - SWITCH_LIMIT);
 
     /** Maximum number of maneuvers to set up in one cycle. */
     protected final int maxManeuvers;
@@ -76,9 +85,6 @@ public abstract class AbstractGroundTrackGrid extends AbstractSKControl {
     /** Reference grid points in Earth frame. */
     private final GridPoint[] grid;
 
-    /** Switch latitude to separate extreme latitude points from intermediate ones. */
-    private double switchLatitude;
-
     /** Reference radius of the Earth for the potential model. */
     protected final double referenceRadius;
 
@@ -92,7 +98,7 @@ public abstract class AbstractGroundTrackGrid extends AbstractSKControl {
     protected final List<ErrorModel> longitudeModels;
 
     /** Error models for inclination at each reference latitude. */
-    protected final List<ErrorModel> inclinationModels;
+    protected List<ErrorModel> inclinationModels;
 
     /** States at crossing points. */
     protected final List<Crossing> crossings;
@@ -140,15 +146,17 @@ public abstract class AbstractGroundTrackGrid extends AbstractSKControl {
      * @param mu central attraction coefficient (m<sup>3</sup>/s<sup>2</sup>)
      * @param j2 un-normalized zonal coefficient (about +1.08e-3 for Earth)
      * @param grid grid points
+     * @param inPlane flag for in-plane GT control
      * @param maxDistance maximal cross distance to ground track allowed
      * @param horizon time horizon duration
      */
     public AbstractGroundTrackGrid(final String name, final String controlledName, final int controlledIndex,
-                           final TunableManeuver model, final double firstOffset,
-                           final int maxManeuvers, final int orbitsSeparation,
-                           final OneAxisEllipsoid earth,
-                           final double referenceRadius, final double mu, final double j2,
-                           final List<GridPoint> grid, final double maxDistance, final double horizon)
+                                   final TunableManeuver model, final double firstOffset,
+                                   final int maxManeuvers, final int orbitsSeparation,
+                                   final OneAxisEllipsoid earth,
+                                   final double referenceRadius, final double mu, final double j2,
+                                   final List<GridPoint> grid, final double maxDistance, final boolean inPlane,
+                                   final double horizon)
         throws SkatException {
         super(name, model, controlledName, controlledIndex, null, -1, -maxDistance, maxDistance,
               horizon * Constants.JULIAN_DAY);
@@ -176,8 +184,16 @@ public abstract class AbstractGroundTrackGrid extends AbstractSKControl {
         });
 
         // extract the limited set of independent point/directions from the grid
-        longitudeModels   = createErrorModels(true, false);
-        inclinationModels = createErrorModels(false, true);
+        longitudeModels = createErrorModels(true, false);
+        try {
+            inclinationModels = createErrorModels(false, true);
+        } catch(SkatException e) {
+            if (inPlane && e.getSpecifier() == SkatMessages.NO_GRID_POINTS) {
+                inclinationModels = new ArrayList<ErrorModel>();
+            } else {
+                throw e;
+            }
+        }
 
         // phasing is reached one orbit after last
         final ErrorModel m0 = longitudeModels.get(0);
@@ -266,13 +282,6 @@ public abstract class AbstractGroundTrackGrid extends AbstractSKControl {
         resetMarginsChecks();
         this.iteration = iteration;
         this.cycleEnd  = end;
-
-        // limit latitude for switching between latitude and longitude crossings
-        double maxLatitude = propagator.getInitialState().getI();
-        if (maxLatitude > 0.5 * FastMath.PI) {
-            maxLatitude = FastMath.PI - maxLatitude;
-        }
-        switchLatitude = FastMath.max(maxLatitude - SWITCH_LIMIT, 0);
 
         if (iteration == 0) {
 
@@ -572,8 +581,10 @@ public abstract class AbstractGroundTrackGrid extends AbstractSKControl {
                 ++n;
             }
         }
-        for (int i = 0; i < fittedDI.length; ++i) {
-            fittedDI[i] /= n;
+        if (n > 0) {
+            for (int i = 0; i < fittedDI.length; ++i) {
+                fittedDI[i] /= n;
+            }
         }
 
     }
@@ -622,14 +633,14 @@ public abstract class AbstractGroundTrackGrid extends AbstractSKControl {
      * @return true if latitude is an extreme latitude
      */
     private boolean isExtremeLatitude(final double latitude) {
-        return latitude < -switchLatitude || latitude > switchLatitude;
+        return latitude < -EXTREME_LATITUDE || latitude > EXTREME_LATITUDE;
     }
 
     /** Check if a latitude is close to equator.
      * @return true if latitude is close to equator
      */
     private boolean isEquatorialLatitude(final double latitude) {
-        return latitude >= -SWITCH_LIMIT && latitude <= SWITCH_LIMIT;
+        return latitude >= -EQUATORIAL_LATITUDE && latitude <= EQUATORIAL_LATITUDE;
     }
 
     /** {@inheritDoc} */
