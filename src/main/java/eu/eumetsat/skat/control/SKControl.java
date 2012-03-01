@@ -101,10 +101,11 @@ public interface SKControl {
      * @param reference reference ephemeris to use (does not take maneuvers into account)
      * @return tuned maneuvers
      * @exception OrekitException if maneuvers cannot be tuned
+     * @exception SkatException if maneuvers cannot be tuned
      */
     ScheduledManeuver[] tuneManeuvers(ScheduledManeuver[] maneuvers,
                                       BoundedPropagator reference)
-        throws OrekitException;
+        throws OrekitException, SkatException;
 
     /** Get the name of the controlled spacecraft.
      * @return name of the controlled spacecraft.

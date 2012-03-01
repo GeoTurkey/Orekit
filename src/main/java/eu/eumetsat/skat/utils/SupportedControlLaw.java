@@ -14,6 +14,11 @@ import org.apache.commons.math3.util.FastMath;
 import org.orekit.bodies.OneAxisEllipsoid;
 import org.orekit.errors.OrekitException;
 import org.orekit.forces.gravity.potential.PotentialCoefficientsProvider;
+import org.orekit.time.AbsoluteDate;
+import org.orekit.time.DateTimeComponents;
+import org.orekit.time.TimeScale;
+import org.orekit.time.TimeScalesFactory;
+import org.orekit.utils.Constants;
 
 import eu.eumetsat.skat.Skat;
 import eu.eumetsat.skat.control.SKControl;
@@ -118,7 +123,8 @@ public enum SupportedControlLaw {
             final File gridFile = new File(new File(parser.getInputName()).getParent(), fileName);
             final PotentialCoefficientsProvider gravityField = skat.getgravityField();
             return new InPlaneGroundTrackGrid(name, controlled, skat.getSpacecraftIndex(controlled),
-                                              model, firstOffset, maxManeuvers, orbitsSeparation, skat.getEarth(),
+                                              model, firstOffset, maxManeuvers, orbitsSeparation,
+                                              skat.getEarth(), skat.getSun(),
                                               gravityField.getAe(), gravityField.getMu(), gravityField.getJ(false, 2)[2],
                                               readGridFile(gridFile, skat.getEarth()), maxDistance, horizon);
         }
@@ -160,22 +166,67 @@ public enum SupportedControlLaw {
         public SKControl parse(final SkatFileParser parser, final Tree node,
                                final String controlled, final Skat skat)
             throws OrekitException, SkatException {
-            final String name                = parser.getString(node,  ParameterKey.CONTROL_NAME);
-            final double horizon             = parser.getDouble(node, ParameterKey.CONTROL_HORIZON);
+            final String name                = parser.getString(node,    ParameterKey.CONTROL_NAME);
+            final double horizon             = parser.getDouble(node,    ParameterKey.CONTROL_HORIZON);
             final TunableManeuver model      = skat.getManeuver(parser.getString(node, ParameterKey.CONTROL_MANEUVER_NAME));
-            final int maxManeuvers           = parser.getInt(node,     ParameterKey.CONTROL_MAX_MANEUVERS);
-            final int orbitsSeparation       = parser.getInt(node,     ParameterKey.CONTROL_MANEUVERS_ORBITS_SEPARATION);
-            final double firstOffset         = parser.getDouble(node,  ParameterKey.CONTROL_SOLAR_TIME_FIRST_OFFSET);
-            final double latitude            = parser.getAngle(node,   ParameterKey.CONTROL_SOLAR_TIME_LATITUDE);
-            final boolean ascending          = parser.getBoolean(node, ParameterKey.CONTROL_SOLAR_TIME_ASCENDING);
-            final double solarTime           = parser.getDouble(node,  ParameterKey.CONTROL_SOLAR_TIME_SOLAR_TIME);
-            final double solarTimeTolerance  = parser.getDouble(node,  ParameterKey.CONTROL_SOLAR_TIME_SOLAR_TIME_TOLERANCE) / 60.0;
-            final boolean compensateLongBurn = parser.getBoolean(node, ParameterKey.CONTROL_SOLAR_TIME_LONG_BURN_COMPENSATION);
+            final int maxManeuvers           = parser.getInt(node,       ParameterKey.CONTROL_MAX_MANEUVERS);
+            final int orbitsSeparation       = parser.getInt(node,       ParameterKey.CONTROL_MANEUVERS_ORBITS_SEPARATION);
+            final double firstOffset         = parser.getDouble(node,    ParameterKey.CONTROL_SOLAR_TIME_FIRST_OFFSET);
+            final double latitude            = parser.getAngle(node,     ParameterKey.CONTROL_SOLAR_TIME_LATITUDE);
+            final boolean ascending          = parser.getBoolean(node,   ParameterKey.CONTROL_SOLAR_TIME_ASCENDING);
+            final double solarTime           = parser.getDouble(node,    ParameterKey.CONTROL_SOLAR_TIME_SOLAR_TIME);
+            final double solarTimeTolerance  = parser.getDouble(node,    ParameterKey.CONTROL_SOLAR_TIME_SOLAR_TIME_TOLERANCE) / 60.0;
+            final boolean compensateLongBurn = parser.getBoolean(node,   ParameterKey.CONTROL_SOLAR_TIME_LONG_BURN_COMPENSATION);
+            final double iDrift0             = parser.getAngle(node,     ParameterKey.CONTROL_SOLAR_TIME_I_DRIFT_0)   / Constants.JULIAN_DAY;
+            final double iDriftCos           = parser.getAngle(node,     ParameterKey.CONTROL_SOLAR_TIME_I_DRIFT_COS) / Constants.JULIAN_DAY;
+            final double iDriftDoy           = parser.getDouble(node,    ParameterKey.CONTROL_SOLAR_TIME_I_DRIFT_DOY);
+            final int phasingDays            = parser.getInt(node,       ParameterKey.CONTROL_SOLAR_TIME_PHASING_CYCLE_DAYS);
+            final int phasingOrbits          = parser.getInt(node,       ParameterKey.CONTROL_SOLAR_TIME_PHASING_CYCLE_ORBITS);
+            final int[] maneuversDoy         = parser.getIntArray1(node, ParameterKey.CONTROL_SOLAR_TIME_MANEUVERS_DOY);
             final PotentialCoefficientsProvider gravityField = skat.getgravityField();
+            final TimeScale utc = TimeScalesFactory.getUTC();
+
+            // inclination offset function in radians
+            final MeanLocalSolarTime.MlstModel analyticalModels =
+                    new MeanLocalSolarTime.MlstModel() {
+
+                /** {@inheritDoc} */
+                public boolean increasingInclination() {
+                    return iDrift0 >= 0;
+                }
+
+                /** {@inheritDoc} */
+                public double mlst(final AbsoluteDate t, final AbsoluteDate tRef, final double dhDotDi,
+                                   final double mlstRef, final double iOffsetRef) {
+                    final double dt        = t.durationFrom(tRef);
+                    final double pulsation = 2 * FastMath.PI / (365 * Constants.JULIAN_DAY);
+                    final double cos0      = FastMath.cos(pulsation * timeOffset(tRef));
+                    final double cosT      = FastMath.cos(pulsation * timeOffset(t));
+                    final double deltaI    = iOffsetRef * dt + 0.5 * iDrift0 * dt * dt -
+                                             iDriftCos * (cosT - cos0) / (pulsation * pulsation);
+                    return mlstRef + dhDotDi * deltaI;
+                }
+
+                /** Compute time offset.
+                 * @param date date
+                 * @return time offset at specified date
+                 */
+                private double timeOffset(final AbsoluteDate date) {
+                    final DateTimeComponents dtc = date.getComponents(utc);
+                    final int doy        = dtc.getDate().getDayOfYear();
+                    final double seconds = dtc.getTime().getSecondsInDay();
+                    return (doy - iDriftDoy) * Constants.JULIAN_DAY + seconds;
+                }
+
+            };
+
             return new MeanLocalSolarTime(name, controlled, skat.getSpacecraftIndex(controlled),
-                                          model, firstOffset, maxManeuvers, orbitsSeparation, skat.getEarth(),
+                                          model, firstOffset, maxManeuvers, orbitsSeparation,
+                                          skat.getEarth(), skat.getSun(),
                                           gravityField.getAe(), gravityField.getMu(), gravityField.getJ(false, 2)[2],
-                                          latitude, ascending, solarTime, solarTimeTolerance, horizon, compensateLongBurn);
+                                          latitude, ascending, solarTime, solarTimeTolerance, horizon, compensateLongBurn,
+                                          phasingDays, phasingOrbits, maneuversDoy, analyticalModels);
+
         }
 
     };

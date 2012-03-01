@@ -3,20 +3,13 @@ package eu.eumetsat.skat.strategies.leo;
 
 import java.util.List;
 
-import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.util.FastMath;
 import org.orekit.bodies.CelestialBody;
 import org.orekit.bodies.OneAxisEllipsoid;
 import org.orekit.errors.OrekitException;
-import org.orekit.errors.PropagationException;
-import org.orekit.forces.maneuvers.SmallManeuverAnalyticalModel;
-import org.orekit.orbits.CircularOrbit;
-import org.orekit.orbits.OrbitType;
 import org.orekit.propagation.BoundedPropagator;
 import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
-import org.orekit.propagation.analytical.AdapterPropagator;
-import org.orekit.propagation.analytical.J2DifferentialEffect;
 import org.orekit.propagation.events.EventDetector;
 import org.orekit.propagation.sampling.OrekitStepHandler;
 import org.orekit.time.AbsoluteDate;
@@ -40,9 +33,6 @@ public class OutOfPlaneGroundTrackGrid extends AbstractGroundTrackGrid {
 
     /** Reference state at first node in eclipse. */
     private SpacecraftState nodeState;
-
-    /** Sun model. */
-    private CelestialBody sun;
 
     /** Indicator for compensating long burns inefficiency. */
     private boolean compensateLongBurn;
@@ -77,8 +67,7 @@ public class OutOfPlaneGroundTrackGrid extends AbstractGroundTrackGrid {
                                      final boolean compensateLongBurn)
         throws SkatException {
         super(name, controlledName, controlledIndex, model, firstOffset, maxManeuvers, orbitsSeparation,
-              earth, referenceRadius, mu, j2, grid, maxDistance, false, horizon);
-        this.sun                = sun;
+              earth, sun, referenceRadius, mu, j2, grid, maxDistance, false, horizon);
         this.safetyMargin       = 0.1 * maxDistance / earth.getEquatorialRadius();
         this.compensateLongBurn = compensateLongBurn;
 
@@ -100,28 +89,8 @@ public class OutOfPlaneGroundTrackGrid extends AbstractGroundTrackGrid {
                 final double diMax = getMax() / earth.getEquatorialRadius();
                 if (FastMath.abs(fittedDI[0] + fittedDI[1] * end.durationFrom(fitStart.getDate())) > diMax) {
                     // inclination error exceeds boundaries
-
                     // look for a node at which maneuvers can be performed
-                    for (int i = 0; nodeState == null && i < crossings.size(); ++i) {
-
-                        // find the first available node that is in eclipse for maneuver
-                        final double stepSize = meanPeriod / 100;
-                        nodeState = firstLatitudeCrossing(0.0, true, earth, start.shiftedBy(meanPeriod), end, stepSize, propagator);
-                        Vector3D satPos = nodeState.getPVCoordinates().getPosition();
-                        Vector3D sunPos = sun.getPVCoordinates(nodeState.getDate(), nodeState.getFrame()).getPosition();
-                        if (Vector3D.dotProduct(satPos, sunPos) > 0) {
-                            // wrong node, it is under Sun light, select the next one
-                            nodeState = latitudeCrossing(0.0, earth, nodeState.getDate().shiftedBy(0.5 * meanPeriod),
-                                                         end, stepSize, meanPeriod / 8, propagator);
-                        }
-
-                        // ensure maneuvers separation requirements
-                        while (nodeState.getDate().durationFrom(start) < firstOffset) {
-                            nodeState = latitudeCrossing(0.0, earth, nodeState.getDate().shiftedBy(meanPeriod),
-                                                         end, stepSize, meanPeriod / 8, propagator);
-                        }
-
-                    }
+                    nodeState = findManeuverNode(start, end, propagator);
                 }
             }
 
@@ -149,75 +118,7 @@ public class OutOfPlaneGroundTrackGrid extends AbstractGroundTrackGrid {
         final double deltaI = FastMath.copySign(diMax - safetyMargin, -fittedDI[1]) -
                               (fittedDI[0] + fittedDI[1] * nodeState.getDate().durationFrom(fitStart.getDate()));
 
-       final ScheduledManeuver[] tuned;
-        final AdapterPropagator adapterPropagator = new AdapterPropagator(reference);
-        if (iteration == 0) {
-            // we need to first define the number of maneuvers and their initial settings
-
-            // compute the out of plane maneuver required to get the initial inclination offset
-            final Vector3D v          = nodeState.getPVCoordinates().getVelocity();
-            final double totalDeltaV  = thrustSignMomentum(nodeState) * FastMath.signum(v.getZ()) *
-                                        v.getNorm() * deltaI;
-
-            // compute the number of maneuvers required
-            final double separation = orbitsSeparation * meanPeriod;
-            final TunableManeuver model = getModel();
-            final double limitDV = (totalDeltaV < 0) ? model.getDVInf() : model.getDVSup();
-            int nMan = FastMath.min(maxManeuvers, (int) FastMath.ceil(FastMath.abs(totalDeltaV / limitDV)));
-            while (nodeState.getDate().shiftedBy((nMan - 1) * separation).getDate().compareTo(cycleEnd) >= 0) {
-                --nMan;
-            }
-            final double deltaV = FastMath.max(model.getDVInf(), FastMath.min(model.getDVSup(), totalDeltaV / nMan));
-
-            tuned = new ScheduledManeuver[tunables.length + nMan];
-            System.arraycopy(tunables, 0, tuned, 0, tunables.length);
-            changeTrajectory(tuned, 0, tunables.length, adapterPropagator);
-
-
-            // add the new maneuvers
-            for (int i = 0; i < nMan; ++i) {
-                tuned[tunables.length + i] =
-                        new ScheduledManeuver(model, nodeState.getDate().shiftedBy(i * separation),
-                                              new Vector3D(deltaV, model.getDirection()),
-                                              model.getCurrentThrust(), model.getCurrentISP(),
-                                              adapterPropagator, false);
-            }
-
-        } else {
-
-            // adjust the existing maneuvers
-
-            // compute the out of plane maneuver required to get the initial inclination offset
-            final double v            = nodeState.getPVCoordinates().getVelocity().getNorm();
-            final double deltaVChange = thrustSignMomentum(nodeState) * v * deltaI;
-
-            // distribute the change over all maneuvers
-            tuned = tunables.clone();
-            changeTrajectory(tuned, 0, tuned.length, adapterPropagator);
-            distributeDV(deltaVChange, 0.0, tuned, adapterPropagator);
-
-        }
-
-        if (compensateLongBurn) {
-            for (int i = 0; i < tuned.length; ++i) {
-                if (tuned[i].getName().equals(getModel().getName())) {
-                    tuned[i] = longBurnCompensation(tuned[i]);
-                }
-            }
-        }
-
-        // finalize propagator
-        for (final ScheduledManeuver maneuver : tuned) {
-            final SpacecraftState state = maneuver.getStateBefore();
-            AdapterPropagator.DifferentialEffect directEffect =
-                    new SmallManeuverAnalyticalModel(state, maneuver.getDeltaV(), maneuver.getIsp());
-            AdapterPropagator.DifferentialEffect resultingEffect =
-                    new J2DifferentialEffect(state, directEffect, false, referenceRadius, mu, j2);
-            adapterPropagator.addEffect(directEffect);
-            adapterPropagator.addEffect(resultingEffect);
-        }
-
-        return tuned;
+        return tuneInclinationManeuver(tunables, reference, nodeState, deltaI, compensateLongBurn);
 
     }
 
@@ -229,32 +130,6 @@ public class OutOfPlaneGroundTrackGrid extends AbstractGroundTrackGrid {
     /** {@inheritDoc} */
     public OrekitStepHandler getStepHandler() {
         return null;
-    }
-
-    /** Compensate inefficiency of long burns.
-     * @param maneuver maneuver to compensate
-     * @return compensated maneuver (Isp reduced to get same dV with more consumed mass)
-     * @throws PropagationException if state cannot be propagated around maneuvera
-     */
-    private ScheduledManeuver longBurnCompensation(final ScheduledManeuver maneuver)
-        throws PropagationException {
-        // this is a long out of plane maneuver, we adapt Isp to reflect
-        // the fact more mass will be consumed to achieve the same velocity increment
-        final double nominalDuration = maneuver.getDuration(maneuver.getStateBefore().getMass());
-
-        final SpacecraftState startState = maneuver.getState(-0.5 * nominalDuration);
-        final CircularOrbit startOrbit   = (CircularOrbit) (OrbitType.CIRCULAR.convertType(startState.getOrbit()));
-        final double alphaS              = startOrbit.getAlphaV();
-
-        final SpacecraftState endState   = maneuver.getState(+0.5 * nominalDuration);
-        final CircularOrbit endOrbit     = (CircularOrbit) (OrbitType.CIRCULAR.convertType(endState.getOrbit()));
-        final double alphaE              = endOrbit.getAlphaV();
-
-        final double reductionFactor = (FastMath.sin(alphaE) - FastMath.sin(alphaS)) / (alphaE - alphaS);
-        return new ScheduledManeuver(maneuver.getModel(), maneuver.getDate(),
-                                     maneuver.getDeltaV(), maneuver.getThrust(),
-                                     reductionFactor * getModel().getCurrentISP(),
-                                     maneuver.getTrajectory(), maneuver.isReplanned());
     }
 
 }

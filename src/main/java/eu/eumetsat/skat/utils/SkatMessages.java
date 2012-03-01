@@ -63,7 +63,9 @@ public enum SkatMessages implements Localizable {
     LATITUDE_NEVER_CROSSED("latitude {0} is never crossed in the search interval from {1} to {2}"),
     NO_GRID_POINTS("no grid points read"),
     GRID_POINTS_NUMBER_MISMATCH("inconsistent grid points numbers: {0} points at latitude {1} but {2} points at latitude {3}"),
-    GRID_ON_EQUATORIAL_ORBIT("ground track grid cannot be used on equatorial orbits");
+    GRID_ON_EQUATORIAL_ORBIT("ground track grid cannot be used on equatorial orbits"),
+    NO_BRACKETING("unable to find interval bracketing root"),
+    NO_SUITABLE_NODE_FOR_MANEUVER("no suitable node found for maneuver between {0} and {1}");
 
     // CHECKSTYLE: resume JavadocVariable check
 

@@ -108,6 +108,13 @@ public enum ParameterKey {
     CONTROL_SOLAR_TIME_SOLAR_TIME("solar_time"),
     CONTROL_SOLAR_TIME_SOLAR_TIME_TOLERANCE("solar_time_tolerance"),
     CONTROL_SOLAR_TIME_LONG_BURN_COMPENSATION("long_burn_compensation"),
+    CONTROL_SOLAR_TIME_I_DRIFT_0("i_drift_0"),
+    CONTROL_SOLAR_TIME_I_DRIFT_COS("i_drift_cos"),
+    CONTROL_SOLAR_TIME_I_DRIFT_DOY("i_drift_doy"),
+    CONTROL_SOLAR_TIME_PHASING_CYCLE_DAYS("phasing_cycle_days"),
+    CONTROL_SOLAR_TIME_PHASING_CYCLE_ORBITS("phasing_cycle_orbits"),
+    CONTROL_SOLAR_TIME_MANEUVERS_DOY("maneuvers_doy"),
+
     // In-plane ground track grid
     CONTROL_IN_PLANE_GROUND_TRACK_FIRST_OFFSET("offset_first_maneuver"),
     CONTROL_IN_PLANE_GROUND_TRACK_GRID_FILE("grid_file"),

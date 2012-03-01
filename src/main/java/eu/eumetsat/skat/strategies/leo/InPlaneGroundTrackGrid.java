@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.util.FastMath;
+import org.orekit.bodies.CelestialBody;
 import org.orekit.bodies.OneAxisEllipsoid;
 import org.orekit.errors.OrekitException;
 import org.orekit.forces.maneuvers.SmallManeuverAnalyticalModel;
@@ -61,6 +62,7 @@ public class InPlaneGroundTrackGrid extends AbstractGroundTrackGrid {
      * @param maxManeuvers maximum number of maneuvers to set up in one cycle
      * @param orbitsSeparation minimum time between split parts in number of orbits
      * @param earth Earth model
+     * @param sun Sun model
      * @param referenceRadius reference radius of the Earth for the potential model (m)
      * @param mu central attraction coefficient (m<sup>3</sup>/s<sup>2</sup>)
      * @param j2 un-normalized zonal coefficient (about +1.08e-3 for Earth)
@@ -71,12 +73,12 @@ public class InPlaneGroundTrackGrid extends AbstractGroundTrackGrid {
     public InPlaneGroundTrackGrid(final String name, final String controlledName, final int controlledIndex,
                            final TunableManeuver model, final double firstOffset,
                            final int maxManeuvers, final int orbitsSeparation,
-                           final OneAxisEllipsoid earth,
+                           final OneAxisEllipsoid earth, final CelestialBody sun,
                            final double referenceRadius, final double mu, final double j2,
                            final List<GridPoint> grid, final double maxDistance, final double horizon)
         throws SkatException {
         super(name, controlledName, controlledIndex, model, firstOffset, maxManeuvers, orbitsSeparation,
-              earth, referenceRadius, mu, j2, grid, maxDistance, true, horizon);
+              earth, sun, referenceRadius, mu, j2, grid, maxDistance, true, horizon);
         this.safetyMargin = 0.1 * maxDistance;
     }
 

@@ -4,7 +4,7 @@ simulation = {
     inertial_frame          = "MOD without EOP";
     earth_frame             = "GTOD without EOP";
     start_date              = 2020-01-07T00:00:00.000;
-    end_date                = 2022-01-06T00:00:00.000;
+    end_date                = 2030-01-06T00:00:00.000;
     solar_activity_strength = AVERAGE;
     output_step             = 10000.0;
     random_seed             = 53732252;
@@ -109,15 +109,22 @@ scenario         = [
                 type                        = MEAN_LOCAL_SOLAR_TIME;
                 name                        = "local time at descending node";
                 maneuver_name               = "out-of-plane";
-                max_maneuvers               = 2;
+                max_maneuvers               = 1;
                 offset_first_maneuver       = 86400;
                 maneuvers_orbits_separation = 2;
-                time_horizon                = 180;
+                time_horizon                = 30;
                 latitude                    = 0.;
                 ascending                   = false;
                 solar_time                  = 9.5;
                 solar_time_tolerance        = 2;
-                long_burn_compensation      = true;
+                long_burn_compensation      = false;
+                i_drift_0                   = -0.000142892;  # degrees per day
+                i_drift_cos                 =  0.0000834374; # degrees per day
+                i_drift_doy                 = 163.805;       # Day Of Year
+                phasing_cycle_days          = 29;
+                phasing_cycle_orbits        = 412;
+                maneuvers_doy               = [ 288 ];
+                
             }
         ];
     },

@@ -10,6 +10,7 @@ import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.util.FastMath;
 import org.apache.commons.math3.util.MathUtils;
 import org.apache.commons.math3.util.Precision;
+import org.orekit.bodies.CelestialBody;
 import org.orekit.bodies.GeodeticPoint;
 import org.orekit.bodies.OneAxisEllipsoid;
 import org.orekit.errors.OrekitException;
@@ -25,7 +26,6 @@ import org.orekit.utils.Constants;
 import org.orekit.utils.PVCoordinates;
 import org.orekit.utils.SecularAndHarmonic;
 
-import eu.eumetsat.skat.control.AbstractSKControl;
 import eu.eumetsat.skat.strategies.ScheduledManeuver;
 import eu.eumetsat.skat.strategies.TunableManeuver;
 import eu.eumetsat.skat.utils.SkatException;
@@ -53,7 +53,7 @@ import eu.eumetsat.skat.utils.SkatMessages;
  * </p>
  * @author Luc Maisonobe
  */
-public abstract class AbstractGroundTrackGrid extends AbstractSKControl {
+public abstract class AbstractGroundTrackGrid extends AbstractLeoSKControl {
 
     /** Threshold under which latitudes are considered equal. */
     private static final double EPSILON_LATITUDE = 1.0e-3;
@@ -70,29 +70,8 @@ public abstract class AbstractGroundTrackGrid extends AbstractSKControl {
     /** Limit for separating extreme latitudes region. */
     protected static final double EXTREME_LATITUDE = FastMath.toRadians(MAX_LATITUDE - SWITCH_LIMIT);
 
-    /** Maximum number of maneuvers to set up in one cycle. */
-    protected final int maxManeuvers;
-
-    /** Time offset of the first maneuver with respect to cycle start. */
-    protected final double firstOffset;
-
-    /** Minimum time between split parts in number of orbits. */
-    protected final int orbitsSeparation;
-
-    /** Earth model. */
-    protected final OneAxisEllipsoid earth;
-
     /** Reference grid points in Earth frame. */
     private final GridPoint[] grid;
-
-    /** Reference radius of the Earth for the potential model. */
-    protected final double referenceRadius;
-
-    /** Central attraction coefficient. */
-    protected final double mu;
-
-    /** Un-normalized zonal coefficient. */
-    protected final double j2;
 
     /** Error models for longitude at each reference latitude. */
     protected final List<ErrorModel> longitudeModels;
@@ -115,18 +94,6 @@ public abstract class AbstractGroundTrackGrid extends AbstractSKControl {
     /** Phasing duration (interval between two grids. */
     protected final double phasingDuration;
 
-    /** Mean period. */
-    protected final double meanPeriod;
-
-    /** Iteration number. */
-    protected int iteration;
-
-    /** Cycle end. */
-    protected AbsoluteDate cycleEnd;
-
-    /** Maneuver-free interval. */
-    protected AbsoluteDate[] freeInterval;
-
     /** Mean fitting parameters for ascending node error. */
     protected final double[] fittedDN;
 
@@ -142,6 +109,7 @@ public abstract class AbstractGroundTrackGrid extends AbstractSKControl {
      * @param maxManeuvers maximum number of maneuvers to set up in one cycle
      * @param orbitsSeparation minimum time between split parts in number of orbits
      * @param earth Earth model
+     * @param sun Sun model
      * @param referenceRadius reference radius of the Earth for the potential model (m)
      * @param mu central attraction coefficient (m<sup>3</sup>/s<sup>2</sup>)
      * @param j2 un-normalized zonal coefficient (about +1.08e-3 for Earth)
@@ -151,26 +119,20 @@ public abstract class AbstractGroundTrackGrid extends AbstractSKControl {
      * @param horizon time horizon duration
      */
     public AbstractGroundTrackGrid(final String name, final String controlledName, final int controlledIndex,
-                                   final TunableManeuver model, final double firstOffset,
-                                   final int maxManeuvers, final int orbitsSeparation,
-                                   final OneAxisEllipsoid earth,
-                                   final double referenceRadius, final double mu, final double j2,
-                                   final List<GridPoint> grid, final double maxDistance, final boolean inPlane,
-                                   final double horizon)
+                           final TunableManeuver model, final double firstOffset,
+                           final int maxManeuvers, final int orbitsSeparation,
+                           final OneAxisEllipsoid earth, final CelestialBody sun,
+                           final double referenceRadius, final double mu, final double j2,
+                           final List<GridPoint> grid, final double maxDistance,
+                           final boolean inPlane, final double horizon)
         throws SkatException {
-        super(name, model, controlledName, controlledIndex, null, -1, -maxDistance, maxDistance,
-              horizon * Constants.JULIAN_DAY);
+        super(name, controlledName, controlledIndex, model,
+              firstOffset, maxManeuvers, orbitsSeparation, earth, sun, referenceRadius, mu, j2,
+              -maxDistance, maxDistance, horizon * Constants.JULIAN_DAY);
 
-        this.firstOffset      = firstOffset;
-        this.maxManeuvers     = maxManeuvers;
-        this.orbitsSeparation = orbitsSeparation;
-        this.earth            = earth;
-        this.referenceRadius  = referenceRadius;
-        this.mu               = mu;
-        this.j2               = j2;
-        this.crossings        = new ArrayList<Crossing>();
-        this.fittedDN         = new double[3];
-        this.fittedDI         = new double[2];
+        this.crossings = new ArrayList<Crossing>();
+        this.fittedDN  = new double[3];
+        this.fittedDI  = new double[2];
 
         // store the grid in chronological order
         this.grid             = grid.toArray(new GridPoint[grid.size()]);
@@ -280,8 +242,9 @@ public abstract class AbstractGroundTrackGrid extends AbstractSKControl {
         throws OrekitException, SkatException {
 
         resetMarginsChecks();
-        this.iteration = iteration;
-        this.cycleEnd  = end;
+        this.iteration  = iteration;
+        this.cycleStart = start;
+        this.cycleEnd   = end;
 
         if (iteration == 0) {
 
