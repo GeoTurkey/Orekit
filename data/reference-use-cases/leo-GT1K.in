@@ -16,9 +16,9 @@ simulation = {
             isp_curve             = [ [ 200, 0.0 ], [ 180, 100.0 ] ];
             dv_inf                = -7;
             dv_sup                =  7;
-            elimination_threshold =  0.001;
-            dv_convergence        =  0.001;
-            dt_convergence        =  1.0;
+            elimination_threshold =  1.e-3;
+            dv_convergence        =  1.e-4;
+            dt_convergence        = 30.0;
         },
         {
             name                  = "out-of-plane";
@@ -28,8 +28,8 @@ simulation = {
             dv_inf                = -7;
             dv_sup                =  7;
             elimination_threshold =  0.1;
-            dv_convergence        =  0.01;
-            dt_convergence        =  100.0;
+            dv_convergence        =  1.e-4;
+            dt_convergence        = 30.0;
         }      
     ];
     ground_location  = {
@@ -45,18 +45,6 @@ initial_states = [
         cycle_number = 1;
         bol_mass     = 4093.0;
         mass         = 4093.0;
-        maneuvers    = [
-            {
-                name     = "in-plane";
-                number   = 0;
-                total_dV = 0.0;
-            },
-            {
-                name     = "out-of-plane";
-                number   = 0;
-                total_dV = 0.0;
-            }
-        ];
         orbit        = {
             orbit_type        = CIRCULAR;
             date              = 2012-04-25T11:00:00.000;
@@ -96,11 +84,11 @@ scenario = [
         max_iterations           = 100;
         propagator  = {
             method               = NUMERICAL;
-            min_step             = 0.1;
-            max_step             = 200.;
-            position_tolerance   = 1;
-            gravity_field_degree = 8;
-            gravity_field_order  = 8;
+            min_step             = 1.0;
+            max_step             = 400.;
+            position_tolerance   = 50.;
+            gravity_field_degree = 6;
+            gravity_field_order  = 6;
             drag_cross_section   = 40.0;
             drag_coefficient     = 2;
             third_bodies         = [ SUN, MOON ];
@@ -111,9 +99,9 @@ scenario = [
                 name                        = "in plane ground track grid";
                 maneuver_name               = "in-plane";
                 max_maneuvers               = 3;
-                maneuvers_orbits_separation = 5;
-                offset_first_maneuver       = 172800;
-                time_horizon                = 45;
+                maneuvers_orbits_separation = 1;
+                offset_first_maneuver       = 86400;
+                time_horizon                = 15;
                 grid_file                   = "metop.grd";
                 max_cross_track_distance    = 1000.0;
             },
@@ -122,9 +110,9 @@ scenario = [
                 name                        = "out of plane ground track grid";
                 maneuver_name               = "out-of-plane";
                 max_maneuvers               = 3;
-                offset_first_maneuver       = 86400;
-                maneuvers_orbits_separation = 5;
-                time_horizon                = 90;
+                maneuvers_orbits_separation = 1;
+                offset_first_maneuver       = 10800;
+                time_horizon                = 15;
                 grid_file                   = "metop.grd";
                 max_cross_track_distance    = 1000.0;
                 long_burn_compensation      = true;
@@ -138,9 +126,9 @@ scenario = [
         truncation_maneuver_delay = 60;
         propagator                = {
             method                = NUMERICAL;
-            min_step              = 0.1;
-            max_step              = 200.;
-            position_tolerance    = 1.0;
+            min_step              = 1.0;
+            max_step              = 400.;
+            position_tolerance    = 50.0;
             gravity_field_degree  = 8;
             gravity_field_order   = 8;
             drag_cross_section    = 40.0;
@@ -151,8 +139,8 @@ scenario = [
 ];
 # Monitored parameters
 monitoring_mono = [
-    INCLINATION,
     SEMI_MAJOR_AXIS,
     CIRCULAR_ECCENTRICITY_VECTOR,
+    INCLINATION,
     RIGHT_ASCENSION_ASCENDING_NODE
 ]
