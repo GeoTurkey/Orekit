@@ -454,10 +454,7 @@ public class MeanLocalSolarTime extends AbstractLeoSKControl {
         // compute inclination offset needed to achieve station-keeping target
         double deltaOffset = findZero(targeting, 0, -0.1, 0.1, 1.0e-6, 0.1, 1.0e-10);
         if (Double.isNaN(deltaOffset)) {
-            deltaOffset = findZero(targeting, 0, -0.1, 0.1, 1.0e-6, 0.1, 1.0e-10);
-           if (Double.isNaN(deltaOffset)) {
-                throw new SkatException(SkatMessages.NO_BRACKETING);
-            }
+            throw new SkatException(SkatMessages.NO_BRACKETING);
         }
 
         return tuneInclinationManeuver(tunables, reference, nodeState, deltaOffset, compensateLongBurn);
