@@ -422,7 +422,7 @@ public class MeanLocalSolarTime extends AbstractLeoSKControl {
                             nodeState = findManeuverNode(firstOpportunity, cycleEnd, propagator);
                         } else {
                             // maneuver opportunity is too close to cycle end, we need some margin to find the node
-                            nodeState = findManeuverNode(cycleEnd.shiftedBy(-meanPeriod), cycleEnd, propagator);
+                            nodeState = findManeuverNode(cycleEnd.shiftedBy(-3 * meanPeriod), cycleEnd, propagator);
                         }
                     }
                 } else {
