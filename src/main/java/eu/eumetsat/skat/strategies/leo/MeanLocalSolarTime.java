@@ -457,6 +457,31 @@ public class MeanLocalSolarTime extends AbstractLeoSKControl {
             throw new SkatException(SkatMessages.NO_BRACKETING);
         }
 
+        // check for overshoot
+        final double savedIOffsetRef = iOffsetRef;
+        iOffsetRef += scaling * deltaOffset;
+        final UnivariatePointValuePair pvPeak =
+                extremumMLST(start, targetT, mlstModel.increasingInclination());
+        iOffsetRef = savedIOffsetRef;
+        if (pvPeak.getValue() >= getMax() || pvPeak.getValue() <= getMin()) {
+            final double safetyMargin = 0.1;
+            final double desiredPeak  = pvPeak.getValue() > getMax() ?
+                                        ((1 - safetyMargin) * getMax() + safetyMargin * getMin()) :
+                                        (safetyMargin * getMax() + (1 - safetyMargin) * getMin());
+            deltaOffset = findZero(new UnivariateFunction() {
+                /** {@inheritDoc} */
+                public double value(double x) {
+                    iOffsetRef = savedIOffsetRef + scaling * x;
+                    final UnivariatePointValuePair p = extremumMLST(start, targetT, mlstModel.increasingInclination());
+                    iOffsetRef = savedIOffsetRef;
+                    return p.getValue() - desiredPeak;
+                }
+            }, deltaOffset,  deltaOffset - 0.1, deltaOffset + 0.1, 1.0e-6, 0.1, 1.0e-10);
+            if (Double.isNaN(deltaOffset)) {
+                throw new SkatException(SkatMessages.NO_BRACKETING);
+            }
+        }
+
         return tuneInclinationManeuver(tunables, reference, nodeState, deltaOffset, compensateLongBurn);
 
     }
