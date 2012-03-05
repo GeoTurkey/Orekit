@@ -230,31 +230,26 @@ public abstract class AbstractLeoSKControl extends AbstractSKControl {
     /**
      * Find the state at which a function becomes zero.
      * @param function function to check
-     * @param guessDate guess date for the crossing
-     * @param endDate maximal date not to overtake
-     * @param shift shift value used to evaluate the function bracketing around the guess date  
-     * @param maxShift maximum value that the shift value can take
-     * @param propagator propagator used
-     * @return state at function zero time (may be null)
-     * @throws OrekitException if state cannot be propagated
-     * @throws NoBracketingException if function cannot be bracketed in the search interval
+     * @param guess guess for the free variable
+     * @param min lower bound for free variable
+     * @param max upper bound for free variable
+     * @param initialSpan initial span used to bracket root around the guess date  
+     * @param maxSpan maximum span to use before declaring bracketing failed
+     * @param convergence convergence threshold for solver
+     * @return root of the function (may be NaN if out of range is detected)
+     * @exception OrekitException if the function throws one
+     * @exception NoBracketingException if function cannot be bracketed in the search interval
      */
-    private SpacecraftState findZero(final UnivariateFunction function,
-                                     final AbsoluteDate guessDate, final AbsoluteDate endDate,
-                                     final double shift, final double maxShift,
-                                     final Propagator propagator)
+    protected double findZero(final UnivariateFunction function, final double guess,
+                              final double min, final double max,
+                              final double initialSpan, final double maxSpan,
+                              final double convergence)
         throws OrekitException, NoBracketingException {
 
         try {
 
-            // try to bracket the encounter
-            double span;
-            if (guessDate.shiftedBy(shift).compareTo(endDate) > 0) {
-                // Take a 1e-3 security margin
-                span = endDate.durationFrom(guessDate) - 1e-3;
-            } else {
-                span = shift;
-            }
+            // try to bracket the root
+            double span = initialSpan;
 
             double earliestPositive = Double.POSITIVE_INFINITY;
             double latestPositive   = Double.NEGATIVE_INFINITY;
@@ -283,9 +278,9 @@ public abstract class AbstractLeoSKControl extends AbstractSKControl {
                 if ((Double.isInfinite(earliestNegative) && Double.isInfinite(latestNegative)) ||
                     (Double.isInfinite(earliestPositive) && Double.isInfinite(latestPositive))) {
 
-                    if (guessDate.shiftedBy(2 * span).compareTo(endDate) > 0) {
+                    if (guess - 2 * span < min || guess + 2 * span > max) {
                         // out of range
-                        return null;
+                        return Double.NaN;
                     } else {
                         // expand the search interval
                         span *= 2;
@@ -293,9 +288,9 @@ public abstract class AbstractLeoSKControl extends AbstractSKControl {
 
                 } else {
 
-                    // find the latitude crossing in the bracketed interval
+                    // find the root in the bracketed interval
                     final BaseUnivariateSolver<UnivariateFunction> solver =
-                            new BracketingNthOrderBrentSolver(0.1, 5);
+                            new BracketingNthOrderBrentSolver(convergence, 5);
                     final double dEnEp = FastMath.abs(earliestPositive - earliestNegative);
                     final double dEnLp = FastMath.abs(latestPositive   - earliestNegative);
                     final double dLnEp = FastMath.abs(earliestPositive - latestNegative);
@@ -339,15 +334,13 @@ public abstract class AbstractLeoSKControl extends AbstractSKControl {
                             }
                         }
                     }
-                    final double dt = (selectedNegative <= selectedPositive) ?
+                    return (selectedNegative <= selectedPositive) ?
                             solver.solve(1000, function, selectedNegative, selectedPositive) :
                             solver.solve(1000, function, selectedPositive, selectedNegative);
 
-                    return propagator.propagate(guessDate.shiftedBy(dt));
-
                 }
 
-            } while (2 * span < maxShift);
+            } while (2 * span < maxSpan);
 
             // no bracketing found
             throw new NoBracketingException(-span, span, function.value(-span), function.value(+span));
@@ -356,6 +349,30 @@ public abstract class AbstractLeoSKControl extends AbstractSKControl {
             throw owe.getWrappedException();
         }
 
+    }
+
+    /**
+     * Find the state at which a function becomes zero.
+     * @param function function to check
+     * @param guessDate guess date for the crossing
+     * @param endDate maximal date not to overtake
+     * @param shift shift value used to evaluate the function bracketing around the guess date  
+     * @param maxShift maximum value that the shift value can take
+     * @param propagator propagator used
+     * @return state at function zero time (may be null)
+     * @throws OrekitException if state cannot be propagated
+     * @throws NoBracketingException if function cannot be bracketed in the search interval
+     */
+    private SpacecraftState findZero(final UnivariateFunction function,
+                                     final AbsoluteDate guessDate, final AbsoluteDate endDate,
+                                     final double shift, final double maxShift,
+                                     final Propagator propagator)
+        throws OrekitException, NoBracketingException {
+
+        final double max = endDate.durationFrom(guessDate) - 1.0e-3;
+        final double dt = findZero(function, 0, Double.NEGATIVE_INFINITY, max,
+                                   FastMath.min(shift, max), maxShift, 0.1);
+        return Double.isNaN(dt) ? null : propagator.propagate(guessDate.shiftedBy(dt));
     }
 
     protected ScheduledManeuver[] tuneInclinationManeuver(final ScheduledManeuver[] tunables,

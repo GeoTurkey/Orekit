@@ -7,7 +7,6 @@ import java.util.List;
 
 import org.apache.commons.math3.analysis.UnivariateFunction;
 import org.apache.commons.math3.analysis.solvers.BracketingNthOrderBrentSolver;
-import org.apache.commons.math3.analysis.solvers.UnivariateSolverUtils;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.optimization.GoalType;
 import org.apache.commons.math3.optimization.fitting.PolynomialFitter;
@@ -453,15 +452,12 @@ public class MeanLocalSolarTime extends AbstractLeoSKControl {
         }
 
         // compute inclination offset needed to achieve station-keeping target
-        double deltaOffset = Double.NaN;
-        for (double span = 1.0e-6; Double.isNaN(deltaOffset) && span < 1.0e-2; span *= 2) {
-            // try to bracket inclination change
-            if (UnivariateSolverUtils.isBracketing(targeting, -span, span)) {
-                deltaOffset = new BracketingNthOrderBrentSolver(1.0e-10, 5).solve(1000, targeting, -span, span, 0);
-            }
-        }
+        double deltaOffset = findZero(targeting, 0, -0.1, 0.1, 1.0e-6, 0.1, 1.0e-10);
         if (Double.isNaN(deltaOffset)) {
-            throw new SkatException(SkatMessages.NO_BRACKETING);
+            deltaOffset = findZero(targeting, 0, -0.1, 0.1, 1.0e-6, 0.1, 1.0e-10);
+           if (Double.isNaN(deltaOffset)) {
+                throw new SkatException(SkatMessages.NO_BRACKETING);
+            }
         }
 
         return tuneInclinationManeuver(tunables, reference, nodeState, deltaOffset, compensateLongBurn);
