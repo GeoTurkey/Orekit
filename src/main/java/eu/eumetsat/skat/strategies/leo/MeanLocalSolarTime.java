@@ -404,9 +404,13 @@ public class MeanLocalSolarTime extends AbstractLeoSKControl {
                     };
                     final double tExit = new BracketingNthOrderBrentSolver(1.0e-10, 5).solve(1000, exitFunction,
                                                                                              0, pvTail.getPoint());
-                    if (cycleEnd.durationFrom(peakDate) >= tExit - meanPeriod) {
+                    if (cycleEnd.durationFrom(peakDate) >= tExit) {
                         // early exit
-                        nodeState = findManeuverNode(peakDate.shiftedBy(tExit - meanPeriod), cycleEnd, propagator);
+                        AbsoluteDate searchStart = peakDate.shiftedBy(tExit - 3 * meanPeriod);
+                        if (searchStart.durationFrom(cycleStart) < firstOffset) {
+                            searchStart = cycleStart.shiftedBy(firstOffset);
+                        }
+                        nodeState = findManeuverNode(searchStart, cycleEnd, propagator);
                     } else {
                         // late exit
                         final double dt = firstOpportunity.durationFrom(cycleEnd);
