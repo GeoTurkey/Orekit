@@ -74,6 +74,9 @@ public class MeanLocalSolarTime extends AbstractLeoSKControl {
     /** Tropical year duration. */
     private static final double TROPICAL_YEAR = 365.242199 * Constants.JULIAN_DAY;
 
+    /** Minimal number of crossings needed for fitting. */
+    private static final int MIN_CROSSINGS_NUMBER = 14;
+
     /** Latitude at witch the local solar time will be checked */
     private final double latitude;
 
@@ -218,19 +221,6 @@ public class MeanLocalSolarTime extends AbstractLeoSKControl {
         // select a long maneuver-free interval for fitting
         freeInterval = getManeuverFreeInterval(maneuvers, fixedManeuvers, start, end);
         double stepSize = meanPeriod / 100.0;
-        if (freeInterval[1].durationFrom(freeInterval[0]) < meanPeriod) {
-            // if free interval is too short, use only one checking value
-            AbsoluteDate t1 = start.shiftedBy(FastMath.max(0, freeInterval[0].durationFrom(start) - meanPeriod));
-            AbsoluteDate t2 = t1.shiftedBy(2 * meanPeriod);
-            if (t2.durationFrom(start) >= getTimeHorizon()) {
-                t2 = start.shiftedBy(getTimeHorizon());
-            }
-            SpacecraftState crossing = firstLatitudeCrossing(latitude, ascending, earth, t1, t2, stepSize, propagator);
-            mlstRef    = meanSolarTime(crossing);
-            iOffsetRef = 0;
-            checkMargins(crossing.getDate(), mlstRef);
-            return;
-        }
 
         // find all crossings
         List<SpacecraftState> crossings = new ArrayList<SpacecraftState>();
@@ -262,17 +252,25 @@ public class MeanLocalSolarTime extends AbstractLeoSKControl {
         // set up reference date for analytical models
         tRef = (nodeState != null) ? nodeState.getDate() : start;
 
-        // fit the mean solar time constants of integration
-        PolynomialFitter fitter = new PolynomialFitter(1, new LevenbergMarquardtOptimizer());
-        for (int i = 0; i < crossings.size(); ++i) {
-            crossing = crossings.get(i);
-            fitter.addObservedPoint(crossing.getDate().durationFrom(tRef),
-                                    meanSolarTime(crossing) -
-                                    mlstModel.mlst(crossing.getDate(), tRef, dhDotDi, 0.0, 0.0));
+        if (crossings.size() > MIN_CROSSINGS_NUMBER) {
+            // fit the mean solar time constants of integration
+            PolynomialFitter fitter = new PolynomialFitter(1, new LevenbergMarquardtOptimizer());
+            for (int i = 0; i < crossings.size(); ++i) {
+                crossing = crossings.get(i);
+                fitter.addObservedPoint(crossing.getDate().durationFrom(tRef),
+                                        meanSolarTime(crossing) -
+                                        mlstModel.mlst(crossing.getDate(), tRef, dhDotDi, 0.0, 0.0));
+            }
+            final double[] coefficients = fitter.fit();
+            mlstRef    = coefficients[0];
+            iOffsetRef = coefficients[1] / dhDotDi;          
+        } else if (! crossings.isEmpty()) {
+            mlstRef    = meanSolarTime(crossings.get(0));
+            iOffsetRef = 0.;
+        } else {
+            mlstRef    = 0.5 * (getMin() + getMax());
+            iOffsetRef = 0.;
         }
-        final double[] coefficients = fitter.fit();
-        mlstRef    = coefficients[0];
-        iOffsetRef = coefficients[1] / dhDotDi;
 
     }
 
