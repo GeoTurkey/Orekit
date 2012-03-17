@@ -414,7 +414,7 @@
             <rect x="0" y="0" clip-path="url(#clipPath1)" fill="none"
                 width="998" height="453" stroke="black"/>
         </g>
-        <g stroke-width="0.1" font-size="13" stroke-linecap="butt">
+        <g stroke-width="2.0" font-size="13" stroke-linecap="butt">
             <line clip-path="url(#clipPath43)" fill="none" x1="84"
                 x2="216" y1="140" y2="140"/>
             <text xml:space="preserve" x="121" y="135"
