@@ -2,6 +2,11 @@ package eu.eumetsat.skat.utils;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 import org.antlr.runtime.ANTLRInputStream;
 import org.antlr.runtime.CommonTokenStream;
@@ -27,7 +32,8 @@ import org.orekit.utils.PVCoordinates;
 
 import eu.eumetsat.skat.strategies.leo.GMODFrame;
 
-/** Simple parser for key/value files with embedded structures and arrays.
+/**
+ * Simple parser for key/value files with embedded structures and arrays.
  */
 public class SkatFileParser {
 
@@ -278,14 +284,41 @@ public class SkatFileParser {
         final Tree value = getValue(node, key);
 
         // check its type
-        checkType(SkatParser.STRING, value);
+        checkType(new int[]{SkatParser.STRING, SkatParser.IDENTIFIER}, value);
 
         // parse the value
         return value.getText();
 
     }
 
-    /** Get an angle value.
+	/**
+	 * Get an enumerate value.
+	 * 
+	 * @param node
+	 *            array containing the parameter
+	 * @param index
+	 *            index of the identifier in the array
+	 * @param enumClass
+	 *            enumerate class
+	 * @return enumerate value corresponding to the index
+	 * @exception IllegalArgumentException
+	 *                if node does not contains the key or it is not a string
+	 */
+	public String getString(final Tree node, final int index)
+			throws IllegalArgumentException {
+
+		// get the node
+		final Tree value = getElement(node, index);
+
+		// check its type
+		checkType(new int[]{SkatParser.STRING, SkatParser.IDENTIFIER}, value);
+		
+		// parse the value
+		return value.getText();
+	}
+
+	/**
+	 * Get an angle value.
      * <p>
      * The angle is considered to be in degrees in the file, it will be returned in radians
      * </p>
@@ -321,6 +354,18 @@ public class SkatFileParser {
 
     }
 
+	public Date getDateAsJava(final Tree node, final ParameterKey key) throws ParseException {
+		// get the node
+		final Tree value = getValue(node, key);
+
+		// check its type
+		checkType(SkatParser.DATE, value);
+
+		// parse the value
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss.SSS");
+		return sdf.parse(value.getText());
+	}
+
     /** Get a vector value.
      * @param node structure containing the parameter
      * @param key parameter key
@@ -332,6 +377,13 @@ public class SkatFileParser {
     public Vector3D getVector(final Tree node, final ParameterKey key)
         throws IllegalArgumentException {
 
+		Double[] dAr = getVectorAsArray(node, key);
+		return new Vector3D(dAr[0], dAr[1], dAr[2]);
+	}
+	
+	public Double[] getVectorAsArray(final Tree node, final ParameterKey key)
+			throws IllegalArgumentException {
+
         // get the node
         final Tree value = getValue(node, key);
 
@@ -342,9 +394,9 @@ public class SkatFileParser {
         if (getElementsNumber(value) != 3) {
             throw new DimensionMismatchException(getElementsNumber(value), 3);
         }
-        return new Vector3D(Double.parseDouble(getElement(value, 0).getText()),
+        return new Double[]{Double.parseDouble(getElement(value, 0).getText()),
                             Double.parseDouble(getElement(value, 1).getText()),
-                            Double.parseDouble(getElement(value, 2).getText()));
+                            Double.parseDouble(getElement(value, 2).getText())};
 
     }
 
@@ -399,6 +451,35 @@ public class SkatFileParser {
         return array;
 
     }
+
+public List<Double> getDoubleList(final Tree node, final ParameterKey key)
+			throws IllegalArgumentException {
+
+		// get the node
+		final Tree value = getValue(node, key);
+
+		// check types and get dimensions
+		checkType(SkatParser.ARRAY, value);
+
+		// parse the value
+		int nbElem = getElementsNumber(value);
+		List<Double> dblList = new ArrayList<Double>(nbElem);
+		for (int i = 0; i <nbElem; i++) {
+			try{
+				checkType(SkatParser.ARRAY, value);
+
+				final Tree row = getElement(value, i);
+				int columns = getElementsNumber(row);
+				for (int j = 0; j < columns; ++j) {
+					dblList.add( Double.parseDouble(getElement(row, j).getText()) );
+				}
+			} catch( IllegalArgumentException iae_){
+				dblList.add( Double.parseDouble(getElement(value, i).getText()) );
+			}
+		}
+		return dblList;
+
+	}
 
     /** Get a double[][] value.
      * @param node structure containing the parameter
@@ -585,6 +666,30 @@ public class SkatFileParser {
                                                                SkatParser.tokenNames[node.getType()]);
         }
     }
+
+private void checkType(final int [] expected, final Tree node)
+			throws IllegalArgumentException {
+		int i=0;
+		boolean found = false;
+		StringBuffer typeNotFoundStrBuf = new StringBuffer();
+		while(i<expected.length && !found ){
+			if (node.getType() == expected[i]) {
+				found = true;
+			} else {
+				if( typeNotFoundStrBuf.length()> 0){
+					typeNotFoundStrBuf.append( "," );
+				}
+				typeNotFoundStrBuf.append( node.getType() );
+			}
+			i++;
+		}
+		if ( !found ){
+			throw SkatException.createIllegalArgumentException(
+					SkatMessages.WRONG_TYPE, node.getLine(), inputName,
+					typeNotFoundStrBuf,
+					SkatParser.tokenNames[node.getType()]);
+		}
+	}
 
     /** Parse an enumerate.
      * @param node tree node containing the enumerate identifier
