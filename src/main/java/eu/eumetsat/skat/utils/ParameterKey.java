@@ -7,7 +7,7 @@ package eu.eumetsat.skat.utils;
  */
 public enum ParameterKey {
 
-    SIMULATION,
+    SIMULATION("simulation"),
     SIMULATION_OUTPUT_BASE_NAME("output_base_name"),
     SIMULATION_INERTIAL_FRAME("inertial_frame"),
     SIMULATION_EARTH_FRAME("earth_frame"),
