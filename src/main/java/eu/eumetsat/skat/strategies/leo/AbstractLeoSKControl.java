@@ -472,7 +472,11 @@ public abstract class AbstractLeoSKControl extends AbstractSKControl {
         final CircularOrbit endOrbit     = (CircularOrbit) (OrbitType.CIRCULAR.convertType(endState.getOrbit()));
         final double alphaE              = endOrbit.getAlphaV();
 
-        final double reductionFactor     = (FastMath.sin(alphaE) - FastMath.sin(alphaS)) / (alphaE - alphaS);
+        double alphaDelta                = alphaE - alphaS;
+        while( alphaDelta < -FastMath.PI) alphaDelta+=2*FastMath.PI;
+        while( alphaDelta >  FastMath.PI) alphaDelta-=2*FastMath.PI;
+        final double reductionFactor     = (FastMath.sin(alphaE) - FastMath.sin(alphaS)) / alphaDelta;
+
 
         return new ScheduledManeuver(maneuver.getModel(),
                                      maneuver.getDate(),
