@@ -6,6 +6,8 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 
+import org.apache.commons.math3.geometry.euclidean.threed.Line;
+import org.apache.commons.math3.geometry.euclidean.threed.Plane;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.util.FastMath;
 import org.apache.commons.math3.util.MathUtils;
@@ -370,7 +372,12 @@ public abstract class AbstractGroundTrackGrid extends AbstractLeoSKControl {
             final Vector3D subSat       = earth.transform(new GeodeticPoint(gp.getLatitude(), gp.getLongitude(), 0.0));
             final Vector3D delta        = subSat.subtract(crossing.getGridPoint().getCartesianPoint());
             final double dot            = Vector3D.dotProduct(delta, t.transformVector(current.getMomentum()));
-            checkMargins(state.getDate(), FastMath.copySign(delta.getNorm(), dot));
+            final Vector3D subSatVelDir = state.getPVCoordinates(earth.getBodyFrame()).getMomentum().normalize().crossProduct(subSat.normalize());
+            final Plane subSatPlane     = new Plane(subSatVelDir.crossProduct(subSat));
+            final Line minVector        = new Line(crossing.getGridPoint().getCartesianPoint(),crossing.getGridPoint().getCartesianPoint().add(subSatVelDir.crossProduct(subSat)));
+            final double deviation      = subSatPlane.intersection(minVector).subtract(crossing.getGridPoint().getCartesianPoint()).getNorm();
+            checkMargins(state.getDate(), FastMath.copySign(deviation, dot));
+
         }
 
     }
