@@ -19,6 +19,8 @@ import org.apache.commons.math3.util.MathUtils;
 import org.orekit.bodies.CelestialBody;
 import org.orekit.bodies.OneAxisEllipsoid;
 import org.orekit.errors.OrekitException;
+import org.orekit.frames.Frame;
+import org.orekit.frames.FramesFactory;
 import org.orekit.propagation.BoundedPropagator;
 import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
@@ -283,7 +285,8 @@ public class MeanLocalSolarTime extends AbstractLeoSKControl {
     private double meanSolarTime(final SpacecraftState state) throws OrekitException {
 
         // compute angle between Sun and spacecraft in the equatorial plane
-        final Vector3D position = state.getPVCoordinates().getPosition();
+    	Frame modFrame  = FramesFactory.getMOD(false);
+        final Vector3D position = state.getPVCoordinates(modFrame).getPosition();
         final double time = state.getDate().getComponents(TimeScalesFactory.getUTC()).getTime().getSecondsInDay();
         final double gmst = gmod.getMeanSiderealTime(state.getDate());
         final double sunAlpha = gmst + FastMath.PI * (1 - time / (Constants.JULIAN_DAY * 0.5));
