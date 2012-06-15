@@ -150,6 +150,7 @@ public class Scenario implements ScenarioComponent {
             }
         }
 
+        // cycles loop
         while (cycleEnd.durationFrom(startDate) > 1.0) {
 
             // initial setting target date for iteration using cycle duration
@@ -209,7 +210,7 @@ public class Scenario implements ScenarioComponent {
                                             new double[] {maneuverNb.get(name), 0.0, maneuverDV.get(name)});
             }
 
-        }
+        } // end of cycles loop
 
         return states;
 
@@ -353,12 +354,20 @@ public class Scenario implements ScenarioComponent {
                                                     });
 
                         // print the maneuver
-                        maneuversOutput.println(maneuver.getDate()          + " " +
-                                                maneuver.getName()          + " " +
-                                                maneuver.getDeltaV().getX() + " " +
-                                                maneuver.getDeltaV().getY() + " " +
-                                                maneuver.getDeltaV().getZ() + " " +
-                                                states[i].getName()         + " " +
+                        maneuversOutput.println(states[i].getName()             + " " +
+                        						maneuver.getName()              + " " +
+                        						maneuver.getDate()              + " " +
+                                                maneuver.getDeltaV().getX()     + " " +
+                                                maneuver.getDeltaV().getY()     + " " +
+                                                maneuver.getDeltaV().getZ()     + " " +
+                                                maneuver.getDeltaV().getNorm()  + " " +
+                                                maneuver.getDuration(maneuver.getStateBefore().getMass()) + " " +
+                                                maneuver.getStateBefore().getMass() + " " +
+                                                maneuver.getStateAfter().getMass() + " " +
+                                                maneuver.getModel().getCurrentThrust() + " " +
+                                                maneuver.getModel().getCurrentISP() + " " +
+                                                maneuver.getThrust()            + " " +
+                                                maneuver.getIsp()               + " " +
                                                 (maneuver.isReplanned() ? "replanned" : ""));
                     }
                 }

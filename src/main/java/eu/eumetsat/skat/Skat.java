@@ -271,6 +271,22 @@ public class Skat {
         maneuversOutput = new PrintStream(new File(input.getParentFile(), baseName + ".man"));
         maneuversOutput.println("# file generated on " + new AbsoluteDate(now, utc).toString(utc));
         maneuversOutput.println("#");
+        maneuversOutput.println("# column 01: spacecraft name");
+        maneuversOutput.println("# column 02: maneuver name");
+        maneuversOutput.println("# column 03: maneuver mean date");
+        maneuversOutput.println("# column 04: X component of delta V (m/s)");
+        maneuversOutput.println("# column 05: Y component of delta V (m/s)");
+        maneuversOutput.println("# column 06: Z component of delta V (m/s)");
+        maneuversOutput.println("# column 07: delta V (m/s)");
+        maneuversOutput.println("# column 08: maneuver duration (s)");
+        maneuversOutput.println("# column 09: spacecraft mass before manoeuver (kg)");
+        maneuversOutput.println("# column 10: spacecraft mass after manoeuver (kg)");
+        maneuversOutput.println("# column 11: model thrust (N)");
+        maneuversOutput.println("# column 12: model Isp (s)");
+        maneuversOutput.println("# column 13: maneuver thrust (N)");
+        maneuversOutput.println("# column 14: maneuver Isp (s)");
+        maneuversOutput.println("# column 15: replanned flag (if not replanned, empty column)");
+        maneuversOutput.println("#");
 
         // get general data
         cycleDuration = 0.0;
