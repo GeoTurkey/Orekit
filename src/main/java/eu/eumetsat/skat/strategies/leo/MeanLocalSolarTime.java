@@ -194,10 +194,12 @@ public class MeanLocalSolarTime extends AbstractLeoSKControl {
         // theoretical (i.e. non-fitted) coefficients
         meanPeriod        = phasingDays * Constants.JULIAN_DAY / phasingOrbits;
         final double n    = 2 * FastMath.PI / meanPeriod;
+        // RAAN rate ( = 2 * FastMath.PI / TROPICAL_YEAR ) = cSSO * cos (iSSO)
         final double cSSO = -1.5 * j2 * referenceRadius * referenceRadius *
                             n * n * FastMath.cbrt(n / (mu * mu));
+        // SSO inclination
         final double iSSO = FastMath.acos(2 * FastMath.PI / (TROPICAL_YEAR * cSSO));
-        scaling           = 2;  // TODO this required scaling factor is unexplained ...
+        scaling           = 2;  // TODO this required scaling factor is unexplained ... 
         dhDotDi           = -12 * cSSO * FastMath.sin(iSSO) / (scaling * FastMath.PI);
 
     }
@@ -325,18 +327,25 @@ public class MeanLocalSolarTime extends AbstractLeoSKControl {
                                              final BoundedPropagator reference)
         throws OrekitException, SkatException {
 
+    	// get maneuver date index inside interval
+    	final int manoDoyIndex = getManeuverIndex(cycleStart,cycleEnd);
+    	
+    	// if no maneuver inside this interval
+    	if(manoDoyIndex<0) {
+    		//do nothing
+    		return tunables;
+    	}
+
+    	// get maneuver DoY (doy1) and next maneuver DoY (doy2)
+    	int doy1 = maneuversDoy[manoDoyIndex];
+    	int doy2 = maneuversDoy[(manoDoyIndex+1) % maneuversDoy.length];
+    	
         // find next maneuvers opportunities
         final DateTimeComponents dtc =
                 cycleStart.shiftedBy(firstOffset).getComponents(TimeScalesFactory.getUTC());
         final int startDoy = dtc.getDate().getDayOfYear();
-        int doy1 = maneuversDoy[0];
-        int doy2 = maneuversDoy[1 % maneuversDoy.length];
-        for (int i = 0; i < maneuversDoy.length; ++i) {
-            if (startDoy >= maneuversDoy[i]) {
-                doy1 = maneuversDoy[(i + 1) % maneuversDoy.length];
-                doy2 = maneuversDoy[(i + 2) % maneuversDoy.length];
-            }
-        }
+
+        // update maneuvers DoY
         while (doy1 <= startDoy) {
             doy1 += 365;
         }
@@ -353,101 +362,85 @@ public class MeanLocalSolarTime extends AbstractLeoSKControl {
         final AbsoluteDate targetT;
         if (nodeState == null) {
             start   = cycleStart;
-            targetT = firstOpportunity.compareTo(cycleEnd) > 0 ? firstOpportunity : secondOpportunity;
         } else {
             start   = nodeState.getDate();
-            targetT = secondOpportunity;
         }
+        targetT = start.shiftedBy(2*Constants.JULIAN_YEAR);
 
+        	
         if (iteration == 0) {
 
-            final double mlstCycleStart =
-                    mlstModel.mlst(cycleStart, tRef, dhDotDi, mlstRef, iOffsetRef);
-            if (mlstCycleStart > getMax() || mlstCycleStart < getMin()) {
-                // we are already outside of window, try to get back inside
+            // look at current excursion (achieved peak, and following tail)
+            final UnivariatePointValuePair pvPeak =
+                    extremumMLST(start, targetT, mlstModel.increasingInclination());
+            final AbsoluteDate peakDate = start.shiftedBy(pvPeak.getPoint());
+            final UnivariatePointValuePair pvTail =
+                    extremumMLST(peakDate, targetT, !mlstModel.increasingInclination());
 
-                // set up a maneuver as soon as possible
-                nodeState = findManeuverNode(cycleStart, cycleEnd, propagator);
+            // get exit date
+            final double mlstExit = getMin();
+            final UnivariateFunction exitFunction = new UnivariateFunction() {
+            	/** {@inheritDoc} */
+            	public double value(double x) {
+            		return mlstModel.mlst(peakDate.shiftedBy(x), tRef, dhDotDi, mlstRef, iOffsetRef) -
+                          mlstExit;
+            	}
+            };
 
-                // target a centered MLST at cycle end
-                targeting = new UnivariateFunction() {
-                    /** {@inheritDoc} */
-                    public double value(double x) {
-                        return mlstModel.mlst(cycleEnd, tRef, dhDotDi, mlstRef, iOffsetRef + scaling * x) -
-                               0.5 * (getMin() + getMax());
-                    }
-                };
+            // get exit date
+            final AbsoluteDate exitDate;
+            if (pvPeak.getValue() > getMax()) {
+            	// if peak value is above maximum value
+        		// do nothing
+        		return tunables;           	
+            } else if(pvPeak.getValue() < getMin()) {
+            	// if peak value is below minimum value
+                exitDate = start;
+            } else if (pvTail.getValue() > getMin()) {
+            	// if tail value is above minimum value
+                exitDate = targetT.shiftedBy(1.0);
+            } else {
+            	// otherwise
+                final double tExit = new BracketingNthOrderBrentSolver(1.0e-10, 5).solve(1000, exitFunction,
+                        0, pvTail.getPoint());
+                exitDate = peakDate.shiftedBy(tExit);
+            }
+
+            // if exit date is after next maneuver opportunity
+            if (exitDate.compareTo(secondOpportunity)>0) {
+            	
+                // no maneuver needed
+                nodeState = null;
 
             } else {
-                // we are within window at start, look for exit conditions
+                // otherwise (i.e. if exit date is before next maneuver opportunity)
+                // maneuver is needed
 
-                // look at current excursion (achieved peak, and following tail)
-                final UnivariatePointValuePair pvPeak =
-                        extremumMLST(start, targetT, mlstModel.increasingInclination());
-                final AbsoluteDate peakDate = start.shiftedBy(pvPeak.getPoint());
-                final UnivariatePointValuePair pvTail =
-                        extremumMLST(peakDate, targetT, !mlstModel.increasingInclination());
-
-                if (pvPeak.getValue() < getMin() || pvPeak.getValue() > getMax()) {
-                    // we overshoot the tolerance window on the wrong side (around parabola peak)
-                    // set up a maneuver as soon as possible to prevent this early exit
-                    nodeState = findManeuverNode(cycleStart, cycleEnd, propagator);
-                } else if (pvTail.getValue() < getMin() || pvTail.getValue() > getMax()) {
-                    // we exit the tolerance window on the nominal side (at parabola tail)
-
-                    final double mlstExit = pvTail.getValue() < getMin() ? getMin() : getMax();
-                    final UnivariateFunction exitFunction = new UnivariateFunction() {
-                        /** {@inheritDoc} */
-                        public double value(double x) {
-                            return mlstModel.mlst(peakDate.shiftedBy(x), tRef, dhDotDi, mlstRef, iOffsetRef) -
-                                    mlstExit;
-                        }
-                    };
-                    final double tExit = new BracketingNthOrderBrentSolver(1.0e-10, 5).solve(1000, exitFunction,
-                                                                                             0, pvTail.getPoint());
-                    if (cycleEnd.durationFrom(peakDate) >= tExit) {
-                        // early exit
-                        AbsoluteDate searchStart = peakDate.shiftedBy(tExit - 3 * meanPeriod);
-                        if (searchStart.durationFrom(cycleStart) < firstOffset) {
-                            searchStart = cycleStart.shiftedBy(firstOffset);
-                        }
-                        nodeState = findManeuverNode(searchStart, cycleEnd, propagator);
-                    } else {
-                        // late exit
-                        final double dt = firstOpportunity.durationFrom(cycleEnd);
-                        if (dt > firstOffset) {
-                            // we can wait for next cycle to perform the maneuver
-                            nodeState = null;
-                        } else if (dt < -meanPeriod) {
-                            // maneuver opportunity is well inside the cycle, we can find a node close to it
-                            nodeState = findManeuverNode(firstOpportunity, cycleEnd, propagator);
-                        } else {
-                            // maneuver opportunity is too close to cycle end, we need some margin to find the node
-                            nodeState = findManeuverNode(cycleEnd.shiftedBy(-3 * meanPeriod), cycleEnd, propagator);
-                        }
-                    }
+                // get node state (used for maneuver date)
+                if (firstOpportunity.durationFrom(cycleEnd) < -meanPeriod) {
+                    // maneuver opportunity is well inside the cycle, we can find a node close to it
+                    nodeState = findManeuverNode(firstOpportunity, cycleEnd, propagator);
                 } else {
-                    // we stay within bounds for all the monitoring period
-                    nodeState = null;
+                    // maneuver opportunity is too close to cycle end, we need some margin to find the node
+                    nodeState = findManeuverNode(cycleEnd.shiftedBy(-3 * meanPeriod), cycleEnd, propagator);
                 }
-
-                // target a centered excursion for the observing period
-                targeting = new UnivariateFunction() {
-                    /** {@inheritDoc} */
-                    public double value(double x) {
-                        final double savedIOffsetRef = iOffsetRef;
-                        iOffsetRef += scaling * x;
-                        final UnivariatePointValuePair pvPeak =
-                                extremumMLST(start, targetT, mlstModel.increasingInclination());
-                        final AbsoluteDate peakDate = start.shiftedBy(pvPeak.getPoint());
-                        final UnivariatePointValuePair pvTail =
-                                extremumMLST(peakDate, targetT, !mlstModel.increasingInclination());
-                        iOffsetRef = savedIOffsetRef;
-                        return (pvPeak.getValue() + pvTail.getValue()) - (getMin() + getMax());
-                    }
-                };
-
+            	
             }
+            	
+            // target a centered excursion for the observing period
+            targeting = new UnivariateFunction() {
+                /** {@inheritDoc} */
+                public double value(double x) {
+                    final double savedIOffsetRef = iOffsetRef;
+                    iOffsetRef += scaling * x;
+                    final UnivariatePointValuePair pvPeak =
+                            extremumMLST(start, targetT, mlstModel.increasingInclination());
+                    iOffsetRef = savedIOffsetRef;
+                    return (pvPeak.getValue() - getMax());
+                }
+            };
+
+
 
         }
 
@@ -468,11 +461,13 @@ public class MeanLocalSolarTime extends AbstractLeoSKControl {
         final UnivariatePointValuePair pvPeak =
                 extremumMLST(start, targetT, mlstModel.increasingInclination());
         iOffsetRef = savedIOffsetRef;
-        if (pvPeak.getValue() >= getMax() || pvPeak.getValue() <= getMin()) {
-            final double safetyMargin = 0.1;
-            final double desiredPeak  = pvPeak.getValue() > getMax() ?
-                                        ((1 - safetyMargin) * getMax() + safetyMargin * getMin()) :
-                                        (safetyMargin * getMax() + (1 - safetyMargin) * getMin());
+//        if (pvPeak.getValue() > getMax() || pvPeak.getValue() <= getMin()) {
+        if (pvPeak.getValue() > getMax()) {
+//            final double safetyMargin = 0.1;
+//            final double desiredPeak  = pvPeak.getValue() > getMax() ?
+//                                        ((1 - safetyMargin) * getMax() + safetyMargin * getMin()) :
+//                                        (safetyMargin * getMax() + (1 - safetyMargin) * getMin());
+            final double desiredPeak = getMax();
             deltaOffset = findZero(new UnivariateFunction() {
                 /** {@inheritDoc} */
                 public double value(double x) {
@@ -491,6 +486,62 @@ public class MeanLocalSolarTime extends AbstractLeoSKControl {
 
     }
 
+    /** TBW
+     * @param TVW
+     * @param TBW
+     * @return TBW
+     * @throws OrekitException 
+     */
+    private int getManeuverIndex(final AbsoluteDate start, final AbsoluteDate end) throws OrekitException {
+
+    	// check maneuver size
+    	if(maneuversDoy.length>=1) {
+    		
+        	//check maneuver one by one
+            for (int i = 0; i < maneuversDoy.length; ++i) {
+            	
+            	if(isManeuverInsideInterval(i,start,end)) {
+            		return i;
+            	} else if(i==maneuversDoy.length-1) {
+            		return -1;
+            	}
+            	
+            }
+
+    	}
+    	
+    	return -1;
+    }
+    
+    /** TBW
+     * @param TVW
+     * @param TBW
+     * @param TBW
+     * @return TBW
+     * @throws OrekitException 
+     */
+    private boolean isManeuverInsideInterval(final int manoIdx, final AbsoluteDate start, final AbsoluteDate end) throws OrekitException {
+
+    	if ( (manoIdx>=0) && (manoIdx<maneuversDoy.length) ) {
+    		
+    		final int startDoY = start.getComponents(TimeScalesFactory.getUTC()).getDate().getDayOfYear();
+    		final int endDoY   = end.getComponents(TimeScalesFactory.getUTC()).getDate().getDayOfYear();
+    		
+    		if (startDoY<=endDoY) {
+    			
+    			return (maneuversDoy[manoIdx]>=startDoY) && (maneuversDoy[manoIdx]<=endDoY);
+    			    			
+    		} else {
+    			
+    			return !(maneuversDoy[manoIdx]>=endDoY) && (maneuversDoy[manoIdx]<=startDoY);
+    			
+    		}
+
+    	}
+    	
+    	return false;
+    }
+
     /** {@inheritDoc} */
     public EventDetector getEventDetector() {
         return null;
@@ -502,3 +553,4 @@ public class MeanLocalSolarTime extends AbstractLeoSKControl {
     }
 
 }
+
