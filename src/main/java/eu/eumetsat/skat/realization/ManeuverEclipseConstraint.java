@@ -11,6 +11,11 @@ import org.orekit.bodies.OneAxisEllipsoid;
 import org.orekit.errors.OrekitException;
 import org.orekit.forces.maneuvers.SmallManeuverAnalyticalModel;
 import org.orekit.frames.Frame;
+import org.orekit.frames.FramesFactory;
+import org.orekit.orbits.CartesianOrbit;
+import org.orekit.orbits.KeplerianOrbit;
+import org.orekit.orbits.OrbitType;
+
 import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
 import org.orekit.propagation.analytical.AdapterPropagator;
@@ -47,8 +52,11 @@ public class ManeuverEclipseConstraint implements ScenarioComponent {
     /** Number of orbits between parts of a split maneuver. */
     private final int nbOrbits;
 
-    /** Minimal duration ratio. */
-    private final double durationMaxRatio;
+    /** Minimum duration ratio w.r.t. eclipse duration (taking margins into account). */
+    private final double minEclipseRatio;
+
+    /** Indicator for compensating inefficiency due to out-of-plane maneuver asymmetry w.r.t. ascending or descending node location. */
+    private final boolean compensateNodeAsymmetry;
 
     /** Sun model. */
     private final CelestialBody sun;
@@ -62,24 +70,27 @@ public class ManeuverEclipseConstraint implements ScenarioComponent {
      * @param entryDelay time margin after eclipse entry
      * @param exitDelay time margin before eclipse exit
      * @param nbOrbits number of orbits between parts of a split maneuver
-     * @param durationMaxRatio maximal ratio of maneuver duration wrt eclipse duration
+     * @param minEclipseRatio minimum ratio of maneuver duration wrt eclipse duration
+     * @param compensateNodeAsymmetry indicator for compensating inefficiency due to out-of-plane maneuver asymmetry w.r.t. ascending or descending node location.
      * @param sun Sun model
      * @param earth Earth model
      */
     public ManeuverEclipseConstraint(final int[] spacecraftIndices, final String name,
                                      final double entryDelay, final double exitDelay,
-                                     final int nbOrbits, final double durationMaxRatio,
+                                     final int nbOrbits, final double minEclipseRatio,
+                                     final boolean compensateNodeAsymmetry, 
                                      final CelestialBody sun,
                                      final OneAxisEllipsoid earth)
         throws IllegalArgumentException {
-        this.spacecraftIndices = spacecraftIndices.clone();
-        this.name              = name;
-        this.entryDelay        = entryDelay;
-        this.exitDelay         = exitDelay;
-        this.nbOrbits          = nbOrbits;
-        this.durationMaxRatio  = durationMaxRatio;
-        this.sun               = sun;
-        this.earth             = earth;
+        this.spacecraftIndices        = spacecraftIndices.clone();
+        this.name                     = name;
+        this.entryDelay    		      = entryDelay;
+        this.exitDelay        		  = exitDelay;
+        this.nbOrbits      		      = nbOrbits;
+        this.minEclipseRatio		  = minEclipseRatio;
+        this.compensateNodeAsymmetry  = compensateNodeAsymmetry;
+        this.sun             		  = sun;
+        this.earth           		  = earth;
     }
 
     /** {@inheritDoc} */
@@ -106,71 +117,82 @@ public class ManeuverEclipseConstraint implements ScenarioComponent {
                 if (maneuver.getName().equals(name)) {
 
                     // maneuvers limits
-                    final AbsoluteDate centralDate = maneuver.getDate();
-                    final SpacecraftState state    = maneuver.getStateBefore();
-                    final double burnDuration      = maneuver.getDuration(state.getMass());
-                    final AbsoluteDate burnStart   = centralDate.shiftedBy(-0.5 * burnDuration);
-                    final AbsoluteDate burnEnd     = centralDate.shiftedBy( 0.5 * burnDuration);
+                    final AbsoluteDate manoCentralDate = maneuver.getDate();
+                    final SpacecraftState state        = maneuver.getStateBefore();
+                    double manoDuration                = maneuver.getDuration(state.getMass());
+                    final AbsoluteDate manoStart       = manoCentralDate.shiftedBy(-0.5 * manoDuration);
+                    final AbsoluteDate manoEnd         = manoCentralDate.shiftedBy( 0.5 * manoDuration);
 
                     // find the closest eclipse
                     final double period            = state.getKeplerianPeriod();
-                    final EclipseSelector selector = new EclipseSelector(state.getFrame(), centralDate);
+                    final EclipseSelector selector = new EclipseSelector(state.getFrame(), manoCentralDate);
                     final Propagator tmpPropagator = new AdapterPropagator(maneuver.getTrajectory());
                     tmpPropagator.addEventDetector(selector);
-                    tmpPropagator.propagate(burnStart.shiftedBy(-1.5 * period), burnEnd.shiftedBy(1.5 * period));
+                    tmpPropagator.propagate(manoStart.shiftedBy(-1.5 * period), manoEnd.shiftedBy(1.5 * period));
                     if ((selector.getEntry() == null) || (selector.getExit() == null)) {
-                        throw new SkatException(SkatMessages.NO_ECLIPSE_AROUND_DATE, centralDate);
+                        throw new SkatException(SkatMessages.NO_ECLIPSE_AROUND_DATE, manoCentralDate);
                     }
 
-                    // find the number of parts into which the maneuver will be split
-                    int nbParts = 1;
-
-                    // Check maneuver start
+                    // Compute earliest and latest maneuver allowed times due to eclipse (including margins) 
                     final AbsoluteDate earliestAllowed = selector.getEntry().shiftedBy(entryDelay);
-                    if (centralDate.compareTo(earliestAllowed) < 0) {
-                        throw new SkatException(SkatMessages.NO_ECLIPSE_AROUND_DATE, centralDate);
-                    } else if (burnStart.compareTo(earliestAllowed) < 0) {
-                        final double maxDuration = 2.0 * centralDate.durationFrom(earliestAllowed);
-                        nbParts = FastMath.max(nbParts, (int) FastMath.ceil(burnDuration / maxDuration));
-                    }
-
-                    // Check maneuver end
                     final AbsoluteDate latestAllowed   = selector.getExit().shiftedBy(-exitDelay);
-                    if (centralDate.compareTo(latestAllowed) > 0) {
-                        throw new SkatException(SkatMessages.NO_ECLIPSE_AROUND_DATE, centralDate);
-                    } else if (burnEnd.compareTo(latestAllowed) > 0) {
-                        final double maxDuration = 2.0 * latestAllowed.durationFrom(centralDate);
-                        nbParts = FastMath.max(nbParts, (int) FastMath.ceil(burnDuration / maxDuration));
+                    // Compute maximum single maneuver duration due to eclipse
+                    final double maxSingleBurnDuration = latestAllowed.durationFrom(earliestAllowed);
+                    // Compute central date of eclipse
+                    final AbsoluteDate centralEclipseDate = earliestAllowed.shiftedBy(0.5*maxSingleBurnDuration);
+
+                    // if compensation due to asymmetry w.r.t. node needs to be applied
+                    if (compensateNodeAsymmetry) {
+
+                    	// get PSO (Position Sur l'Orbite) at the eclipse central time
+                    	PVCoordinates pvCoord = tmpPropagator.getPVCoordinates(centralEclipseDate, FramesFactory.getMOD(false));
+                    	CartesianOrbit carOrbit = new CartesianOrbit(pvCoord,FramesFactory.getMOD(false),centralEclipseDate, Constants.WGS84_EARTH_MU);
+                        KeplerianOrbit kepOrbit = (KeplerianOrbit) OrbitType.KEPLERIAN.convertType(carOrbit);
+                        double pso = kepOrbit.getMeanAnomaly() + kepOrbit.getPerigeeArgument();
+                        // update maneuver duration
+                        manoDuration = manoDuration / FastMath.abs(FastMath.cos(pso));
+
                     }
 
-                    // Check maneuver duration
-                    final double maxDuration = durationMaxRatio * latestAllowed.durationFrom(earliestAllowed);
-                    if (maxDuration < burnDuration) {
-                        nbParts = FastMath.max(nbParts, (int) FastMath.ceil(burnDuration / maxDuration));
+                    // compute number of full maneuvers (assuming maximum duration)
+                    double nbParts = (int) FastMath.ceil(manoDuration / maxSingleBurnDuration);
+                    
+                    // compute eclipse ratio if all maneuvers are equal
+                    double eclipseRatio = (manoDuration/nbParts)/maxSingleBurnDuration;
+                    
+                    // if this eclipse ratio is smaller than minimum eclipse ratio	
+                    if (eclipseRatio<minEclipseRatio) {
+                    	
+                    	// reduce number of maneuvers by one
+                    	nbParts = nbParts - 1;
+                    	
+                    	// eclipse ratio is equal to one
+                        eclipseRatio = 1.0;
+
                     }
+                                       	
+                    // remove the original maneuver from the trajectory
+                    maneuver.getTrajectory().addEffect(new SmallManeuverAnalyticalModel(maneuver.getStateBefore(),
+                                                                                        maneuver.getDeltaV().negate(),
+                                                                                        -maneuver.getIsp()));
+                    // compute effective dV
+                    double dVeff = maneuver.getSignedDeltaV() * eclipseRatio*maxSingleBurnDuration/manoDuration;
 
-                    if (nbParts == 1) {
-                        // the maneuver is unchanged
-                        modified.add(maneuver);
-                    } else {
-                        // remove the original maneuver from the trajectory
-                        maneuver.getTrajectory().addEffect(new SmallManeuverAnalyticalModel(maneuver.getStateBefore(),
-                                                                                            maneuver.getDeltaV().negate(),
-                                                                                            maneuver.getIsp()));
+                    // add all maneuvers
+                    for (int j = 0; j < nbParts; ++j) {
+                    	
+                        ScheduledManeuver m = new ScheduledManeuver(maneuver.getModel(),
+							      										  centralEclipseDate.shiftedBy(j * nbOrbits * period),
+                                                                          new Vector3D(dVeff, maneuver.getModel().getDirection()),
+                                                                          maneuver.getThrust(), maneuver.getIsp(),
+                                                                          maneuver.getTrajectory(), false);
+                        m.getTrajectory().addEffect(new SmallManeuverAnalyticalModel(m.getStateBefore(),
+                                                    m.getDeltaV(),
+                                                    m.getIsp()));
+                        
+                        // add maneuver
+                        modified.add(m);
 
-                        // add the various parts of the split maneuver
-                        final double dV = maneuver.getSignedDeltaV() / nbParts;
-                        for (int j = 0; j < nbParts; ++j) {
-                            final ScheduledManeuver m = new ScheduledManeuver(maneuver.getModel(),
-                                                                              centralDate.shiftedBy(j * nbOrbits * period),
-                                                                              new Vector3D(dV, maneuver.getModel().getDirection()),
-                                                                              maneuver.getThrust(), maneuver.getIsp(),
-                                                                              maneuver.getTrajectory(), false);
-                            m.getTrajectory().addEffect(new SmallManeuverAnalyticalModel(m.getStateBefore(),
-                                                                                         m.getDeltaV(),
-                                                                                         m.getIsp()));
-                            modified.add(m);
-                        }
                     }
 
                 } else {
