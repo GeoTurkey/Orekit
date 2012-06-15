@@ -123,15 +123,15 @@ public class TunableManeuver {
      */
     public void updateThrust(final double consumedMass) {
 
-        if (consumedMass >= thrust[0][1]) {
-            // mass is greater than first curve point,
+        if (consumedMass >= thrust[thrust.length-1][1]) {
+            // mass is greater than last curve point,
             // we are in a regulated phase, thrust is constant
-            currentThrust = thrust[0][0];
+            currentThrust = thrust[thrust.length-1][0];
             return;
         }
 
-        for (int i = 1; i < thrust.length; ++i) {
-            if (consumedMass >= thrust[i][1]) {
+        for (int i = thrust.length-1; i > 0 ; --i) {
+            if (consumedMass >= thrust[i-1][1]) {
                 // we are in an interval between two curve points
                 // we are in blow-down mode, thrust evolves linearly
                 final double thrust0  = thrust[i - 1][0];
@@ -144,9 +144,8 @@ public class TunableManeuver {
             }
         }
 
-        // we have reached the end of the calibration curve,
-        // we consider remaining thrust is constant
-        currentThrust = thrust[thrust.length - 1][0];
+        // otherwise, we assign first point
+        currentThrust = thrust[0][0];
 
     }
 
@@ -155,15 +154,15 @@ public class TunableManeuver {
      */
     public void updateISP(final double consumedMass) {
 
-        if (consumedMass >= isp[0][1]) {
-            // mass is greater than first curve point,
+        if (consumedMass >= isp[isp.length-1][1]) {
+            // mass is greater than last curve point,
             // we are in a regulated phase, ISP is constant
-            currentIsp = isp[0][0];
+            currentIsp = isp[isp.length-1][0];
             return;
         }
 
-        for (int i = 1; i < isp.length; ++i) {
-            if (consumedMass >= isp[i][1]) {
+        for (int i = isp.length-1; i > 0 ; --i) {
+            if (consumedMass >= isp[i-1][1]) {
                 // we are in an interval between two curve points
                 // we are in blow-down mode, ISP evolves linearly
                 final double isp0  = isp[i - 1][0];
@@ -176,9 +175,8 @@ public class TunableManeuver {
             }
         }
 
-        // we have reached the end of the calibration curve,
-        // we consider remaining ISP is constant
-        currentIsp = isp[isp.length - 1][0];
+        // otherwise, we assign first point
+        currentIsp = isp[0][0];
 
     }
 
