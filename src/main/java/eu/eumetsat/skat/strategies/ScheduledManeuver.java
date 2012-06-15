@@ -39,6 +39,12 @@ public class ScheduledManeuver {
     /** Indicator for replanned maneuvers. */
     private final boolean replanned;
 
+    /** Eclipse ratio used. This is only used for out-of-plane maneuvers. */
+    private double eclipseRatio; 
+    
+    /** Lost eclipse ratio. This is only used for out-of-plane maneuvers. */
+    private double lostEclipseRatio; 
+    
     /** Simple constructor.
      * @param model tunable model of the maneuver
      * @param date maneuver date
@@ -59,6 +65,8 @@ public class ScheduledManeuver {
         this.isp        = isp;
         this.trajectory = trajectory;
         this.replanned  = replanned;
+        this.eclipseRatio     = -1;
+        this.lostEclipseRatio = -1;
     }
 
     /** Get the maneuver name.
@@ -174,6 +182,34 @@ public class ScheduledManeuver {
      */
     public boolean isReplanned() {
         return replanned;
+    }
+
+    /** Get the eclipse ratio.
+    * @return eclipse ratio
+    */
+    public double getEclipseRatio() {
+        return eclipseRatio;
+    }
+
+    /** Get the lost eclipse ratio.
+    * @return lost eclipse ratio
+    */
+    public double getLostEclipseRatio() {
+        return lostEclipseRatio;
+    }
+
+    /** Update eclipse ratio
+     * @param eclipseRatio eclipse ratio
+     */
+    public void updateEclipseRatio(final double eclipseRatio) {
+    	this.eclipseRatio = eclipseRatio;
+    }
+
+    /** Update lost eclipse ratio
+     * @param lostEclipseRatio lost eclipse ratio
+     */
+    public void updateLostEclipseRatio(final double lostEclipseRatio) {
+    	this.lostEclipseRatio = lostEclipseRatio;
     }
 
     /** Check if a maneuver is within convergence threshold of another maneuver.

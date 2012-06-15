@@ -368,6 +368,8 @@ public class Scenario implements ScenarioComponent {
                                                 maneuver.getModel().getCurrentISP() + " " +
                                                 maneuver.getThrust()            + " " +
                                                 maneuver.getIsp()               + " " +
+                                                maneuver.getEclipseRatio()      + " " +
+                                                maneuver.getLostEclipseRatio()  + " " +
                                                 (maneuver.isReplanned() ? "replanned" : ""));
                     }
                 }

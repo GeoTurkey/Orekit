@@ -159,6 +159,8 @@ public class ManeuverEclipseConstraint implements ScenarioComponent {
                     
                     // compute eclipse ratio if all maneuvers are equal
                     double eclipseRatio = (manoDuration/nbParts)/maxSingleBurnDuration;
+                	double lostEclipseRatio = 0;
+
                     
                     // if this eclipse ratio is smaller than minimum eclipse ratio	
                     if (eclipseRatio<minEclipseRatio) {
@@ -168,6 +170,9 @@ public class ManeuverEclipseConstraint implements ScenarioComponent {
                     	
                     	// eclipse ratio is equal to one
                         eclipseRatio = 1.0;
+                    	
+                    	// lost eclipse ratio
+                    	lostEclipseRatio = manoDuration / maxSingleBurnDuration - nbParts;
 
                     }
                                        	
@@ -190,6 +195,12 @@ public class ManeuverEclipseConstraint implements ScenarioComponent {
                                                     m.getDeltaV(),
                                                     m.getIsp()));
                         
+                        // set eclipse ratio
+                        m.updateEclipseRatio(eclipseRatio);
+                        
+                        // set maneuver loss due to eclipse constraint
+                    	m.updateLostEclipseRatio(lostEclipseRatio);
+
                         // add maneuver
                         modified.add(m);
 
