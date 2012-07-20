@@ -29,6 +29,7 @@ import eu.eumetsat.skat.strategies.geo.ParabolicLongitude;
 import eu.eumetsat.skat.strategies.leo.GridPoint;
 import eu.eumetsat.skat.strategies.leo.InPlaneGroundTrackGrid;
 import eu.eumetsat.skat.strategies.leo.MeanLocalSolarTime;
+import eu.eumetsat.skat.strategies.leo.Inclination;
 import eu.eumetsat.skat.strategies.leo.OutOfPlaneGroundTrackGrid;
 
 /** Enumerate for parsing the supported scenario components.
@@ -155,6 +156,77 @@ public enum SupportedControlLaw {
                                                  gravityField.getAe(), gravityField.getMu(), gravityField.getJ(false, 2)[2],
                                                  readGridFile(gridFile, skat.getEarth()), maxDistance, horizon,
                                                  compensateLongBurn);
+        }
+
+    },
+
+    /** Constant for inclination control law. */
+    INCLINATION() {
+
+        /** {@inheritDoc} */
+        public SKControl parse(final SkatFileParser parser, final Tree node,
+                               final String controlled, final Skat skat)
+            throws OrekitException, SkatException {
+            final String name                = parser.getString(node,    ParameterKey.CONTROL_NAME);
+            final double horizon             = parser.getDouble(node,    ParameterKey.CONTROL_HORIZON);
+            final TunableManeuver model      = skat.getManeuver(parser.getString(node, ParameterKey.CONTROL_MANEUVER_NAME));
+            final int maxManeuvers           = parser.getInt(node,       ParameterKey.CONTROL_MAX_MANEUVERS);
+            final int orbitsSeparation       = parser.getInt(node,       ParameterKey.CONTROL_MANEUVERS_ORBITS_SEPARATION);
+            final double firstOffset         = parser.getDouble(node,    ParameterKey.CONTROL_INCLINATION_FIRST_OFFSET);
+            final double latitude            = parser.getAngle(node,     ParameterKey.CONTROL_INCLINATION_LATITUDE);
+            final boolean ascending          = parser.getBoolean(node,   ParameterKey.CONTROL_INCLINATION_ASCENDING);
+            final double incMeanValue        = parser.getAngle(node,    ParameterKey.CONTROL_INCLINATION_MEAN_VALUE);
+            final double incDeadband         = parser.getAngle(node,    ParameterKey.CONTROL_INCLINATION_TOLERANCE);
+            final boolean compensateLongBurn = parser.getBoolean(node,   ParameterKey.CONTROL_INCLINATION_LONG_BURN_COMPENSATION);
+            final double iDrift0             = parser.getAngle(node,     ParameterKey.CONTROL_INCLINATION_I_DRIFT_0)   / Constants.JULIAN_DAY;
+            final double iDriftCos           = parser.getAngle(node,     ParameterKey.CONTROL_INCLINATION_I_DRIFT_COS) / Constants.JULIAN_DAY;
+            final double iDriftDoy           = parser.getDouble(node,    ParameterKey.CONTROL_INCLINATION_I_DRIFT_DOY);
+            final int phasingDays            = parser.getInt(node,       ParameterKey.CONTROL_INCLINATION_PHASING_CYCLE_DAYS);
+            final int phasingOrbits          = parser.getInt(node,       ParameterKey.CONTROL_INCLINATION_PHASING_CYCLE_ORBITS);
+            final int[] maneuversDoy         = parser.getIntArray1(node, ParameterKey.CONTROL_INCLINATION_MANEUVERS_DOY);
+            final PotentialCoefficientsProvider gravityField = skat.getgravityField();
+            final TimeScale utc = TimeScalesFactory.getUTC();
+
+            // inclination offset function in radians
+            final Inclination.InclinationModel analyticalModels =
+                    new Inclination.InclinationModel() {
+
+                /** {@inheritDoc} */
+                public boolean increasingInclination() {
+                    return iDrift0 >= 0;
+                }
+
+                /** {@inheritDoc} */
+                public double inc(final AbsoluteDate t, final AbsoluteDate t0, final double inc0, final double iOffsetRef) {
+                    final double dt        = t.durationFrom(t0);
+                    final double pulsation = 2 * FastMath.PI / (365 * Constants.JULIAN_DAY);
+                    final double sin0      = FastMath.sin(pulsation * timeOffset(t0));
+                    final double sinT      = FastMath.sin(pulsation * timeOffset(t));
+                    final double deltaI    = iOffsetRef + iDrift0 * dt -
+                                             iDriftCos / pulsation * (sinT - sin0) ;
+                    return inc0 + deltaI;
+                }
+
+                /** Compute time offset.
+                 * @param date date
+                 * @return time offset at specified date
+                 */
+                private double timeOffset(final AbsoluteDate date) {
+                    final DateTimeComponents dtc = date.getComponents(utc);
+                    final int doy        = dtc.getDate().getDayOfYear();
+                    final double seconds = dtc.getTime().getSecondsInDay();
+                    return (doy - iDriftDoy) * Constants.JULIAN_DAY + seconds;
+                }
+
+            };
+
+            return new Inclination(name, controlled, skat.getSpacecraftIndex(controlled),
+                                          model, firstOffset, maxManeuvers, orbitsSeparation,
+                                          skat.getEarth(), skat.getSun(),
+                                          gravityField.getAe(), gravityField.getMu(), gravityField.getJ(false, 2)[2],
+                                          latitude, ascending, incMeanValue, incDeadband, horizon, compensateLongBurn,
+                                          phasingDays, phasingOrbits, maneuversDoy, analyticalModels);
+
         }
 
     },
