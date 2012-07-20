@@ -12,15 +12,20 @@ import org.orekit.bodies.BodyShape;
 import org.orekit.bodies.GeodeticPoint;
 import org.orekit.errors.OrekitException;
 import org.orekit.frames.Frame;
+import org.orekit.frames.FramesFactory;
+import org.orekit.orbits.CartesianOrbit;
 import org.orekit.orbits.CircularOrbit;
 import org.orekit.orbits.EquinoctialOrbit;
 import org.orekit.orbits.KeplerianOrbit;
 import org.orekit.orbits.OrbitType;
 import org.orekit.propagation.SpacecraftState;
 import org.orekit.time.AbsoluteDate;
+import org.orekit.time.TimeScalesFactory;
+import org.orekit.utils.Constants;
 import org.orekit.utils.PVCoordinates;
 
 import eu.eumetsat.skat.scenario.ScenarioState;
+import eu.eumetsat.skat.strategies.leo.GMODFrame;
 
 /** Enumerate representing time-dependent values from a single spacecraft
  * that can be monitored.
@@ -109,8 +114,8 @@ public enum MonitorableMonoSKData implements MonitorableMono {
             final BodyShape earth    = state.getEarth();
             final Frame earthFrame   = earth.getBodyFrame();
             final Vector3D position  = getPVCoordinates(state, earthFrame).getPosition();
-            final AbsoluteDate  date = state.getRealState().getDate();
-            final GeodeticPoint gp   = earth.transform(position, earthFrame, date);
+            final AbsoluteDate  date = state.getRealState().getDate(); // TODO Check this date. It should probably be  "final AbsoluteDate  date = getDate();"
+            final GeodeticPoint gp   = earth.transform(position, earthFrame, date); 
             data[0] = FastMath.toDegrees(gp.getLatitude());
         }
 
@@ -138,7 +143,7 @@ public enum MonitorableMonoSKData implements MonitorableMono {
             final BodyShape earth    = state.getEarth();
             final Frame earthFrame   = earth.getBodyFrame();
             final Vector3D position  = getPVCoordinates(state, earthFrame).getPosition();
-            final AbsoluteDate  date = state.getRealState().getDate();
+            final AbsoluteDate  date = state.getRealState().getDate(); // TODO Check this date. It should probably be  "final AbsoluteDate  date = getDate();"
             final GeodeticPoint gp   = earth.transform(position, earthFrame, date);
             data[0] = gp.getAltitude();
         }
@@ -236,6 +241,54 @@ public enum MonitorableMonoSKData implements MonitorableMono {
             final EquinoctialOrbit orbit = getEquinoctialOrbit(state);
             data[0] = orbit.getHx();
             data[1] = orbit.getHy();
+        }
+
+    },
+
+    MEAN_LOCAL_SOLAR_TIME_AT_ASCENDING_NODE(1) {
+
+        /** {@inheritDoc} */
+        @Override
+        protected void extractData(final ScenarioState state, double[] data)
+            throws OrekitException {
+        	
+            // compute angle between Sun and spacecraft in the equatorial plane
+        	Frame modFrame  = FramesFactory.getMOD(false);
+        	final PVCoordinates pv = getPVCoordinates(state, modFrame);
+        	final KeplerianOrbit kepOrbit = (KeplerianOrbit) OrbitType.KEPLERIAN.convertType(new CartesianOrbit(pv, modFrame,state.getRealState().getDate(),Constants.WGS84_EARTH_MU)); 
+            final double time = state.getRealState().getDate().getComponents(TimeScalesFactory.getUTC()).getTime().getSecondsInDay(); 
+            final GMODFrame gmod = new GMODFrame();
+            final double gmst = gmod.getMeanSiderealTime(state.getRealState().getDate());
+            final double sunAlpha = gmst + FastMath.PI * (1 - time / (Constants.JULIAN_DAY * 0.5));
+            final double dAlpha = MathUtils.normalizeAngle(kepOrbit.getRightAscensionOfAscendingNode() - sunAlpha, 0);
+
+            // convert the angle to solar time
+            data[0] =  12.0 * (1.0 + dAlpha / FastMath.PI);
+
+        }
+
+    },
+
+    MEAN_LOCAL_SOLAR_TIME_AT_DESCENDING_NODE(1) {
+
+        /** {@inheritDoc} */
+        @Override
+        protected void extractData(final ScenarioState state, double[] data)
+            throws OrekitException {
+        	
+            // compute angle between Sun and spacecraft in the equatorial plane
+        	Frame modFrame  = FramesFactory.getMOD(false);
+        	final PVCoordinates pv = getPVCoordinates(state, modFrame);
+        	final KeplerianOrbit kepOrbit = (KeplerianOrbit) OrbitType.KEPLERIAN.convertType(new CartesianOrbit(pv, modFrame, state.getRealState().getDate(),Constants.WGS84_EARTH_MU));
+        	final double time = getDate().getComponents(TimeScalesFactory.getUTC()).getTime().getSecondsInDay(); 
+            final GMODFrame gmod = new GMODFrame();
+            final double gmst = gmod.getMeanSiderealTime(getDate());
+            final double sunAlpha = gmst + FastMath.PI * (1 - time / (Constants.JULIAN_DAY * 0.5));
+            final double dAlpha = MathUtils.normalizeAngle(kepOrbit.getRightAscensionOfAscendingNode() + FastMath.PI- sunAlpha, 0);
+
+            // convert the angle to solar time
+            data[0] =  12.0 * (1.0 + dAlpha / FastMath.PI);
+
         }
 
     },
