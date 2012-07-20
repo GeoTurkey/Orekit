@@ -474,7 +474,7 @@ public abstract class AbstractLeoSKControl extends AbstractSKControl {
 
         double alphaDelta                = alphaE - alphaS;
         while( alphaDelta < -FastMath.PI) alphaDelta+=2*FastMath.PI;
-        final double reductionFactor     = (FastMath.sin(alphaE) - FastMath.sin(alphaS)) / alphaDelta;
+        final double reductionFactor     = FastMath.sin(alphaDelta/2)/ (alphaDelta/2);
 
 
         return new ScheduledManeuver(maneuver.getModel(),
