@@ -180,7 +180,7 @@ public abstract class AbstractSKControl implements SKControl {
         return horizon;
     }
 
-    /** Check if control limits are exceeded.
+    /** Check if control limits are exceeded and add value to monitored list.
      * @param date current date
      * @param value current value of the control law
      */

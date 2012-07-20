@@ -174,6 +174,7 @@ public class Scenario implements ScenarioComponent {
                 states = component.updateStates(states);
             }
 
+            // perform monitoring (and write the monitored parameters in the csv file)
             performMonitoring(states);
 
             // prepare next cycle
@@ -232,14 +233,19 @@ public class Scenario implements ScenarioComponent {
         Set<SKControl> controls = new HashSet<SKControl>();
         controls.addAll(controlsValues.keySet());
         controls.addAll(controlsViolations.keySet());
+        
+        // loop to go through each state (one state per spacecraft)
         for (int i = 0; i < states.length; ++i) {
 
+        	// get spacecraft ephemeris
             final BoundedPropagator propagator = states[i].getPerformedEphemeris();
             propagator.clearEventsDetectors();
 
             final OrekitStepHandlerMultiplexer multiplexer = new OrekitStepHandlerMultiplexer();
 
+            // loop to go through each control law
             for (final SKControl controlLaw : controls) {
+            	// if control law applies to current spacecraft
                 if (i == controlLaw.getControlledSpacecraftIndex()) {
                     controlLaw.setMonitoring(true);
                     final List<ScheduledManeuver> maneuvers = new ArrayList<ScheduledManeuver>();
