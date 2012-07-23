@@ -14,9 +14,9 @@ import org.apache.commons.math3.optimization.univariate.UnivariatePointValuePair
 import org.orekit.bodies.CelestialBody;
 import org.orekit.bodies.OneAxisEllipsoid;
 import org.orekit.errors.OrekitException;
+import org.orekit.frames.FramesFactory;
+import org.orekit.orbits.CartesianOrbit;
 import org.orekit.propagation.BoundedPropagator;
-//import eu.eumetsat.skat.utils.OsculatingToMeanElementsConverter;
-import org.orekit.propagation.OsculatingToMeanElementsConverter;
 import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
 import org.orekit.propagation.events.EventDetector;
@@ -203,32 +203,12 @@ public class Inclination extends AbstractLeoSKControl {
      *  @exception OrekitException if state cannot be converted
      */
     private double inclinationMOD(final SpacecraftState state) throws OrekitException {
-
-        // get MOD frame
-    	//Frame modFrame  = FramesFactory.getMOD(false);
-    	// get keplerian orbit
-    	//final Orbit kepOrbit = (KeplerianOrbit) OrbitType.KEPLERIAN.convertType(new CartesianOrbit(state.getPVCoordinates(modFrame),modFrame,state.getDate(),Constants.WGS84_EARTH_MU));
-
-        // get inclination
-        //return kepOrbit.getI();
-    	
-    	// convert from osculating to mean elements
-    	//if(state.getDate().compareTo(new AbsoluteDate(2009,10,28,11,0,0, TimeScalesFactory.getUTC()))>0) {
-    	//	int dani = 1;
-    		//final OsculatingToMeanElementsConverter o2m1 = new OsculatingToMeanElementsConverter(auxState,1,auxPropagator);
-    		//double auxInc1 = o2m1.convert().getI();
-    		//final OsculatingToMeanElementsConverter o2m2 = new OsculatingToMeanElementsConverter(auxState,1,propagator);
-    		//double auxInc2 = o2m2.convert().getI();
-    		//final OsculatingToMeanElementsConverter o2m3 = new OsculatingToMeanElementsConverter(state,1,auxPropagator);
-    		//double auxInc3 = o2m3.convert().getI();
-    	//}
-    	//System.out.println(state.getDate().toString() + " " + state.getA() + " " + state.getE() + " " + state.getI());
-    	final OsculatingToMeanElementsConverter o2m = new OsculatingToMeanElementsConverter(state,1,propagator);
+    	final CartesianOrbit modOrbit = new CartesianOrbit(state.getPVCoordinates(FramesFactory.getMOD(false)),
+    			FramesFactory.getMOD(false),state.getDate(),state.getMu()); 
+    	final SpacecraftState scState = new SpacecraftState(modOrbit, state.getMass());
+    	return scState.getI();
+    	//final OsculatingToMeanElementsConverter o2m = new OsculatingToMeanElementsConverter(scState,1,propagator);
     	//return o2m.getMeanInclination();
-    	return o2m.convert().getI();
-		//auxPropagator = propagator;
-		//auxState = state;
-		//return inc;
     }
 
     /** Find a min/max inclination value.
