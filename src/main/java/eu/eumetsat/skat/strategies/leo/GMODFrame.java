@@ -20,9 +20,9 @@ import org.apache.commons.math3.geometry.euclidean.threed.Rotation;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.util.MathUtils;
 import org.orekit.errors.OrekitException;
-import org.orekit.frames.Frame;
 import org.orekit.frames.FramesFactory;
 import org.orekit.frames.Transform;
+import org.orekit.frames.UpdatableFrame;
 import org.orekit.time.AbsoluteDate;
 import org.orekit.time.DateComponents;
 import org.orekit.time.TimeComponents;
@@ -37,7 +37,8 @@ import org.orekit.utils.Constants;
  * <p> Its parent frame is the {@link MODFrame}.</p>
  * @author Luc Maisonobe
  */
-public class GMODFrame extends Frame {
+//public class GMODFrame extends UpdatableFrame {
+public class GMODFrame extends UpdatableFrame {
 
     /** Serializable UID. */
     private static final long serialVersionUID = 7206203752034399513L;
@@ -118,8 +119,8 @@ public class GMODFrame extends Frame {
             final Vector3D rotationRate = new Vector3D(AVE, Vector3D.PLUS_K);
 
             // set up the transform from parent TOD
-            setTransform(new Transform(new Rotation(Vector3D.PLUS_K, -gmst), rotationRate));
-
+            setTransform(new Transform(date, new Rotation(Vector3D.PLUS_K, -gmst), rotationRate));
+            
             cachedDate = date;
 
         }
