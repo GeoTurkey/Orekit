@@ -173,8 +173,6 @@ public enum SupportedControlLaw {
             final int maxManeuvers           = parser.getInt(node,       ParameterKey.CONTROL_MAX_MANEUVERS);
             final int orbitsSeparation       = parser.getInt(node,       ParameterKey.CONTROL_MANEUVERS_ORBITS_SEPARATION);
             final double firstOffset         = parser.getDouble(node,    ParameterKey.CONTROL_INCLINATION_FIRST_OFFSET);
-            final double latitude            = parser.getAngle(node,     ParameterKey.CONTROL_INCLINATION_LATITUDE);
-            final boolean ascending          = parser.getBoolean(node,   ParameterKey.CONTROL_INCLINATION_ASCENDING);
             final double incMeanValue        = parser.getAngle(node,    ParameterKey.CONTROL_INCLINATION_MEAN_VALUE);
             final double incDeadband         = parser.getAngle(node,    ParameterKey.CONTROL_INCLINATION_TOLERANCE);
             final boolean compensateLongBurn = parser.getBoolean(node,   ParameterKey.CONTROL_INCLINATION_LONG_BURN_COMPENSATION);
@@ -224,7 +222,7 @@ public enum SupportedControlLaw {
                                           model, firstOffset, maxManeuvers, orbitsSeparation,
                                           skat.getEarth(), skat.getSun(),
                                           gravityField.getAe(), gravityField.getMu(), gravityField.getJ(false, 2)[2],
-                                          latitude, ascending, incMeanValue, incDeadband, horizon, compensateLongBurn,
+                                          incMeanValue, incDeadband, horizon, compensateLongBurn,
                                           phasingDays, phasingOrbits, maneuversDoy, analyticalModels);
 
         }

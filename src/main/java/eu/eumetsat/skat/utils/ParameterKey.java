@@ -114,10 +114,8 @@ public enum ParameterKey {
     CONTROL_SOLAR_TIME_PHASING_CYCLE_DAYS("phasing_cycle_days"),
     CONTROL_SOLAR_TIME_PHASING_CYCLE_ORBITS("phasing_cycle_orbits"),
     CONTROL_SOLAR_TIME_MANEUVERS_DOY("maneuvers_doy"),
-    // Local solar time
+    // Inclination
     CONTROL_INCLINATION_FIRST_OFFSET("offset_first_maneuver"),
-    CONTROL_INCLINATION_LATITUDE("latitude"),
-    CONTROL_INCLINATION_ASCENDING("ascending"),
     CONTROL_INCLINATION_MEAN_VALUE("inclination_mean_value"),
     CONTROL_INCLINATION_TOLERANCE("inclination_tolerance"),
     CONTROL_INCLINATION_LONG_BURN_COMPENSATION("long_burn_compensation"),

@@ -41,12 +41,6 @@ import eu.eumetsat.skat.utils.SkatMessages;
  */
 public class Inclination extends AbstractLeoSKControl {
 
-    /** Latitude at witch the local solar time will be checked */
-    private final double latitude;
-
-    /** Indicator for ascending crossing of latitude. */
-    private final boolean ascending;
-
     /** Indicator for compensating long burns inefficiency. */
     private final boolean compensateLongBurn;
 
@@ -107,8 +101,6 @@ public class Inclination extends AbstractLeoSKControl {
      * @param referenceRadius reference radius of the Earth for the potential model (m)
      * @param mu central attraction coefficient (m<sup>3</sup>/s<sup>2</sup>)
      * @param j2 un-normalized zonal coefficient (about +1.08e-3 for Earth)
-     * @param latitude latitude at which solar time should be computed
-     * @param ascending if true, solar time is computed when crossing the specified latitude from south to north
      * @param solarTime target solar time (in fractional hour, i.e 9h30 = 9.5)
      * @param solarTimetolerance solar time tolerance (in hours)
      * @param horizon time horizon duration
@@ -123,7 +115,6 @@ public class Inclination extends AbstractLeoSKControl {
                               final TunableManeuver model, final double firstOffset, final int maxManeuvers,
                               final int orbitsSeparation, final OneAxisEllipsoid earth, final CelestialBody sun,
                               final double referenceRadius, final double mu, final double j2,
-                              final double latitude, final boolean ascending,
                               final double incMeanValue, final double incDeadband, final double horizon,
                               final boolean compensateLongBurn, final int phasingDays, final int phasingOrbits,
                               final int[] maneuversDoy, final InclinationModel analyticalModels)
@@ -133,8 +124,6 @@ public class Inclination extends AbstractLeoSKControl {
               firstOffset, maxManeuvers, orbitsSeparation, earth, sun, referenceRadius, mu, j2,
               incMeanValue - incDeadband, incMeanValue + incDeadband, horizon * Constants.JULIAN_DAY);
 
-        this.latitude  = latitude;
-        this.ascending = ascending;
         this.compensateLongBurn = compensateLongBurn;
         this.maneuversDoy = maneuversDoy.clone();
         Arrays.sort(this.maneuversDoy);
@@ -167,7 +156,7 @@ public class Inclination extends AbstractLeoSKControl {
 
         // find all crossings
         List<SpacecraftState> crossings = new ArrayList<SpacecraftState>();
-        SpacecraftState crossing = firstLatitudeCrossing(latitude, ascending, earth,
+        SpacecraftState crossing = firstLatitudeCrossing(0.0, true, earth,
                                                          start.shiftedBy(meanPeriod), end, stepSize, propagator);
         checkMargins(crossing.getDate(), inclinationMOD(crossing));
         if (crossing.getDate().compareTo(freeInterval[0]) >= 0 &&
@@ -180,7 +169,7 @@ public class Inclination extends AbstractLeoSKControl {
         while (crossing != null && crossing.getDate().shiftedBy(deltaT).compareTo(end.shiftedBy(-meanPeriod)) < 0) {
 
             final AbsoluteDate previous = crossing.getDate();
-            crossing = latitudeCrossing(latitude, earth, previous.shiftedBy(deltaT), end, stepSize, meanPeriod / 8, propagator);
+            crossing = latitudeCrossing(0.0, earth, previous.shiftedBy(deltaT), end, stepSize, meanPeriod / 8, propagator);
             if (crossing != null) {
                 checkMargins(crossing.getDate(), inclinationMOD(crossing));
                 if (crossing.getDate().compareTo(freeInterval[0]) >= 0 &&
