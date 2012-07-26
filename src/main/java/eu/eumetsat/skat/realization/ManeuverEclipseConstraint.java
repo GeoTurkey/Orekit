@@ -9,10 +9,12 @@ import org.apache.commons.math3.util.FastMath;
 import org.orekit.bodies.CelestialBody;
 import org.orekit.bodies.OneAxisEllipsoid;
 import org.orekit.errors.OrekitException;
+import org.orekit.errors.PropagationException;
 import org.orekit.forces.maneuvers.SmallManeuverAnalyticalModel;
 import org.orekit.frames.Frame;
 import org.orekit.frames.FramesFactory;
 import org.orekit.orbits.CartesianOrbit;
+import org.orekit.orbits.CircularOrbit;
 import org.orekit.orbits.KeplerianOrbit;
 import org.orekit.orbits.OrbitType;
 
@@ -55,8 +57,9 @@ public class ManeuverEclipseConstraint implements ScenarioComponent {
     /** Minimum duration ratio w.r.t. eclipse duration (taking margins into account). */
     private final double minEclipseRatio;
 
-    /** Indicator for compensating inefficiency due to out-of-plane maneuver asymmetry w.r.t. ascending or descending node location. */
-    private final boolean compensateNodeAsymmetry;
+    /** Indicator for compensating inefficiency due to (1) out-of-plane maneuver asymmetry w.r.t. ascending or descending node location
+     *  and extended maneuver. */
+    private final boolean compensateLongBurnAndNodeAsymmetry;
 
     /** Sun model. */
     private final CelestialBody sun;
@@ -78,7 +81,7 @@ public class ManeuverEclipseConstraint implements ScenarioComponent {
     public ManeuverEclipseConstraint(final int[] spacecraftIndices, final String name,
                                      final double entryDelay, final double exitDelay,
                                      final int nbOrbits, final double minEclipseRatio,
-                                     final boolean compensateNodeAsymmetry, 
+                                     final boolean compensateLongBurnAndNodeAsymmetry, 
                                      final CelestialBody sun,
                                      final OneAxisEllipsoid earth)
         throws IllegalArgumentException {
@@ -88,7 +91,7 @@ public class ManeuverEclipseConstraint implements ScenarioComponent {
         this.exitDelay        		  = exitDelay;
         this.nbOrbits      		      = nbOrbits;
         this.minEclipseRatio		  = minEclipseRatio;
-        this.compensateNodeAsymmetry  = compensateNodeAsymmetry;
+        this.compensateLongBurnAndNodeAsymmetry  = compensateLongBurnAndNodeAsymmetry;
         this.sun             		  = sun;
         this.earth           		  = earth;
     }
@@ -142,16 +145,11 @@ public class ManeuverEclipseConstraint implements ScenarioComponent {
                     final AbsoluteDate centralEclipseDate = earliestAllowed.shiftedBy(0.5*maxSingleBurnDuration);
 
                     // if compensation due to asymmetry w.r.t. node needs to be applied
-                    if (compensateNodeAsymmetry) {
+                    if (compensateLongBurnAndNodeAsymmetry) {
 
-                    	// get PSO (Position Sur l'Orbite) at the eclipse central time
-                    	PVCoordinates pvCoord = tmpPropagator.getPVCoordinates(centralEclipseDate, FramesFactory.getMOD(false));
-                    	CartesianOrbit carOrbit = new CartesianOrbit(pvCoord,FramesFactory.getMOD(false),centralEclipseDate, Constants.WGS84_EARTH_MU);
-                        KeplerianOrbit kepOrbit = (KeplerianOrbit) OrbitType.KEPLERIAN.convertType(carOrbit);
-                        double pso = kepOrbit.getMeanAnomaly() + kepOrbit.getPerigeeArgument();
-                        // update maneuver duration
-                        manoDuration = manoDuration / FastMath.abs(FastMath.cos(pso));
-
+                    	// get new duration assuming maneuver duration equal to effective eclipse duration
+                    	manoDuration = compensateDurationLongBurnAndNodeAssymetry(manoDuration, tmpPropagator, earliestAllowed, latestAllowed);
+                    	
                     }
 
                     // compute number of full maneuvers (assuming maximum duration)
@@ -180,17 +178,18 @@ public class ManeuverEclipseConstraint implements ScenarioComponent {
                     maneuver.getTrajectory().addEffect(new SmallManeuverAnalyticalModel(maneuver.getStateBefore(),
                                                                                         maneuver.getDeltaV().negate(),
                                                                                         -maneuver.getIsp()));
-                    // compute effective dV
-                    double dVeff = maneuver.getSignedDeltaV() * eclipseRatio*maxSingleBurnDuration/manoDuration;
-
                     // add all maneuvers
                     for (int j = 0; j < nbParts; ++j) {
                     	
                         ScheduledManeuver m = new ScheduledManeuver(maneuver.getModel(),
 							      										  centralEclipseDate.shiftedBy(j * nbOrbits * period),
-                                                                          new Vector3D(dVeff, maneuver.getModel().getDirection()),
+                                                                          new Vector3D(maneuver.getSignedDeltaV() / nbParts, maneuver.getModel().getDirection()),
                                                                           maneuver.getThrust(), maneuver.getIsp(),
                                                                           maneuver.getTrajectory(), false);
+                        // if long burn and node assymetry compensation
+                        if (compensateLongBurnAndNodeAsymmetry) {
+                        	m = longBurnAndNodeAssymetryCompensation(m);
+                        }
                         m.getTrajectory().addEffect(new SmallManeuverAnalyticalModel(m.getStateBefore(),
                                                     m.getDeltaV(),
                                                     m.getIsp()));
@@ -220,6 +219,78 @@ public class ManeuverEclipseConstraint implements ScenarioComponent {
         // return an updated states
         return updated;
 
+    }
+
+    /** Increase maneuver duration due to inefficiency of long burns and node assymetry.
+     *  <p>
+     *  Maneuver duration is recomputed to be consider during the segmenting approach
+     *  </p>
+     *  @param duration initial duration
+     *  @param propag propagator
+     *  @param start start absolute date
+     *  @param end end absolute date
+     *  @return compensated maneuver
+     * @throws OrekitException 
+     */
+    private double compensateDurationLongBurnAndNodeAssymetry(final double duration, final Propagator propag, final AbsoluteDate start, final AbsoluteDate end) throws OrekitException {
+
+    	// get PSO (Position Sur l'Orbite) at start
+    	PVCoordinates pvCoord = propag.getPVCoordinates(start, FramesFactory.getMOD(false));
+    	CartesianOrbit carOrbit = new CartesianOrbit(pvCoord,FramesFactory.getMOD(false),start, Constants.WGS84_EARTH_MU);
+        KeplerianOrbit kepOrbit = (KeplerianOrbit) OrbitType.KEPLERIAN.convertType(carOrbit);
+        double psoStart = kepOrbit.getMeanAnomaly() + kepOrbit.getPerigeeArgument();
+        
+    	// get PSO (Position Sur l'Orbite) at end
+    	pvCoord = propag.getPVCoordinates(end, FramesFactory.getMOD(false));
+    	carOrbit = new CartesianOrbit(pvCoord,FramesFactory.getMOD(false),end, Constants.WGS84_EARTH_MU);
+        kepOrbit = (KeplerianOrbit) OrbitType.KEPLERIAN.convertType(carOrbit);
+        double psoEnd = kepOrbit.getMeanAnomaly() + kepOrbit.getPerigeeArgument();
+
+        // get delta PSO
+        double alphaDelta                = psoEnd - psoStart;
+        while( alphaDelta < -FastMath.PI) alphaDelta+=2*FastMath.PI;
+        
+        // get increase factor
+        final double increaseFactor     = (FastMath.sin(psoEnd) - FastMath.sin(psoStart)) / alphaDelta;
+        
+        // return new duration
+        return duration/increaseFactor;
+
+    }
+
+    /** Compensate inefficiency of long burns and node assymetry.
+     *  <p>
+     *  For a long out-of-plane maneuver, Isp has to be adapted to reflect the
+     *  fact more mass will be consumed to achieve the same velocity increment.
+     *  </p>
+     *  @param maneuver maneuver to compensate
+     *  @return compensated maneuver (Isp reduced to get same dV with more consumed mass)
+     *  @throws PropagationException if state cannot be propagated around maneuvera
+     */
+    private ScheduledManeuver longBurnAndNodeAssymetryCompensation(final ScheduledManeuver maneuver) throws PropagationException {
+        // this is a long out of plane maneuver, we adapt Isp to reflect
+        // the fact more mass will be consumed to achieve the same velocity increment
+        final double nominalDuration     = maneuver.getDuration(maneuver.getStateBefore().getMass());
+
+        final SpacecraftState startState = maneuver.getState(-0.5 * nominalDuration);
+        final CircularOrbit startOrbit   = (CircularOrbit) (OrbitType.CIRCULAR.convertType(startState.getOrbit()));
+        final double alphaS              = startOrbit.getAlphaV();
+
+        final SpacecraftState endState   = maneuver.getState(+0.5 * nominalDuration);
+        final CircularOrbit endOrbit     = (CircularOrbit) (OrbitType.CIRCULAR.convertType(endState.getOrbit()));
+        final double alphaE              = endOrbit.getAlphaV();
+
+        double alphaDelta                = alphaE - alphaS;
+        while( alphaDelta < -FastMath.PI) alphaDelta+=2*FastMath.PI;
+        final double reductionFactor     = (FastMath.sin(alphaE) - FastMath.sin(alphaS)) / alphaDelta;
+
+        return new ScheduledManeuver(maneuver.getModel(),
+                                     maneuver.getDate(),
+                                     maneuver.getDeltaV(),
+                                     maneuver.getThrust(),
+                                     reductionFactor * maneuver.getModel().getCurrentISP(),
+                                     maneuver.getTrajectory(),
+                                     maneuver.isReplanned());
     }
 
     /** Selector for eclipse close to a specified date. */

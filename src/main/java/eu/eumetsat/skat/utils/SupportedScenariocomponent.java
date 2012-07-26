@@ -206,9 +206,9 @@ public enum SupportedScenariocomponent {
                     parser.getInt(node, ParameterKey.COMPONENT_MANEUVER_ECLIPSE_CONSTRAINT_ORBITS_SEPARATION);
             final double durationMinRatio =
                     parser.getDouble(node, ParameterKey.COMPONENT_MANEUVER_ECLIPSE_CONSTRAINT_DURATION_MIN_RATIO);
-            final boolean compensateNodeAsymmetry = parser.getBoolean(node,   ParameterKey.COMPONENT_MANEUVER_ECLIPSE_CONSTRAINT_NODE_ASYMMETRY_COMPENSATION);            
+            final boolean compensateLongBurnAndNodeAsymmetry = parser.getBoolean(node,   ParameterKey.COMPONENT_MANEUVER_ECLIPSE_CONSTRAINT_LONG_BURN_COMPENSATION);            
             return new ManeuverEclipseConstraint(getIndices(parser, node, skat), name,
-                                                 entryDelay, exitDelay, orbitsSeparation, durationMinRatio, compensateNodeAsymmetry,
+                                                 entryDelay, exitDelay, orbitsSeparation, durationMinRatio, compensateLongBurnAndNodeAsymmetry,
                                                  skat.getSun(), skat.getEarth());
         }
     },
