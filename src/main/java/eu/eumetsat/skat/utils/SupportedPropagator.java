@@ -13,20 +13,20 @@ import org.orekit.errors.OrekitException;
 import org.orekit.forces.ForceModel;
 import org.orekit.forces.SphericalSpacecraft;
 import org.orekit.forces.drag.DragForce;
-import org.orekit.forces.gravity.CunninghamAttractionModel;
+import org.orekit.forces.gravity.HolmesFeatherstoneAttractionModel;
 import org.orekit.forces.gravity.ThirdBodyAttraction;
-import org.orekit.forces.gravity.potential.PotentialCoefficientsProvider;
+import org.orekit.forces.gravity.potential.GravityFieldFactory;
 import org.orekit.forces.radiation.SolarRadiationPressure;
 import org.orekit.frames.LOFType;
 import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
 import org.orekit.propagation.numerical.NumericalPropagator;
 import org.orekit.propagation.semianalytical.dsst.DSSTPropagator;
-import org.orekit.propagation.semianalytical.dsst.dsstforcemodel.DSSTAtmosphericDrag;
-import org.orekit.propagation.semianalytical.dsst.dsstforcemodel.DSSTCentralBody;
-import org.orekit.propagation.semianalytical.dsst.dsstforcemodel.DSSTForceModel;
-import org.orekit.propagation.semianalytical.dsst.dsstforcemodel.DSSTSolarRadiationPressure;
-import org.orekit.propagation.semianalytical.dsst.dsstforcemodel.DSSTThirdBody;
+import org.orekit.propagation.semianalytical.dsst.forces.DSSTAtmosphericDrag;
+import org.orekit.propagation.semianalytical.dsst.forces.DSSTCentralBody;
+import org.orekit.propagation.semianalytical.dsst.forces.DSSTForceModel;
+import org.orekit.propagation.semianalytical.dsst.forces.DSSTSolarRadiationPressure;
+import org.orekit.propagation.semianalytical.dsst.forces.DSSTThirdBody;
 import org.orekit.utils.Constants;
 
 import eu.eumetsat.skat.Skat;
@@ -48,14 +48,10 @@ public enum SupportedPropagator {
             final double maxStep = parser.getDouble(node, ParameterKey.NUMERICAL_PROPAGATOR_MAX_STEP);
 
             // Earth gravity field
-            PotentialCoefficientsProvider gravityField = skat.getgravityField();
             final int degree = parser.getInt(node, ParameterKey.NUMERICAL_PROPAGATOR_GRAVITY_FIELD_DEGREE);
             final int order  = parser.getInt(node, ParameterKey.NUMERICAL_PROPAGATOR_GRAVITY_FIELD_ORDER);
-            final ForceModel gravity = new CunninghamAttractionModel(skat.getEarth().getBodyFrame(),
-                                                                     gravityField.getAe(),
-                                                                     gravityField.getMu(),
-                                                                     gravityField.getC(degree, order, false),
-                                                                     gravityField.getS(degree, order, false));
+            final ForceModel gravity = new HolmesFeatherstoneAttractionModel(skat.getEarth().getBodyFrame(),
+                                                                     GravityFieldFactory.getNormalizedProvider(degree, order));
             forceModels.add(gravity);
 
             // drag
@@ -163,20 +159,15 @@ public enum SupportedPropagator {
         public PropagatorRandomizer parse(final SkatFileParser parser, final Tree node,
                                           final Skat skat, final int spacecraftIndex)
             throws OrekitException, SkatException {
-
             final List<DSSTForceModel> forceModels = new ArrayList<DSSTForceModel>();
             final double dP = parser.getDouble(node, ParameterKey.DSST_PROPAGATOR_TOLERANCE);
 
             // Earth gravity field
-            PotentialCoefficientsProvider gravityField = skat.getgravityField();
             final int degree = parser.getInt(node, ParameterKey.DSST_PROPAGATOR_GRAVITY_FIELD_DEGREE);
             final int order  = parser.getInt(node, ParameterKey.DSST_PROPAGATOR_GRAVITY_FIELD_ORDER);
-            forceModels.add(new DSSTCentralBody(Constants.WGS84_EARTH_ANGULAR_VELOCITY,
-                                                gravityField.getAe(),
-                                                gravityField.getMu(),
-                                                gravityField.getC(degree, order, false),
-                                                gravityField.getS(degree, order, false),
-                                                null));
+            forceModels.add(new DSSTCentralBody(skat.getEarth().getBodyFrame(),
+                                                Constants.WGS84_EARTH_ANGULAR_VELOCITY,
+                                                GravityFieldFactory.getUnnormalizedProvider(degree, order)));
 
             // drag
             final double dragStandardDeviation =
@@ -242,9 +233,9 @@ public enum SupportedPropagator {
                     }
                     
                     // create propagator
-                    final DSSTPropagator dsstPropagator =
-                            new DSSTPropagator(integrator, initialState.getOrbit(), osculating, 10 * maxStep,
-                                               new LofOffset(initialState.getFrame(), LOFType.VNC));
+                    final DSSTPropagator dsstPropagator = new DSSTPropagator(integrator);
+                    dsstPropagator.setInitialState(initialState, osculating);
+                    dsstPropagator.setAttitudeProvider(new LofOffset(initialState.getFrame(), LOFType.VNC));
 
                     // add the fixed force models
                     for (final DSSTForceModel forceModel : forceModels) {
