@@ -18,7 +18,9 @@ import org.apache.commons.math3.util.FastMath;
 import org.orekit.errors.OrekitException;
 import org.orekit.frames.Frame;
 import org.orekit.frames.FramesFactory;
+import org.orekit.frames.GTODProvider;
 import org.orekit.frames.Predefined;
+import org.orekit.frames.TransformProvider;
 import org.orekit.orbits.CartesianOrbit;
 import org.orekit.orbits.CircularOrbit;
 import org.orekit.orbits.EquinoctialOrbit;
@@ -30,7 +32,7 @@ import org.orekit.time.AbsoluteDate;
 import org.orekit.time.TimeScale;
 import org.orekit.utils.PVCoordinates;
 
-import eu.eumetsat.skat.strategies.leo.GMODFrame;
+//import eu.eumetsat.skat.strategies.leo.GMODProvider;
 
 /**
  * Simple parser for key/value files with embedded structures and arrays.
@@ -693,9 +695,9 @@ public class SkatFileParser {
 		// get the name of the desired frame
 		final String frameName = getString(node, key);
 
-		final Frame gMod = new GMODFrame();
-		if (frameName.equals(gMod.getName())) {
-			return gMod;
+		final Frame gtod = FramesFactory.getGTOD(false);
+		if (frameName.equals(gtod.getName())) {
+			return gtod;
 		}
 
 		// check the name against predefined frames

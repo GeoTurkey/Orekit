@@ -13,7 +13,8 @@ import org.apache.commons.math3.exception.util.LocalizedFormats;
 import org.apache.commons.math3.util.FastMath;
 import org.orekit.bodies.OneAxisEllipsoid;
 import org.orekit.errors.OrekitException;
-import org.orekit.forces.gravity.potential.PotentialCoefficientsProvider;
+import org.orekit.forces.gravity.potential.GravityFieldFactory;
+import org.orekit.forces.gravity.potential.UnnormalizedSphericalHarmonicsProvider;
 import org.orekit.time.AbsoluteDate;
 import org.orekit.time.DateTimeComponents;
 import org.orekit.time.TimeScale;
@@ -122,11 +123,12 @@ public enum SupportedControlLaw {
             final double maxDistance      = parser.getDouble(node, ParameterKey.CONTROL_IN_PLANE_GROUND_TRACK_MAX_CROSS_TRACK_DISTANCE);
             final String fileName         = parser.getString(node, ParameterKey.CONTROL_IN_PLANE_GROUND_TRACK_GRID_FILE);
             final File gridFile = new File(new File(parser.getInputName()).getParent(), fileName);
-            final PotentialCoefficientsProvider gravityField = skat.getgravityField();
+            final UnnormalizedSphericalHarmonicsProvider gravityField = GravityFieldFactory.getUnnormalizedProvider(2, 0);
             return new InPlaneGroundTrackGrid(name, controlled, skat.getSpacecraftIndex(controlled),
                                               model, firstOffset, maxManeuvers, orbitsSeparation,
                                               skat.getEarth(), skat.getSun(),
-                                              gravityField.getAe(), gravityField.getMu(), gravityField.getJ(false, 2)[2],
+                                              gravityField.getAe(), gravityField.getMu(),
+                                              -gravityField.getUnnormalizedCnm(0.0, 2, 0),
                                               readGridFile(gridFile, skat.getEarth()), maxDistance, horizon);
         }
 
@@ -149,11 +151,12 @@ public enum SupportedControlLaw {
             final String fileName         = parser.getString(node, ParameterKey.CONTROL_OUT_OF_PLANE_GROUND_TRACK_GRID_FILE);
             final boolean compensateLongBurn = parser.getBoolean(node, ParameterKey.CONTROL_OUT_OF_PLANE_GROUND_TRACK_GRID_BURN_COMPENSATION);
             final File gridFile = new File(new File(parser.getInputName()).getParent(), fileName);
-            final PotentialCoefficientsProvider gravityField = skat.getgravityField();
+            final UnnormalizedSphericalHarmonicsProvider gravityField = GravityFieldFactory.getUnnormalizedProvider(2, 0);
             return new OutOfPlaneGroundTrackGrid(name, controlled, skat.getSpacecraftIndex(controlled),
                                                  model, firstOffset, maxManeuvers, orbitsSeparation,
                                                  skat.getEarth(), skat.getSun(),
-                                                 gravityField.getAe(), gravityField.getMu(), gravityField.getJ(false, 2)[2],
+                                                 gravityField.getAe(), gravityField.getMu(),
+                                                 -gravityField.getUnnormalizedCnm(0.0, 2, 0),
                                                  readGridFile(gridFile, skat.getEarth()), maxDistance, horizon,
                                                  compensateLongBurn);
         }
@@ -182,7 +185,7 @@ public enum SupportedControlLaw {
             final int phasingDays            = parser.getInt(node,       ParameterKey.CONTROL_INCLINATION_PHASING_CYCLE_DAYS);
             final int phasingOrbits          = parser.getInt(node,       ParameterKey.CONTROL_INCLINATION_PHASING_CYCLE_ORBITS);
             final int[] maneuversDoy         = parser.getIntArray1(node, ParameterKey.CONTROL_INCLINATION_MANEUVERS_DOY);
-            final PotentialCoefficientsProvider gravityField = skat.getgravityField();
+            final UnnormalizedSphericalHarmonicsProvider gravityField = GravityFieldFactory.getUnnormalizedProvider(2, 0);
             final TimeScale utc = TimeScalesFactory.getUTC();
 
             // inclination offset function in radians
@@ -221,7 +224,7 @@ public enum SupportedControlLaw {
             return new Inclination(name, controlled, skat.getSpacecraftIndex(controlled),
                                           model, firstOffset, maxManeuvers, orbitsSeparation,
                                           skat.getEarth(), skat.getSun(),
-                                          gravityField.getAe(), gravityField.getMu(), gravityField.getJ(false, 2)[2],
+                                          gravityField.getAe(), gravityField.getMu(),-gravityField.getUnnormalizedCnm(0.0, 2, 0),
                                           incMeanValue, incDeadband, horizon, compensateLongBurn,
                                           phasingDays, phasingOrbits, maneuversDoy, analyticalModels);
 
@@ -253,7 +256,7 @@ public enum SupportedControlLaw {
             final int phasingDays            = parser.getInt(node,       ParameterKey.CONTROL_SOLAR_TIME_PHASING_CYCLE_DAYS);
             final int phasingOrbits          = parser.getInt(node,       ParameterKey.CONTROL_SOLAR_TIME_PHASING_CYCLE_ORBITS);
             final int[] maneuversDoy         = parser.getIntArray1(node, ParameterKey.CONTROL_SOLAR_TIME_MANEUVERS_DOY);
-            final PotentialCoefficientsProvider gravityField = skat.getgravityField();
+            final UnnormalizedSphericalHarmonicsProvider gravityField = GravityFieldFactory.getUnnormalizedProvider(2, 0);
             final TimeScale utc = TimeScalesFactory.getUTC();
 
             // inclination offset function in radians
@@ -293,7 +296,8 @@ public enum SupportedControlLaw {
             return new MeanLocalSolarTime(name, controlled, skat.getSpacecraftIndex(controlled),
                                           model, firstOffset, maxManeuvers, orbitsSeparation,
                                           skat.getEarth(), skat.getSun(),
-                                          gravityField.getAe(), gravityField.getMu(), gravityField.getJ(false, 2)[2],
+                                          gravityField.getAe(), gravityField.getMu(),
+                                          -gravityField.getUnnormalizedCnm(0.0, 2, 0),
                                           latitude, ascending, solarTime, solarTimeTolerance, horizon, compensateLongBurn,
                                           phasingDays, phasingOrbits, maneuversDoy, analyticalModels);
 

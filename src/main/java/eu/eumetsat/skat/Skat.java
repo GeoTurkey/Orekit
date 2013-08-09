@@ -44,7 +44,6 @@ import org.orekit.forces.drag.DTM2000;
 import org.orekit.forces.drag.MarshallSolarActivityFutureEstimation;
 import org.orekit.forces.drag.MarshallSolarActivityFutureEstimation.StrengthLevel;
 import org.orekit.forces.gravity.potential.GravityFieldFactory;
-import org.orekit.forces.gravity.potential.PotentialCoefficientsProvider;
 import org.orekit.frames.Frame;
 import org.orekit.frames.TopocentricFrame;
 import org.orekit.orbits.CircularOrbit;
@@ -112,9 +111,6 @@ public class Skat {
 
     /** Moon model. */
     private final CelestialBody moon;
-
-    /** Gravity field. */
-    private final PotentialCoefficientsProvider gravityField;
 
     /** Atmosphere. */
     private final Atmosphere atmosphere;
@@ -299,7 +295,6 @@ public class Skat {
         earth.setAngularThreshold(1.e-7);
         sun           = CelestialBodyFactory.getSun();
         moon          = CelestialBodyFactory.getMoon();
-        gravityField  = GravityFieldFactory.getPotentialProvider();
 
         // atmospheric model
         final String supportedNames = "(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\\p{Digit}\\p{Digit}\\p{Digit}\\p{Digit}F10\\.(?:txt|TXT)";
@@ -322,7 +317,7 @@ public class Skat {
                                               "skat-ground-location");
 
         // load gravity field
-        final double mu = GravityFieldFactory.getPotentialProvider().getMu();
+        final double mu = GravityFieldFactory.getUnnormalizedProvider(2, 2).getMu();
 
         // maneuvers models pool
         final Tree maneuversNode = parser.getValue(simulationNode, ParameterKey.SIMULATION_MANEUVERS);
@@ -506,13 +501,6 @@ public class Skat {
      */
     public CelestialBody getMoon() {
         return moon;
-    }
-
-    /** Get the configured gravity field.
-     * @return configured gravity field
-     */
-    public PotentialCoefficientsProvider getgravityField() {
-        return gravityField;
     }
 
     /** Get the configured atmosphere.

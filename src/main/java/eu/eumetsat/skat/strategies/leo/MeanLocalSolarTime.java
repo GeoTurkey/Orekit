@@ -1,6 +1,8 @@
 /* Copyright 2011 Eumetsat */
 package eu.eumetsat.skat.strategies.leo;
 
+import java.io.IOException;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -21,9 +23,14 @@ import org.orekit.bodies.OneAxisEllipsoid;
 import org.orekit.errors.OrekitException;
 import org.orekit.frames.Frame;
 import org.orekit.frames.FramesFactory;
+import org.orekit.frames.GTODProvider;
+import org.orekit.frames.TransformProvider;
+import org.orekit.orbits.CircularOrbit;
+import org.orekit.orbits.OrbitType;
 import org.orekit.propagation.BoundedPropagator;
 import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
+import org.orekit.propagation.analytical.AdapterPropagator;
 import org.orekit.propagation.events.EventDetector;
 import org.orekit.propagation.sampling.OrekitStepHandler;
 import org.orekit.time.AbsoluteDate;
@@ -88,8 +95,8 @@ public class MeanLocalSolarTime extends AbstractLeoSKControl {
     /** Indicator for compensating long burns inefficiency. */
     private final boolean compensateLongBurn;
 
-    /** Greenwhich mean of date frame. */
-    private final GMODFrame gmod;
+    /** Mean Of Date frame. */
+    private final Frame mod;
 
     /** Reference state at first node in eclipse. */
     private SpacecraftState nodeState;
@@ -120,6 +127,9 @@ public class MeanLocalSolarTime extends AbstractLeoSKControl {
 
     /** Scaling factor between offset and slope. */
     private final double scaling;
+
+    // TODO remove
+    PrintStream out;
 
     /** Interface for providing Mean Local Solar Time analytical model. */
     public interface MlstModel {
@@ -185,7 +195,7 @@ public class MeanLocalSolarTime extends AbstractLeoSKControl {
 
         this.latitude  = latitude;
         this.ascending = ascending;
-        this.gmod = new GMODFrame();
+        this.mod = FramesFactory.getMOD(false);
         this.compensateLongBurn = compensateLongBurn;
         this.maneuversDoy = maneuversDoy.clone();
         Arrays.sort(this.maneuversDoy);
@@ -277,6 +287,8 @@ public class MeanLocalSolarTime extends AbstractLeoSKControl {
         }
 
     }
+    
+    
 
     /** Compute the mean solar time.
      * 
@@ -286,18 +298,23 @@ public class MeanLocalSolarTime extends AbstractLeoSKControl {
      */
     private double meanSolarTime(final SpacecraftState state) throws OrekitException {
 
-        // compute angle between Sun and spacecraft in the equatorial plane
-    	Frame modFrame  = FramesFactory.getMOD(false);
-        final Vector3D position = state.getPVCoordinates(modFrame).getPosition();
-        final double time = state.getDate().getComponents(TimeScalesFactory.getUTC()).getTime().getSecondsInDay();
-        final double gmst = gmod.getMeanSiderealTime(state.getDate());
-        final double sunAlpha = gmst + FastMath.PI * (1 - time / (Constants.JULIAN_DAY * 0.5));
-        final double dAlpha = MathUtils.normalizeAngle(position.getAlpha() - sunAlpha, 0);
+    	// GTOD frame
+    	//GTODProvider gtod = (GTODProvider)((TransformProvider) FramesFactory.getGTOD(false));
+    	//Frame frame = FramesFactory.getGTOD(false);
+    	GTODProvider gtod = (GTODProvider) FramesFactory.getGTOD(false).getTransformProvider();
+    	
 
-        // convert the angle to solar time
-        return 12.0 * (1.0 + dAlpha / FastMath.PI);
+    	// compute angle between Sun and spacecraft in the equatorial plane
+    	final Vector3D position = state.getPVCoordinates(mod).getPosition();
+    	final double time = state.getDate().getComponents(TimeScalesFactory.getUTC()).getTime().getSecondsInDay();
+    	final double gmst = gtod.getGMST(state.getDate());
+    	final double sunAlpha = gmst + FastMath.PI * (1 - time / (Constants.JULIAN_DAY * 0.5));
+    	final double dAlpha = MathUtils.normalizeAngle(position.getAlpha() - sunAlpha, 0);
 
-    }
+    	// convert the angle to solar time
+    	return 12.0 * (1.0 + dAlpha / FastMath.PI);
+
+    }    
 
     /** Find a min/max MLST value.
      * @param tMin search start
@@ -482,7 +499,21 @@ public class MeanLocalSolarTime extends AbstractLeoSKControl {
             }
         }
 
-        return tuneInclinationManeuver(tunables, reference, nodeState, deltaOffset, compensateLongBurn);
+        // TODO fix
+        final ScheduledManeuver[] newManeuvers =
+                tuneInclinationManeuver(tunables, reference, nodeState, deltaOffset, compensateLongBurn);
+        final AdapterPropagator adapter = newManeuvers[0].getTrajectory();
+        for (AbsoluteDate date = reference.getMinDate(); date.compareTo(reference.getMaxDate()) < 0; date = date.shiftedBy(60.0)) {
+            CircularOrbit o1 = (CircularOrbit) OrbitType.CIRCULAR.convertType(adapter.propagate(date).getOrbit());
+            CircularOrbit o2 = (CircularOrbit) OrbitType.CIRCULAR.convertType(reference.propagate(date).getOrbit());
+            out.println(date + " " +
+                        MathUtils.normalizeAngle(o1.getRightAscensionOfAscendingNode() -
+                                                 o2.getRightAscensionOfAscendingNode(),
+                                                 0.0) + " " +
+                        (o1.getI() - o2.getI()) + " " +
+                        deltaOffset);
+        }
+        return newManeuvers;
 
     }
 

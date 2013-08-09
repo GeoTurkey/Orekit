@@ -13,6 +13,8 @@ import org.orekit.bodies.GeodeticPoint;
 import org.orekit.errors.OrekitException;
 import org.orekit.frames.Frame;
 import org.orekit.frames.FramesFactory;
+import org.orekit.frames.GTODProvider;
+import org.orekit.frames.TransformProvider;
 import org.orekit.orbits.CartesianOrbit;
 import org.orekit.orbits.CircularOrbit;
 import org.orekit.orbits.EquinoctialOrbit;
@@ -25,7 +27,7 @@ import org.orekit.utils.Constants;
 import org.orekit.utils.PVCoordinates;
 
 import eu.eumetsat.skat.scenario.ScenarioState;
-import eu.eumetsat.skat.strategies.leo.GMODFrame;
+//import eu.eumetsat.skat.strategies.leo.GMODFrame;
 
 /** Enumerate representing time-dependent values from a single spacecraft
  * that can be monitored.
@@ -73,6 +75,24 @@ public enum MonitorableMonoSKData implements MonitorableMono {
             data[0] = velocity.getX();
             data[1] = velocity.getY();
             data[2] = velocity.getZ();
+        }
+
+    },
+
+    MLSTDN(1) {
+
+        /** {@inheritDoc} */
+        @Override
+        protected void extractData(final ScenarioState state, double[] data)
+            throws OrekitException {
+            final double raan         = getKeplerianOrbit(state).getRightAscensionOfAscendingNode();
+            final double time         = getDate().getComponents(TimeScalesFactory.getUTC()).getTime().getSecondsInDay();
+            final Frame  earthFrame   = state.getEarth().getBodyFrame();
+            final Frame inertialFrame = state.getInertialFrame();
+            final Vector3D greenwhich = earthFrame.getTransformTo(inertialFrame, getDate()).transformVector(Vector3D.PLUS_I);
+            final double sunAlpha     = greenwhich.getAlpha() + FastMath.PI * (1 - time / (Constants.JULIAN_DAY * 0.5));
+            final double alpha        = raan - sunAlpha;
+            data[0] = 12 * MathUtils.normalizeAngle(alpha, FastMath.PI) / FastMath.PI;
         }
 
     },
@@ -257,8 +277,8 @@ public enum MonitorableMonoSKData implements MonitorableMono {
         	final PVCoordinates pv = getPVCoordinates(state, modFrame);
         	final KeplerianOrbit kepOrbit = (KeplerianOrbit) OrbitType.KEPLERIAN.convertType(new CartesianOrbit(pv, modFrame,state.getRealState().getDate(),Constants.WGS84_EARTH_MU)); 
             final double time = state.getRealState().getDate().getComponents(TimeScalesFactory.getUTC()).getTime().getSecondsInDay(); 
-            final GMODFrame gmod = new GMODFrame();
-            final double gmst = gmod.getMeanSiderealTime(state.getRealState().getDate());
+            GTODProvider gtod = (GTODProvider) FramesFactory.getGTOD(false).getTransformProvider();
+            final double gmst = gtod.getGMST(state.getRealState().getDate());
             final double sunAlpha = gmst + FastMath.PI * (1 - time / (Constants.JULIAN_DAY * 0.5));
             final double dAlpha = MathUtils.normalizeAngle(kepOrbit.getRightAscensionOfAscendingNode() - sunAlpha, 0);
 
@@ -281,8 +301,8 @@ public enum MonitorableMonoSKData implements MonitorableMono {
         	final PVCoordinates pv = getPVCoordinates(state, modFrame);
         	final KeplerianOrbit kepOrbit = (KeplerianOrbit) OrbitType.KEPLERIAN.convertType(new CartesianOrbit(pv, modFrame, state.getRealState().getDate(),Constants.WGS84_EARTH_MU));
         	final double time = getDate().getComponents(TimeScalesFactory.getUTC()).getTime().getSecondsInDay(); 
-            final GMODFrame gmod = new GMODFrame();
-            final double gmst = gmod.getMeanSiderealTime(getDate());
+            GTODProvider gtod = (GTODProvider) FramesFactory.getGTOD(false).getTransformProvider();
+            final double gmst = gtod.getGMST(state.getRealState().getDate());
             final double sunAlpha = gmst + FastMath.PI * (1 - time / (Constants.JULIAN_DAY * 0.5));
             final double dAlpha = MathUtils.normalizeAngle(kepOrbit.getRightAscensionOfAscendingNode() + FastMath.PI- sunAlpha, 0);
 
