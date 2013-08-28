@@ -299,8 +299,6 @@ public class MeanLocalSolarTime extends AbstractLeoSKControl {
     private double meanSolarTime(final SpacecraftState state) throws OrekitException {
 
     	// GTOD frame
-    	//GTODProvider gtod = (GTODProvider)((TransformProvider) FramesFactory.getGTOD(false));
-    	//Frame frame = FramesFactory.getGTOD(false);
     	GTODProvider gtod = (GTODProvider) FramesFactory.getGTOD(false).getTransformProvider();
     	
 
@@ -441,7 +439,6 @@ public class MeanLocalSolarTime extends AbstractLeoSKControl {
                     // maneuver opportunity is too close to cycle end, we need some margin to find the node
                     nodeState = findManeuverNode(cycleEnd.shiftedBy(-3 * meanPeriod), cycleEnd, propagator);
                 }
-            	
             }
             	
             // target a centered excursion for the observing period
@@ -502,17 +499,17 @@ public class MeanLocalSolarTime extends AbstractLeoSKControl {
         // TODO fix
         final ScheduledManeuver[] newManeuvers =
                 tuneInclinationManeuver(tunables, reference, nodeState, deltaOffset, compensateLongBurn);
-        final AdapterPropagator adapter = newManeuvers[0].getTrajectory();
-        for (AbsoluteDate date = reference.getMinDate(); date.compareTo(reference.getMaxDate()) < 0; date = date.shiftedBy(60.0)) {
-            CircularOrbit o1 = (CircularOrbit) OrbitType.CIRCULAR.convertType(adapter.propagate(date).getOrbit());
-            CircularOrbit o2 = (CircularOrbit) OrbitType.CIRCULAR.convertType(reference.propagate(date).getOrbit());
-            out.println(date + " " +
-                        MathUtils.normalizeAngle(o1.getRightAscensionOfAscendingNode() -
-                                                 o2.getRightAscensionOfAscendingNode(),
-                                                 0.0) + " " +
-                        (o1.getI() - o2.getI()) + " " +
-                        deltaOffset);
-        }
+//        final AdapterPropagator adapter = newManeuvers[0].getTrajectory();
+//        for (AbsoluteDate date = reference.getMinDate(); date.compareTo(reference.getMaxDate()) < 0; date = date.shiftedBy(60.0)) {
+//            CircularOrbit o1 = (CircularOrbit) OrbitType.CIRCULAR.convertType(adapter.propagate(date).getOrbit());
+//            CircularOrbit o2 = (CircularOrbit) OrbitType.CIRCULAR.convertType(reference.propagate(date).getOrbit());
+//            out.println(date + " " +
+//                        MathUtils.normalizeAngle(o1.getRightAscensionOfAscendingNode() -
+//                                                 o2.getRightAscensionOfAscendingNode(),
+//                                                 0.0) + " " +
+//                        (o1.getI() - o2.getI()) + " " +
+//                        deltaOffset);
+//        }
         return newManeuvers;
 
     }
