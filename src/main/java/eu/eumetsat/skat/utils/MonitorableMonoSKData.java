@@ -134,7 +134,7 @@ public enum MonitorableMonoSKData implements MonitorableMono {
             final BodyShape earth    = state.getEarth();
             final Frame earthFrame   = earth.getBodyFrame();
             final Vector3D position  = getPVCoordinates(state, earthFrame).getPosition();
-            final AbsoluteDate  date = state.getRealState().getDate(); // TODO Check this date. It should probably be  "final AbsoluteDate  date = getDate();"
+            final AbsoluteDate  date = getDate(); 
             final GeodeticPoint gp   = earth.transform(position, earthFrame, date); 
             data[0] = FastMath.toDegrees(gp.getLatitude());
         }
@@ -275,10 +275,10 @@ public enum MonitorableMonoSKData implements MonitorableMono {
             // compute angle between Sun and spacecraft in the equatorial plane
         	Frame modFrame  = FramesFactory.getMOD(false);
         	final PVCoordinates pv = getPVCoordinates(state, modFrame);
-        	final KeplerianOrbit kepOrbit = (KeplerianOrbit) OrbitType.KEPLERIAN.convertType(new CartesianOrbit(pv, modFrame,state.getRealState().getDate(),Constants.WGS84_EARTH_MU)); 
-            final double time = state.getRealState().getDate().getComponents(TimeScalesFactory.getUTC()).getTime().getSecondsInDay(); 
+        	final KeplerianOrbit kepOrbit = (KeplerianOrbit) OrbitType.KEPLERIAN.convertType(new CartesianOrbit(pv, modFrame,getDate(),Constants.WGS84_EARTH_MU)); 
+            final double time = getDate().getComponents(TimeScalesFactory.getUTC()).getTime().getSecondsInDay(); 
             GTODProvider gtod = (GTODProvider) FramesFactory.getGTOD(false).getTransformProvider();
-            final double gmst = gtod.getGMST(state.getRealState().getDate());
+            final double gmst = gtod.getGMST(getDate());
             final double sunAlpha = gmst + FastMath.PI * (1 - time / (Constants.JULIAN_DAY * 0.5));
             final double dAlpha = MathUtils.normalizeAngle(kepOrbit.getRightAscensionOfAscendingNode() - sunAlpha, 0);
 
@@ -295,20 +295,19 @@ public enum MonitorableMonoSKData implements MonitorableMono {
         @Override
         protected void extractData(final ScenarioState state, double[] data)
             throws OrekitException {
-        	
-            // compute angle between Sun and spacecraft in the equatorial plane
-        	Frame modFrame  = FramesFactory.getMOD(false);
-        	final PVCoordinates pv = getPVCoordinates(state, modFrame);
-        	final KeplerianOrbit kepOrbit = (KeplerianOrbit) OrbitType.KEPLERIAN.convertType(new CartesianOrbit(pv, modFrame, state.getRealState().getDate(),Constants.WGS84_EARTH_MU));
-        	final double time = getDate().getComponents(TimeScalesFactory.getUTC()).getTime().getSecondsInDay(); 
-            GTODProvider gtod = (GTODProvider) FramesFactory.getGTOD(false).getTransformProvider();
-            final double gmst = gtod.getGMST(state.getRealState().getDate());
-            final double sunAlpha = gmst + FastMath.PI * (1 - time / (Constants.JULIAN_DAY * 0.5));
-            final double dAlpha = MathUtils.normalizeAngle(kepOrbit.getRightAscensionOfAscendingNode() + FastMath.PI- sunAlpha, 0);
-
-            // convert the angle to solar time
-            data[0] =  12.0 * (1.0 + dAlpha / FastMath.PI);
-
+            
+                // compute angle between Sun and spacecraft in the equatorial plane
+                Frame modFrame  = FramesFactory.getMOD(false);
+                final PVCoordinates pv = getPVCoordinates(state, modFrame);
+                final KeplerianOrbit kepOrbit = (KeplerianOrbit) OrbitType.KEPLERIAN.convertType(new CartesianOrbit(pv, modFrame, getDate(),Constants.WGS84_EARTH_MU));
+                final double time = getDate().getComponents(TimeScalesFactory.getUTC()).getTime().getSecondsInDay();
+                GTODProvider gtod = (GTODProvider) FramesFactory.getGTOD(false).getTransformProvider();
+                final double gmst = gtod.getGMST(getDate());
+                final double sunAlpha = gmst + FastMath.PI * (1 - time / (Constants.JULIAN_DAY * 0.5));
+                final double dAlpha = MathUtils.normalizeAngle(kepOrbit.getRightAscensionOfAscendingNode() + FastMath.PI- sunAlpha, 0);
+                
+                // convert the angle to solar time
+                data[0] =  12.0 * (1.0 + dAlpha / FastMath.PI);
         }
 
     },
