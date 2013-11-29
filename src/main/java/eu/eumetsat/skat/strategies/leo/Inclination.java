@@ -330,16 +330,16 @@ public class Inclination extends AbstractLeoSKControl {
                 // maneuver is needed
 
                 // get node state (used for maneuver date)
-                if (firstOpportunity.durationFrom(cycleEnd) < -meanPeriod) {
+                if (firstOpportunity.durationFrom(cycleEnd) < -2.5*meanPeriod) {
                     // maneuver opportunity is well inside the cycle, we can find a node close to it
-                    nodeState = findManeuverNode(firstOpportunity, cycleEnd, propagator);
+                    nodeState = findManeuverNode(firstOpportunity, cycleEnd.shiftedBy(-1.5 * meanPeriod), propagator);
                 } else {
                     // maneuver opportunity is too close to cycle end, we need some margin to find the node
-                    nodeState = findManeuverNode(cycleEnd.shiftedBy(-3 * meanPeriod), cycleEnd, propagator);
+                    nodeState = findManeuverNode(cycleEnd.shiftedBy(-4.5 * meanPeriod), cycleEnd.shiftedBy(-1.5 * meanPeriod), propagator);
                 }
-            	
             }
 
+            
             // target a centered excursion for the observing period
             targeting = new UnivariateFunction() {
                 /** {@inheritDoc} */
@@ -352,9 +352,6 @@ public class Inclination extends AbstractLeoSKControl {
                     return (pvPeak.getValue() - getMax());
                 }
             };
-
-
-
         }
 
         if (nodeState == null) {
