@@ -70,16 +70,17 @@ public class InPlaneGroundTrackGrid extends AbstractGroundTrackGrid {
      * @param grid grid points
      * @param maxDistance maximal cross distance to ground track allowed
      * @param horizon time horizon duration
+     * @param inclinationOffsetFineTuning strange correction necessary to have accurate GTE-to-inclination-error translation
      */
     public InPlaneGroundTrackGrid(final String name, final String controlledName, final int controlledIndex,
                            final TunableManeuver[] model, int[][] maneuverSequence, final double firstOffset,
                            final int maxManeuvers, final int orbitsSeparation,
                            final OneAxisEllipsoid earth, final CelestialBody sun,
                            final double referenceRadius, final double mu, final double j2,
-                           final List<GridPoint> grid, final double maxDistance, final double horizon)
+                           final List<GridPoint> grid, final double maxDistance, final double horizon, double inclinationOffsetFineTuning)
         throws SkatException {
         super(name, controlledName, controlledIndex, model, maneuverSequence, firstOffset, maxManeuvers, orbitsSeparation,
-              earth, sun, referenceRadius, mu, j2, grid, maxDistance, true, horizon);
+              earth, sun, referenceRadius, mu, j2, grid, maxDistance, true, horizon, inclinationOffsetFineTuning);
         this.safetyMargin = 0.1 * maxDistance;
     }
 

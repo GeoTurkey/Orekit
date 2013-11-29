@@ -132,12 +132,13 @@ public enum ParameterKey {
     CONTROL_IN_PLANE_GROUND_TRACK_FIRST_OFFSET("offset_first_maneuver"),
     CONTROL_IN_PLANE_GROUND_TRACK_GRID_FILE("grid_file"),
     CONTROL_IN_PLANE_GROUND_TRACK_MAX_CROSS_TRACK_DISTANCE("max_cross_track_distance"),
+    CONTROL_IN_PLANE_GROUND_TRACK_GRID_INCLINATION_OFFSET_FINE_TUNING("inclination_offset_fine_tuning_parameter"),
     // Out-of-plane ground track grid
     CONTROL_OUT_OF_PLANE_GROUND_TRACK_FIRST_OFFSET("offset_first_maneuver"),
     CONTROL_OUT_OF_PLANE_GROUND_TRACK_GRID_FILE("grid_file"),
     CONTROL_OUT_OF_PLANE_GROUND_TRACK_MAX_CROSS_TRACK_DISTANCE("max_cross_track_distance"),
     CONTROL_OUT_OF_PLANE_GROUND_TRACK_GRID_BURN_COMPENSATION("long_burn_compensation"),
-
+    CONTROL_OUT_OF_PLANE_GROUND_TRACK_GRID_INCLINATION_OFFSET_FINE_TUNING("inclination_offset_fine_tuning_parameter"),
     // Maneuvers 
     MANEUVERS_NAME("name"),
     MANEUVERS_DIRECTION("direction"),

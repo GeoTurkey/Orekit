@@ -101,7 +101,11 @@ public abstract class AbstractGroundTrackGrid extends AbstractLeoSKControl {
 
     /** Mean fitting parameters for inclination error. */
     protected final double[] fittedDI;
-
+    
+    /** Strange correction necessary to have the GTE at intermediate 
+     * latitudes correctly transformed into an inclination error. */
+	protected double inclinationOffsetFineTuning;
+    
     /** Simple constructor.
      * @param name name of the control law
      * @param controlledName name of the controlled spacecraft
@@ -120,6 +124,7 @@ public abstract class AbstractGroundTrackGrid extends AbstractLeoSKControl {
      * @param inPlane flag for in-plane GT control
      * @param maxDistance maximal cross distance to ground track allowed
      * @param horizon time horizon duration
+     * @param inclinationOffsetFineTuning strange correction necessary to have accurate GTE-to-inclination-error translation
      */
     public AbstractGroundTrackGrid(final String name, final String controlledName, final int controlledIndex,
                            final TunableManeuver[] model, int[][] maneuverSequence, final double firstOffset,
@@ -127,16 +132,17 @@ public abstract class AbstractGroundTrackGrid extends AbstractLeoSKControl {
                            final OneAxisEllipsoid earth, final CelestialBody sun,
                            final double referenceRadius, final double mu, final double j2,
                            final List<GridPoint> grid, final double maxDistance,
-                           final boolean inPlane, final double horizon)
+                           final boolean inPlane, final double horizon, final double inclinationOffsetFineTuning)
         throws SkatException {
         super(name, controlledName, controlledIndex, model, maneuverSequence, 
               firstOffset, maxManeuvers, orbitsSeparation, earth, sun, referenceRadius, mu, j2,
               -maxDistance, maxDistance, horizon * Constants.JULIAN_DAY);
 
+        this.inclinationOffsetFineTuning = Double.isNaN(inclinationOffsetFineTuning)? 0.0001 : inclinationOffsetFineTuning;
         this.crossings = new ArrayList<Crossing>();
         this.fittedDN  = new double[3];
         this.fittedDI  = new double[2];
-
+        
         // store the grid in chronological order
         this.grid             = grid.toArray(new GridPoint[grid.size()]);
         Arrays.sort(this.grid, new Comparator<GridPoint>() {
@@ -249,11 +255,11 @@ public abstract class AbstractGroundTrackGrid extends AbstractLeoSKControl {
         this.cycleStart = start;
         this.cycleEnd   = end;
 
-        if (iteration == 0) {
+        // select a long maneuver-free interval for fitting
+        freeInterval = getManeuverFreeInterval(maneuvers, fixedManeuvers,
+        		                               start.shiftedBy(meanPeriod), end.shiftedBy(-meanPeriod));
 
-            // select a long maneuver-free interval for fitting
-            freeInterval = getManeuverFreeInterval(maneuvers, fixedManeuvers,
-                                                   start.shiftedBy(meanPeriod), end.shiftedBy(-meanPeriod));
+        if (iteration == 0) {
 
             // find the first crossing of one of the grid latitudes
             final double stepSize = meanPeriod / 100;
@@ -521,7 +527,7 @@ public abstract class AbstractGroundTrackGrid extends AbstractLeoSKControl {
                 final Vector3D reference  = transform.transformPosition(crossing.getGridPoint().getCartesianPoint());
                 final double referenceI   = computeInclination(reference.normalize(), referenceN);
 
-                final double deltaI = currentI - referenceI;
+                final double deltaI = currentI - referenceI + inclinationOffsetFineTuning;
 
                 if (state.getDate().compareTo(freeInterval[0]) >= 0 &&
                     state.getDate().compareTo(freeInterval[1]) <= 0) {

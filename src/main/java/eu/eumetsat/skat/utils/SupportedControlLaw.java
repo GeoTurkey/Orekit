@@ -168,20 +168,22 @@ public enum SupportedControlLaw {
             	model    = new TunableManeuver[1];
             	model[0] = skat.getManeuver(parser.getString(node, ParameterKey.CONTROL_MANEUVER_NAME));
             }
-            final int[][] yawFlipSequence =  {};
-            final int maxManeuvers        = parser.getInt(node,    ParameterKey.CONTROL_MAX_MANEUVERS);
-            final int orbitsSeparation    = parser.getInt(node,    ParameterKey.CONTROL_MANEUVERS_ORBITS_SEPARATION);
-            final double firstOffset      = parser.getDouble(node, ParameterKey.CONTROL_IN_PLANE_GROUND_TRACK_FIRST_OFFSET);
-            final double maxDistance      = parser.getDouble(node, ParameterKey.CONTROL_IN_PLANE_GROUND_TRACK_MAX_CROSS_TRACK_DISTANCE);
-            final String fileName         = parser.getString(node, ParameterKey.CONTROL_IN_PLANE_GROUND_TRACK_GRID_FILE);
-            final File gridFile = new File(new File(parser.getInputName()).getParent(), fileName);
+            final int[][] yawFlipSequence            =  {};
+            final int maxManeuvers                   = parser.getInt(node,     ParameterKey.CONTROL_MAX_MANEUVERS);
+            final int orbitsSeparation               = parser.getInt(node,     ParameterKey.CONTROL_MANEUVERS_ORBITS_SEPARATION);
+            final double firstOffset                 = parser.getDouble(node,  ParameterKey.CONTROL_IN_PLANE_GROUND_TRACK_FIRST_OFFSET);
+            final double maxDistance                 = parser.getDouble(node,  ParameterKey.CONTROL_IN_PLANE_GROUND_TRACK_MAX_CROSS_TRACK_DISTANCE);
+            final String fileName                    = parser.getString(node,  ParameterKey.CONTROL_IN_PLANE_GROUND_TRACK_GRID_FILE);
+            final double inclinationOffsetFineTuning = parser.containsKey(node,ParameterKey.CONTROL_IN_PLANE_GROUND_TRACK_GRID_INCLINATION_OFFSET_FINE_TUNING) ? 
+                                                       parser.getDouble(node,  ParameterKey.CONTROL_IN_PLANE_GROUND_TRACK_GRID_INCLINATION_OFFSET_FINE_TUNING) : Double.NaN;
+            final File gridFile                      = new File(new File(parser.getInputName()).getParent(), fileName);
             final UnnormalizedSphericalHarmonicsProvider gravityField = GravityFieldFactory.getUnnormalizedProvider(2, 0);
             return new InPlaneGroundTrackGrid(name, controlled, skat.getSpacecraftIndex(controlled),
                                               model, yawFlipSequence, firstOffset, maxManeuvers, orbitsSeparation,
                                               skat.getEarth(), skat.getSun(),
                                               gravityField.getAe(), gravityField.getMu(),
                                               -gravityField.getUnnormalizedCnm(0.0, 2, 0),
-                                              readGridFile(gridFile, skat.getEarth()), maxDistance, horizon);
+                                              readGridFile(gridFile, skat.getEarth()), maxDistance, horizon, inclinationOffsetFineTuning);
         }
 
     },
@@ -207,14 +209,16 @@ public enum SupportedControlLaw {
             	model    = new TunableManeuver[1];
             	model[0] = skat.getManeuver(parser.getString(node, ParameterKey.CONTROL_MANEUVER_NAME));
             }
-            final int[][] yawFlipSequence =  {};
-            final int maxManeuvers        = parser.getInt(node,    ParameterKey.CONTROL_MAX_MANEUVERS);
-            final int orbitsSeparation    = parser.getInt(node,    ParameterKey.CONTROL_MANEUVERS_ORBITS_SEPARATION);
-            final double firstOffset      = parser.getDouble(node, ParameterKey.CONTROL_OUT_OF_PLANE_GROUND_TRACK_FIRST_OFFSET);
-            final double maxDistance      = parser.getDouble(node, ParameterKey.CONTROL_OUT_OF_PLANE_GROUND_TRACK_MAX_CROSS_TRACK_DISTANCE);
-            final String fileName         = parser.getString(node, ParameterKey.CONTROL_OUT_OF_PLANE_GROUND_TRACK_GRID_FILE);
-            final boolean compensateLongBurn = parser.getBoolean(node, ParameterKey.CONTROL_OUT_OF_PLANE_GROUND_TRACK_GRID_BURN_COMPENSATION);
-            final File gridFile = new File(new File(parser.getInputName()).getParent(), fileName);
+            final int[][] yawFlipSequence            = {};
+            final int maxManeuvers                   = parser.getInt(node,      ParameterKey.CONTROL_MAX_MANEUVERS);
+            final int orbitsSeparation               = parser.getInt(node,      ParameterKey.CONTROL_MANEUVERS_ORBITS_SEPARATION);
+            final double firstOffset                 = parser.getDouble(node,   ParameterKey.CONTROL_OUT_OF_PLANE_GROUND_TRACK_FIRST_OFFSET);
+            final double maxDistance                 = parser.getDouble(node,   ParameterKey.CONTROL_OUT_OF_PLANE_GROUND_TRACK_MAX_CROSS_TRACK_DISTANCE);
+            final String fileName                    = parser.getString(node,   ParameterKey.CONTROL_OUT_OF_PLANE_GROUND_TRACK_GRID_FILE);
+            final boolean compensateLongBurn         = parser.getBoolean(node,  ParameterKey.CONTROL_OUT_OF_PLANE_GROUND_TRACK_GRID_BURN_COMPENSATION);
+            final double inclinationOffsetFineTuning = parser.containsKey(node, ParameterKey.CONTROL_OUT_OF_PLANE_GROUND_TRACK_GRID_INCLINATION_OFFSET_FINE_TUNING) ? 
+            		                                   parser.getDouble(node,   ParameterKey.CONTROL_OUT_OF_PLANE_GROUND_TRACK_GRID_INCLINATION_OFFSET_FINE_TUNING) : Double.NaN;
+            final File gridFile                      = new File(new File(parser.getInputName()).getParent(), fileName);
             final UnnormalizedSphericalHarmonicsProvider gravityField = GravityFieldFactory.getUnnormalizedProvider(2, 0);
             return new OutOfPlaneGroundTrackGrid(name, controlled, skat.getSpacecraftIndex(controlled),
                                                  model, yawFlipSequence, firstOffset, maxManeuvers, orbitsSeparation,
@@ -222,7 +226,7 @@ public enum SupportedControlLaw {
                                                  gravityField.getAe(), gravityField.getMu(),
                                                  -gravityField.getUnnormalizedCnm(0.0, 2, 0),
                                                  readGridFile(gridFile, skat.getEarth()), maxDistance, horizon,
-                                                 compensateLongBurn);
+                                                 compensateLongBurn, inclinationOffsetFineTuning);
         }
 
     },
