@@ -98,7 +98,10 @@ public class ControlLoop implements ScenarioComponent {
      */
     public void addControl(final SKControl controlLaw) {
         controls.add(controlLaw);
-        tunables.add(controlLaw.getModel());
+        for (final TunableManeuver model:controlLaw.getModels()){
+        	tunables.add(model);
+        }
+        //tunables.add(controlLaw.getModel());
         minTimeHorizon = FastMath.min(minTimeHorizon, controlLaw.getTimeHorizon());
         maxTimeHorizon = FastMath.max(maxTimeHorizon, controlLaw.getTimeHorizon());
     }

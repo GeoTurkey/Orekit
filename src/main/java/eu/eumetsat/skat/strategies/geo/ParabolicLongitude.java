@@ -158,6 +158,7 @@ public class ParabolicLongitude extends AbstractSKControl {
      * @param controlledName name of the controlled spacecraft
      * @param controlledIndex index of the controlled spacecraft
      * @param model in-plane maneuver model
+     * @param yawFlipSequence array of pairs containing a day-of-year and the corresponding new status of the yaw flip (0 or 1)
      * @param firstOffset time offset of the first maneuver with respect to cycle start
      * @param maxManeuvers maximum number of maneuvers to set up in one cycle
      * @param orbitsSeparation minimum time between split parts in number of orbits
@@ -170,13 +171,13 @@ public class ParabolicLongitude extends AbstractSKControl {
      */
     public ParabolicLongitude(final String name,
                               final String controlledName, final int controlledIndex,
-                              final TunableManeuver model, final double firstOffset,
+                              final TunableManeuver[] model, int[][] yawFlipSequence, final double firstOffset,
                               final int maxManeuvers, final int orbitsSeparation,
                               final double lEast, final double lWest,
                               final double samplingStep, final double horizon,
                               final BodyShape earth)
         throws SkatException {
-        super(name, model, controlledName, controlledIndex, null, -1,
+        super(name, model, yawFlipSequence, controlledName, controlledIndex, null, -1,
               FastMath.toDegrees(lWest), FastMath.toDegrees(MathUtils.normalizeAngle(lEast, lWest)),
               horizon * Constants.JULIAN_DAY);
         if (getMin() >= getMax()) {
@@ -308,7 +309,7 @@ public class ParabolicLongitude extends AbstractSKControl {
             final double deltaA       = aMas - a0Mas;
             final double mu           = fitStart.getMu();
             final double a            = fitStart.getA();
-            final double totalDeltaV  = thrustSignVelocity(fitStart) *
+            final double totalDeltaV  = thrustSignVelocity(fitStart,getModel()) *
                                         FastMath.sqrt(mu * (2 / a - 1 / (a + deltaA))) - FastMath.sqrt(mu / a);
 
             // compute the number of maneuvers required
@@ -351,7 +352,7 @@ public class ParabolicLongitude extends AbstractSKControl {
             // compute the in plane maneuver required to get this initial semi-major axis offset
             final double mu           = fitStart.getMu();
             final double a            = fitStart.getA();
-            final double deltaVChange = thrustSignVelocity(fitStart) *
+            final double deltaVChange = thrustSignVelocity(fitStart,getModel()) *
                                         FastMath.sqrt(mu * (2 / a - 1 / (a + deltaA))) - FastMath.sqrt(mu / a);
 
             // distribute the change over all maneuvers

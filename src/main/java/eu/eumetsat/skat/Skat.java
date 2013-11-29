@@ -648,7 +648,7 @@ public class Skat {
                 monitorableViolation.register(configuredStates.length, monitorsMono[index]);
             }
         } else {
-            // this is a control law for a spacecrafts pair
+            // this is a control law for a spacecraft pair
             final int index1 = controlLaw.getControlledSpacecraftIndex();
             final int index2 = controlLaw.getReferenceSpacecraftIndex();
             monitorableValue.register(configuredStates.length, monitorsDuo[index1][index2]);

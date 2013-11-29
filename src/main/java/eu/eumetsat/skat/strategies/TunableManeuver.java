@@ -100,6 +100,28 @@ public class TunableManeuver {
 
     }
 
+    /** Constructor for attitude variation (copy a model and change the thrust direction)
+     * @param model model to be copied
+     * @param direction new thrust direction
+     */
+    public TunableManeuver(final TunableManeuver model, final Vector3D direction)
+    {
+    	this.direction = direction.normalize();
+    	
+        this.name          = model.name;
+        this.thrust        = model.thrust.clone();
+        this.isp           = model.isp.clone();
+        this.endDate       = model.endDate;
+        this.elimination   = model.elimination;
+        this.dVInf         = model.dVInf;
+        this.dVSup         = model.dVSup;
+        this.dVConvergence = model.dVConvergence;
+        this.dTConvergence = model.dTConvergence;
+        this.currentThrust = model.currentThrust;;
+        this.currentIsp    = model.currentIsp;;
+
+}
+
     /** Get the name of the maneuver.
      * @return name of the maneuver
      */

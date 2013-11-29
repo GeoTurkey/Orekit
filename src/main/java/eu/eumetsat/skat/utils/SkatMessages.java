@@ -64,6 +64,7 @@ public enum SkatMessages implements Localizable {
     NO_GRID_POINTS("no grid points read"),
     GRID_POINTS_NUMBER_MISMATCH("inconsistent grid points numbers: {0} points at latitude {1} but {2} points at latitude {3}"),
     GRID_ON_EQUATORIAL_ORBIT("ground track grid cannot be used on equatorial orbits"),
+    INVALID_OPPOSED_THRUSTERS("maneuvers indicated in inclination vector control law should have opposed directions for yaw-flip choice"),
     NO_BRACKETING("unable to find interval bracketing root"),
     NO_SUITABLE_NODE_FOR_MANEUVER("no suitable node found for maneuver between {0} and {1}");
 

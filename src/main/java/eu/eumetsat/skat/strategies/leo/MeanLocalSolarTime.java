@@ -180,7 +180,7 @@ public class MeanLocalSolarTime extends AbstractLeoSKControl {
      * @exception OrekitException if the UTC-TAI correction cannot be loaded
      */
     public MeanLocalSolarTime(final String name, final String controlledName, final int controlledIndex,
-                              final TunableManeuver model, final double firstOffset, final int maxManeuvers,
+                              final TunableManeuver[] model, int[][] maneuverSequence, final double firstOffset, final int maxManeuvers,
                               final int orbitsSeparation, final OneAxisEllipsoid earth, final CelestialBody sun,
                               final double referenceRadius, final double mu, final double j2,
                               final double latitude, final boolean ascending,
@@ -189,7 +189,7 @@ public class MeanLocalSolarTime extends AbstractLeoSKControl {
                               final int[] maneuversDoy, final MlstModel analyticalModels)
         throws OrekitException {
 
-        super(name, controlledName, controlledIndex, model,
+        super(name, controlledName, controlledIndex, model, maneuverSequence,
               firstOffset, maxManeuvers, orbitsSeparation, earth, sun, referenceRadius, mu, j2,
               solarTime - solarTimetolerance, solarTime + solarTimetolerance, horizon * Constants.JULIAN_DAY);
 

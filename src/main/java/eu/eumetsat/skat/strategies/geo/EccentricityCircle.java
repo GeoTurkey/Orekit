@@ -121,6 +121,7 @@ public class EccentricityCircle extends AbstractSKControl {
      * @param controlledName name of the controlled spacecraft
      * @param controlledIndex index of the controlled spacecraft
      * @param model in-plane maneuver model
+     * @param yawFlipSequence array of pairs containing a day-of-year and the corresponding new status of the yaw flip (0 or 1)
      * @param centerX abscissa of the circle center
      * @param centerY ordinate of the circle center
      * @param meanRadius radius of the controlled circle
@@ -131,10 +132,10 @@ public class EccentricityCircle extends AbstractSKControl {
      * @param horizon time horizon duration
      */
     public EccentricityCircle(final String name, final String controlledName, final int controlledIndex,
-                              final TunableManeuver model, final double centerX, final double centerY,
+                              final TunableManeuver[] model, int[][] yawFlipSequence, final double centerX, final double centerY,
                               final double meanRadius, final double maxRadius, final boolean singleBurn,
                               final CelestialBody sun, final double samplingStep, final double horizon) {
-        super(name, model, controlledName, controlledIndex, null, -1, 0, maxRadius, horizon * Constants.JULIAN_DAY);
+        super(name, model, yawFlipSequence, controlledName, controlledIndex, null, -1, 0, maxRadius, horizon * Constants.JULIAN_DAY);
         this.stephandler  = new Handler();
         this.centerX      = centerX;
         this.centerY      = centerY;
@@ -262,7 +263,7 @@ public class EccentricityCircle extends AbstractSKControl {
 
             	// compute the desired application angle of the maneuver
                 final SpacecraftState state  = tunables[index].getStateBefore();
-                final double sign            = thrustSignVelocity(state);
+                final double sign            = thrustSignVelocity(state,getModel());
                 final EquinoctialOrbit orbit = (EquinoctialOrbit) OrbitType.EQUINOCTIAL.convertType(state.getOrbit());
                 final double alphaState      = orbit.getLM();
                 final double alphaMan        = FastMath.atan2(sign * deY, sign * deX);
@@ -383,7 +384,7 @@ public class EccentricityCircle extends AbstractSKControl {
                 }
 
                 final SpacecraftState state  = tunables[indices[0]].getStateBefore();
-                final double sign            = thrustSignVelocity(state);
+                final double sign            = thrustSignVelocity(state, getModel());
                 final EquinoctialOrbit orbit = (EquinoctialOrbit) OrbitType.EQUINOCTIAL.convertType(state.getOrbit());
                 final double alphaState      = orbit.getLM();
                 final double alphaMan        = FastMath.atan2(sign * deY, sign * deX);

@@ -635,6 +635,45 @@ public class SkatFileParser {
 	}
 
 	/**
+	 * Get a double[][] value.
+	 * 
+	 * @param node
+	 *            structure containing the parameter
+	 * @param key
+	 *            parameter key
+	 * @return double[][] value corresponding to the key
+	 * @exception IllegalArgumentException
+	 *                if node does not contains the key or it is not a matrix
+	 */
+	public int[][] getIntArray2(final Tree node, final ParameterKey key)
+			throws IllegalArgumentException {
+
+		// get the node
+		final Tree value = getValue(node, key);
+
+		// check types and get dimensions
+		checkType(SkatParser.ARRAY, value);
+		final int rows = getElementsNumber(value);
+		int columns = 0;
+		for (int i = 0; i < rows; ++i) {
+			final Tree row = getElement(value, i);
+			checkType(SkatParser.ARRAY, row);
+			columns = getElementsNumber(row);
+		}
+
+		// parse the value
+		final int[][] array = new int[rows][columns];
+		for (int i = 0; i < array.length; ++i) {
+			final Tree row = getElement(value, i);
+			for (int j = 0; j < array[i].length; ++j) {
+				array[i][j] = Integer.parseInt(getElement(row, j).getText());
+			}
+		}
+		return array;
+
+	}
+
+	/**
 	 * Get an inertial frame.
 	 * 
 	 * @param node

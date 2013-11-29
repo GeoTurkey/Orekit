@@ -8,10 +8,13 @@ import java.util.TreeSet;
 
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.util.FastMath;
+import org.orekit.errors.OrekitException;
 import org.orekit.propagation.SpacecraftState;
 import org.orekit.propagation.analytical.AdapterPropagator;
 import org.orekit.time.AbsoluteDate;
 import org.orekit.time.ChronologicalComparator;
+import org.orekit.time.DateTimeComponents;
+import org.orekit.time.TimeScalesFactory;
 import org.orekit.time.TimeStamped;
 
 import eu.eumetsat.skat.strategies.ScheduledManeuver;
@@ -25,8 +28,11 @@ public abstract class AbstractSKControl implements SKControl {
     /** Name of the control law. */
     private final String name;
 
-    /** Maneuver model. */
-    private final TunableManeuver model;
+    /** Maneuver models. */
+    protected final TunableManeuver[] models;
+
+    /** Sequence of dates and maneuver indices for maneuver switching */
+    private final int[][] yawFlipSequence;
 
     /** Name of the controlled spacecraft. */
     private final String controlledName;
@@ -67,6 +73,7 @@ public abstract class AbstractSKControl implements SKControl {
     /** Simple constructor.
      * @param name name of the control law
      * @param model in-plane maneuver model
+     * @param yawFlipSequence 
      * @param controlledName name of the controlled spacecraft
      * @param controlledIndex index of the controlled spacecraft
      * @param referenceName name of the reference spacecraft
@@ -75,22 +82,23 @@ public abstract class AbstractSKControl implements SKControl {
      * @param max maximal value for the constraint
      * @param horizon time horizon duration
      */
-    protected AbstractSKControl(final String name, final TunableManeuver model,
-                                final String controlledName, final int controlledIndex,
+    protected AbstractSKControl(final String name, final TunableManeuver[] model,
+                                int[][] yawFlipSequence, final String controlledName, final int controlledIndex,
                                 final String referenceName, final int referenceIndex,
                                 final double min, final double max, final double horizon) {
-        this.name            = name;
-        this.model           = model;
-        this.controlledName  = controlledName;
-        this.controlledIndex = controlledIndex;
-        this.referenceName   = referenceName;
-        this.referenceIndex  = referenceIndex;
-        this.min             = min;
-        this.max             = max;
-        this.horizon         = horizon;
-        this.values          = new TreeSet<TimeStamped>(new ChronologicalComparator());
-        this.history         = new ArrayList<double[]>();
-        this.monitoring      = false;
+        this.name             = name;
+        this.models           = model;
+        this.yawFlipSequence  = yawFlipSequence;
+        this.controlledName   = controlledName;
+        this.controlledIndex  = controlledIndex;
+        this.referenceName    = referenceName;
+        this.referenceIndex   = referenceIndex;
+        this.min              = min;
+        this.max              = max;
+        this.horizon          = horizon;
+        this.values           = new TreeSet<TimeStamped>(new ChronologicalComparator());
+        this.history          = new ArrayList<double[]>();
+        this.monitoring       = false;
     }
 
     /** {@inheritDoc} */
@@ -100,10 +108,43 @@ public abstract class AbstractSKControl implements SKControl {
 
     /** {@inheritDoc} */
     public TunableManeuver getModel() {
-        return model;
+    	return models[0];
     }
 
     /** {@inheritDoc} */
+    public TunableManeuver[] getModels() {
+    	return models;
+    }
+
+    /** {@inheritDoc} */
+    public boolean getYawFlip(AbsoluteDate date)
+    throws OrekitException {
+    	
+        // Requested day of year 
+        final int doy = date.getComponents(TimeScalesFactory.getUTC()).getDate().getDayOfYear();
+        
+        // Empty model sequence: return first model
+        if (yawFlipSequence.length < 2 || models.length < 2){
+        	return false;
+        }
+        // Find the model to be applied according to the date (DoY)
+        else{
+        	int i;
+        	for(i=0; i<yawFlipSequence.length; i++){
+        		if(doy<yawFlipSequence[i][0]){
+        			break;
+        		}
+        	}
+        	// When the date is before the first model change of the sequence, apply the last one
+        	if(i==0){
+        		i = yawFlipSequence.length;
+        	}
+        	
+        	return yawFlipSequence[i-1][1] == 1;
+        }
+    }
+
+/** {@inheritDoc} */
     public String getControlledSpacecraftName() {
         return controlledName;
     }
@@ -202,10 +243,11 @@ public abstract class AbstractSKControl implements SKControl {
      * @param start start date of the propagation
      * @param end end date of the propagation
      * @return longest maneuver-free interval
+     * @throws OrekitException 
      */
     protected AbsoluteDate[] getManeuverFreeInterval(final ScheduledManeuver[] maneuvers,
                                                      final List<ScheduledManeuver> fixedManeuvers,
-                                                     final AbsoluteDate start, final AbsoluteDate end) {
+                                                     final AbsoluteDate start, final AbsoluteDate end) throws OrekitException {
 
         // gather all special dates (start, end, maneuvers) in one chronologically sorted set
         SortedSet<AbsoluteDate> sortedDates = new TreeSet<AbsoluteDate>();
@@ -214,6 +256,7 @@ public abstract class AbstractSKControl implements SKControl {
         AbsoluteDate last = start;
         for (final ScheduledManeuver maneuver : maneuvers) {
             final AbsoluteDate date = maneuver.getDate();
+            final TunableManeuver model = getModel();
             if (maneuver.getName().equals(model.getName()) && date.compareTo(last) >= 0) {
                 // this is the last maneuver seen so far
                 last = date;
@@ -222,6 +265,7 @@ public abstract class AbstractSKControl implements SKControl {
         }
         for (final ScheduledManeuver maneuver : fixedManeuvers) {
             final AbsoluteDate date = maneuver.getDate();
+            final TunableManeuver model = getModel();
             if (maneuver.getName().equals(model.getName()) && date.compareTo(last) >= 0) {
                 // this is the last maneuver seen so far
                 last = date;
@@ -259,10 +303,11 @@ public abstract class AbstractSKControl implements SKControl {
     /** Get the sign of the maneuver model with respect to orbital momentum.
      * @param state spacecraft state
      * @return +1 if model thrust is along momentum direction, -1 otherwise
+     * @throws OrekitException 
      */
-    protected double thrustSignMomentum(final SpacecraftState state) {
+    protected double thrustSignMomentum(final SpacecraftState state, final TunableManeuver model) throws OrekitException {
         final Vector3D thrustDirection =
-                state.getAttitude().getRotation().applyInverseTo(getModel().getDirection());
+                state.getAttitude().getRotation().applyInverseTo(model.getDirection());
         Vector3D momentum = state.getPVCoordinates().getMomentum();
         return FastMath.signum(Vector3D.dotProduct(thrustDirection, momentum));
     }
@@ -270,10 +315,11 @@ public abstract class AbstractSKControl implements SKControl {
     /** Get the sign of the maneuver model with respect to orbital velocity.
      * @param state spacecraft state
      * @return +1 if model thrust is along velocity direction, -1 otherwise
+     * @throws OrekitException 
      */
-    protected double thrustSignVelocity(final SpacecraftState state) {
+    protected double thrustSignVelocity(final SpacecraftState state, final TunableManeuver model) throws OrekitException {
         final Vector3D thrustDirection =
-                state.getAttitude().getRotation().applyInverseTo(getModel().getDirection());
+                state.getAttitude().getRotation().applyInverseTo(model.getDirection());
         Vector3D velocity = state.getPVCoordinates().getVelocity();
         return FastMath.signum(Vector3D.dotProduct(thrustDirection, velocity));
     }
@@ -300,13 +346,12 @@ public abstract class AbstractSKControl implements SKControl {
      * @param dT date change to apply to all maneuvers
      * @param maneuvers array of maneuvers to change
      * @param adapterPropagator propagator to use for maneuvers
+     * @throws OrekitException 
      */
     protected void distributeDV(final double dV, final double dT,
                                 final ScheduledManeuver[] maneuvers,
-                                final AdapterPropagator adapterPropagator) {
+                                final AdapterPropagator adapterPropagator) throws OrekitException {
 
-        final double inf = model.getDVInf();
-        final double sup = model.getDVSup();
 
         double remaining = dV;
         while (FastMath.abs(remaining) > 1.e-6) {
@@ -314,9 +359,11 @@ public abstract class AbstractSKControl implements SKControl {
             // identify the maneuvers that can be changed
             final List<Integer> nonSaturated = new ArrayList<Integer>(maneuvers.length);
             for (int i = 0; i < maneuvers.length; ++i) {
+                final TunableManeuver model = getModel();
+
                 if (maneuvers[i].getName().equals(model.getName()) &&
-                    ((dV < 0 && maneuvers[i].getSignedDeltaV() > inf) ||
-                     (dV > 0 && maneuvers[i].getSignedDeltaV() < sup))) {
+                    ((dV < 0 && maneuvers[i].getSignedDeltaV() > model.getDVInf()) ||
+                     (dV > 0 && maneuvers[i].getSignedDeltaV() < model.getDVSup()))) {
                     nonSaturated.add(i);
                 }
             }
@@ -329,8 +376,9 @@ public abstract class AbstractSKControl implements SKControl {
             // distribute the remaining dV evenly
             final double dVPart = remaining / nonSaturated.size();
             for (final int i : nonSaturated) {
+                final TunableManeuver model = maneuvers[i].getModel();
                 final double original = maneuvers[i].getSignedDeltaV();
-                final double changed  = FastMath.max(inf, FastMath.min(sup, original + dVPart));
+                final double changed  = FastMath.max(model.getDVInf(), FastMath.min(model.getDVSup(), original + dVPart));
                 remaining   -= changed - original;
                 maneuvers[i] = new ScheduledManeuver(maneuvers[i].getModel(),
                                                      maneuvers[i].getDate().shiftedBy(dT),

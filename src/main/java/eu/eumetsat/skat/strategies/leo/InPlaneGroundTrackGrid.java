@@ -58,6 +58,7 @@ public class InPlaneGroundTrackGrid extends AbstractGroundTrackGrid {
      * @param controlledName name of the controlled spacecraft
      * @param controlledIndex index of the controlled spacecraft
      * @param model out-of-plane maneuver model
+     * @param maneuverSequence sequence of day-of-year and maneuver indices for maneuver switching
      * @param firstOffset time offset of the first maneuver with respect to cycle start
      * @param maxManeuvers maximum number of maneuvers to set up in one cycle
      * @param orbitsSeparation minimum time between split parts in number of orbits
@@ -71,13 +72,13 @@ public class InPlaneGroundTrackGrid extends AbstractGroundTrackGrid {
      * @param horizon time horizon duration
      */
     public InPlaneGroundTrackGrid(final String name, final String controlledName, final int controlledIndex,
-                           final TunableManeuver model, final double firstOffset,
+                           final TunableManeuver[] model, int[][] maneuverSequence, final double firstOffset,
                            final int maxManeuvers, final int orbitsSeparation,
                            final OneAxisEllipsoid earth, final CelestialBody sun,
                            final double referenceRadius, final double mu, final double j2,
                            final List<GridPoint> grid, final double maxDistance, final double horizon)
         throws SkatException {
-        super(name, controlledName, controlledIndex, model, firstOffset, maxManeuvers, orbitsSeparation,
+        super(name, controlledName, controlledIndex, model, maneuverSequence, firstOffset, maxManeuvers, orbitsSeparation,
               earth, sun, referenceRadius, mu, j2, grid, maxDistance, true, horizon);
         this.safetyMargin = 0.1 * maxDistance;
     }
@@ -168,7 +169,7 @@ public class InPlaneGroundTrackGrid extends AbstractGroundTrackGrid {
             // compute the in plane maneuver required to get this initial semi-major axis offset
             final double mu           = fitStart.getMu();
             final double a            = fitStart.getA();
-            final double totalDeltaV  = thrustSignVelocity(fitStart) *
+            final double totalDeltaV  = thrustSignVelocity(fitStart,getModel()) *
                                         FastMath.sqrt(mu * (2 / a - 1 / (a + deltaA))) - FastMath.sqrt(mu / a);
 
             // in order to avoid tempering eccentricity too much,
@@ -204,7 +205,7 @@ public class InPlaneGroundTrackGrid extends AbstractGroundTrackGrid {
             // compute the in plane maneuver required to get this initial semi-major axis offset
             final double mu           = fitStart.getMu();
             final double a            = fitStart.getA();
-            final double deltaVChange = thrustSignVelocity(fitStart) *
+            final double deltaVChange = thrustSignVelocity(fitStart,getModel()) *
                                         FastMath.sqrt(mu * (2 / a - 1 / (a + deltaA))) - FastMath.sqrt(mu / a);
 
             // distribute the change over all maneuvers

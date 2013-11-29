@@ -81,6 +81,7 @@ public abstract class AbstractLeoSKControl extends AbstractSKControl {
      * @param controlledName name of the controlled spacecraft
      * @param controlledIndex index of the controlled spacecraft
      * @param model in-plane maneuver model
+     * @param yawFlipSequence array of pairs containing a day-of-year and the corresponding new status of the yaw flip (0 or 1) 
      * @param firstOffset time offset of the first maneuver with respect to cycle start
      * @param maxManeuvers maximum number of maneuvers to set up in one cycle
      * @param orbitsSeparation minimum time between split parts in number of orbits
@@ -94,12 +95,12 @@ public abstract class AbstractLeoSKControl extends AbstractSKControl {
      * @param horizon time horizon duration
      */
     protected AbstractLeoSKControl(final String name, final String controlledName, final int controlledIndex,
-                                   final TunableManeuver model, final double firstOffset, final int maxManeuvers,
+                                   final TunableManeuver[] model, int[][] yawFlipSequence, final double firstOffset, final int maxManeuvers,
                                    final int orbitsSeparation, final OneAxisEllipsoid earth,
                                    final CelestialBody sun,
                                    final double referenceRadius, final double mu, final double j2,
                                    final double min, final double max, final double horizon) {
-        super(name, model, controlledName, controlledIndex, null, -1, min, max, horizon);
+        super(name, model, yawFlipSequence, controlledName, controlledIndex, null, -1, min, max, horizon);
         this.firstOffset      = firstOffset;
         this.maxManeuvers     = maxManeuvers;
         this.orbitsSeparation = orbitsSeparation;
@@ -389,7 +390,7 @@ public abstract class AbstractLeoSKControl extends AbstractSKControl {
 
             // compute the out of plane maneuver required to get the initial inclination offset
             final Vector3D v = nodeState.getPVCoordinates().getVelocity();
-            final double totalDeltaV = thrustSignMomentum(nodeState) * FastMath.signum(v.getZ()) * v.getNorm() * deltaI;
+            final double totalDeltaV = thrustSignMomentum(nodeState, getModel()) * FastMath.signum(v.getZ()) * v.getNorm() * deltaI;
             
             // compute the number of maneuvers required
             final double separation = orbitsSeparation * meanPeriod;
@@ -418,7 +419,7 @@ public abstract class AbstractLeoSKControl extends AbstractSKControl {
 
             // compute the out of plane maneuver required to get the initial inclination offset
             final Vector3D v = nodeState.getPVCoordinates().getVelocity();
-            final double deltaVChange = thrustSignMomentum(nodeState) * FastMath.signum(v.getZ()) * v.getNorm() * deltaI;
+            final double deltaVChange = thrustSignMomentum(nodeState, getModel()) * FastMath.signum(v.getZ()) * v.getNorm() * deltaI;
 
             // distribute the change over all maneuvers
             tuned = tunables.clone();
@@ -457,9 +458,9 @@ public abstract class AbstractLeoSKControl extends AbstractSKControl {
      *  </p>
      *  @param maneuver maneuver to compensate
      *  @return compensated maneuver (Isp reduced to get same dV with more consumed mass)
-     *  @throws PropagationException if state cannot be propagated around maneuvera
+     * @throws OrekitException 
      */
-    private ScheduledManeuver longBurnCompensation(final ScheduledManeuver maneuver) throws PropagationException {
+    private ScheduledManeuver longBurnCompensation(final ScheduledManeuver maneuver) throws OrekitException {
         // this is a long out of plane maneuver, we adapt Isp to reflect
         // the fact more mass will be consumed to achieve the same velocity increment
         final double nominalDuration     = maneuver.getDuration(maneuver.getStateBefore().getMass());

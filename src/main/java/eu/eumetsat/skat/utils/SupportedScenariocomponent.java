@@ -23,6 +23,9 @@ import eu.eumetsat.skat.realization.Propagation;
 import eu.eumetsat.skat.scenario.Scenario;
 import eu.eumetsat.skat.scenario.ScenarioComponent;
 import eu.eumetsat.skat.utils.SupportedPropagator.PropagatorRandomizer;
+import org.orekit.time.AbsoluteDate;
+import org.orekit.time.TimeScale;
+import org.orekit.time.TimeScalesFactory;
 
 /** Enumerate for parsing the supported scenario components.
  */
@@ -173,21 +176,80 @@ public enum SupportedScenariocomponent {
     MANEUVER_CROSS_COUPLING() {
         /** {@inheritDoc} */
         public ScenarioComponent parse(final SkatFileParser parser, final Tree node, final Skat skat)
-            throws OrekitException, SkatException {
+            throws OrekitException, SkatException {            
+            // Get some general simulation parameters
+            TimeScale utc = TimeScalesFactory.getUTC();
+            final Tree simulationNode = parser.getValue(parser.getRoot(), ParameterKey.SIMULATION);
+            AbsoluteDate startDate = 
+                    parser.getDate(simulationNode, ParameterKey.SIMULATION_START_DATE, utc);
+            
             final String name =
                     parser.getString(node, ParameterKey.COMPONENT_CROSS_COUPLING_NAME);
             final Vector3D nominalDirection =
                     parser.getVector(node, ParameterKey.COMPONENT_CROSS_COUPLING_NOMINAL_DIRECTION);
-            final Vector3D couplingDirection =
-                    parser.getVector(node, ParameterKey.COMPONENT_CROSS_COUPLING_COUPLING_DIRECTION);
-            final double couplingRatio =
-                    parser.getDouble(node, ParameterKey.COMPONENT_CROSS_COUPLING_RATIO);
-            final double standardDeviation =
-                    parser.containsKey(node, ParameterKey.COMPONENT_CROSS_COUPLING_STANDARD_DEVIATION) ?
-                    parser.getDouble(node, ParameterKey.COMPONENT_CROSS_COUPLING_STANDARD_DEVIATION) : 0.0;
-            return new ManeuverCrossCoupling(getIndices(parser, node, skat), name,
-                                             nominalDirection, couplingDirection, couplingRatio,
-                                             standardDeviation, skat.getGenerator());
+
+            final double standardDeviation1 =
+                    parser.containsKey(node, ParameterKey.COMPONENT_CROSS_COUPLING_STANDARD_DEVIATION1) ?
+                    parser.getDouble(node, ParameterKey.COMPONENT_CROSS_COUPLING_STANDARD_DEVIATION1) : 0.0;
+            final Vector3D couplingDirection1 =
+                    parser.getVector(node, ParameterKey.COMPONENT_CROSS_COUPLING_DIRECTION_1);
+            final double constantCouplingRatio1 =
+                    parser.getDouble(node, ParameterKey.COMPONENT_CROSS_COUPLING_CONSTANT_RATIO_1);
+            final double secularVariation1 =
+                    parser.containsKey(node, ParameterKey.COMPONENT_CROSS_COUPLING_SECULAR_VARIATION_1) ? 
+                    parser.getDouble(node, ParameterKey.COMPONENT_CROSS_COUPLING_SECULAR_VARIATION_1) : 0.0;
+            final AbsoluteDate secularZero1 =
+                    parser.containsKey(node, ParameterKey.COMPONENT_CROSS_COUPLING_SECULAR_ZERO_1) ? 
+                    parser.getDate(node, ParameterKey.COMPONENT_CROSS_COUPLING_SECULAR_ZERO_1,utc) : startDate;
+            final double period1 =
+                    parser.containsKey(node, ParameterKey.COMPONENT_CROSS_COUPLING_PERIOD_1) ? 
+                    parser.getDouble(node, ParameterKey.COMPONENT_CROSS_COUPLING_PERIOD_1) : 0.0;
+            final AbsoluteDate harmonicZero1 =
+                    parser.containsKey(node, ParameterKey.COMPONENT_CROSS_COUPLING_PERIOD_ZERO_1) ? 
+                    parser.getDate(node, ParameterKey.COMPONENT_CROSS_COUPLING_PERIOD_ZERO_1,utc) : startDate;
+            final double amplitude1 =
+                    parser.containsKey(node, ParameterKey.COMPONENT_CROSS_COUPLING_AMPLITUDE_1) ? 
+                    parser.getDouble(node, ParameterKey.COMPONENT_CROSS_COUPLING_AMPLITUDE_1) : 0.0;
+                    
+            // Default values for optional second X-coupling direction 
+            double standardDeviation2           = 0.0;
+            Vector3D couplingDirection2         = couplingDirection1;
+            double       constantCouplingRatio2 = 0.0;
+            double       secularVariation2      = 0.0;
+            AbsoluteDate secularZero2           = startDate;
+            double       period2                = 0.0;
+            AbsoluteDate harmonicZero2          = startDate;
+            double       amplitude2             = 0.0;
+            
+            // Optional second X-coupling direction detailed definition (when present)
+            if(parser.containsKey(node, ParameterKey.COMPONENT_CROSS_COUPLING_SECULAR_VARIATION_2)){        
+                standardDeviation2 =
+                        parser.containsKey(node, ParameterKey.COMPONENT_CROSS_COUPLING_STANDARD_DEVIATION2) ?
+                        parser.getDouble(node, ParameterKey.COMPONENT_CROSS_COUPLING_STANDARD_DEVIATION2) : 0.0;
+                couplingDirection2 = 
+                		parser.getVector(node, ParameterKey.COMPONENT_CROSS_COUPLING_DIRECTION_2);
+                constantCouplingRatio2 =
+                        parser.getDouble(node, ParameterKey.COMPONENT_CROSS_COUPLING_CONSTANT_RATIO_2);
+                secularVariation2 =
+                        parser.containsKey(node, ParameterKey.COMPONENT_CROSS_COUPLING_SECULAR_VARIATION_2) ? 
+                        parser.getDouble(node, ParameterKey.COMPONENT_CROSS_COUPLING_SECULAR_VARIATION_2) : 0.0;
+                secularZero2 =
+                        parser.containsKey(node, ParameterKey.COMPONENT_CROSS_COUPLING_SECULAR_ZERO_2) ? 
+                        parser.getDate(node, ParameterKey.COMPONENT_CROSS_COUPLING_SECULAR_ZERO_2,utc) : startDate;
+                period2 =
+                        parser.containsKey(node, ParameterKey.COMPONENT_CROSS_COUPLING_PERIOD_2) ? 
+                        parser.getDouble(node, ParameterKey.COMPONENT_CROSS_COUPLING_PERIOD_2) : 0.0;
+                harmonicZero2 =
+                        parser.containsKey(node, ParameterKey.COMPONENT_CROSS_COUPLING_PERIOD_ZERO_2) ? 
+                        parser.getDate(node, ParameterKey.COMPONENT_CROSS_COUPLING_PERIOD_ZERO_2,utc) : startDate;
+                amplitude2 =
+                        parser.containsKey(node, ParameterKey.COMPONENT_CROSS_COUPLING_AMPLITUDE_2) ? 
+                        parser.getDouble(node, ParameterKey.COMPONENT_CROSS_COUPLING_AMPLITUDE_2) : 0.0;
+            }
+	                                    
+            return new ManeuverCrossCoupling(getIndices(parser, node, skat), name, nominalDirection, skat.getGenerator(),
+                    standardDeviation1, couplingDirection1, constantCouplingRatio1, secularVariation1, secularZero1, period1, harmonicZero1, amplitude1,
+                    standardDeviation2, couplingDirection2, constantCouplingRatio2, secularVariation2, secularZero2, period2, harmonicZero2, amplitude2);
         }
     },
 

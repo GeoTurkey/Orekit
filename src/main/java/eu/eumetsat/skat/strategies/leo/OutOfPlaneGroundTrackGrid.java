@@ -45,6 +45,7 @@ public class OutOfPlaneGroundTrackGrid extends AbstractGroundTrackGrid {
      * @param controlledName name of the controlled spacecraft
      * @param controlledIndex index of the controlled spacecraft
      * @param model out-of-plane maneuver model
+     * @param maneuverSequence 
      * @param firstOffset time offset of the first maneuver with respect to cycle start
      * @param maxManeuvers maximum number of maneuvers to set up in one cycle
      * @param orbitsSeparation minimum time between split parts in number of orbits
@@ -59,14 +60,14 @@ public class OutOfPlaneGroundTrackGrid extends AbstractGroundTrackGrid {
      * @param compensateLongBurn if true, long burn inefficiency should be compensated
      */
     public OutOfPlaneGroundTrackGrid(final String name, final String controlledName, final int controlledIndex,
-                                     final TunableManeuver model, final double firstOffset,
+                                     final TunableManeuver[] model, int[][] maneuverSequence, final double firstOffset,
                                      final int maxManeuvers, final int orbitsSeparation,
                                      final OneAxisEllipsoid earth, final CelestialBody sun,
                                      final double referenceRadius, final double mu, final double j2,
                                      final List<GridPoint> grid, final double maxDistance, final double horizon,
                                      final boolean compensateLongBurn)
         throws SkatException {
-        super(name, controlledName, controlledIndex, model, firstOffset, maxManeuvers, orbitsSeparation,
+        super(name, controlledName, controlledIndex, model, maneuverSequence, firstOffset, maxManeuvers, orbitsSeparation,
               earth, sun, referenceRadius, mu, j2, grid, maxDistance, false, horizon);
         this.safetyMargin       = 0.1 * maxDistance / earth.getEquatorialRadius();
         this.compensateLongBurn = compensateLongBurn;

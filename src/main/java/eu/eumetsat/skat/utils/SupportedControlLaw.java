@@ -44,17 +44,29 @@ public enum SupportedControlLaw {
         public SKControl parse(final SkatFileParser parser, final Tree node,
                                final String controlled, final Skat skat)
             throws OrekitException, SkatException {
-            final String name           = parser.getString(node, ParameterKey.CONTROL_NAME);
-            final double sampling       = parser.getDouble(node, ParameterKey.CONTROL_SAMPLING);
-            final double horizon        = parser.getDouble(node, ParameterKey.CONTROL_HORIZON);
-            final TunableManeuver model = skat.getManeuver(parser.getString(node, ParameterKey.CONTROL_MANEUVER_NAME));
-            final int maxManeuvers      = parser.getInt(node,    ParameterKey.CONTROL_MAX_MANEUVERS);
-            final int orbitsSeparation  = parser.getInt(node,    ParameterKey.CONTROL_MANEUVERS_ORBITS_SEPARATION);
-            final double firstOffset    = parser.getDouble(node,  ParameterKey.CONTROL_PARABOLIC_FIRST_OFFSET);
-            final double lEast          = parser.getAngle(node,  ParameterKey.CONTROL_PARABOLIC_LONGITUDE_EAST);
-            final double lWest          = parser.getAngle(node,  ParameterKey.CONTROL_PARABOLIC_LONGITUDE_WEST);
+            final String name              = parser.getString(node, ParameterKey.CONTROL_NAME);
+            final double sampling          = parser.getDouble(node, ParameterKey.CONTROL_SAMPLING);
+            final double horizon           = parser.getDouble(node, ParameterKey.CONTROL_HORIZON);
+            TunableManeuver[] model;
+            final Tree namesArrayNode      = parser.getValue(node, ParameterKey.CONTROL_MANEUVER_NAME);
+            if(namesArrayNode.getType() == SkatParser.ARRAY){
+            	model = new TunableManeuver[parser.getElementsNumber(namesArrayNode)];
+            	for (int i = 0; i < model.length; ++i) {
+            		model[i] = skat.getManeuver(parser.getElement(namesArrayNode, i).getText());
+            	}
+            }
+            else{
+            	model    = new TunableManeuver[1];
+            	model[0] = skat.getManeuver(parser.getString(node, ParameterKey.CONTROL_MANEUVER_NAME));
+            }
+            final int[][] yawFlipSequence  = {};
+            final int maxManeuvers         = parser.getInt(node,    ParameterKey.CONTROL_MAX_MANEUVERS);
+            final int orbitsSeparation     = parser.getInt(node,    ParameterKey.CONTROL_MANEUVERS_ORBITS_SEPARATION);
+            final double firstOffset       = parser.getDouble(node,  ParameterKey.CONTROL_PARABOLIC_FIRST_OFFSET);
+            final double lEast             = parser.getAngle(node,  ParameterKey.CONTROL_PARABOLIC_LONGITUDE_EAST);
+            final double lWest             = parser.getAngle(node,  ParameterKey.CONTROL_PARABOLIC_LONGITUDE_WEST);
             return new ParabolicLongitude(name, controlled, skat.getSpacecraftIndex(controlled),
-                                          model, firstOffset, maxManeuvers, orbitsSeparation,
+                                          model, yawFlipSequence, firstOffset, maxManeuvers, orbitsSeparation,
                                           lEast, lWest, sampling, horizon, skat.getEarth());
         }
 
@@ -67,17 +79,29 @@ public enum SupportedControlLaw {
         public SKControl parse(final SkatFileParser parser, final Tree node,
                                final String controlled, final Skat skat)
             throws OrekitException, SkatException {
-            final String name           = parser.getString(node, ParameterKey.CONTROL_NAME);
-            final double sampling       = parser.getDouble(node, ParameterKey.CONTROL_SAMPLING);
-            final double horizon        = parser.getDouble(node, ParameterKey.CONTROL_HORIZON);
-            final TunableManeuver model = skat.getManeuver(parser.getString(node, ParameterKey.CONTROL_MANEUVER_NAME));
-            final double centerX        = parser.getDouble(node, ParameterKey.CONTROL_ECCENTRICITY_CIRCLE_CENTER_X);
-            final double centerY        = parser.getDouble(node, ParameterKey.CONTROL_ECCENTRICITY_CIRCLE_CENTER_Y);
-            final double meanRadius     = parser.getDouble(node, ParameterKey.CONTROL_ECCENTRICITY_CIRCLE_MEAN_RADIUS);
-            final double maxRadius      = parser.getDouble(node, ParameterKey.CONTROL_ECCENTRICITY_CIRCLE_MAX_RADIUS);
-            final boolean singleBurn    = parser.getBoolean(node, ParameterKey.CONTROL_ECCENTRICITY_CIRCLE_SINGLE_BURN);
+            final String name             = parser.getString(node, ParameterKey.CONTROL_NAME);
+            final double sampling         = parser.getDouble(node, ParameterKey.CONTROL_SAMPLING);
+            final double horizon          = parser.getDouble(node, ParameterKey.CONTROL_HORIZON);
+            TunableManeuver[] model;
+            final Tree namesArrayNode     = parser.getValue(node, ParameterKey.CONTROL_MANEUVER_NAME);
+            if(namesArrayNode.getType() == SkatParser.ARRAY){
+            	model = new TunableManeuver[parser.getElementsNumber(namesArrayNode)];
+            	for (int i = 0; i < model.length; ++i) {
+            		model[i] = skat.getManeuver(parser.getElement(namesArrayNode, i).getText());
+            	}
+            }
+            else{
+            	model    = new TunableManeuver[1];
+            	model[0] = skat.getManeuver(parser.getString(node, ParameterKey.CONTROL_MANEUVER_NAME));
+            }
+            final int[][] yawFlipSequence = {}; 
+            final double centerX          = parser.getDouble(node, ParameterKey.CONTROL_ECCENTRICITY_CIRCLE_CENTER_X);
+            final double centerY          = parser.getDouble(node, ParameterKey.CONTROL_ECCENTRICITY_CIRCLE_CENTER_Y);
+            final double meanRadius       = parser.getDouble(node, ParameterKey.CONTROL_ECCENTRICITY_CIRCLE_MEAN_RADIUS);
+            final double maxRadius        = parser.getDouble(node, ParameterKey.CONTROL_ECCENTRICITY_CIRCLE_MAX_RADIUS);
+            final boolean singleBurn      = parser.getBoolean(node, ParameterKey.CONTROL_ECCENTRICITY_CIRCLE_SINGLE_BURN);
             return new EccentricityCircle(name, controlled, skat.getSpacecraftIndex(controlled),
-                                          model, centerX, centerY, meanRadius, maxRadius, singleBurn,
+                                          model, yawFlipSequence, centerX, centerY, meanRadius, maxRadius, singleBurn,
                                           skat.getSun(), sampling, horizon);
         }
 
@@ -93,7 +117,22 @@ public enum SupportedControlLaw {
             final String name             = parser.getString(node, ParameterKey.CONTROL_NAME);
             final double sampling         = parser.getDouble(node, ParameterKey.CONTROL_SAMPLING);
             final double horizon          = parser.getDouble(node, ParameterKey.CONTROL_HORIZON);
-            final TunableManeuver model   = skat.getManeuver(parser.getString(node, ParameterKey.CONTROL_MANEUVER_NAME));
+            TunableManeuver[] model;
+            final Tree namesArrayNode   = parser.getValue(node, ParameterKey.CONTROL_MANEUVER_NAME);
+            if(namesArrayNode.getType() == SkatParser.ARRAY){
+            	model = new TunableManeuver[parser.getElementsNumber(namesArrayNode)];
+            	for (int i = 0; i < model.length; ++i) {
+            		model[i] = skat.getManeuver(parser.getElement(namesArrayNode, i).getText());
+            	}
+            }
+            else{
+            	model    = new TunableManeuver[1];
+            	model[0] = skat.getManeuver(parser.getString(node, ParameterKey.CONTROL_MANEUVER_NAME));
+            }
+            int[][] emptyArray = {};
+            final int[][] yawFlipSequence =  
+                    parser.containsKey(node, ParameterKey.CONTROL_YAW_FLIP_SEQUENCE) ? 
+                    parser.getIntArray2(node, ParameterKey.CONTROL_YAW_FLIP_SEQUENCE) : emptyArray;
             final int maxManeuvers        = parser.getInt(node,    ParameterKey.CONTROL_MAX_MANEUVERS);
             final int orbitsSeparation    = parser.getInt(node,    ParameterKey.CONTROL_MANEUVERS_ORBITS_SEPARATION);
             final double firstOffset      = parser.getDouble(node, ParameterKey.CONTROL_INCLINATION_VECTOR_FIRST_OFFSET);
@@ -101,7 +140,7 @@ public enum SupportedControlLaw {
             final double referenceHy      = parser.getDouble(node, ParameterKey.CONTROL_INCLINATION_VECTOR_REFERENCE_HY);
             final double limitInclination = parser.getAngle(node, ParameterKey.CONTROL_INCLINATION_LIMIT_INCLINATION_ANGLE);
             return new InclinationVector(name, controlled, skat.getSpacecraftIndex(controlled),
-                                         model, firstOffset, maxManeuvers, orbitsSeparation,
+                                         model, yawFlipSequence, firstOffset, maxManeuvers, orbitsSeparation,
                                          referenceHx, referenceHy, limitInclination, sampling, horizon);
         }
 
@@ -116,7 +155,19 @@ public enum SupportedControlLaw {
             throws OrekitException, SkatException {
             final String name             = parser.getString(node, ParameterKey.CONTROL_NAME);
             final double horizon          = parser.getDouble(node, ParameterKey.CONTROL_HORIZON);
-            final TunableManeuver model   = skat.getManeuver(parser.getString(node, ParameterKey.CONTROL_MANEUVER_NAME));
+            TunableManeuver[] model;
+            final Tree namesArrayNode   = parser.getValue(node, ParameterKey.CONTROL_MANEUVER_NAME);
+            if(namesArrayNode.getType() == SkatParser.ARRAY){
+            	model = new TunableManeuver[parser.getElementsNumber(namesArrayNode)];
+            	for (int i = 0; i < model.length; ++i) {
+            		model[i] = skat.getManeuver(parser.getElement(namesArrayNode, i).getText());
+            	}
+            }
+            else{
+            	model    = new TunableManeuver[1];
+            	model[0] = skat.getManeuver(parser.getString(node, ParameterKey.CONTROL_MANEUVER_NAME));
+            }
+            final int[][] yawFlipSequence =  {};
             final int maxManeuvers        = parser.getInt(node,    ParameterKey.CONTROL_MAX_MANEUVERS);
             final int orbitsSeparation    = parser.getInt(node,    ParameterKey.CONTROL_MANEUVERS_ORBITS_SEPARATION);
             final double firstOffset      = parser.getDouble(node, ParameterKey.CONTROL_IN_PLANE_GROUND_TRACK_FIRST_OFFSET);
@@ -125,7 +176,7 @@ public enum SupportedControlLaw {
             final File gridFile = new File(new File(parser.getInputName()).getParent(), fileName);
             final UnnormalizedSphericalHarmonicsProvider gravityField = GravityFieldFactory.getUnnormalizedProvider(2, 0);
             return new InPlaneGroundTrackGrid(name, controlled, skat.getSpacecraftIndex(controlled),
-                                              model, firstOffset, maxManeuvers, orbitsSeparation,
+                                              model, yawFlipSequence, firstOffset, maxManeuvers, orbitsSeparation,
                                               skat.getEarth(), skat.getSun(),
                                               gravityField.getAe(), gravityField.getMu(),
                                               -gravityField.getUnnormalizedCnm(0.0, 2, 0),
@@ -143,7 +194,19 @@ public enum SupportedControlLaw {
             throws OrekitException, SkatException {
             final String name             = parser.getString(node, ParameterKey.CONTROL_NAME);
             final double horizon          = parser.getDouble(node, ParameterKey.CONTROL_HORIZON);
-            final TunableManeuver model   = skat.getManeuver(parser.getString(node, ParameterKey.CONTROL_MANEUVER_NAME));
+            TunableManeuver[] model;
+            final Tree namesArrayNode   = parser.getValue(node, ParameterKey.CONTROL_MANEUVER_NAME);
+            if(namesArrayNode.getType() == SkatParser.ARRAY){
+            	model = new TunableManeuver[parser.getElementsNumber(namesArrayNode)];
+            	for (int i = 0; i < model.length; ++i) {
+            		model[i] = skat.getManeuver(parser.getElement(namesArrayNode, i).getText());
+            	}
+            }
+            else{
+            	model    = new TunableManeuver[1];
+            	model[0] = skat.getManeuver(parser.getString(node, ParameterKey.CONTROL_MANEUVER_NAME));
+            }
+            final int[][] yawFlipSequence =  {};
             final int maxManeuvers        = parser.getInt(node,    ParameterKey.CONTROL_MAX_MANEUVERS);
             final int orbitsSeparation    = parser.getInt(node,    ParameterKey.CONTROL_MANEUVERS_ORBITS_SEPARATION);
             final double firstOffset      = parser.getDouble(node, ParameterKey.CONTROL_OUT_OF_PLANE_GROUND_TRACK_FIRST_OFFSET);
@@ -153,7 +216,7 @@ public enum SupportedControlLaw {
             final File gridFile = new File(new File(parser.getInputName()).getParent(), fileName);
             final UnnormalizedSphericalHarmonicsProvider gravityField = GravityFieldFactory.getUnnormalizedProvider(2, 0);
             return new OutOfPlaneGroundTrackGrid(name, controlled, skat.getSpacecraftIndex(controlled),
-                                                 model, firstOffset, maxManeuvers, orbitsSeparation,
+                                                 model, yawFlipSequence, firstOffset, maxManeuvers, orbitsSeparation,
                                                  skat.getEarth(), skat.getSun(),
                                                  gravityField.getAe(), gravityField.getMu(),
                                                  -gravityField.getUnnormalizedCnm(0.0, 2, 0),
@@ -172,7 +235,19 @@ public enum SupportedControlLaw {
             throws OrekitException, SkatException {
             final String name                = parser.getString(node,    ParameterKey.CONTROL_NAME);
             final double horizon             = parser.getDouble(node,    ParameterKey.CONTROL_HORIZON);
-            final TunableManeuver model      = skat.getManeuver(parser.getString(node, ParameterKey.CONTROL_MANEUVER_NAME));
+            TunableManeuver[] model;
+            final Tree namesArrayNode   = parser.getValue(node, ParameterKey.CONTROL_MANEUVER_NAME);
+            if(namesArrayNode.getType() == SkatParser.ARRAY){
+            	model = new TunableManeuver[parser.getElementsNumber(namesArrayNode)];
+            	for (int i = 0; i < model.length; ++i) {
+            		model[i] = skat.getManeuver(parser.getElement(namesArrayNode, i).getText());
+            	}
+            }
+            else{
+            	model    = new TunableManeuver[1];
+            	model[0] = skat.getManeuver(parser.getString(node, ParameterKey.CONTROL_MANEUVER_NAME));
+            }
+            final int[][] yawFlipSequence    = {};  
             final int maxManeuvers           = parser.getInt(node,       ParameterKey.CONTROL_MAX_MANEUVERS);
             final int orbitsSeparation       = parser.getInt(node,       ParameterKey.CONTROL_MANEUVERS_ORBITS_SEPARATION);
             final double firstOffset         = parser.getDouble(node,    ParameterKey.CONTROL_INCLINATION_FIRST_OFFSET);
@@ -222,7 +297,7 @@ public enum SupportedControlLaw {
             };
 
             return new Inclination(name, controlled, skat.getSpacecraftIndex(controlled),
-                                          model, firstOffset, maxManeuvers, orbitsSeparation,
+                                          model, yawFlipSequence, firstOffset, maxManeuvers, orbitsSeparation,
                                           skat.getEarth(), skat.getSun(),
                                           gravityField.getAe(), gravityField.getMu(),-gravityField.getUnnormalizedCnm(0.0, 2, 0),
                                           incMeanValue, incDeadband, horizon, compensateLongBurn,
@@ -241,7 +316,19 @@ public enum SupportedControlLaw {
             throws OrekitException, SkatException {
             final String name                = parser.getString(node,    ParameterKey.CONTROL_NAME);
             final double horizon             = parser.getDouble(node,    ParameterKey.CONTROL_HORIZON);
-            final TunableManeuver model      = skat.getManeuver(parser.getString(node, ParameterKey.CONTROL_MANEUVER_NAME));
+            TunableManeuver[] model;
+            final Tree namesArrayNode   = parser.getValue(node, ParameterKey.CONTROL_MANEUVER_NAME);
+            if(namesArrayNode.getType() == SkatParser.ARRAY){
+            	model = new TunableManeuver[parser.getElementsNumber(namesArrayNode)];
+            	for (int i = 0; i < model.length; ++i) {
+            		model[i] = skat.getManeuver(parser.getElement(namesArrayNode, i).getText());
+            	}
+            }
+            else{
+            	model    = new TunableManeuver[1];
+            	model[0] = skat.getManeuver(parser.getString(node, ParameterKey.CONTROL_MANEUVER_NAME));
+            }
+            final int[][] yawFlipSequence    =  {};
             final int maxManeuvers           = parser.getInt(node,       ParameterKey.CONTROL_MAX_MANEUVERS);
             final int orbitsSeparation       = parser.getInt(node,       ParameterKey.CONTROL_MANEUVERS_ORBITS_SEPARATION);
             final double firstOffset         = parser.getDouble(node,    ParameterKey.CONTROL_SOLAR_TIME_FIRST_OFFSET);
@@ -294,7 +381,7 @@ public enum SupportedControlLaw {
             };
 
             return new MeanLocalSolarTime(name, controlled, skat.getSpacecraftIndex(controlled),
-                                          model, firstOffset, maxManeuvers, orbitsSeparation,
+                                          model, yawFlipSequence, firstOffset, maxManeuvers, orbitsSeparation,
                                           skat.getEarth(), skat.getSun(),
                                           gravityField.getAe(), gravityField.getMu(),
                                           -gravityField.getUnnormalizedCnm(0.0, 2, 0),

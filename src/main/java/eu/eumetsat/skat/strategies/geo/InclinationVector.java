@@ -25,6 +25,8 @@ import org.orekit.utils.SecularAndHarmonic;
 import eu.eumetsat.skat.control.AbstractSKControl;
 import eu.eumetsat.skat.strategies.ScheduledManeuver;
 import eu.eumetsat.skat.strategies.TunableManeuver;
+import eu.eumetsat.skat.utils.SkatException;
+import eu.eumetsat.skat.utils.SkatMessages;
 
 /**
  * Station-keeping control for inclination vector.
@@ -118,6 +120,7 @@ public class InclinationVector extends AbstractSKControl {
      * @param controlledName name of the controlled spacecraft
      * @param controlledIndex index of the controlled spacecraft
      * @param model out-of-plane maneuver model
+     * @param yawFlipSequence array of pairs containing a day-of-year and the corresponding new status of the yaw flip (0 or 1)
      * @param firstOffset time offset of the first maneuver with respect to cycle start
      * @param maxManeuvers maximum number of maneuvers to set up in one cycle
      * @param orbitsSeparation minimum time between split parts in number of orbits
@@ -128,12 +131,12 @@ public class InclinationVector extends AbstractSKControl {
      * @param horizon time horizon duration
      */
     public InclinationVector(final String name, final String controlledName, final int controlledIndex,
-                             final TunableManeuver model, final double firstOffset,
+                             final TunableManeuver[] model, int[][] yawFlipSequence, final double firstOffset,
                              final int maxManeuvers, final int orbitsSeparation,
                              final double referenceHx, final double referenceHy,
                              final double limitInclination, final double samplingStep, final double horizon) {
 
-        super(name, model, controlledName, controlledIndex, null, -1,
+        super(name, model, yawFlipSequence, controlledName, controlledIndex, null, -1,
               0.0, innerRadius(referenceHx, referenceHy, limitInclination),
               horizon * Constants.JULIAN_DAY);
 
@@ -175,11 +178,12 @@ public class InclinationVector extends AbstractSKControl {
         return (maxRadius - offCenter);
     }
 
-    /** {@inheritDoc} */
+    /** {@inheritDoc} 
+     * @throws OrekitException */
     public void initializeRun(final int iteration, final ScheduledManeuver[] maneuvers,
                               final Propagator propagator, final List<ScheduledManeuver> fixedManeuvers,
                               final AbsoluteDate start, final AbsoluteDate end)
-        throws PropagationException {
+        throws OrekitException {
 
         this.iteration = iteration;
         resetMarginsChecks();
@@ -210,10 +214,11 @@ public class InclinationVector extends AbstractSKControl {
 
     }
 
-    /** {@inheritDoc} */
+    /** {@inheritDoc} 
+     * @throws SkatException */
     public ScheduledManeuver[] tuneManeuvers(final ScheduledManeuver[] tunables,
                                              final BoundedPropagator reference)
-        throws OrekitException {
+        throws OrekitException, SkatException {
 
         final ScheduledManeuver[] tuned;
         final AdapterPropagator adapterPropagator = new AdapterPropagator(reference);
@@ -237,7 +242,7 @@ public class InclinationVector extends AbstractSKControl {
             final double dHYdT = yModel.meanDerivative(date, 1, 1);
             final double dHdT  = FastMath.hypot(dHXdT, dHYdT);
             
-            // Distance traveled by H vector at the end of life and increase it a bit to have some margin
+            // Distance traveled by H vector between now and end-of-life. Increase it a bit to have some margin
             final double margin      = .5;
             final double deltaHToEnd = dHdT * getModel().getEndDate().durationFrom(fitStart.getDate()) * (1+margin);
             
@@ -258,27 +263,47 @@ public class InclinationVector extends AbstractSKControl {
             final double deltaHx     = targetHx - startHx;
             final double deltaHy     = targetHy - startHy;
             final double vs          = fitStart.getPVCoordinates().getVelocity().getNorm();
-            final double totalDeltaV = thrustSignMomentum(fitStart) * 2 * FastMath.hypot(deltaHx, deltaHy) * vs;
+            final double totalDeltaV = 2 * FastMath.hypot(deltaHx, deltaHy) * vs;
+            
+            // yaw-flip thrusters if necessary
+            final boolean isYawFlipped     = getYawFlip(fitStart.getDate());
+            final TunableManeuver[] models = isYawFlipped ? yawFlipModels(getModels()) : getModels();
 
-            // compute the number of maneuvers required
-            final TunableManeuver model = getModel();
-            final double limitDV = (totalDeltaV < 0) ? model.getDVInf() : model.getDVSup();
-            nbMan = FastMath.min(maxManeuvers, (int) FastMath.ceil(FastMath.abs(totalDeltaV / limitDV)));
-            final double deltaV  = FastMath.max(model.getDVInf(),
-                                                FastMath.min(model.getDVSup(), totalDeltaV / nbMan));
+            // find which thruster is the one to use (based on the thrust direction)
+            int modelIndex = -1;
+            if(models.length == 2){
+            	for(int i=0; i<2; i++){
+            		if(thrustSignMomentum(fitStart, models[i]) > 0){
+            			modelIndex = i;
+            		}
+            	}
+            	if(modelIndex == -1){
+            		modelIndex = 0;
+            		throw new SkatException(SkatMessages.INVALID_OPPOSED_THRUSTERS);
+            	}
+            }
+            else{
+            	modelIndex = 0;
+            }
+            final TunableManeuver model = models[modelIndex];
+            	
+            
+            // compute the number and magnitude of required maneuvers 
+            nbMan                = FastMath.min(maxManeuvers, (int) FastMath.ceil(totalDeltaV / model.getDVSup()));
+            final double deltaV  = FastMath.min(model.getDVSup(), totalDeltaV / nbMan);
 
             tuned = new ScheduledManeuver[tunables.length + nbMan];
             System.arraycopy(tunables, 0, tuned, 0, tunables.length);
             changeTrajectory(tuned, 0, tunables.length, adapterPropagator);
 
-            final EquinoctialOrbit orbit =
-                    (EquinoctialOrbit) OrbitType.EQUINOCTIAL.convertType(fitStart.getOrbit());
-            final double alphaStart = orbit.getLM();
-            final double alphaMan   = FastMath.atan2(deltaHy, deltaHx);
-            final double dAlpha     = MathUtils.normalizeAngle(alphaMan - alphaStart, 2 * FastMath.PI);
-            final double n          = fitStart.getKeplerianMeanMotion();
-            final double separation = orbitsSeparation * 2 * FastMath.PI / n;
-            AbsoluteDate t0         = fitStart.getDate().shiftedBy(dAlpha / n);
+            // compute the local time of the maneuvers
+            final EquinoctialOrbit orbit = (EquinoctialOrbit) OrbitType.EQUINOCTIAL.convertType(fitStart.getOrbit());
+            final double alphaStart      = orbit.getLM();
+            final double alphaMan        = FastMath.atan2(deltaHy, deltaHx);
+            final double dAlpha          = MathUtils.normalizeAngle(alphaMan - alphaStart, 2 * FastMath.PI);
+            final double n               = fitStart.getKeplerianMeanMotion();
+            final double separation      = orbitsSeparation * 2 * FastMath.PI / n;
+            AbsoluteDate t0              = fitStart.getDate().shiftedBy(dAlpha / n);
             while (t0.durationFrom(cycleStart) < firstOffset) {
                 t0 = t0.shiftedBy(separation);
             }
@@ -300,16 +325,19 @@ public class InclinationVector extends AbstractSKControl {
             }
 
             // adjust the existing maneuvers
-
+        	final TunableManeuver[] models = getModels();
+        	
             // find the date of the last adjusted maneuver
-            ScheduledManeuver last = null;
-            for (final ScheduledManeuver maneuver : tunables) {
-                if (maneuver.getName().equals(getModel().getName())) {
-                    if (last == null || maneuver.getDate().compareTo(last.getDate()) > 0) {
-                        last = maneuver;
-                    }
-                }
-            }
+        	ScheduledManeuver last = null;
+        	for (final ScheduledManeuver maneuver : tunables) {
+        		for (final TunableManeuver model : models){
+        			if (maneuver.getName().equals(model.getName())) {
+        				if (last == null || maneuver.getDate().compareTo(last.getDate()) > 0) {
+        					last = maneuver;
+        				}
+        			}
+        		}
+        	}
 
             // achieved inclination after the last maneuver
             final EquinoctialOrbit orbit =
@@ -347,6 +375,18 @@ public class InclinationVector extends AbstractSKControl {
 
     }
 
+
+    private TunableManeuver[] yawFlipModels(final TunableManeuver[] models){
+    	TunableManeuver[] flippedModels = new TunableManeuver[models.length];
+    	for(int i=0; i<models.length; i++){
+    		TunableManeuver model     = models[i];
+    		Vector3D direction        = model.getDirection();
+    		Vector3D flippedDirection = new Vector3D(-direction.getX(), -direction.getY(), direction.getZ());
+    		flippedModels[i]          = new TunableManeuver(model, flippedDirection);
+    	}
+    	return flippedModels;
+    }
+    
     /** {@inheritDoc} */
     public EventDetector getEventDetector() {
         return null;

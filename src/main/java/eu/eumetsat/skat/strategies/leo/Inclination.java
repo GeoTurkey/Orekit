@@ -93,6 +93,7 @@ public class Inclination extends AbstractLeoSKControl {
      * @param controlledName name of the controlled spacecraft
      * @param controlledIndex index of the controlled spacecraft
      * @param model out-of-plane maneuver model
+     * @param maneuverSequence 
      * @param firstOffset time offset of the first maneuver with respect to cycle start
      * @param maxManeuvers maximum number of maneuvers to set up in one cycle
      * @param orbitsSeparation minimum time between split parts in number of orbits
@@ -112,7 +113,7 @@ public class Inclination extends AbstractLeoSKControl {
      * @exception OrekitException if the UTC-TAI correction cannot be loaded
      */
     public Inclination(final String name, final String controlledName, final int controlledIndex,
-                              final TunableManeuver model, final double firstOffset, final int maxManeuvers,
+                              final TunableManeuver[] model, int[][] maneuverSequence, final double firstOffset, final int maxManeuvers,
                               final int orbitsSeparation, final OneAxisEllipsoid earth, final CelestialBody sun,
                               final double referenceRadius, final double mu, final double j2,
                               final double incMeanValue, final double incDeadband, final double horizon,
@@ -121,7 +122,7 @@ public class Inclination extends AbstractLeoSKControl {
         throws OrekitException {
 
         super(name, controlledName, controlledIndex, model,
-              firstOffset, maxManeuvers, orbitsSeparation, earth, sun, referenceRadius, mu, j2,
+              maneuverSequence, firstOffset, maxManeuvers, orbitsSeparation, earth, sun, referenceRadius, mu, j2,
               incMeanValue - incDeadband, incMeanValue + incDeadband, horizon * Constants.JULIAN_DAY);
 
         this.compensateLongBurn = compensateLongBurn;

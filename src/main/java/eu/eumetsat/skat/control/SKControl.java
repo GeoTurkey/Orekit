@@ -71,8 +71,10 @@ public interface SKControl {
 
     /** Get the maneuver model for the control law.
      * @return maneuver model
+     * @throws OrekitException 
      */
-    TunableManeuver getModel();
+    TunableManeuver   getModel();
+    TunableManeuver[] getModels();
 
     /** Initialize one run of the control law.
      * <p>
