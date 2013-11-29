@@ -22,7 +22,9 @@ import eu.eumetsat.skat.realization.OrbitDetermination;
 import eu.eumetsat.skat.realization.Propagation;
 import eu.eumetsat.skat.scenario.Scenario;
 import eu.eumetsat.skat.scenario.ScenarioComponent;
+import eu.eumetsat.skat.strategies.TunableManeuver;
 import eu.eumetsat.skat.utils.SupportedPropagator.PropagatorRandomizer;
+
 import org.orekit.time.AbsoluteDate;
 import org.orekit.time.TimeScale;
 import org.orekit.time.TimeScalesFactory;
@@ -260,10 +262,31 @@ public enum SupportedScenariocomponent {
             throws OrekitException, SkatException {
             final String name =
                     parser.getString(node, ParameterKey.COMPONENT_MANEUVER_ECLIPSE_CONSTRAINT_NAME);
-            final double entryDelay =
-                    parser.getDouble(node, ParameterKey.COMPONENT_MANEUVER_ECLIPSE_CONSTRAINT_ENTRY_DELAY);
-            final double exitDelay =
-                    parser.getDouble(node, ParameterKey.COMPONENT_MANEUVER_ECLIPSE_CONSTRAINT_EXIT_DELAY);
+            
+            // entry_delay field may either be double[n][2] (variable, function of mass) or double (constant, for backward compatibility) 
+            double[][] entryDelay;
+            if(parser.getValue(node, ParameterKey.COMPONENT_MANEUVER_ECLIPSE_CONSTRAINT_ENTRY_DELAY).getType()
+            		== SkatParser.ARRAY){
+            	entryDelay = parser.getDoubleArray2(node, ParameterKey.COMPONENT_MANEUVER_ECLIPSE_CONSTRAINT_ENTRY_DELAY);
+            }
+            else{
+            	entryDelay = new double[1][2];
+            	entryDelay[0][0] = 0.;
+            	entryDelay[0][1] = parser.getDouble(node, ParameterKey.COMPONENT_MANEUVER_ECLIPSE_CONSTRAINT_ENTRY_DELAY);
+            }
+            
+            // exit_delay field may either be double[n][2] (variable, function of mass) or double (constant, for backward compatibility) 
+            double[][] exitDelay;
+            if(parser.getValue(node, ParameterKey.COMPONENT_MANEUVER_ECLIPSE_CONSTRAINT_EXIT_DELAY).getType()
+            		== SkatParser.ARRAY){
+             	exitDelay = parser.getDoubleArray2(node, ParameterKey.COMPONENT_MANEUVER_ECLIPSE_CONSTRAINT_EXIT_DELAY);
+            }
+            else{
+             	exitDelay = new double[1][2];
+            	exitDelay[0][0] = 0.;
+            	exitDelay[0][1] = parser.getDouble(node, ParameterKey.COMPONENT_MANEUVER_ECLIPSE_CONSTRAINT_EXIT_DELAY);
+            }
+            
             final int orbitsSeparation =
                     parser.getInt(node, ParameterKey.COMPONENT_MANEUVER_ECLIPSE_CONSTRAINT_ORBITS_SEPARATION);
             final double durationMinRatio =

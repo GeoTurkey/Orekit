@@ -17,12 +17,12 @@ import org.orekit.orbits.CartesianOrbit;
 import org.orekit.orbits.CircularOrbit;
 import org.orekit.orbits.KeplerianOrbit;
 import org.orekit.orbits.OrbitType;
-
 import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
 import org.orekit.propagation.analytical.AdapterPropagator;
 import org.orekit.propagation.events.EclipseDetector;
 import org.orekit.time.AbsoluteDate;
+import org.orekit.time.TimeScalesFactory;
 import org.orekit.utils.Constants;
 import org.orekit.utils.PVCoordinates;
 import org.orekit.utils.PVCoordinatesProvider;
@@ -46,10 +46,10 @@ public class ManeuverEclipseConstraint implements ScenarioComponent {
     private final String name;
 
     /** Time margin after eclipse entry. */
-    private final double entryDelay;
+    private final double[][] entryDelay;
 
     /** Time margin before eclipse exit. */
-    private final double exitDelay;
+    private final double[][] exitDelay;
 
     /** Number of orbits between parts of a split maneuver. */
     private final int nbOrbits;
@@ -77,23 +77,38 @@ public class ManeuverEclipseConstraint implements ScenarioComponent {
      * @param compensateNodeAsymmetry indicator for compensating inefficiency due to out-of-plane maneuver asymmetry w.r.t. ascending or descending node location.
      * @param sun Sun model
      * @param earth Earth model
+     * @throws SkatException 
      */
     public ManeuverEclipseConstraint(final int[] spacecraftIndices, final String name,
-                                     final double entryDelay, final double exitDelay,
+                                     final double[][] entryDelay, final double[][] exitDelay,
                                      final int nbOrbits, final double minEclipseRatio,
                                      final boolean compensateLongBurnAndNodeAsymmetry, 
                                      final CelestialBody sun,
                                      final OneAxisEllipsoid earth)
-        throws IllegalArgumentException {
+        throws IllegalArgumentException, SkatException {
         this.spacecraftIndices        = spacecraftIndices.clone();
         this.name                     = name;
-        this.entryDelay    		      = entryDelay;
-        this.exitDelay        		  = exitDelay;
         this.nbOrbits      		      = nbOrbits;
         this.minEclipseRatio		  = minEclipseRatio;
         this.compensateLongBurnAndNodeAsymmetry  = compensateLongBurnAndNodeAsymmetry;
         this.sun             		  = sun;
         this.earth           		  = earth;
+        
+        this.entryDelay = entryDelay.clone();
+        for (int i = 1; i < entryDelay.length; ++i) {
+            if (entryDelay[i - 1][1] > entryDelay[i][1]) {
+                throw new SkatException(SkatMessages.NON_INCREASING_DATES_IN_ENTRY_DELAY_CURVE,
+                		entryDelay[i - 1][1], entryDelay[i][1]);
+            }
+        }
+        this.exitDelay = exitDelay.clone();
+        for (int i = 1; i < exitDelay.length; ++i) {
+            if (exitDelay[i - 1][1] > exitDelay[i][1]) {
+                throw new SkatException(SkatMessages.NON_INCREASING_DATES_IN_EXIT_DELAY_CURVE,
+                		exitDelay[i - 1][1], exitDelay[i][1]);
+            }
+        }
+        
     }
 
     /** {@inheritDoc} */
@@ -137,8 +152,9 @@ public class ManeuverEclipseConstraint implements ScenarioComponent {
                     }
 
                     // Compute earliest and latest maneuver allowed times due to eclipse (including margins) 
-                    final AbsoluteDate earliestAllowed = selector.getEntry().shiftedBy(entryDelay);
-                    final AbsoluteDate latestAllowed   = selector.getExit().shiftedBy(-exitDelay);
+                    final double consumedMass          = originals[index].getBOLMass() - state.getMass();
+                    final AbsoluteDate earliestAllowed = selector.getEntry().shiftedBy(getEntryDelay(consumedMass));
+                    final AbsoluteDate latestAllowed   = selector.getExit().shiftedBy(-getExitDelay(consumedMass));
                     // Compute maximum single maneuver duration due to eclipse
                     final double maxSingleBurnDuration = latestAllowed.durationFrom(earliestAllowed);
                     // Compute central date of eclipse
@@ -186,7 +202,7 @@ public class ManeuverEclipseConstraint implements ScenarioComponent {
                                                                           new Vector3D(maneuver.getSignedDeltaV() / nbParts, maneuver.getModel().getDirection()),
                                                                           maneuver.getThrust(), maneuver.getIsp(),
                                                                           maneuver.getTrajectory(), false);
-                        // if long burn and node assymetry compensation
+                        // if long burn and node asymmetry compensation
                         if (compensateLongBurnAndNodeAsymmetry) {
                         	m = longBurnAndNodeAssymetryCompensation(m);
                         }
@@ -257,7 +273,45 @@ public class ManeuverEclipseConstraint implements ScenarioComponent {
         return duration/increaseFactor;
 
     }
+    
+    
+    public double getEntryDelay(final double consumedMass) {
+    	return(interpolateDelay(consumedMass, entryDelay));
+    }
+ 
+    public double getExitDelay(final double consumedMass) {
+    	return(interpolateDelay(consumedMass, exitDelay));
+    }
+ 
+    private double interpolateDelay(final double consumedMass, final double[][] delayArray) {
 
+    	double delay = delayArray[0][1];
+        if(consumedMass >= delayArray[delayArray.length-1][1]) {
+            // mass is greater than last curve point,
+            // we are in a regulated phase, delay is constant
+            delay = delayArray[delayArray.length-1][0];
+        }
+        else{
+	        for (int i = delayArray.length-1; i > 0 ; --i) {
+	            if (consumedMass >= delayArray[i-1][1]) {
+	                // we are in an interval between two curve points
+	                // we are in blow-down mode, delay evolves linearly
+	                final double delay0 = delayArray[i - 1][0];
+	                final double mass0  = delayArray[i - 1][1];
+	                final double delay1 = delayArray[i][0];
+	                final double mass1  = delayArray[i][1];
+	                delay = (delay0 * (consumedMass - mass1) + delay1 * (mass0 - consumedMass)) /
+	                                (mass0 - mass1);
+	                break;
+	            }
+	        }
+        }
+        
+        return(delay);
+    }
+    
+    
+    
     /** Compensate inefficiency of long burns and node assymetry.
      *  <p>
      *  For a long out-of-plane maneuver, Isp has to be adapted to reflect the
