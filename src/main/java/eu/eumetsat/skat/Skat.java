@@ -327,18 +327,27 @@ public class Skat {
         for (int i = 0; i < nbManeuvers; ++i) {
             final Tree maneuver = parser.getElement(maneuversNode, i);
 
-            final String name          = parser.getString(maneuver,  ParameterKey.MANEUVERS_NAME);
-            final Vector3D direction   = parser.getVector(maneuver,  ParameterKey.MANEUVERS_DIRECTION).normalize();
-            final double[][] thrust    = parser.getDoubleArray2(maneuver,  ParameterKey.MANEUVERS_THRUST);
-            final double[][] isp       = parser.getDoubleArray2(maneuver,  ParameterKey.MANEUVERS_ISP_CURVE);
-            final double dvInf         = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DV_INF);
-            final double dvSup         = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DV_SUP);
-            final double dvConvergence = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DV_CONVERGENCE);
-            final double dtConvergence = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DT_CONVERGENCE);
-            final double elimination   = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_ELIMINATION_THRESHOLD);
-            maneuversModelsPool[i]     = new TunableManeuver(name, direction, thrust, isp, elimination,
-                                                             dvInf, dvSup, dvConvergence, dtConvergence, endDate);
-
+            final String name                   = parser.getString(maneuver, ParameterKey.MANEUVERS_NAME);
+            final Vector3D direction            = parser.getVector(maneuver, ParameterKey.MANEUVERS_DIRECTION).normalize();
+            final double[][] thrust             = parser.getDoubleArray2(maneuver,  ParameterKey.MANEUVERS_THRUST);
+            final double[][] isp                = parser.getDoubleArray2(maneuver,  ParameterKey.MANEUVERS_ISP_CURVE);
+            final double dvInf                  = parser.getDouble(maneuver, ParameterKey.MANEUVERS_DV_INF);
+            final double dvSup                  = parser.getDouble(maneuver, ParameterKey.MANEUVERS_DV_SUP);
+            final double dvConvergence          = parser.getDouble(maneuver, ParameterKey.MANEUVERS_DV_CONVERGENCE);
+            final double dtConvergence          = parser.getDouble(maneuver, ParameterKey.MANEUVERS_DT_CONVERGENCE);
+            final double elimination            = parser.getDouble(maneuver, ParameterKey.MANEUVERS_ELIMINATION_THRESHOLD);
+            final boolean isPreviousSlew        = parser.containsKey(maneuver,ParameterKey.MANEUVERS_PREVIOUS_SLEW_DELTA_MASS);
+            final Vector3D previousSlewDeltaV   = isPreviousSlew ? parser.getVector(maneuver, ParameterKey.MANEUVERS_PREVIOUS_SLEW_DELTA_V) : new Vector3D(0.,0.,0.);
+            final double previousSlewDeltaMass  = isPreviousSlew ? parser.getDouble(maneuver, ParameterKey.MANEUVERS_PREVIOUS_SLEW_DELTA_MASS) : 0.0;
+            final double previousSlewDelay      = isPreviousSlew ? parser.getDouble(maneuver, ParameterKey.MANEUVERS_PREVIOUS_SLEW_DELAY) : 0.0;
+            final boolean isFollowingSlew       = parser.containsKey(maneuver,ParameterKey.MANEUVERS_FOLLOWING_SLEW_DELTA_MASS);
+            final Vector3D followingSlewDeltaV  = isFollowingSlew ? parser.getVector(maneuver, ParameterKey.MANEUVERS_FOLLOWING_SLEW_DELTA_V) : new Vector3D(0.,0.,0.);
+            final double followingSlewDeltaMass = isFollowingSlew ? parser.getDouble(maneuver, ParameterKey.MANEUVERS_FOLLOWING_SLEW_DELTA_MASS) : 0.0;
+            final double followingSlewDelay     = isFollowingSlew ? parser.getDouble(maneuver, ParameterKey.MANEUVERS_FOLLOWING_SLEW_DELAY) : 0.0;
+            maneuversModelsPool[i] = new TunableManeuver(name, direction, thrust, isp, elimination,
+                                                         dvInf, dvSup, dvConvergence, dtConvergence, endDate,
+                                                         isPreviousSlew,  previousSlewDeltaV,  previousSlewDeltaMass,  previousSlewDelay,
+                                                         isFollowingSlew, followingSlewDeltaV, followingSlewDeltaMass, followingSlewDelay);
         }
 
         // set up configured states

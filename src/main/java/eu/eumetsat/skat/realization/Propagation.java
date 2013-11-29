@@ -16,6 +16,7 @@ import org.orekit.time.AbsoluteDate;
 import eu.eumetsat.skat.scenario.ScenarioComponent;
 import eu.eumetsat.skat.scenario.ScenarioState;
 import eu.eumetsat.skat.strategies.ScheduledManeuver;
+import eu.eumetsat.skat.realization.ImpulseManeuverNoIsp;
 import eu.eumetsat.skat.utils.SkatException;
 import eu.eumetsat.skat.utils.SkatMessages;
 import eu.eumetsat.skat.utils.SupportedPropagator.PropagatorRandomizer;
@@ -31,7 +32,7 @@ import eu.eumetsat.skat.utils.SupportedPropagator.PropagatorRandomizer;
  */
 public class Propagation implements ScenarioComponent {
 
-    /** Indices of the spacecrafts managed by this component. */
+    /** Indices of the spacecraft managed by this component. */
     private final int[] spacecraftIndices;
 
     /** Orbit propagator randomizers. */
@@ -44,7 +45,7 @@ public class Propagation implements ScenarioComponent {
     private final double truncationManeuverDelay;
 
     /** Simple constructor.
-     * @param spacecraftIndices indices of the spacecrafts managed by this component
+     * @param spacecraftIndices indices of the spacecraft managed by this component
      * @param randomizers orbit propagator randomizers to use for each spacecraft
      * @param truncationManeuverName name of the maneuver triggering cycle truncation (may be null)
      * @param truncationManeuverDelay truncation delay after maneuver
@@ -121,10 +122,25 @@ public class Propagation implements ScenarioComponent {
                                                                           maneuver.getIsp(),
                                                                           maneuver.getDeltaV().normalize());
                         ((NumericalPropagator) propagator).addForceModel(ctm);
+                        
+                        
                     } else {
                         propagator.addEventDetector(new ImpulseManeuver(new DateDetector(maneuver.getDate()),
                                                                         maneuver.getDeltaV(),
                                                                         maneuver.getIsp()));
+                    }
+                    
+                    if(maneuver.getModel().isPreviousSlew()){                   
+                    	// set slew date (maneuver start - slew delay)
+                    	final double totalDelay   = -0.5 * nominalDuration - maneuver.getModel().getPreviousSlewDelay();
+                    	DateDetector dateDetector = new DateDetector(maneuver.getDate().shiftedBy(totalDelay));
+                    	propagator.addEventDetector(new ImpulseManeuverNoIsp(dateDetector, maneuver.getModel().getPreviousSlewDeltaV(), maneuver.getModel().getPreviousSlewDeltaMass()));
+                    }
+                    if(maneuver.getModel().isFollowingSlew()){                   
+                    	// set slew date (maneuver end + slew delay)
+                    	final double totalDelay   = +0.5 * nominalDuration + maneuver.getModel().getFollowingSlewDelay();
+                    	DateDetector dateDetector = new DateDetector(maneuver.getDate().shiftedBy(totalDelay));
+                    	propagator.addEventDetector(new ImpulseManeuverNoIsp(dateDetector, maneuver.getModel().getFollowingSlewDeltaV(), maneuver.getModel().getFollowingSlewDeltaMass()));
                     }
                 }
             }

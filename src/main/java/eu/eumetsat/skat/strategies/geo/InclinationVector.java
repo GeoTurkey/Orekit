@@ -115,6 +115,9 @@ public class InclinationVector extends AbstractSKControl {
     /** Cycle start. */
     private AbsoluteDate cycleStart;
 
+    /** Flag indicating whether maneuvers must be paired (2 half maneuvers separated by 12 hours) or not. */
+	private boolean isPairedManeuvers;
+
     /** Simple constructor.
      * @param name name of the control law
      * @param controlledName name of the controlled spacecraft
@@ -134,20 +137,21 @@ public class InclinationVector extends AbstractSKControl {
                              final TunableManeuver[] model, int[][] yawFlipSequence, final double firstOffset,
                              final int maxManeuvers, final int orbitsSeparation,
                              final double referenceHx, final double referenceHy,
-                             final double limitInclination, final double samplingStep, final double horizon) {
+                             final double limitInclination, final double samplingStep, final double horizon, final boolean isPairedManeuvers) {
 
         super(name, model, yawFlipSequence, controlledName, controlledIndex, null, -1,
               0.0, innerRadius(referenceHx, referenceHy, limitInclination),
               horizon * Constants.JULIAN_DAY);
 
-        this.stephandler      = new Handler();
-        this.firstOffset      = firstOffset;
-        this.maxManeuvers     = maxManeuvers;
-        this.orbitsSeparation = orbitsSeparation;
-        this.referenceHx      = referenceHx;
-        this.referenceHy      = referenceHy;
-        this.samplingStep     = samplingStep;
-        this.innerRadius      = innerRadius(referenceHx, referenceHy, limitInclination);
+        this.stephandler       = new Handler();
+        this.firstOffset       = firstOffset;
+        this.maxManeuvers      = maxManeuvers;
+        this.orbitsSeparation  = orbitsSeparation;
+        this.referenceHx       = referenceHx;
+        this.referenceHy       = referenceHy;
+        this.samplingStep      = samplingStep;
+        this.innerRadius       = innerRadius(referenceHx, referenceHy, limitInclination);
+        this.isPairedManeuvers = isPairedManeuvers;
 
         xModel = new SecularAndHarmonic(1, new double[] { SUN_PULSATION, MOON_PULSATION });
         yModel = new SecularAndHarmonic(1, new double[] { SUN_PULSATION, MOON_PULSATION });
@@ -244,19 +248,32 @@ public class InclinationVector extends AbstractSKControl {
             
             // Distance traveled by H vector between now and end-of-life. Increase it a bit to have some margin
             final double margin      = .5;
-            final double deltaHToEnd = dHdT * getModel().getEndDate().durationFrom(fitStart.getDate()) * (1+margin);
+            final AbsoluteDate simulationEnd = getModel().getEndDate();
+            final double deltaHToEnd = dHdT * simulationEnd.durationFrom(fitStart.getDate()) * (1+margin);
             
-            // Check for end of life: is there enough time left to travel the entire circle?
+            // Check for end of life: is there enough time left to travel the entire circle before EoL?
             if (deltaHToEnd >= 2 * innerRadius) {
-            	// Normal OOP maneuver: target a point on the limit circle
+            	// Normal OOP maneuver: there is time
+            	// Target a point on the limit circle
             	// such that trajectory crosses the circle radially 
             	targetHx = referenceHx + dHXdT / dHdT * (-innerRadius);
             	targetHy = referenceHy + dHYdT / dHdT * (-innerRadius);
             } else {
-                // End-of-life maneuver: do not go back all the way to the lower edge,
-            	// leave just enough distance to finish life within the inner circle.
+            	// End-of-life case: there is no time
+            	// Maybe there is such little time that no maneuver at all is necessary
+            	// We are here because the H-vector has been found to exit the circle before
+            	// the end of the next control cycle, but not before the end of the simulation...
+            	final double endRadius = FastMath.hypot(xModel.osculatingValue(simulationEnd), 
+            			                                yModel.osculatingValue(simulationEnd));
+            	if(endRadius < innerRadius){
+            		nbMan = 0;
+            		return tunables;
+            	}
+            	
+                // If a maneuver is necessary, do not go back all the way to the lower edge of
+            	// the circle, leave just enough distance to finish life within the inner circle.
                 targetHx = referenceHx + dHXdT / dHdT * (innerRadius - deltaHToEnd);
-                targetHy = referenceHy + dHYdT / dHdT * (innerRadius - deltaHToEnd);                
+                targetHy = referenceHy + dHYdT / dHdT * (innerRadius - deltaHToEnd);                  
             }
 
             // compute the out of plane maneuver required to get this inclination offset
@@ -270,32 +287,22 @@ public class InclinationVector extends AbstractSKControl {
             final TunableManeuver[] models = isYawFlipped ? yawFlipModels(getModels()) : getModels();
 
             // find which thruster is the one to use (based on the thrust direction)
-            int modelIndex = -1;
+            int modelIndexPos = 0;
+            int modelIndexNeg = 0;
             if(models.length == 2){
-            	for(int i=0; i<2; i++){
-            		if(thrustSignMomentum(fitStart, models[i]) > 0){
-            			modelIndex = i;
-            		}
+            	if     (thrustSignMomentum(fitStart, models[0]) > 0  &&  thrustSignMomentum(fitStart, models[1]) < 0){
+            		modelIndexNeg = 1;
             	}
-            	if(modelIndex == -1){
-            		modelIndex = 0;
+            	else if(thrustSignMomentum(fitStart, models[0]) < 0  &&  thrustSignMomentum(fitStart, models[1]) > 0){
+            		modelIndexPos = 1;
+            	}
+            	else{
             		throw new SkatException(SkatMessages.INVALID_OPPOSED_THRUSTERS);
             	}
             }
-            else{
-            	modelIndex = 0;
-            }
-            final TunableManeuver model = models[modelIndex];
-            	
+            final TunableManeuver modelPos = models[modelIndexPos];
+            final TunableManeuver modelNeg = models[modelIndexNeg];
             
-            // compute the number and magnitude of required maneuvers 
-            nbMan                = FastMath.min(maxManeuvers, (int) FastMath.ceil(totalDeltaV / model.getDVSup()));
-            final double deltaV  = FastMath.min(model.getDVSup(), totalDeltaV / nbMan);
-
-            tuned = new ScheduledManeuver[tunables.length + nbMan];
-            System.arraycopy(tunables, 0, tuned, 0, tunables.length);
-            changeTrajectory(tuned, 0, tunables.length, adapterPropagator);
-
             // compute the local time of the maneuvers
             final EquinoctialOrbit orbit = (EquinoctialOrbit) OrbitType.EQUINOCTIAL.convertType(fitStart.getOrbit());
             final double alphaStart      = orbit.getLM();
@@ -304,19 +311,82 @@ public class InclinationVector extends AbstractSKControl {
             final double n               = fitStart.getKeplerianMeanMotion();
             final double separation      = orbitsSeparation * 2 * FastMath.PI / n;
             AbsoluteDate t0              = fitStart.getDate().shiftedBy(dAlpha / n);
-            while (t0.durationFrom(cycleStart) < firstOffset) {
-                t0 = t0.shiftedBy(separation);
-            }
+            
+            
+            if(!isPairedManeuvers){
+	            // Single maneuvers case
+            	// Compute the number and magnitude of required maneuvers 
+	            nbMan  = FastMath.min(maxManeuvers, (int) FastMath.ceil(totalDeltaV / modelPos.getDVSup()));
+	            final double deltaV = FastMath.min(modelPos.getDVSup(), totalDeltaV / nbMan);
+	
+	            tuned = new ScheduledManeuver[tunables.length + nbMan];
+	            System.arraycopy(tunables, 0, tuned, 0, tunables.length);
+	            changeTrajectory(tuned, 0, tunables.length, adapterPropagator);	
+	            
+	            while (t0.durationFrom(cycleStart) < firstOffset) {
+	                t0 = t0.shiftedBy(separation);
+	            }
 
-            // add the new maneuvers
-            for (int i = 0; i < nbMan; ++i) {
-                tuned[tunables.length + i] =
-                        new ScheduledManeuver(model, t0.shiftedBy(i * separation),
-                                              new Vector3D(deltaV, model.getDirection()),
-                                              model.getCurrentThrust(), model.getCurrentISP(),
-                                              adapterPropagator, false);
+	            // add the new maneuvers
+	            for (int i = 0; i < nbMan; ++i) {
+	                tuned[tunables.length + i] =
+	                        new ScheduledManeuver(modelPos, t0.shiftedBy(i * separation),
+	                                              new Vector3D(deltaV, modelPos.getDirection()),
+	                                              modelPos.getCurrentThrust(), modelPos.getCurrentISP(),
+	                                              adapterPropagator, false);
+	            }
             }
+            else{
+            	// Paired maneuvers case
+            	// Compute the number of required maneuver pairs 
+            	final double deltaVPairMax  = modelPos.getDVSup() + modelNeg.getDVSup();
+            	final int nbPairs           = FastMath.min(maxManeuvers, (int) FastMath.ceil(totalDeltaV / deltaVPairMax));
+            	final double lastPairDeltaV = totalDeltaV - (nbPairs-1) * deltaVPairMax ;
+            	if(lastPairDeltaV > modelPos.getDVSup()){
+            		nbMan = 2 * nbPairs;
+            	}else{
+            		nbMan = 2 * nbPairs - 1;
+            	}
+	
+            	// Create new maneuvers array
+	            tuned = new ScheduledManeuver[tunables.length + nbMan];
+	            System.arraycopy(tunables, 0, tuned, 0, tunables.length);
+	            changeTrajectory(tuned, 0, tunables.length, adapterPropagator);
+	            
+	            while (t0.durationFrom(cycleStart) < firstOffset) {
+	                t0 = t0.shiftedBy(separation);
+	            }
 
+	            // add the new full paired maneuvers
+	            for (int iPair = 0; iPair < nbPairs-1; ++iPair) {
+	                tuned[tunables.length + iPair*2] =
+	                        new ScheduledManeuver(modelPos, t0.shiftedBy(iPair * separation),
+                                    new Vector3D(modelPos.getDVSup(), modelPos.getDirection()),
+                                    modelPos.getCurrentThrust(), modelPos.getCurrentISP(),
+                                    adapterPropagator, false);
+	                tuned[tunables.length + iPair*2 + 1] =
+	                        new ScheduledManeuver(modelNeg, t0.shiftedBy(iPair * separation + Constants.JULIAN_DAY / 2),
+                                    new Vector3D(modelNeg.getDVSup(), modelNeg.getDirection()),
+                                    modelNeg.getCurrentThrust(), modelNeg.getCurrentISP(),
+                                    adapterPropagator, false);
+	            }
+	            // add the last pair (1 or 2 maneuvers)
+	            final double deltaVPos = FastMath.min(modelPos.getDVSup(), lastPairDeltaV);
+	            final int iPair = nbPairs-1;
+                tuned[tunables.length + iPair*2] =
+                        new ScheduledManeuver(modelPos, t0.shiftedBy(iPair * separation),
+                                new Vector3D(deltaVPos, modelPos.getDirection()),
+                                modelPos.getCurrentThrust(), modelPos.getCurrentISP(),
+                                adapterPropagator, false);
+                if(lastPairDeltaV > modelPos.getDVSup()){
+		            final double deltaVNeg = FastMath.min(modelNeg.getDVSup(), lastPairDeltaV - modelPos.getDVSup());
+	                tuned[tunables.length + iPair*2 + 1] =
+	                        new ScheduledManeuver(modelNeg, t0.shiftedBy(iPair * separation + Constants.JULIAN_DAY / 2),
+	                                new Vector3D(deltaVNeg, modelNeg.getDirection()),
+	                                modelNeg.getCurrentThrust(), modelNeg.getCurrentISP(),
+	                                adapterPropagator, false);
+                }
+            }
         } else {
 
             if (nbMan == 0) {

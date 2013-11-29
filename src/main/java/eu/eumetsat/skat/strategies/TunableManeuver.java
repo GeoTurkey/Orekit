@@ -56,6 +56,30 @@ public class TunableManeuver {
     /** Current ISP. */
     private double currentIsp;
 
+    /** Flag for the necessity of a slew prior to the maneuver */
+	private boolean isPreviousSlew;
+
+    /** Slew prior to the maneuver: fixed delta-V */
+	private Vector3D previousSlewDeltaV;
+
+    /** Slew prior to the maneuver: fixed mass consumption */
+	private double previousSlewDeltaMass;
+
+    /** Slew prior to the maneuver: fixed delay between slew and maneuver */
+	private double previousSlewDelay;
+
+    /** Flag for the necessity of a slew after to the maneuver */
+	private boolean isFollowingSlew;
+
+    /** Slew after the maneuver: fixed delta-V */
+	private Vector3D followingSlewDeltaV;
+
+    /** Slew after to the maneuver: fixed mass consumption */
+	private double followingSlewDeltaMass;
+
+	/** Slew after to the maneuver: fixed delay between maneuver and slew */
+	private double followingSlewDelay;
+
     /** Simple constructor.
      * @param name name of the maneuver
      * @param direction thrust direction in spacecraft frame
@@ -72,7 +96,9 @@ public class TunableManeuver {
                            final double[][] thrust, final double[][] isp, final double elimination,
                            final double dVInf, final double dVSup,
                            final double dVConvergence, final double dTConvergence,
-                           final AbsoluteDate endDate)
+                           final AbsoluteDate endDate,
+                           final boolean isPreviousSlew,  final Vector3D previousSlewDeltaV,  final double previousSlewDeltaMass,  final double previousSlewDelay,
+                           final boolean isFollowingSlew, final Vector3D followingSlewDeltaV, final double followingSlewDeltaMass, final double followingSlewDelay)
         throws SkatException {
         this.name                  = name;
         this.direction             = direction.normalize();
@@ -92,11 +118,19 @@ public class TunableManeuver {
             }
         }
 
-        this.elimination   = elimination;
-        this.dVInf         = dVInf;
-        this.dVSup         = dVSup;
-        this.dVConvergence = dVConvergence;
-        this.dTConvergence = dTConvergence;
+        this.elimination    = elimination;
+        this.dVInf          = dVInf;
+        this.dVSup          = dVSup;
+        this.dVConvergence  = dVConvergence;
+        this.dTConvergence  = dTConvergence;
+        this.isPreviousSlew = isPreviousSlew;
+        this.previousSlewDeltaV     = previousSlewDeltaV;
+        this.previousSlewDeltaMass  = previousSlewDeltaMass;
+        this.previousSlewDelay      = previousSlewDelay;
+        this.isFollowingSlew = isFollowingSlew;
+        this.followingSlewDeltaV    = followingSlewDeltaV;
+        this.followingSlewDeltaMass = followingSlewDeltaMass;
+        this.followingSlewDelay     = followingSlewDelay;
 
     }
 
@@ -267,5 +301,42 @@ public class TunableManeuver {
     public double getDVSup() {
         return dVSup;
     }
+
+    /** Get the flag for the presence of a previous mass-consuming slew.
+     * @return true if there is a previous slew, false otherwise
+     */
+	public boolean isPreviousSlew() {
+		return isPreviousSlew;
+	}
+
+	public Vector3D getPreviousSlewDeltaV() {
+		return previousSlewDeltaV;
+	}
+
+	public double getPreviousSlewDeltaMass() {
+		return previousSlewDeltaMass;
+	}
+
+	public double getPreviousSlewDelay() {
+		return previousSlewDelay;
+	}
+
+	public boolean isFollowingSlew() {
+		return isFollowingSlew;
+	}
+
+	public Vector3D getFollowingSlewDeltaV() {
+		return followingSlewDeltaV;
+	}
+
+	public double getFollowingSlewDeltaMass() {
+		return followingSlewDeltaMass;
+	}
+
+	public double getFollowingSlewDelay() {
+		return followingSlewDelay;
+	}
+
+
 
 }

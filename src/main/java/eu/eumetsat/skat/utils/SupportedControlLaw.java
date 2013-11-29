@@ -139,9 +139,10 @@ public enum SupportedControlLaw {
             final double referenceHx      = parser.getDouble(node, ParameterKey.CONTROL_INCLINATION_VECTOR_REFERENCE_HX);
             final double referenceHy      = parser.getDouble(node, ParameterKey.CONTROL_INCLINATION_VECTOR_REFERENCE_HY);
             final double limitInclination = parser.getAngle(node, ParameterKey.CONTROL_INCLINATION_LIMIT_INCLINATION_ANGLE);
+            final boolean isPairedManeuvers = parser.containsKey(node, ParameterKey.CONTROL_INCLINATION_IS_PAIRED_MANEUVERS) ? parser.getBoolean(node,ParameterKey.CONTROL_INCLINATION_IS_PAIRED_MANEUVERS) : false;
             return new InclinationVector(name, controlled, skat.getSpacecraftIndex(controlled),
                                          model, yawFlipSequence, firstOffset, maxManeuvers, orbitsSeparation,
-                                         referenceHx, referenceHy, limitInclination, sampling, horizon);
+                                         referenceHx, referenceHy, limitInclination, sampling, horizon, isPairedManeuvers);
         }
 
     },

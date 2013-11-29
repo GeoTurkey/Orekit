@@ -102,6 +102,7 @@ public enum ParameterKey {
     CONTROL_INCLINATION_VECTOR_REFERENCE_HX("reference_hx"),
     CONTROL_INCLINATION_VECTOR_REFERENCE_HY("reference_hy"),
     CONTROL_INCLINATION_LIMIT_INCLINATION_ANGLE("limit_inclination_angle"),
+    CONTROL_INCLINATION_IS_PAIRED_MANEUVERS("is_paired_maneuvers"),
     // Local solar time
     CONTROL_SOLAR_TIME_FIRST_OFFSET("offset_first_maneuver"),
     CONTROL_SOLAR_TIME_LATITUDE("latitude"),
@@ -147,6 +148,12 @@ public enum ParameterKey {
     MANEUVERS_DV_CONVERGENCE("dv_convergence"),
     MANEUVERS_DT_CONVERGENCE("dt_convergence"),
     MANEUVERS_ELIMINATION_THRESHOLD("elimination_threshold"),
+    MANEUVERS_PREVIOUS_SLEW_DELTA_V("previous_slew_delta_v"),
+    MANEUVERS_PREVIOUS_SLEW_DELTA_MASS("previous_slew_delta_mass"),
+    MANEUVERS_PREVIOUS_SLEW_DELAY("previous_slew_delay"),
+    MANEUVERS_FOLLOWING_SLEW_DELTA_V("following_slew_delta_v"),
+    MANEUVERS_FOLLOWING_SLEW_DELTA_MASS("following_slew_delta_mass"),
+    MANEUVERS_FOLLOWING_SLEW_DELAY("following_slew_delay"),
 
     COMPONENT_MANEUVER_DATE_ERROR_NAME("maneuver_name"),
     COMPONENT_MANEUVER_DATE_ERROR_STANDARD_DEVIATION("standard_deviation"),
