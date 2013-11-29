@@ -306,6 +306,7 @@ public class Skat {
         atmosphere = new DTM2000(msafe, sun, earth);
 
         startDate     = parser.getDate(simulationNode, ParameterKey.SIMULATION_START_DATE, utc);
+        endDate       = parser.getDate(simulationNode, ParameterKey.SIMULATION_END_DATE, utc);
         generator     = new Well19937a(parser.getInt(simulationNode, ParameterKey.SIMULATION_RANDOM_SEED));
         outputStep    = parser.getDouble(simulationNode, ParameterKey.SIMULATION_OUTPUT_STEP);
 
@@ -336,7 +337,7 @@ public class Skat {
             final double dtConvergence = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_DT_CONVERGENCE);
             final double elimination   = parser.getDouble(maneuver,  ParameterKey.MANEUVERS_ELIMINATION_THRESHOLD);
             maneuversModelsPool[i]     = new TunableManeuver(name, direction, thrust, isp, elimination,
-                                                             dvInf, dvSup, dvConvergence, dtConvergence);
+                                                             dvInf, dvSup, dvConvergence, dtConvergence, endDate);
 
         }
 
@@ -457,7 +458,6 @@ public class Skat {
 
         // set up scenario components
         scenario = (Scenario) SupportedScenariocomponent.SCENARIO.parse(parser, root, this);
-        endDate = parser.getDate(simulationNode, ParameterKey.SIMULATION_END_DATE, utc);
 
         // check that every spacecraft is managed by at least one propagation component
         for (int i = 0; i < managed.length; ++i) {
@@ -664,6 +664,13 @@ public class Skat {
      */
     public Map<SKControl, SimpleMonitorable> getControlLawsValuesMap() {
         return controlsValues;
+    }
+
+    /** Get the end date of the simulation.
+     * @return end date of the simulation
+     */
+    public AbsoluteDate getEndDate() {
+        return endDate;
     }
 
     /** Get the control laws violations monitoring map.

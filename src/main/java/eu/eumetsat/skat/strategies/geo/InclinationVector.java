@@ -235,11 +235,24 @@ public class InclinationVector extends AbstractSKControl {
             // we ignore Moon effects here since they have a too short period
             final double dHXdT = xModel.meanDerivative(date, 1, 1);
             final double dHYdT = yModel.meanDerivative(date, 1, 1);
-
-            // select a target a point on the limit circle
-            // such that trajectory enters the circle inner part radially at that point
-            targetHx = referenceHx - innerRadius * dHXdT / FastMath.hypot(dHXdT, dHYdT);
-            targetHy = referenceHy - innerRadius * dHYdT / FastMath.hypot(dHXdT, dHYdT);
+            final double dHdT  = FastMath.hypot(dHXdT, dHYdT);
+            
+            // Distance traveled by H vector at the end of life and increase it a bit to have some margin
+            final double margin      = .5;
+            final double deltaHToEnd = dHdT * getModel().getEndDate().durationFrom(fitStart.getDate()) * (1+margin);
+            
+            // Check for end of life: is there enough time left to travel the entire circle?
+            if (deltaHToEnd >= 2 * innerRadius) {
+            	// Normal OOP maneuver: target a point on the limit circle
+            	// such that trajectory crosses the circle radially 
+            	targetHx = referenceHx + dHXdT / dHdT * (-innerRadius);
+            	targetHy = referenceHy + dHYdT / dHdT * (-innerRadius);
+            } else {
+                // End-of-life maneuver: do not go back all the way to the lower edge,
+            	// leave just enough distance to finish life within the inner circle.
+                targetHx = referenceHx + dHXdT / dHdT * (innerRadius - deltaHToEnd);
+                targetHy = referenceHy + dHYdT / dHdT * (innerRadius - deltaHToEnd);                
+            }
 
             // compute the out of plane maneuver required to get this inclination offset
             final double deltaHx     = targetHx - startHx;

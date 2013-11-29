@@ -63,6 +63,9 @@ public class ControlLoop implements ScenarioComponent {
     /** Latest time horizon across all control laws. */
     private double maxTimeHorizon;
 
+    /** End date of the simulation. */
+    AbsoluteDate simulationEndDate;
+
     /** Simple constructor.
      * <p>
      * Creates an empty control loop with no control law.
@@ -73,18 +76,21 @@ public class ControlLoop implements ScenarioComponent {
      * @param lastCycle last cycle this loop should control
      * @param maxIter maximal number of iterations
      * @param randomizer orbit propagator randomizer
+     * @param simulationEndDate end date of the simulation
      */
     public ControlLoop(final int spacecraftIndex, final int firstCycle, final int lastCycle,
-                       final int maxIter, final PropagatorRandomizer randomizer) {
-        this.spacecraftIndex = spacecraftIndex;
-        this.firstCycle      = firstCycle;
-        this.lastCycle       = lastCycle;
-        this.maxIter         = maxIter;
-        this.randomizer      = randomizer;
-        this.tunables        = new HashSet<TunableManeuver>();
-        this.controls        = new ArrayList<SKControl>();
-        this.minTimeHorizon  = Double.POSITIVE_INFINITY;
-        this.maxTimeHorizon  = Double.NEGATIVE_INFINITY;
+                       final int maxIter, final PropagatorRandomizer randomizer,
+                       final AbsoluteDate simulationEndDate) {
+        this.spacecraftIndex   = spacecraftIndex;
+        this.firstCycle        = firstCycle;
+        this.lastCycle         = lastCycle;
+        this.maxIter           = maxIter;
+        this.randomizer        = randomizer;
+        this.tunables          = new HashSet<TunableManeuver>();
+        this.controls          = new ArrayList<SKControl>();
+        this.minTimeHorizon    = Double.POSITIVE_INFINITY;
+        this.maxTimeHorizon    = Double.NEGATIVE_INFINITY;
+        this.simulationEndDate = simulationEndDate;
     }
 
     /** Add a control law .
@@ -114,8 +120,13 @@ public class ControlLoop implements ScenarioComponent {
                 throw new SkatException(SkatMessages.NO_ESTIMATED_STATE,
                                         original.getName(), original.getCyclesNumber());
             }
-            updated[spacecraftIndex] =
-                    original.updateTargetCycleEnd(original.getEstimatedState().getDate().shiftedBy(minTimeHorizon));
+            
+			if (original.getTargetCycleEnd().compareTo(simulationEndDate) == 0) {
+			    updated[spacecraftIndex] = original;
+			} else {
+	            updated[spacecraftIndex] =
+	                    original.updateTargetCycleEnd(original.getEstimatedState().getDate().shiftedBy(minTimeHorizon));
+			}
 
             // set the reference consumed mass for maneuvers
             for (TunableManeuver tunable: tunables) {

@@ -6,6 +6,9 @@ import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import eu.eumetsat.skat.utils.SkatException;
 import eu.eumetsat.skat.utils.SkatMessages;
 
+import org.orekit.time.AbsoluteDate;
+
+
 /**
  * This class represents an impulse maneuver with free parameters for date
  * and velocity increment.
@@ -44,6 +47,9 @@ public class TunableManeuver {
     /** Elimination threshold. */
     private final double elimination;
 
+    /** End date of the simulation. */
+    private AbsoluteDate endDate;
+
     /** Current thrust. */
     private double currentThrust;
 
@@ -65,11 +71,13 @@ public class TunableManeuver {
     public TunableManeuver(final String name, final Vector3D direction,
                            final double[][] thrust, final double[][] isp, final double elimination,
                            final double dVInf, final double dVSup,
-                           final double dVConvergence, final double dTConvergence)
+                           final double dVConvergence, final double dTConvergence,
+                           final AbsoluteDate endDate)
         throws SkatException {
         this.name                  = name;
         this.direction             = direction.normalize();
         this.thrust                = thrust.clone();
+        this.endDate               = endDate;
         for (int i = 1; i < thrust.length; ++i) {
             if (thrust[i - 1][1] > thrust[i][1]) {
                 throw new SkatException(SkatMessages.NON_INCREASING_MASSES_IN_THRUST_CALIBRATION_CURVE,
@@ -209,6 +217,13 @@ public class TunableManeuver {
     public double getDTConvergence() {
         return dTConvergence;
     }
+
+    /** Get end date of the simulation.
+    * @return end date of the simulation
+    */
+   public AbsoluteDate getEndDate() {
+       return endDate;
+   }
 
     /** Get the convergence threshold for velocity increment.
      * @return convergence threshold for velocity increment
