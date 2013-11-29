@@ -211,12 +211,104 @@ public class EccentricityCircle extends AbstractSKControl {
                                              final BoundedPropagator reference)
         throws OrekitException {
 
-        // Check if tuning maneuvers is needed
+        // Check which maneuver tuning is needed
         if (singleBurn && getMargins() >= 0) {
-            // No need to tune maneuvers as no constraint violation has been checked
-            return tunables;
+        	
+        	// Single burn case, within margins
+        	// Change only the point of application of the longitude maneuvers
+        	// The delta-e magnitude remains the one needed for longitude but 
+        	// the direction is enhanced
+        	
+            
+            // try to select a pair of in-plane maneuvers
+            final int[] indices = selectManeuversPair(tunables);
 
+            if ((indices[1] < 0) || (indices[0] >= 0 && indices[1] >= 0)) {
+
+                // we have zero maneuver or a full pair (already eccentricity-optimized)
+            	// do nothing
+                return tunables;
+ 
+                
+            } else {
+            	// indices[0] < 0 && indices [1] >= 0
+            	// we have one isolated IP maneuver (longitude)
+            	// tune its date to correctly orient its delta-eccentricity
+            	final int index = indices[1];
+            	            	
+                // mean eccentricity at cycle middle time
+                final AbsoluteDate middleDate = cycleStart.shiftedBy(0.5 * (cycleEnd.durationFrom(cycleStart)));
+                final double meanEx = xModel.meanValue(middleDate, 0, 1);
+                final double meanEy = yModel.meanValue(middleDate, 0, 1);
+
+                // desired eccentricity at cycle middle time
+                final PVCoordinates sunPV = sun.getPVCoordinates(middleDate, fitStart.getFrame());
+                final double alphaSun = sunPV.getPosition().getAlpha();
+                final double targetEx = centerX + meanRadius * FastMath.cos(alphaSun);
+                final double targetEy = centerY + meanRadius * FastMath.sin(alphaSun);
+
+                // eccentricity change needed
+                final double deX = targetEx - meanEx;
+                final double deY = targetEy - meanEy;
+
+                final ScheduledManeuver[] tuned;
+                final AdapterPropagator adapterPropagator = new AdapterPropagator(reference);
+
+                // copy the array
+            	tuned = tunables.clone();
+                        
+            	// the maneuver magnitude won't be changed 
+            	final double dV0 = tunables[index].getSignedDeltaV();
+
+            	// compute the desired application angle of the maneuver
+                final SpacecraftState state  = tunables[index].getStateBefore();
+                final double sign            = thrustSignVelocity(state);
+                final EquinoctialOrbit orbit = (EquinoctialOrbit) OrbitType.EQUINOCTIAL.convertType(state.getOrbit());
+                final double alphaState      = orbit.getLM();
+                final double alphaMan        = FastMath.atan2(sign * deY, sign * deX);
+                final double dAlpha          = MathUtils.normalizeAngle(alphaMan - alphaState, 0);
+                final double n               = state.getKeplerianMeanMotion();
+
+                // derive the corresponding application date
+                AbsoluteDate t = state.getDate().shiftedBy(dAlpha / n);
+                final AbsoluteDate t0  = (t.compareTo(cycleStart.getDate()) <= 0) ? t.shiftedBy(2 * FastMath.PI / n) : t;
+                                
+                // adjust maneuver
+                final TunableManeuver model = getModel();
+                final ScheduledManeuver m0 = new ScheduledManeuver(model, t0, new Vector3D(dV0, model.getDirection()),
+                                                                   model.getCurrentThrust(), model.getCurrentISP(),
+                                                                   adapterPropagator, false);
+                adapterPropagator.addEffect(new SmallManeuverAnalyticalModel(m0.getStateBefore(),
+                                                                             m0.getDeltaV(),
+                                                                             m0.getIsp()));
+                tuned[index] = m0;
+
+
+                // change the trajectory of untouched maneuvers
+                for (int i = 0; i < tuned.length; ++i) {
+                    if (i != index) {
+                        final ScheduledManeuver maneuver =
+                                new ScheduledManeuver(tuned[i].getModel(), tuned[i].getDate(),
+                                                      tuned[i].getDeltaV(), tuned[i].getThrust(),
+                                                      tuned[i].getIsp(), adapterPropagator,
+                                                      tuned[i].isReplanned());
+                        tuned[i] = maneuver;
+                        adapterPropagator.addEffect(new SmallManeuverAnalyticalModel(maneuver.getStateBefore(),
+                                                                                     maneuver.getDeltaV(),
+                                                                                     maneuver.getIsp()));
+                    }
+                }
+
+                return tuned;
+
+            }
+
+            
         } else {
+        	// Double burn case (or single burn, but out of margins)
+        	// Re-tune previous IP maneuvers, split them or create new specifically 
+        	// eccentricity-related maneuver pair
+        	
             // mean eccentricity at cycle middle time
             final AbsoluteDate middleDate = cycleStart.shiftedBy(0.5 * (cycleEnd.durationFrom(cycleStart)));
             final double meanEx = xModel.meanValue(middleDate, 0, 1);
