@@ -58,6 +58,8 @@ public enum SkatMessages implements Localizable {
     INITIAL_MASS_LARGER_THAN_BOL_MASS("initial mass ({0} kg) larger than Begin Of Life mass ({1} kg)"),
     NON_INCREASING_MASSES_IN_THRUST_CALIBRATION_CURVE("non increasing masses in thrust decay law: {0} > {1}"),
     NON_INCREASING_MASSES_IN_ISP_CALIBRATION_CURVE("non increasing masses in ISP decay law: {0} > {1}"),
+    NON_INCREASING_MASSES_IN_DELTAV_SUP_CALIBRATION_CURVE("non increasing masses in delta-V sup decay law: {0} > {1}"),
+    NON_INCREASING_MASSES_IN_DELTAV_INF_CALIBRATION_CURVE("non increasing masses in delta-V inf decay law: {0} > {1}"),
     NON_INCREASING_DATES_IN_ENTRY_DELAY_CURVE("non increasing dates in entry delay curve: {0} > {1}"),
     NON_INCREASING_DATES_IN_EXIT_DELAY_CURVE("non increasing dates in exit delay curve: {0} > {1}"),
     UNSORTED_LONGITUDES("unsorted longitude limits: {0} >= {1}"),

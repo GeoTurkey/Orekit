@@ -74,6 +74,7 @@ import eu.eumetsat.skat.utils.SimpleMonitorable;
 import eu.eumetsat.skat.utils.SkatException;
 import eu.eumetsat.skat.utils.SkatFileParser;
 import eu.eumetsat.skat.utils.SkatMessages;
+import eu.eumetsat.skat.utils.SkatParser;
 import eu.eumetsat.skat.utils.SupportedScenariocomponent;
 
 /** Station-Keeping Analysis Tool (SKAT).
@@ -331,8 +332,6 @@ public class Skat {
             final Vector3D direction            = parser.getVector(maneuver, ParameterKey.MANEUVERS_DIRECTION).normalize();
             final double[][] thrust             = parser.getDoubleArray2(maneuver,  ParameterKey.MANEUVERS_THRUST);
             final double[][] isp                = parser.getDoubleArray2(maneuver,  ParameterKey.MANEUVERS_ISP_CURVE);
-            final double dvInf                  = parser.getDouble(maneuver, ParameterKey.MANEUVERS_DV_INF);
-            final double dvSup                  = parser.getDouble(maneuver, ParameterKey.MANEUVERS_DV_SUP);
             final double dvConvergence          = parser.getDouble(maneuver, ParameterKey.MANEUVERS_DV_CONVERGENCE);
             final double dtConvergence          = parser.getDouble(maneuver, ParameterKey.MANEUVERS_DT_CONVERGENCE);
             final double elimination            = parser.getDouble(maneuver, ParameterKey.MANEUVERS_ELIMINATION_THRESHOLD);
@@ -344,8 +343,35 @@ public class Skat {
             final Vector3D followingSlewDeltaV  = isFollowingSlew ? parser.getVector(maneuver, ParameterKey.MANEUVERS_FOLLOWING_SLEW_DELTA_V) : new Vector3D(0.,0.,0.);
             final double followingSlewDeltaMass = isFollowingSlew ? parser.getDouble(maneuver, ParameterKey.MANEUVERS_FOLLOWING_SLEW_DELTA_MASS) : 0.0;
             final double followingSlewDelay     = isFollowingSlew ? parser.getDouble(maneuver, ParameterKey.MANEUVERS_FOLLOWING_SLEW_DELAY) : 0.0;
+            
+            // dv_inf field may either be double[n][2] (variable, function of mass)
+            // or double (constant, for backward compatibility) 
+            double[][] dvInf;
+            if(parser.getValue(maneuver, ParameterKey.MANEUVERS_DV_INF).getType()
+            		== SkatParser.ARRAY){
+             	dvInf = parser.getDoubleArray2(maneuver, ParameterKey.MANEUVERS_DV_INF);
+            }
+            else{
+             	dvInf = new double[1][2];
+            	dvInf[0][0] = parser.getDouble(maneuver, ParameterKey.MANEUVERS_DV_INF);
+            	dvInf[0][1] = 0.;
+            }
+            
+            // dv_sup field may either be double[n][2] (variable, function of mass)
+            // or double (constant, for backward compatibility) 
+            double[][] dvSup;
+            if(parser.getValue(maneuver, ParameterKey.MANEUVERS_DV_SUP).getType()
+            		== SkatParser.ARRAY){
+             	dvSup = parser.getDoubleArray2(maneuver, ParameterKey.MANEUVERS_DV_SUP);
+            }
+            else{
+             	dvSup = new double[1][2];
+            	dvSup[0][0] = parser.getDouble(maneuver, ParameterKey.MANEUVERS_DV_SUP);
+            	dvSup[0][1] = 0.;
+            }
+            
             maneuversModelsPool[i] = new TunableManeuver(name, direction, thrust, isp, elimination,
-                                                         dvInf, dvSup, dvConvergence, dtConvergence, endDate,
+                                                         dvInf, dvSup, dvConvergence, dtConvergence, startDate, endDate,
                                                          isPreviousSlew,  previousSlewDeltaV,  previousSlewDeltaMass,  previousSlewDelay,
                                                          isFollowingSlew, followingSlewDeltaV, followingSlewDeltaMass, followingSlewDelay);
         }

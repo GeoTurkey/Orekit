@@ -314,11 +314,11 @@ public class ParabolicLongitude extends AbstractSKControl {
 
             // compute the number of maneuvers required
             final TunableManeuver model = getModel();
-            final double limitDV = (totalDeltaV < 0) ? model.getDVInf() : model.getDVSup();
+            final double limitDV = (totalDeltaV < 0) ? model.getCurrentDVInf() : model.getCurrentDVSup();
             final int    nMan    = FastMath.min(maxManeuvers,
                                                 (int) FastMath.ceil(FastMath.abs(totalDeltaV / limitDV)));
-            final double deltaV  = FastMath.max(model.getDVInf(),
-                                                FastMath.min(model.getDVSup(), totalDeltaV / nMan));
+            final double deltaV  = FastMath.max(model.getCurrentDVInf(),
+                                                FastMath.min(model.getCurrentDVSup(), totalDeltaV / nMan));
 
             tuned = new ScheduledManeuver[tunables.length + nMan];
             System.arraycopy(tunables, 0, tuned, 0, tunables.length);

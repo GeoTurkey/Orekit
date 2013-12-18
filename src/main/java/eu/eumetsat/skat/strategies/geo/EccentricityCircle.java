@@ -1,15 +1,20 @@
 /* Copyright 2011 Eumetsat */
 package eu.eumetsat.skat.strategies.geo;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
+import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
 import org.apache.commons.math3.util.FastMath;
 import org.apache.commons.math3.util.MathUtils;
 import org.orekit.bodies.CelestialBody;
 import org.orekit.errors.OrekitException;
 import org.orekit.errors.PropagationException;
 import org.orekit.forces.maneuvers.SmallManeuverAnalyticalModel;
+import org.orekit.frames.FramesFactory;
 import org.orekit.orbits.EquinoctialOrbit;
 import org.orekit.orbits.OrbitType;
 import org.orekit.propagation.BoundedPropagator;
@@ -80,6 +85,9 @@ public class EccentricityCircle extends AbstractSKControl {
     /** Moon pulsation (one Moon synodic period). */
     private static final double MOON_PULSATION = 2.0 * FastMath.PI / (29.530589 * Constants.JULIAN_DAY);
 
+    /** Average delta-V spent to control inclination [m/s/year] (Soop table 3 lowest value)*/
+    private static final double MEAN_OOP_DV_PER_YEAR = 40.6;
+	
     /** Associated step handler. */
     private final OrekitStepHandler stephandler;
 
@@ -116,6 +124,12 @@ public class EccentricityCircle extends AbstractSKControl {
     /** Cycle end. */
     private AbsoluteDate cycleEnd;
 
+	private TunableManeuver oopManeuver;
+
+	private AbsoluteDate lastOopManeuverDate;
+
+	private final double oopPrecompensationMargin = .8;
+
     /** Simple constructor.
      * @param name name of the control law
      * @param controlledName name of the controlled spacecraft
@@ -130,11 +144,12 @@ public class EccentricityCircle extends AbstractSKControl {
      * @param sun Sun model
      * @param samplingStep step to use for sampling throughout propagation
      * @param horizon time horizon duration
+     * @param oopManeuver optional OOP maneuver which X-coupling will be compensated for (null if dummy)
      */
     public EccentricityCircle(final String name, final String controlledName, final int controlledIndex,
                               final TunableManeuver[] model, int[][] yawFlipSequence, final double centerX, final double centerY,
                               final double meanRadius, final double maxRadius, final boolean singleBurn,
-                              final CelestialBody sun, final double samplingStep, final double horizon) {
+                              final CelestialBody sun, final double samplingStep, final double horizon, TunableManeuver oopManeuver) {
         super(name, model, yawFlipSequence, controlledName, controlledIndex, null, -1, 0, maxRadius, horizon * Constants.JULIAN_DAY);
         this.stephandler  = new Handler();
         this.centerX      = centerX;
@@ -143,6 +158,8 @@ public class EccentricityCircle extends AbstractSKControl {
         this.singleBurn   = singleBurn;
         this.sun          = sun;
         this.samplingStep = samplingStep;
+        this.oopManeuver  = oopManeuver;
+        
 
         xModel = new SecularAndHarmonic(0,
                                          new double[] {
@@ -183,6 +200,12 @@ public class EccentricityCircle extends AbstractSKControl {
 
         // select a long maneuver-free interval for fitting
         final AbsoluteDate[] freeInterval = getManeuverFreeInterval(maneuvers, fixedManeuvers, start, end);
+        
+        // Search for new OOP maneuvers performed by any other control law (same control loop)
+        //updateLastOopManeuverDate(maneuvers);
+
+        // Search for new OOP maneuvers performed by any other control loop
+        updateLastOopManeuverDate(fixedManeuvers);
 
         fitStart   = propagator.propagate(freeInterval[0]);
         cycleStart = start;
@@ -207,7 +230,41 @@ public class EccentricityCircle extends AbstractSKControl {
 
     }
 
-    /** {@inheritDoc} */
+    private void updateLastOopManeuverDate(ScheduledManeuver[] maneuvers) {
+    	
+		// create a list and copy the array content into it
+    	final List<ScheduledManeuver> maneuversList = new ArrayList<ScheduledManeuver>();
+    	
+        for (final ScheduledManeuver maneuver : maneuvers) {
+            	// copy the maneuvers array into the list
+        		maneuversList.add(maneuver);
+            }
+
+        // Call the original function (accepting only a list of maneuvers as input)
+        updateLastOopManeuverDate(maneuversList);
+	}
+
+	private void updateLastOopManeuverDate(List<ScheduledManeuver> fixedManeuvers) {
+    	
+    	// Do something only if there is some OOP maneuver to monitor and compensate for
+    	if(oopManeuver != null){
+    		
+    		if(lastOopManeuverDate == null){
+	    		// If no OOP maneuver has been performed so far, initialize search date at simulation start
+    			lastOopManeuverDate = oopManeuver.getBeginningDate();
+    		}
+	        
+	        // Loop on new OOP maneuvers and remember the last one
+	        for (final ScheduledManeuver maneuver : fixedManeuvers) {
+	            final AbsoluteDate date = maneuver.getDate();
+	            if (maneuver.getName().equals(oopManeuver.getName()) && date.compareTo(lastOopManeuverDate) >= 0) {
+	                lastOopManeuverDate = date;
+	            }
+	        }
+    	}
+	}
+
+	/** {@inheritDoc} */
     public ScheduledManeuver[] tuneManeuvers(final ScheduledManeuver[] tunables,
                                              final BoundedPropagator reference)
         throws OrekitException {
@@ -247,10 +304,26 @@ public class EccentricityCircle extends AbstractSKControl {
                 final double alphaSun = sunPV.getPosition().getAlpha();
                 final double targetEx = centerX + meanRadius * FastMath.cos(alphaSun);
                 final double targetEy = centerY + meanRadius * FastMath.sin(alphaSun);
+                
+                // Approximate OOP X-coupling perturbation on the eccentricity
+                final Vector2D deOopCrossCoupling = getOopCrossCouplingPerturbation();
 
                 // eccentricity change needed
-                final double deX = targetEx - meanEx;
-                final double deY = targetEy - meanEy;
+                double deX = targetEx - meanEx;
+                double deY = targetEy - meanEy;
+                
+                // OOP precompensation case
+                if(oopManeuver != null){
+    	            if(FastMath.hypot(targetEx - deOopCrossCoupling.getX(), targetEy - deOopCrossCoupling.getY()) < getMax()*oopPrecompensationMargin){
+    	            	// add OOP compensation
+    	            	deX -= deOopCrossCoupling.getX();
+    	            	deY -= deOopCrossCoupling.getY();
+    	            }else{
+    	            	// If it would drive us off circle, just maintain the eccentricity as is
+    	            	deX = 0;
+    	            	deY = 0;
+    	            }
+                }
 
                 final ScheduledManeuver[] tuned;
                 final AdapterPropagator adapterPropagator = new AdapterPropagator(reference);
@@ -320,10 +393,29 @@ public class EccentricityCircle extends AbstractSKControl {
             final double alphaSun = sunPV.getPosition().getAlpha();
             final double targetEx = centerX + meanRadius * FastMath.cos(alphaSun);
             final double targetEy = centerY + meanRadius * FastMath.sin(alphaSun);
+            
 
             // eccentricity change needed
-            final double deX = targetEx - meanEx;
-            final double deY = targetEy - meanEy;
+            double deX = targetEx - meanEx;
+            double deY = targetEy - meanEy;
+            
+            // OOP pre-compensation case, within margins
+            if(oopManeuver != null && getMargins() >= 0){
+            	
+	            // Approximate OOP X-coupling perturbation on the eccentricity
+	            final Vector2D deOopCrossCoupling = getOopCrossCouplingPerturbation();
+	            
+	            if(FastMath.hypot(targetEx - deOopCrossCoupling.getX(), targetEy - deOopCrossCoupling.getY()) < getMax()*oopPrecompensationMargin){
+	            	// add OOP compensation, except if it brings the eccentricity too close to the margin
+	            	deX -= deOopCrossCoupling.getX();
+	            	deY -= deOopCrossCoupling.getY();
+	            }else{
+	            	// If it would drive us too close, just maintain the eccentricity as is
+	            	deX = 0;
+	            	deY = 0;
+	            }
+            }
+            
             final double vs  = fitStart.getPVCoordinates().getVelocity().getNorm();
             final double dV  = 0.5 * FastMath.hypot(deX, deY) * vs;
 
@@ -442,7 +534,44 @@ public class EccentricityCircle extends AbstractSKControl {
 
     }
 
-    /** Ensure a maneuvers pair to fulfill constraints.
+    
+	/** Compute an approximated value of the eccentricity drift due to OOP X-coupling.
+     * <p>
+     * We want to compensate for past and future eccentricity bumps due to 
+     * OOP maneuvers X-coupling. This function approximates the average 
+     * delta-V spent for OOP control, multiplies it by the X-coupling set by
+     * the user and returns the average eccentricity drift that eccentricity
+     * control maneuvers will have to compensate for.
+     * </p>
+     * @return eccentricity perturbation since last OOP maneuver
+     */
+    private Vector2D getOopCrossCouplingPerturbation() throws OrekitException {
+    	
+    	if(oopManeuver == null){
+    		return new Vector2D(0., 0.);
+    		
+    	}else{
+    		// When no OOP maneuver has been performed yet, consider the start of the simulation as the last one
+	    	AbsoluteDate lastManeuverDate = (lastOopManeuverDate == null) ? oopManeuver.getBeginningDate() : lastOopManeuverDate.getDate();
+    			
+			// Delta-V probably spent if the next inclination maneuver would happen now
+	    	// This is the average OOP delta-V per time (~45m/s/year) integrated over the time since last OOP maneuver
+			final double meanOopDvPerCycle = MEAN_OOP_DV_PER_YEAR / Constants.JULIAN_YEAR * cycleStart.durationFrom(lastManeuverDate);
+
+			// Inertial velocity
+			final double velocity = fitStart.getPVCoordinates(FramesFactory.getMOD(false)).getVelocity().getNorm();
+
+			// Assuming that the OOP maneuvers are performed as single North burns,
+			// derive the probable eccentricity perturbation of next OOP maneuver:
+			// OOP X-coupling along +X moves the eccentricity towards -Y
+			// OOP X-coupling along +Z moves the eccentricity towards -X
+			final double deX = - meanOopDvPerCycle / velocity * oopManeuver.getDirection().getZ();
+			final double deY = - meanOopDvPerCycle / velocity * oopManeuver.getDirection().getX();
+			return new Vector2D(deX, deY);
+    	}
+	}
+
+	/** Ensure a maneuvers pair to fulfill constraints.
      * <p>
      * We have an initial pair of maneuvers (dV0, dV1) attempting to control
      * eccentricity. This pair must fulfill the dVinf and dVsup limits at
@@ -459,8 +588,8 @@ public class EccentricityCircle extends AbstractSKControl {
     private double[] trimManeuvers(final double dV0, final double dV1) {
 
         // ensure the sum fulfills the constraints (this should really be a no-op)
-        final double inf = getModel().getDVInf();
-        final double sup = getModel().getDVSup();
+        final double inf = getModel().getCurrentDVInf();
+        final double sup = getModel().getCurrentDVSup();
         final double sum = FastMath.max(2 * inf, FastMath.min(2 * sup, dV0 + dV1));
         final double sumCorrection = 0.5 * (sum - (dV0 + dV1));
         final double dVA = dV0 + sumCorrection;

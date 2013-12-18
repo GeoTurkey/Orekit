@@ -155,7 +155,7 @@ public class ControlLoop implements ScenarioComponent {
                 }
                 runCycle(iter, maneuvers, propagator, original.getManeuvers(), reference.getMinDate());
 
-                // prepare maneuver update
+                // prepare maneuver update	
                 ScheduledManeuver[] tuned = maneuvers.clone();
 
                 // update the maneuvers

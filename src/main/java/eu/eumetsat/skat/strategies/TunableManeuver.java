@@ -32,11 +32,17 @@ public class TunableManeuver {
     /** Specific impulse calibration curve. */
     private final double[][] isp;
 
-    /** Lower bound for velocity increment. */
-    private final double dVInf;
+    /** Lower bound for velocity increment, calibration curve */
+    private final double[][] dVInf;
 
-    /** Upper bound for velocity increment. */
-    private final double dVSup;
+    /** Upper bound for velocity increment, calibration curve. */
+    private final double[][] dVSup;
+
+    /** Current lower bound for velocity increment. */
+    private double currentDVInf;
+
+    /** Current upper bound for velocity increment. */
+    private double currentDVSup;
 
     /** Convergence threshold for velocity increment. */
     private final double dVConvergence;
@@ -80,6 +86,9 @@ public class TunableManeuver {
 	/** Slew after to the maneuver: fixed delay between maneuver and slew */
 	private double followingSlewDelay;
 
+	/** Simulation start date */
+	private AbsoluteDate beginningDate;
+
     /** Simple constructor.
      * @param name name of the maneuver
      * @param direction thrust direction in spacecraft frame
@@ -88,21 +97,24 @@ public class TunableManeuver {
      * @param elimination elimination threshold
      * @param dVInf lower bound for velocity increment
      * @param dVSup upper bound for velocity increment
+     * @param beginningDate simulation beginning date
+     * @param endDate simulation ending date
      * @param dVConvergence convergence threshold for velocity increment
      * @param dTConvergence convergence threshold for date offset
      * @exception SkatException if calibration curves are not ordered
      */
     public TunableManeuver(final String name, final Vector3D direction,
                            final double[][] thrust, final double[][] isp, final double elimination,
-                           final double dVInf, final double dVSup,
+                           final double[][] dVInf,  final double[][] dVSup,
                            final double dVConvergence, final double dTConvergence,
-                           final AbsoluteDate endDate,
+                           final AbsoluteDate beginningDate, final AbsoluteDate endDate, 
                            final boolean isPreviousSlew,  final Vector3D previousSlewDeltaV,  final double previousSlewDeltaMass,  final double previousSlewDelay,
                            final boolean isFollowingSlew, final Vector3D followingSlewDeltaV, final double followingSlewDeltaMass, final double followingSlewDelay)
         throws SkatException {
         this.name                  = name;
         this.direction             = direction.normalize();
         this.thrust                = thrust.clone();
+        this.beginningDate         = beginningDate;
         this.endDate               = endDate;
         for (int i = 1; i < thrust.length; ++i) {
             if (thrust[i - 1][1] > thrust[i][1]) {
@@ -117,17 +129,29 @@ public class TunableManeuver {
                                         isp[i - 1][1], isp[i][1]);
             }
         }
+        this.dVInf = dVInf.clone();
+        for (int i = 1; i < dVInf.length; ++i) {
+            if (dVInf[i - 1][1] > dVInf[i][1]) {
+                throw new SkatException(SkatMessages.NON_INCREASING_MASSES_IN_DELTAV_INF_CALIBRATION_CURVE,
+                		                dVInf[i - 1][1], dVInf[i][1]);
+            }
+        }
+        this.dVSup  = dVSup.clone();
+        for (int i = 1; i < dVSup.length; ++i) {
+            if (dVSup[i - 1][1] > dVSup[i][1]) {
+                throw new SkatException(SkatMessages.NON_INCREASING_MASSES_IN_DELTAV_SUP_CALIBRATION_CURVE,
+                		                dVSup[i - 1][1], dVSup[i][1]);
+            }
+        }
 
         this.elimination    = elimination;
-        this.dVInf          = dVInf;
-        this.dVSup          = dVSup;
         this.dVConvergence  = dVConvergence;
         this.dTConvergence  = dTConvergence;
         this.isPreviousSlew = isPreviousSlew;
         this.previousSlewDeltaV     = previousSlewDeltaV;
         this.previousSlewDeltaMass  = previousSlewDeltaMass;
         this.previousSlewDelay      = previousSlewDelay;
-        this.isFollowingSlew = isFollowingSlew;
+        this.isFollowingSlew        = isFollowingSlew;
         this.followingSlewDeltaV    = followingSlewDeltaV;
         this.followingSlewDeltaMass = followingSlewDeltaMass;
         this.followingSlewDelay     = followingSlewDelay;
@@ -147,8 +171,10 @@ public class TunableManeuver {
         this.isp           = model.isp.clone();
         this.endDate       = model.endDate;
         this.elimination   = model.elimination;
-        this.dVInf         = model.dVInf;
-        this.dVSup         = model.dVSup;
+        this.dVInf         = model.dVInf.clone();
+        this.dVSup         = model.dVSup.clone();
+        this.currentDVInf  = model.currentDVInf;
+        this.currentDVSup  = model.currentDVSup;
         this.dVConvergence = model.dVConvergence;
         this.dTConvergence = model.dTConvergence;
         this.currentThrust = model.currentThrust;;
@@ -165,7 +191,7 @@ public class TunableManeuver {
 
     /** Set the reference consumed mass.
      * <p>
-     * The reference consumed mass is used to interpolate the thrust and ISP
+     * The reference consumed mass is used to interpolate the thrust, ISP and extreme delta-V
      * to use from the calibration curves.
      * </p>
      * @param consumedMass reference consumed mass
@@ -173,6 +199,8 @@ public class TunableManeuver {
     public void setReferenceConsumedMass(final double consumedMass) {
         updateThrust(consumedMass);
         updateISP(consumedMass);
+        updateDVInf(consumedMass);
+        updateDVSup(consumedMass);
     }
 
     /** Get the thrust direction in spacecraft frame.
@@ -210,6 +238,68 @@ public class TunableManeuver {
 
         // otherwise, we assign first point
         currentThrust = thrust[0][0];
+
+    }
+
+    /** Update the current lower delta-V bound.
+     * @param consumedMass reference consumed mass
+     */
+    public void updateDVInf(final double consumedMass) {
+
+        if (consumedMass >= dVInf[dVInf.length-1][1]) {
+            // mass is greater than last curve point,
+            // we are in a regulated phase, extreme delta-V is constant
+            currentDVInf = dVInf[dVInf.length-1][0];
+            return;
+        }
+
+        for (int i = dVInf.length-1; i > 0 ; --i) {
+            if (consumedMass >= dVInf[i-1][1]) {
+                // we are in an interval between two curve points
+                // we are in blow-down mode, extreme delta-V evolves linearly
+                final double dVInf0 = dVInf[i - 1][0];
+                final double mass0  = dVInf[i - 1][1];
+                final double dVInf1 = dVInf[i][0];
+                final double mass1  = dVInf[i][1];
+                currentDVInf = (dVInf0 * (consumedMass - mass1) + dVInf1 * (mass0 - consumedMass)) /
+                                (mass0 - mass1);
+                return;
+            }
+        }
+
+        // otherwise, we assign first point
+        currentDVInf = dVInf[0][0];
+
+    }
+
+    /** Update the current upper delta-V bound.
+     * @param consumedMass reference consumed mass
+     */
+    public void updateDVSup(final double consumedMass) {
+
+        if (consumedMass >= dVSup[dVSup.length-1][1]) {
+            // mass is greater than last curve point,
+            // we are in a regulated phase, extreme delta-V is constant
+            currentDVSup = dVSup[dVSup.length-1][0];
+            return;
+        }
+
+        for (int i = dVSup.length-1; i > 0 ; --i) {
+            if (consumedMass >= dVSup[i-1][1]) {
+                // we are in an interval between two curve points
+                // we are in blow-down mode, extreme delta-V evolves linearly
+                final double dVSup0 = dVSup[i - 1][0];
+                final double mass0  = dVSup[i - 1][1];
+                final double dVSup1 = dVSup[i][0];
+                final double mass1  = dVSup[i][1];
+                currentDVSup = (dVSup0 * (consumedMass - mass1) + dVSup1 * (mass0 - consumedMass)) /
+                                (mass0 - mass1);
+                return;
+            }
+        }
+
+        // otherwise, we assign first point
+        currentDVSup = dVSup[0][0];
 
     }
 
@@ -260,6 +350,22 @@ public class TunableManeuver {
         return currentIsp;
     }
 
+    /** Get the current value of the lower bound for velocity increment.
+     * @return current value of the lower bound for velocity increment
+     * @see #updateDVInf(double)
+     */
+    public double getCurrentDVInf() {
+        return currentDVInf;
+    }
+
+    /** Get the current value of the upper bound for velocity increment.
+     * @return current value of the upper bound for velocity increment
+     * @see #updateDVSup(double)
+     */
+    public double getCurrentDVSup() {
+        return currentDVSup;
+    }
+
     /** Get the elimination threshold.
      * @return elimination threshold
      */
@@ -286,20 +392,6 @@ public class TunableManeuver {
      */
     public double getDVConvergence() {
         return dVConvergence;
-    }
-
-    /** Get the lower bound for velocity increment.
-     * @return lower bound for velocity increment
-     */
-    public double getDVInf() {
-        return dVInf;
-    }
-
-    /** Get the upper bound for velocity increment.
-     * @return upper bound for velocity increment
-     */
-    public double getDVSup() {
-        return dVSup;
     }
 
     /** Get the flag for the presence of a previous mass-consuming slew.
@@ -337,6 +429,9 @@ public class TunableManeuver {
 		return followingSlewDelay;
 	}
 
+	public AbsoluteDate getBeginningDate() {
+		return beginningDate;
+	}
 
 
 }

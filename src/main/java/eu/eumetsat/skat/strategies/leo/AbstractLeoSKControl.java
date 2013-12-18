@@ -395,12 +395,12 @@ public abstract class AbstractLeoSKControl extends AbstractSKControl {
             // compute the number of maneuvers required
             final double separation = orbitsSeparation * meanPeriod;
             final TunableManeuver model = getModel();
-            final double limitDV = (totalDeltaV < 0) ? model.getDVInf() : model.getDVSup();
+            final double limitDV = (totalDeltaV < 0) ? model.getCurrentDVInf() : model.getCurrentDVSup();
             int nMan = FastMath.min(maxManeuvers, (int) FastMath.ceil(FastMath.abs(totalDeltaV / limitDV)));
             while (nodeState.getDate().shiftedBy((nMan - 1) * separation).getDate().compareTo(cycleEnd) >= 0) {
                 --nMan;
             }
-            final double deltaV = FastMath.max(model.getDVInf(), FastMath.min(model.getDVSup(), totalDeltaV / nMan));
+            final double deltaV = FastMath.max(model.getCurrentDVInf(), FastMath.min(model.getCurrentDVSup(), totalDeltaV / nMan));
 
             tuned = new ScheduledManeuver[tunables.length + nMan];
             System.arraycopy(tunables, 0, tuned, 0, tunables.length);

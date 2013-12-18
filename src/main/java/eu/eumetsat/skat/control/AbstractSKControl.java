@@ -362,8 +362,8 @@ public abstract class AbstractSKControl implements SKControl {
             for (int i = 0; i < maneuvers.length; ++i) {
             	for(final TunableManeuver model : models){
 	                if (maneuvers[i].getName().equals(model.getName()) &&
-	                    ((dV < 0 && maneuvers[i].getSignedDeltaV() > maneuvers[i].getModel().getDVInf()) ||
-	                     (dV > 0 && maneuvers[i].getSignedDeltaV() < maneuvers[i].getModel().getDVSup()))) {
+	                    ((dV < 0 && maneuvers[i].getSignedDeltaV() > maneuvers[i].getModel().getCurrentDVInf()) ||
+	                     (dV > 0 && maneuvers[i].getSignedDeltaV() < maneuvers[i].getModel().getCurrentDVSup()))) {
 	                    nonSaturated.add(i);
 	                }
                 }
@@ -379,7 +379,7 @@ public abstract class AbstractSKControl implements SKControl {
             for (final int i : nonSaturated) {
                 final TunableManeuver model = maneuvers[i].getModel();
                 final double original = maneuvers[i].getSignedDeltaV();
-                final double changed  = FastMath.max(model.getDVInf(), FastMath.min(model.getDVSup(), original + dVPart));
+                final double changed  = FastMath.max(model.getCurrentDVInf(), FastMath.min(model.getCurrentDVSup(), original + dVPart));
                 remaining   -= changed - original;
                 maneuvers[i] = new ScheduledManeuver(maneuvers[i].getModel(),
                                                      maneuvers[i].getDate().shiftedBy(dT),

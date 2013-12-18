@@ -94,15 +94,18 @@ public enum SupportedControlLaw {
             	model    = new TunableManeuver[1];
             	model[0] = skat.getManeuver(parser.getString(node, ParameterKey.CONTROL_MANEUVER_NAME));
             }
-            final int[][] yawFlipSequence = {}; 
-            final double centerX          = parser.getDouble(node, ParameterKey.CONTROL_ECCENTRICITY_CIRCLE_CENTER_X);
-            final double centerY          = parser.getDouble(node, ParameterKey.CONTROL_ECCENTRICITY_CIRCLE_CENTER_Y);
-            final double meanRadius       = parser.getDouble(node, ParameterKey.CONTROL_ECCENTRICITY_CIRCLE_MEAN_RADIUS);
-            final double maxRadius        = parser.getDouble(node, ParameterKey.CONTROL_ECCENTRICITY_CIRCLE_MAX_RADIUS);
-            final boolean singleBurn      = parser.getBoolean(node, ParameterKey.CONTROL_ECCENTRICITY_CIRCLE_SINGLE_BURN);
+            final int[][] yawFlipSequence     = {}; 
+            final double centerX              = parser.getDouble(node, ParameterKey.CONTROL_ECCENTRICITY_CIRCLE_CENTER_X);
+            final double centerY              = parser.getDouble(node, ParameterKey.CONTROL_ECCENTRICITY_CIRCLE_CENTER_Y);
+            final double meanRadius           = parser.getDouble(node, ParameterKey.CONTROL_ECCENTRICITY_CIRCLE_MEAN_RADIUS);
+            final double maxRadius            = parser.getDouble(node, ParameterKey.CONTROL_ECCENTRICITY_CIRCLE_MAX_RADIUS);
+            final boolean singleBurn          = parser.getBoolean(node, ParameterKey.CONTROL_ECCENTRICITY_CIRCLE_SINGLE_BURN);
+            final TunableManeuver oopManeuver = parser.containsKey(node, ParameterKey.CONTROL_ECCENTRICITY_CIRCLE_OOP_MANEUVER_NAME) ? 
+            		skat.getManeuver(parser.getString(node, ParameterKey.CONTROL_ECCENTRICITY_CIRCLE_OOP_MANEUVER_NAME)) : null;
+            
             return new EccentricityCircle(name, controlled, skat.getSpacecraftIndex(controlled),
                                           model, yawFlipSequence, centerX, centerY, meanRadius, maxRadius, singleBurn,
-                                          skat.getSun(), sampling, horizon);
+                                          skat.getSun(), sampling, horizon, oopManeuver);
         }
 
     },

@@ -97,6 +97,7 @@ public enum ParameterKey {
     CONTROL_ECCENTRICITY_CIRCLE_MEAN_RADIUS("mean_radius"),
     CONTROL_ECCENTRICITY_CIRCLE_MAX_RADIUS("max_radius"),
     CONTROL_ECCENTRICITY_CIRCLE_SINGLE_BURN("single_burn"),
+    CONTROL_ECCENTRICITY_CIRCLE_OOP_MANEUVER_NAME("oop_maneuver_name"),
     // Inclination vector
     CONTROL_INCLINATION_VECTOR_FIRST_OFFSET("offset_first_maneuver"),
     CONTROL_INCLINATION_VECTOR_REFERENCE_HX("reference_hx"),

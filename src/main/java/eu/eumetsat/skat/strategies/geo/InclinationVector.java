@@ -60,7 +60,7 @@ public class InclinationVector extends AbstractSKControl {
 
     /** Moon pulsation (two weeks period, we use synodic period here). */
     private static final double MOON_PULSATION = 4.0 * FastMath.PI / (29.530589 * Constants.JULIAN_DAY);
-
+    
     /** Associated step handler. */
     private final OrekitStepHandler stephandler;
 
@@ -276,32 +276,32 @@ public class InclinationVector extends AbstractSKControl {
                 targetHy = referenceHy + dHYdT / dHdT * (innerRadius - deltaHToEnd);                  
             }
 
-            // compute the out of plane maneuver required to get this inclination offset
+            // Compute the out of plane maneuver required to get this inclination offset
             final double deltaHx     = targetHx - startHx;
             final double deltaHy     = targetHy - startHy;
             final double vs          = fitStart.getPVCoordinates().getVelocity().getNorm();
             final double totalDeltaV = 2 * FastMath.hypot(deltaHx, deltaHy) * vs;
             
-            // yaw-flip thrusters if necessary
+            // Yaw-flip thrusters if necessary
             final boolean isYawFlipped     = getYawFlip(fitStart.getDate());
             final TunableManeuver[] models = isYawFlipped ? yawFlipModels(getModels()) : getModels();
 
-            // find which thruster is the one to use (based on the thrust direction)
-            int modelIndexPos = 0;
-            int modelIndexNeg = 0;
+            // Find thrusters orientation (North or South)
+            int modelIndexNorth = 0;
+            int modelIndexSouth = 0;
             if(models.length == 2){
             	if     (thrustSignMomentum(fitStart, models[0]) > 0  &&  thrustSignMomentum(fitStart, models[1]) < 0){
-            		modelIndexNeg = 1;
+            		modelIndexSouth = 1;
             	}
             	else if(thrustSignMomentum(fitStart, models[0]) < 0  &&  thrustSignMomentum(fitStart, models[1]) > 0){
-            		modelIndexPos = 1;
+            		modelIndexNorth = 1;
             	}
             	else{
             		throw new SkatException(SkatMessages.INVALID_OPPOSED_THRUSTERS);
             	}
             }
-            final TunableManeuver modelPos = models[modelIndexPos];
-            final TunableManeuver modelNeg = models[modelIndexNeg];
+            final TunableManeuver modelNorth = models[modelIndexNorth];
+            final TunableManeuver modelSouth = models[modelIndexSouth];
             
             // compute the local time of the maneuvers
             final EquinoctialOrbit orbit = (EquinoctialOrbit) OrbitType.EQUINOCTIAL.convertType(fitStart.getOrbit());
@@ -316,8 +316,8 @@ public class InclinationVector extends AbstractSKControl {
             if(!isPairedManeuvers){
 	            // Single maneuvers case
             	// Compute the number and magnitude of required maneuvers 
-	            nbMan  = FastMath.min(maxManeuvers, (int) FastMath.ceil(totalDeltaV / modelPos.getDVSup()));
-	            final double deltaV = FastMath.min(modelPos.getDVSup(), totalDeltaV / nbMan);
+	            nbMan  = FastMath.min(maxManeuvers, (int) FastMath.ceil(totalDeltaV / modelNorth.getCurrentDVSup()));
+	            final double deltaV = FastMath.min(modelNorth.getCurrentDVSup(), totalDeltaV / nbMan);
 	
 	            tuned = new ScheduledManeuver[tunables.length + nbMan];
 	            System.arraycopy(tunables, 0, tuned, 0, tunables.length);
@@ -330,62 +330,134 @@ public class InclinationVector extends AbstractSKControl {
 	            // add the new maneuvers
 	            for (int i = 0; i < nbMan; ++i) {
 	                tuned[tunables.length + i] =
-	                        new ScheduledManeuver(modelPos, t0.shiftedBy(i * separation),
-	                                              new Vector3D(deltaV, modelPos.getDirection()),
-	                                              modelPos.getCurrentThrust(), modelPos.getCurrentISP(),
+	                        new ScheduledManeuver(modelNorth, t0.shiftedBy(i * separation),
+	                                              new Vector3D(deltaV, modelNorth.getDirection()),
+	                                              modelNorth.getCurrentThrust(), modelNorth.getCurrentISP(),
 	                                              adapterPropagator, false);
 	            }
             }
             else{
             	// Paired maneuvers case
-            	// Compute the number of required maneuver pairs 
-            	final double deltaVPairMax  = modelPos.getDVSup() + modelNeg.getDVSup();
-            	final int nbPairs           = FastMath.min(maxManeuvers, (int) FastMath.ceil(totalDeltaV / deltaVPairMax));
-            	final double lastPairDeltaV = totalDeltaV - (nbPairs-1) * deltaVPairMax ;
-            	if(lastPairDeltaV > modelPos.getDVSup()){
-            		nbMan = 2 * nbPairs;
-            	}else{
-            		nbMan = 2 * nbPairs - 1;
-            	}
-	
-            	// Create new maneuvers array
-	            tuned = new ScheduledManeuver[tunables.length + nbMan];
-	            System.arraycopy(tunables, 0, tuned, 0, tunables.length);
-	            changeTrajectory(tuned, 0, tunables.length, adapterPropagator);
-	            
-	            while (t0.durationFrom(cycleStart) < firstOffset) {
-	                t0 = t0.shiftedBy(separation);
-	            }
 
-	            // add the new full paired maneuvers
-	            for (int iPair = 0; iPair < nbPairs-1; ++iPair) {
-	                tuned[tunables.length + iPair*2] =
-	                        new ScheduledManeuver(modelPos, t0.shiftedBy(iPair * separation),
-                                    new Vector3D(modelPos.getDVSup(), modelPos.getDirection()),
-                                    modelPos.getCurrentThrust(), modelPos.getCurrentISP(),
-                                    adapterPropagator, false);
-	                tuned[tunables.length + iPair*2 + 1] =
-	                        new ScheduledManeuver(modelNeg, t0.shiftedBy(iPair * separation + Constants.JULIAN_DAY / 2),
-                                    new Vector3D(modelNeg.getDVSup(), modelNeg.getDirection()),
-                                    modelNeg.getCurrentThrust(), modelNeg.getCurrentISP(),
-                                    adapterPropagator, false);
-	            }
-	            // add the last pair (1 or 2 maneuvers)
-	            final double deltaVPos = FastMath.min(modelPos.getDVSup(), lastPairDeltaV);
-	            final int iPair = nbPairs-1;
-                tuned[tunables.length + iPair*2] =
-                        new ScheduledManeuver(modelPos, t0.shiftedBy(iPair * separation),
-                                new Vector3D(deltaVPos, modelPos.getDirection()),
-                                modelPos.getCurrentThrust(), modelPos.getCurrentISP(),
-                                adapterPropagator, false);
-                if(lastPairDeltaV > modelPos.getDVSup()){
-		            final double deltaVNeg = FastMath.min(modelNeg.getDVSup(), lastPairDeltaV - modelPos.getDVSup());
-	                tuned[tunables.length + iPair*2 + 1] =
-	                        new ScheduledManeuver(modelNeg, t0.shiftedBy(iPair * separation + Constants.JULIAN_DAY / 2),
-	                                new Vector3D(deltaVNeg, modelNeg.getDirection()),
-	                                modelNeg.getCurrentThrust(), modelNeg.getCurrentISP(),
-	                                adapterPropagator, false);
-                }
+            	// Take a look at thrusters radial (Z) cross-coupling directions
+            	final double radialCouplingNorth = modelNorth.getDirection().getZ();
+            	final double radialCouplingSouth = modelSouth.getDirection().getZ();
+
+            	if(radialCouplingSouth*radialCouplingNorth > 0){
+            		
+            		// Same radial coupling directions, compute ideal DV ratio to balance coupling
+            		final double northSouthDvRatio = radialCouplingSouth / radialCouplingNorth;
+            		
+            		// Limit North and South maximum DVs in function of both the ideal ratio and the thrusters limits
+            		double maxDvSouth;
+            		double maxDvNorth;
+            		
+            		if(modelSouth.getCurrentDVSup()*northSouthDvRatio > modelNorth.getCurrentDVSup()){
+            			maxDvSouth = modelNorth.getCurrentDVSup() / northSouthDvRatio;
+            			maxDvNorth = modelNorth.getCurrentDVSup();
+            		}else{
+            			maxDvSouth = modelNorth.getCurrentDVSup() / northSouthDvRatio;
+            			maxDvNorth = modelNorth.getCurrentDVSup();
+            		}
+            		
+            		// Compute the number of required maneuver pairs 
+            		final double deltaVPairMax  = maxDvSouth + maxDvNorth;
+            		final int nbPairs           = FastMath.min(maxManeuvers, (int) FastMath.ceil(totalDeltaV / deltaVPairMax));
+            		final double lastPairDeltaV = totalDeltaV - (nbPairs-1) * deltaVPairMax ;
+            		nbMan                       = 2 * nbPairs;
+            		
+
+            		// Create new maneuvers array
+            		tuned = new ScheduledManeuver[tunables.length + nbMan];
+            		System.arraycopy(tunables, 0, tuned, 0, tunables.length);
+            		changeTrajectory(tuned, 0, tunables.length, adapterPropagator);
+
+            		while (t0.durationFrom(cycleStart) < firstOffset) {
+            			t0 = t0.shiftedBy(separation);
+            		}
+
+            		// Build the maneuver sequence
+            		for (int iPair = 0; iPair < nbPairs; ++iPair) {
+
+            			// Normal pairs are set at maximum DV
+            			double dvNorth = maxDvNorth;
+            			double dvSouth = maxDvSouth;
+
+            			if(iPair == nbPairs-1){
+            				// The last pair is smaller, but still balancing radial cross coupling
+            				dvNorth = maxDvNorth * lastPairDeltaV / deltaVPairMax;
+            				dvSouth = maxDvSouth * lastPairDeltaV / deltaVPairMax;
+            			}
+
+            			// Create the two maneuvers of the pair
+            			tuned[tunables.length + iPair*2] =
+            					new ScheduledManeuver(modelNorth, t0.shiftedBy(iPair * separation),
+            							new Vector3D(dvNorth, modelNorth.getDirection()),
+            							modelNorth.getCurrentThrust(), modelNorth.getCurrentISP(),
+            							adapterPropagator, false);
+            			tuned[tunables.length + iPair*2 + 1] =
+            					new ScheduledManeuver(modelSouth, t0.shiftedBy(iPair * separation + Constants.JULIAN_DAY / 2),
+            							new Vector3D(dvSouth, modelSouth.getDirection()),
+            							modelSouth.getCurrentThrust(), modelSouth.getCurrentISP(),
+            							adapterPropagator, false);
+            		}
+
+            		
+            		
+            	}else{
+            		// If they are opposed or null, it is useless to try to balance the cross coupling.
+            		// Just "fill" in the delta-V, pair-by-pair, to make things faster
+            		// Different radial coupling direction, use only one thruster, the one will less coupling
+
+            		// Compute the number of required maneuver pairs 
+            		final double deltaVPairMax  = modelNorth.getCurrentDVSup() + modelSouth.getCurrentDVSup();
+            		final int nbPairs           = FastMath.min(maxManeuvers, (int) FastMath.ceil(totalDeltaV / deltaVPairMax));
+            		final double lastPairDeltaV = totalDeltaV - (nbPairs-1) * deltaVPairMax ;
+            		if(lastPairDeltaV > modelNorth.getCurrentDVSup()){
+            			nbMan = 2 * nbPairs;
+            		}else{
+            			nbMan = 2 * nbPairs - 1;
+            		}
+
+            		// Create new maneuvers array
+            		tuned = new ScheduledManeuver[tunables.length + nbMan];
+            		System.arraycopy(tunables, 0, tuned, 0, tunables.length);
+            		changeTrajectory(tuned, 0, tunables.length, adapterPropagator);
+
+            		while (t0.durationFrom(cycleStart) < firstOffset) {
+            			t0 = t0.shiftedBy(separation);
+            		}
+
+            		// add the new full paired maneuvers
+            		for (int iPair = 0; iPair < nbPairs-1; ++iPair) {
+            			tuned[tunables.length + iPair*2] =
+            					new ScheduledManeuver(modelNorth, t0.shiftedBy(iPair * separation),
+            							new Vector3D(modelNorth.getCurrentDVSup(), modelNorth.getDirection()),
+            							modelNorth.getCurrentThrust(), modelNorth.getCurrentISP(),
+            							adapterPropagator, false);
+            			tuned[tunables.length + iPair*2 + 1] =
+            					new ScheduledManeuver(modelSouth, t0.shiftedBy(iPair * separation + Constants.JULIAN_DAY / 2),
+            							new Vector3D(modelSouth.getCurrentDVSup(), modelSouth.getDirection()),
+            							modelSouth.getCurrentThrust(), modelSouth.getCurrentISP(),
+            							adapterPropagator, false);
+            		}
+            		// add the last pair (1 or 2 maneuvers)
+            		final double deltaVPos = FastMath.min(modelNorth.getCurrentDVSup(), lastPairDeltaV);
+            		final int iPair = nbPairs-1;
+            		tuned[tunables.length + iPair*2] =
+            				new ScheduledManeuver(modelNorth, t0.shiftedBy(iPair * separation),
+            						new Vector3D(deltaVPos, modelNorth.getDirection()),
+            						modelNorth.getCurrentThrust(), modelNorth.getCurrentISP(),
+            						adapterPropagator, false);
+            		if(lastPairDeltaV > modelNorth.getCurrentDVSup()){
+            			final double deltaVNeg = FastMath.min(modelSouth.getCurrentDVSup(), lastPairDeltaV - modelNorth.getCurrentDVSup());
+            			tuned[tunables.length + iPair*2 + 1] =
+            					new ScheduledManeuver(modelSouth, t0.shiftedBy(iPair * separation + Constants.JULIAN_DAY / 2),
+            							new Vector3D(deltaVNeg, modelSouth.getDirection()),
+            							modelSouth.getCurrentThrust(), modelSouth.getCurrentISP(),
+            							adapterPropagator, false);
+            		}
+            	}
             }
         } else {
 

@@ -271,8 +271,8 @@ public enum SupportedScenariocomponent {
             }
             else{
             	entryDelay = new double[1][2];
-            	entryDelay[0][0] = 0.;
-            	entryDelay[0][1] = parser.getDouble(node, ParameterKey.COMPONENT_MANEUVER_ECLIPSE_CONSTRAINT_ENTRY_DELAY);
+            	entryDelay[0][0] = parser.getDouble(node, ParameterKey.COMPONENT_MANEUVER_ECLIPSE_CONSTRAINT_ENTRY_DELAY);
+            	entryDelay[0][1] = 0.;
             }
             
             // exit_delay field may either be double[n][2] (variable, function of mass) or double (constant, for backward compatibility) 
@@ -283,8 +283,8 @@ public enum SupportedScenariocomponent {
             }
             else{
              	exitDelay = new double[1][2];
-            	exitDelay[0][0] = 0.;
-            	exitDelay[0][1] = parser.getDouble(node, ParameterKey.COMPONENT_MANEUVER_ECLIPSE_CONSTRAINT_EXIT_DELAY);
+            	exitDelay[0][0] = parser.getDouble(node, ParameterKey.COMPONENT_MANEUVER_ECLIPSE_CONSTRAINT_EXIT_DELAY);
+            	exitDelay[0][1] = 0.;
             }
             
             final int orbitsSeparation =
