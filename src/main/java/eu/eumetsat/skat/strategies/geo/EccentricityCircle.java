@@ -124,10 +124,13 @@ public class EccentricityCircle extends AbstractSKControl {
     /** Cycle end. */
     private AbsoluteDate cycleEnd;
 
+    /** Inclination control maneuver which X-coupling should be anticipated for. */
 	private TunableManeuver oopManeuver;
 
+    /** Date of the last OOP maneuver (to compute how much X-coupling should be compensated for). */
 	private AbsoluteDate lastOopManeuverDate;
 
+    /** OOP X-coupling pre-compensation: margin to avoid driving the eccentricity off-circle. */
 	private final double oopPrecompensationMargin = .8;
 
     /** Simple constructor.
