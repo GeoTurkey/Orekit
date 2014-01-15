@@ -175,7 +175,6 @@ public class ManeuverEclipseConstraint implements ScenarioComponent {
                     double eclipseRatio = (manoDuration/nbParts)/maxSingleBurnDuration;
                 	double lostEclipseRatio = 0;
 
-                    
                     // if this eclipse ratio is smaller than minimum eclipse ratio	
                     if (eclipseRatio<minEclipseRatio) {
                     	
@@ -194,12 +193,16 @@ public class ManeuverEclipseConstraint implements ScenarioComponent {
                     maneuver.getTrajectory().addEffect(new SmallManeuverAnalyticalModel(maneuver.getStateBefore(),
                                                                                         maneuver.getDeltaV().negate(),
                                                                                         -maneuver.getIsp()));
+                    
+                    // compute each actual dV (reduced if necessary for meeting constraint)
+                    double dVactual = maneuver.getSignedDeltaV() * eclipseRatio * maxSingleBurnDuration/manoDuration;
+                    
                     // add all maneuvers
                     for (int j = 0; j < nbParts; ++j) {
                     	
                         ScheduledManeuver m = new ScheduledManeuver(maneuver.getModel(),
 							      										  centralEclipseDate.shiftedBy(j * nbOrbits * period),
-                                                                          new Vector3D(maneuver.getSignedDeltaV() / nbParts, maneuver.getModel().getDirection()),
+                                                                          new Vector3D(dVactual, maneuver.getModel().getDirection()),
                                                                           maneuver.getThrust(), maneuver.getIsp(),
                                                                           maneuver.getTrajectory(), false);
                         // if long burn and node asymmetry compensation
@@ -218,7 +221,7 @@ public class ManeuverEclipseConstraint implements ScenarioComponent {
 
                         // add maneuver
                         modified.add(m);
-
+                        
                     }
 
                 } else {
