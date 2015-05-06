@@ -19,6 +19,7 @@ import org.orekit.errors.OrekitException;
 import org.orekit.frames.Frame;
 import org.orekit.frames.FramesFactory;
 import org.orekit.frames.GTODProvider;
+import org.orekit.frames.HelmertTransformation;
 import org.orekit.frames.Predefined;
 import org.orekit.frames.TransformProvider;
 import org.orekit.orbits.CartesianOrbit;
@@ -675,7 +676,11 @@ public class SkatFileParser {
 
 	/**
 	 * Get an inertial frame.
-	 * 
+         * <p> 
+         * The names of the frames available are: GCRF, ICRF, EME2000, CIRF2000, 
+         * TOD with/without EOP and MOD with/without EOP.
+	 * </p> 
+         * 
 	 * @param node
 	 *            structure containing the parameter
 	 * @param key
@@ -690,31 +695,51 @@ public class SkatFileParser {
 	public Frame getInertialFrame(final Tree node, final ParameterKey key)
 			throws IllegalArgumentException, OrekitException {
 
-		// get the name of the desired frame
-		final String frameName = getString(node, key);
+            // get the name of the desired frame
+            final String frameName = getString(node, key);
 
-		// check the name against predefined frames
-		for (Predefined predefined : Predefined.values()) {
-			if (frameName.equals(predefined.getName())) {
-				if (FramesFactory.getFrame(predefined).isPseudoInertial()) {
-					return FramesFactory.getFrame(predefined);
-				} else {
-					throw new OrekitException(SkatMessages.NOT_INERTIAL_FRAME,
-							frameName);
-				}
-			}
-		}
-
-		// none of the frames match the name
-		throw new OrekitException(SkatMessages.UNKNOWN_FRAME, frameName);
+            if (frameName.equals("GCRF")) {
+                return FramesFactory.getFrame(Predefined.GCRF);
+            }
+            else if (frameName.equals("ICRF")) {
+                return FramesFactory.getFrame(Predefined.ICRF);
+            }
+            else if (frameName.equals("EME2000")) {
+                return FramesFactory.getFrame(Predefined.EME2000);
+            }
+            else if (frameName.equals("CIRF2000")) {
+                return FramesFactory.getFrame(Predefined.CIRF_CONVENTIONS_1996_SIMPLE_EOP);
+            }
+            else if (frameName.equals("TOD without EOP")) {
+                // IERS 1996 conventions without EOP corrections
+                return FramesFactory.getFrame(Predefined.TOD_WITHOUT_EOP_CORRECTIONS);
+            }            
+            else if (frameName.equals("TOD with EOP")) {
+                // IERS 1996 conventions with accurate EOP interpolation
+                return FramesFactory.getFrame(Predefined.TOD_CONVENTIONS_1996_ACCURATE_EOP);
+            }
+            else if (frameName.equals("MOD without EOP")) {
+                // IERS 1996 conventions without EOP corrections
+                return FramesFactory.getFrame(Predefined.MOD_WITHOUT_EOP_CORRECTIONS);
+            }            
+            else if (frameName.equals("MOD with EOP")) {
+                // IERS 1996 conventions
+                return FramesFactory.getFrame(Predefined.MOD_CONVENTIONS_1996);
+            }
+            else {
+                // none of the frames match the name
+                throw new OrekitException(SkatMessages.UNKNOWN_FRAME, frameName);
+            }
 
 	}
 
 	/**
 	 * Get an Earth frame.
 	 * <p>
-	 * We consider Earth frames are the Skat specific GMODFrame and the Orekit
-	 * frames with name starting or ending with either "ITRF" or "GTOD".
+	 * The names of the frames available are: GTOD with/without EOP, 
+         * ITRF2008 with/without tides, ITRF2005 with/without tides, 
+         * ITRF2000 with/without tides, ITRF97 with/without tides, 
+         * ITRF93 with/without tides, Equinox-based ITRF and GMOD.
 	 * </p>
 	 * 
 	 * @param node
@@ -731,31 +756,66 @@ public class SkatFileParser {
 	public Frame getEarthFrame(final Tree node, final ParameterKey key)
 			throws IllegalArgumentException, OrekitException {
 
-		// get the name of the desired frame
-		final String frameName = getString(node, key);
-
-		final Frame gtod = FramesFactory.getGTOD(false);
-		if (frameName.equals(gtod.getName())) {
-			return gtod;
-		}
-
-		// check the name against predefined frames
-		for (Predefined predefined : Predefined.values()) {
-			if (frameName.equals(predefined.getName())) {
-				if (frameName.startsWith("ITRF") || frameName.endsWith("ITRF")
-						|| frameName.startsWith("GTOD")
-						|| frameName.endsWith("GTOD")) {
-					return FramesFactory.getFrame(predefined);
-				} else {
-					throw new OrekitException(SkatMessages.NOT_EARTH_FRAME,
-							frameName);
-				}
-			}
-		}
-
-		// none of the frames match the name
+            // get the name of the desired frame
+            final String frameName = getString(node, key);
+            
+            if (frameName.equals("GTOD without EOP")) {
+                // IERS 1996 conventions without EOP corrections
+                return FramesFactory.getFrame(Predefined.GTOD_WITHOUT_EOP_CORRECTIONS);
+            }            
+            else if (frameName.equals("GTOD with EOP")) {
+                // IERS 1996 conventions with accurate EOP interpolation
+                return FramesFactory.getFrame(Predefined.GTOD_CONVENTIONS_1996_ACCURATE_EOP);
+            }
+            else if (frameName.equals("ITRF2008 without tides")) {
+                return FramesFactory.getFrame(Predefined.ITRF_CIO_CONV_2010_SIMPLE_EOP);
+            }            
+            else if (frameName.equals("ITRF2008 with tides")) {
+                return FramesFactory.getFrame(Predefined.ITRF_CIO_CONV_2010_ACCURATE_EOP);
+            }
+            else if (frameName.equals("ITRF2005 without tides")) {
+                return HelmertTransformation.Predefined.ITRF_2008_TO_ITRF_2005.createTransformedITRF(
+                        FramesFactory.getFrame(Predefined.ITRF_CIO_CONV_2010_SIMPLE_EOP), frameName);
+            }            
+            else if (frameName.equals("ITRF2005 with tides")) {
+                return HelmertTransformation.Predefined.ITRF_2008_TO_ITRF_2005.createTransformedITRF(
+                        FramesFactory.getFrame(Predefined.ITRF_CIO_CONV_2010_ACCURATE_EOP), frameName);
+            }
+            else if (frameName.equals("ITRF2000 without tides")) {
+                return HelmertTransformation.Predefined.ITRF_2008_TO_ITRF_2000.createTransformedITRF(
+                        FramesFactory.getFrame(Predefined.ITRF_CIO_CONV_2010_SIMPLE_EOP), frameName);
+            }            
+            else if (frameName.equals("ITRF2000 with tides")) {
+                return HelmertTransformation.Predefined.ITRF_2008_TO_ITRF_2000.createTransformedITRF(
+                        FramesFactory.getFrame(Predefined.ITRF_CIO_CONV_2010_ACCURATE_EOP), frameName);
+            }
+            else if (frameName.equals("ITRF97 without tides")) {
+                return HelmertTransformation.Predefined.ITRF_2008_TO_ITRF_97.createTransformedITRF(
+                        FramesFactory.getFrame(Predefined.ITRF_CIO_CONV_2010_SIMPLE_EOP), frameName);
+            }            
+            else if (frameName.equals("ITRF97 with tides")) {
+                return HelmertTransformation.Predefined.ITRF_2008_TO_ITRF_97.createTransformedITRF(
+                        FramesFactory.getFrame(Predefined.ITRF_CIO_CONV_2010_ACCURATE_EOP), frameName);
+            }
+            else if (frameName.equals("ITRF93 without tides")) {
+                return HelmertTransformation.Predefined.ITRF_2008_TO_ITRF_93.createTransformedITRF(
+                        FramesFactory.getFrame(Predefined.ITRF_CIO_CONV_2010_SIMPLE_EOP), frameName);
+            }            
+            else if (frameName.equals("ITRF93 with tides")) {
+                return HelmertTransformation.Predefined.ITRF_2008_TO_ITRF_93.createTransformedITRF(
+                        FramesFactory.getFrame(Predefined.ITRF_CIO_CONV_2010_ACCURATE_EOP), frameName);
+            }
+            else if (frameName.equals("Equinox-based ITRF")) {
+                return FramesFactory.getFrame(Predefined.ITRF_EQUINOX_CONV_1996_SIMPLE_EOP);
+            }
+            else if (frameName.equals("GMOD")) {
+                // Greenwich Mean Of Date Frame linked to MoD frame
+                return FramesFactory.getGTOD(false);
+            }
+            else {
+                // none of the frames match the name
 		throw new OrekitException(SkatMessages.UNKNOWN_FRAME, frameName);
-
+            }
 	}
 
 	/**

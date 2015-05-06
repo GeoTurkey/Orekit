@@ -21,11 +21,12 @@ import org.orekit.propagation.Propagator;
 import org.orekit.propagation.SpacecraftState;
 import org.orekit.propagation.analytical.AdapterPropagator;
 import org.orekit.propagation.events.EclipseDetector;
+import org.orekit.propagation.events.handlers.EventHandler.Action;
 import org.orekit.time.AbsoluteDate;
-import org.orekit.time.TimeScalesFactory;
 import org.orekit.utils.Constants;
 import org.orekit.utils.PVCoordinates;
 import org.orekit.utils.PVCoordinatesProvider;
+import org.orekit.utils.TimeStampedPVCoordinates;
 
 import eu.eumetsat.skat.scenario.ScenarioComponent;
 import eu.eumetsat.skat.scenario.ScenarioState;
@@ -373,12 +374,13 @@ public class ManeuverEclipseConstraint implements ScenarioComponent {
             super(sun, Constants.SUN_RADIUS, new PVCoordinatesProvider() {
                 
                 /** {@inheritDoc} */
-                public PVCoordinates getPVCoordinates(AbsoluteDate date, Frame frame)
+                public TimeStampedPVCoordinates getPVCoordinates(AbsoluteDate date, Frame frame)
                     throws OrekitException {
-                    return earthCenteredFrame.getTransformTo(frame, date).transformPVCoordinates(PVCoordinates.ZERO);
+                    return earthCenteredFrame.getTransformTo(frame, date).transformPVCoordinates(new TimeStampedPVCoordinates(date, PVCoordinates.ZERO));
                 }
 
-            }, earth.getEquatorialRadius(), true);
+            }, earth.getEquatorialRadius());
+            super.withUmbra();
             this.central = central;
             this.entry   = null;
             this.exit    = null;

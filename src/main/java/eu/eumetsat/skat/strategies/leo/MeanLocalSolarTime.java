@@ -42,6 +42,12 @@ import eu.eumetsat.skat.strategies.ScheduledManeuver;
 import eu.eumetsat.skat.strategies.TunableManeuver;
 import eu.eumetsat.skat.utils.SkatException;
 import eu.eumetsat.skat.utils.SkatMessages;
+import org.orekit.time.TimeFunction;
+
+import org.orekit.time.TimeScale;
+import org.orekit.utils.IERSConventions;
+import org.orekit.time.UT1Scale;
+import org.apache.commons.math3.analysis.differentiation.DerivativeStructure;
 
 /**
  * Station-keeping control for mean solar time in sun synchronous Low Earth Orbits.
@@ -298,14 +304,14 @@ public class MeanLocalSolarTime extends AbstractLeoSKControl {
      */
     private double meanSolarTime(final SpacecraftState state) throws OrekitException {
 
-    	// GTOD frame
-    	GTODProvider gtod = (GTODProvider) FramesFactory.getGTOD(false).getTransformProvider();
+    	// Get the function that returns the  Greenwich Mean Sidereal Time
+        TimeFunction<DerivativeStructure> getGMST = IERSConventions.IERS_1996.getGMSTFunction(
+                TimeScalesFactory.getUT1(IERSConventions.IERS_1996,true));
     	
-
-    	// compute angle between Sun and spacecraft in the equatorial plane
+        // compute angle between Sun and spacecraft in the equatorial plane
     	final Vector3D position = state.getPVCoordinates(mod).getPosition();
     	final double time = state.getDate().getComponents(TimeScalesFactory.getUTC()).getTime().getSecondsInDay();
-    	final double gmst = gtod.getGMST(state.getDate());
+    	final double gmst = getGMST.value(state.getDate()).getValue();
     	final double sunAlpha = gmst + FastMath.PI * (1 - time / (Constants.JULIAN_DAY * 0.5));
     	final double dAlpha = MathUtils.normalizeAngle(position.getAlpha() - sunAlpha, 0);
 

@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.commons.math3.analysis.differentiation.DerivativeStructure;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.util.FastMath;
 import org.apache.commons.math3.util.MathUtils;
@@ -13,8 +14,6 @@ import org.orekit.bodies.GeodeticPoint;
 import org.orekit.errors.OrekitException;
 import org.orekit.frames.Frame;
 import org.orekit.frames.FramesFactory;
-import org.orekit.frames.GTODProvider;
-import org.orekit.frames.TransformProvider;
 import org.orekit.orbits.CartesianOrbit;
 import org.orekit.orbits.CircularOrbit;
 import org.orekit.orbits.EquinoctialOrbit;
@@ -22,11 +21,15 @@ import org.orekit.orbits.KeplerianOrbit;
 import org.orekit.orbits.OrbitType;
 import org.orekit.propagation.SpacecraftState;
 import org.orekit.time.AbsoluteDate;
+import org.orekit.time.TimeFunction;
 import org.orekit.time.TimeScalesFactory;
 import org.orekit.utils.Constants;
+import org.orekit.utils.IERSConventions;
 import org.orekit.utils.PVCoordinates;
 
+
 import eu.eumetsat.skat.scenario.ScenarioState;
+
 //import eu.eumetsat.skat.strategies.leo.GMODFrame;
 
 /** Enumerate representing time-dependent values from a single spacecraft
@@ -277,8 +280,12 @@ public enum MonitorableMonoSKData implements MonitorableMono {
         	final PVCoordinates pv = getPVCoordinates(state, modFrame);
         	final KeplerianOrbit kepOrbit = (KeplerianOrbit) OrbitType.KEPLERIAN.convertType(new CartesianOrbit(pv, modFrame,getDate(),Constants.WGS84_EARTH_MU)); 
             final double time = getDate().getComponents(TimeScalesFactory.getUTC()).getTime().getSecondsInDay(); 
-            GTODProvider gtod = (GTODProvider) FramesFactory.getGTOD(false).getTransformProvider();
-            final double gmst = gtod.getGMST(getDate());
+            
+            // Get the function that returns the  Greenwich Mean Sidereal Time
+            TimeFunction<DerivativeStructure> getGMST = IERSConventions.IERS_1996.getGMSTFunction(
+                    TimeScalesFactory.getUT1(IERSConventions.IERS_1996,true));
+        
+            final double gmst = getGMST.value(getDate()).getValue();
             final double sunAlpha = gmst + FastMath.PI * (1 - time / (Constants.JULIAN_DAY * 0.5));
             final double dAlpha = MathUtils.normalizeAngle(kepOrbit.getRightAscensionOfAscendingNode() - sunAlpha, 0);
 
@@ -301,8 +308,12 @@ public enum MonitorableMonoSKData implements MonitorableMono {
                 final PVCoordinates pv = getPVCoordinates(state, modFrame);
                 final KeplerianOrbit kepOrbit = (KeplerianOrbit) OrbitType.KEPLERIAN.convertType(new CartesianOrbit(pv, modFrame, getDate(),Constants.WGS84_EARTH_MU));
                 final double time = getDate().getComponents(TimeScalesFactory.getUTC()).getTime().getSecondsInDay();
-                GTODProvider gtod = (GTODProvider) FramesFactory.getGTOD(false).getTransformProvider();
-                final double gmst = gtod.getGMST(getDate());
+                
+                // Get the function that returns the  Greenwich Mean Sidereal Time
+                TimeFunction<DerivativeStructure> getGMST = IERSConventions.IERS_1996.getGMSTFunction(
+                        TimeScalesFactory.getUT1(IERSConventions.IERS_1996,true));
+
+                final double gmst = getGMST.value(getDate()).getValue();
                 final double sunAlpha = gmst + FastMath.PI * (1 - time / (Constants.JULIAN_DAY * 0.5));
                 final double dAlpha = MathUtils.normalizeAngle(kepOrbit.getRightAscensionOfAscendingNode() + FastMath.PI- sunAlpha, 0);
                 

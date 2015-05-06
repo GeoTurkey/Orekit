@@ -47,14 +47,14 @@
     <dependency>
   		<groupId>org.orekit</groupId>
   		<artifactId>orekit</artifactId>
-  		<version>6.0</version>
+  		<version>7.0</version>
   		<type>jar</type>
         <optional>false</optional>
   	</dependency>
     <dependency>
         <groupId>org.apache.commons</groupId>
         <artifactId>commons-math3</artifactId>
-        <version>3.2</version>
+        <version>3.4.1</version>
         <type>jar</type>
         <optional>false</optional>
     </dependency>
@@ -96,6 +96,7 @@
           <source>1.5</source>
           <target>1.5</target>
           <encoding>UTF-8</encoding>
+          <showDeprecation>false</showDeprecation>
         </configuration>
       </plugin>
 	<plugin>

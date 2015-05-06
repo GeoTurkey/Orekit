@@ -185,7 +185,7 @@ public enum SupportedControlLaw {
                                               model, yawFlipSequence, firstOffset, maxManeuvers, orbitsSeparation,
                                               skat.getEarth(), skat.getSun(),
                                               gravityField.getAe(), gravityField.getMu(),
-                                              -gravityField.getUnnormalizedCnm(0.0, 2, 0),
+                                              -gravityField.onDate(AbsoluteDate.J2000_EPOCH).getUnnormalizedCnm(2, 0),
                                               readGridFile(gridFile, skat.getEarth()), maxDistance, horizon, inclinationOffsetFineTuning);
         }
 
@@ -227,7 +227,7 @@ public enum SupportedControlLaw {
                                                  model, yawFlipSequence, firstOffset, maxManeuvers, orbitsSeparation,
                                                  skat.getEarth(), skat.getSun(),
                                                  gravityField.getAe(), gravityField.getMu(),
-                                                 -gravityField.getUnnormalizedCnm(0.0, 2, 0),
+                                                 -gravityField.onDate(AbsoluteDate.J2000_EPOCH).getUnnormalizedCnm(2, 0),
                                                  readGridFile(gridFile, skat.getEarth()), maxDistance, horizon,
                                                  compensateLongBurn, inclinationOffsetFineTuning);
         }
@@ -307,7 +307,8 @@ public enum SupportedControlLaw {
             return new Inclination(name, controlled, skat.getSpacecraftIndex(controlled),
                                           model, yawFlipSequence, firstOffset, maxManeuvers, orbitsSeparation,
                                           skat.getEarth(), skat.getSun(),
-                                          gravityField.getAe(), gravityField.getMu(),-gravityField.getUnnormalizedCnm(0.0, 2, 0),
+                                          gravityField.getAe(), gravityField.getMu(),
+                                          -gravityField.onDate(AbsoluteDate.J2000_EPOCH).getUnnormalizedCnm(2, 0),
                                           incMeanValue, incDeadband, horizon, compensateLongBurn,
                                           phasingDays, phasingOrbits, maneuversDoy, analyticalModels);
 
@@ -392,7 +393,7 @@ public enum SupportedControlLaw {
                                           model, yawFlipSequence, firstOffset, maxManeuvers, orbitsSeparation,
                                           skat.getEarth(), skat.getSun(),
                                           gravityField.getAe(), gravityField.getMu(),
-                                          -gravityField.getUnnormalizedCnm(0.0, 2, 0),
+                                          -gravityField.onDate(AbsoluteDate.J2000_EPOCH).getUnnormalizedCnm(2, 0),
                                           latitude, ascending, solarTime, solarTimeTolerance, horizon, compensateLongBurn,
                                           phasingDays, phasingOrbits, maneuversDoy, analyticalModels);
 
