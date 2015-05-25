@@ -45,6 +45,9 @@ public class ScheduledManeuver {
     /** Lost eclipse ratio. This is only used for out-of-plane maneuvers. */
     private double lostEclipseRatio; 
     
+    /** DV epsilon. Used to avoid numerical errors when checking if a maneuver is saturated. */
+    private final double dV_epsilon = 1e-15;
+    
     /** Simple constructor.
      * @param model tunable model of the maneuver
      * @param date maneuver date
@@ -221,6 +224,17 @@ public class ScheduledManeuver {
         return (model == maneuver.model) &&
                (date.durationFrom(maneuver.date) <= model.getDTConvergence()) &&
                (deltaV.subtract(maneuver.deltaV).getNorm() <= model.getDVConvergence());
+    }
+    
+    /** Check if a maneuver is saturated.
+     * @param dV Delta V used to check whether the maneuver is saturated or not
+     * @return true if the maneuver is saturated
+     */
+    public boolean isSaturated(final double dV)
+    {
+        final boolean isSatInf = dV < 0 && this.getSignedDeltaV() - dV_epsilon > this.getModel().getCurrentDVInf();
+        final boolean isSatSup = dV > 0 && this.getSignedDeltaV() + dV_epsilon < this.getModel().getCurrentDVSup();
+        return (isSatInf || isSatSup);
     }
 
 }

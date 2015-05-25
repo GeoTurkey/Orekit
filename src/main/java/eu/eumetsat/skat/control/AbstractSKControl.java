@@ -356,14 +356,12 @@ public abstract class AbstractSKControl implements SKControl {
         double remaining = dV;
         while (FastMath.abs(remaining) > 1.e-6) {
 
-        	// identify the maneuvers that can be changed
+            // identify the maneuvers that can be changed
             final List<Integer> nonSaturated = new ArrayList<Integer>(maneuvers.length);
             final TunableManeuver[] models = getModels();
             for (int i = 0; i < maneuvers.length; ++i) {
             	for(final TunableManeuver model : models){
-	                if (maneuvers[i].getName().equals(model.getName()) &&
-	                    ((dV < 0 && maneuvers[i].getSignedDeltaV() > maneuvers[i].getModel().getCurrentDVInf()) ||
-	                     (dV > 0 && maneuvers[i].getSignedDeltaV() < maneuvers[i].getModel().getCurrentDVSup()))) {
+	                if (maneuvers[i].getName().equals(model.getName()) && !maneuvers[i].isSaturated(dV)) {
 	                    nonSaturated.add(i);
 	                }
                 }
