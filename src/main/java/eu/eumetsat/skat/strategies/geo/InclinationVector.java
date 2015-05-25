@@ -356,14 +356,14 @@ public class InclinationVector extends AbstractSKControl {
             			maxDvSouth = modelNorth.getCurrentDVSup() / northSouthDvRatio;
             			maxDvNorth = modelNorth.getCurrentDVSup();
             		}else{
-            			maxDvSouth = modelNorth.getCurrentDVSup() / northSouthDvRatio;
-            			maxDvNorth = modelNorth.getCurrentDVSup();
+            			maxDvSouth = modelSouth.getCurrentDVSup();
+            			maxDvNorth = modelSouth.getCurrentDVSup() * northSouthDvRatio;
             		}
             		
             		// Compute the number of required maneuver pairs 
             		final double deltaVPairMax  = maxDvSouth + maxDvNorth;
             		final int nbPairs           = FastMath.min(maxManeuvers, (int) FastMath.ceil(totalDeltaV / deltaVPairMax));
-            		final double lastPairDeltaV = totalDeltaV - (nbPairs-1) * deltaVPairMax ;
+            		final double lastPairDeltaV = FastMath.min(deltaVPairMax,totalDeltaV - (nbPairs-1) * deltaVPairMax);
             		nbMan                       = 2 * nbPairs;
             		
 
