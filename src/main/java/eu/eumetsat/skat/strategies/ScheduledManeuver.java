@@ -234,7 +234,7 @@ public class ScheduledManeuver {
     {
         final boolean isSatInf = dV < 0 && this.getSignedDeltaV() - dV_epsilon > this.getModel().getCurrentDVInf();
         final boolean isSatSup = dV > 0 && this.getSignedDeltaV() + dV_epsilon < this.getModel().getCurrentDVSup();
-        return (isSatInf || isSatSup);
+        return !(isSatInf || isSatSup);
     }
 
 }
