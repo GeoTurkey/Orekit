@@ -5,6 +5,7 @@ import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 
 import eu.eumetsat.skat.utils.SkatException;
 import eu.eumetsat.skat.utils.SkatMessages;
+import java.util.Arrays;
 
 import org.orekit.time.AbsoluteDate;
 
@@ -397,41 +398,89 @@ public class TunableManeuver {
     /** Get the flag for the presence of a previous mass-consuming slew.
      * @return true if there is a previous slew, false otherwise
      */
-	public boolean isPreviousSlew() {
-		return isPreviousSlew;
-	}
+    public boolean isPreviousSlew() {
+            return isPreviousSlew;
+    }
 
-	public Vector3D getPreviousSlewDeltaV() {
-		return previousSlewDeltaV;
-	}
+    public Vector3D getPreviousSlewDeltaV() {
+            return previousSlewDeltaV;
+    }
 
-	public double getPreviousSlewDeltaMass() {
-		return previousSlewDeltaMass;
-	}
+    public double getPreviousSlewDeltaMass() {
+            return previousSlewDeltaMass;
+    }
 
-	public double getPreviousSlewDelay() {
-		return previousSlewDelay;
-	}
+    public double getPreviousSlewDelay() {
+            return previousSlewDelay;
+    }
 
-	public boolean isFollowingSlew() {
-		return isFollowingSlew;
-	}
+    public boolean isFollowingSlew() {
+            return isFollowingSlew;
+    }
 
-	public Vector3D getFollowingSlewDeltaV() {
-		return followingSlewDeltaV;
-	}
+    public Vector3D getFollowingSlewDeltaV() {
+            return followingSlewDeltaV;
+    }
 
-	public double getFollowingSlewDeltaMass() {
-		return followingSlewDeltaMass;
-	}
+    public double getFollowingSlewDeltaMass() {
+            return followingSlewDeltaMass;
+    }
 
-	public double getFollowingSlewDelay() {
-		return followingSlewDelay;
-	}
+    public double getFollowingSlewDelay() {
+            return followingSlewDelay;
+    }
 
-	public AbsoluteDate getBeginningDate() {
-		return beginningDate;
-	}
-
-
+    public AbsoluteDate getBeginningDate() {
+            return beginningDate;
+    }
+    
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final TunableManeuver other = (TunableManeuver) obj;
+        
+        final boolean dirEqual = Vector3D.angle(this.direction,other.direction) < 1e-6;
+        final boolean beginningDateEqual = (this.beginningDate == null && other.beginningDate == null)  || this.beginningDate.equals(other.beginningDate);
+        final boolean endDateEqual       = (this.endDate == null && other.endDate == null)  || this.endDate.equals(other.endDate);
+        final boolean previousSlewEqual;
+        final boolean followingSlewEqual;
+        
+        if (!this.isPreviousSlew && !this.isPreviousSlew) {
+            // this.previousSlewDeltaV and other.previousSlewDeltaV are both null
+            previousSlewEqual = true;
+        } else if (this.isPreviousSlew && this.isPreviousSlew) {
+            previousSlewEqual = this.previousSlewDeltaV.equals(other.previousSlewDeltaV);
+        } else {
+            previousSlewEqual = false;
+        }
+        
+        if (!this.isFollowingSlew && !this.isFollowingSlew) {
+            // this.followingSlewDeltaV and other.followingSlewDeltaV are both null
+            followingSlewEqual = true;
+        } else if (this.isFollowingSlew && this.isFollowingSlew) {
+            followingSlewEqual = this.followingSlewDeltaV.equals(other.followingSlewDeltaV);
+        } else {
+            followingSlewEqual = false;
+        }
+        
+        
+        if ( dirEqual && this.name.equals(other.name) && Arrays.deepEquals(this.thrust,other.thrust)
+                && Arrays.deepEquals(this.isp,other.isp) && this.elimination == other.elimination
+                && Arrays.deepEquals(this.dVInf,other.dVInf) && Arrays.deepEquals(this.dVSup,other.dVSup)
+                && this.dVConvergence == other.dVConvergence && this.dTConvergence == other.dTConvergence
+                && beginningDateEqual && endDateEqual
+                && this.isPreviousSlew == other.isPreviousSlew && previousSlewEqual
+                && this.previousSlewDeltaMass == other.previousSlewDeltaMass && this.previousSlewDelay == other.previousSlewDelay
+                && this.isFollowingSlew == other.isFollowingSlew && followingSlewEqual
+                && this.followingSlewDeltaMass == other.followingSlewDeltaMass && this.followingSlewDelay == other.followingSlewDelay) {
+            return true;
+        }
+        
+        return false;
+    }
 }

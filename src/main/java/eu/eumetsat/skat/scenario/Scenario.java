@@ -376,6 +376,7 @@ public class Scenario implements ScenarioComponent {
                                                 maneuver.getIsp()               + " " +
                                                 maneuver.getEclipseRatio()      + " " +
                                                 maneuver.getLostEclipseRatio()  + " " +
+                                                maneuver.getYawAngle()          + " " +                                                
                                                 (maneuver.isReplanned() ? "replanned" : ""));
                     }
                 }

@@ -282,35 +282,12 @@ public class ParabolicLongitude extends AbstractSKControl {
             // we are stuck in a convergence loop, we cannot improve the current solution
             return tunables;
         }
-
-        // longitude excursion when the cycle is centered from tPeak - cycleDuration/2
-        // to tPeak + cycleDuration/2 where tPeak is the date at which peak longitude
-        // is achieved (i.e. dl/dt = 0)
-        final double cycleDuration      = end.durationFrom(start);
-        final double longitudeExcursion = -dlDotDa * aDot * cycleDuration * cycleDuration / 8;
-
-        // we want to achieve a longitude at next cycle first maneuver which will be
-        // exactly at the start of a centered parabola
-        final double lEnd    = center - 0.5 * longitudeExcursion;
-        final double tEndMt0 = end.durationFrom(fitStart.getDate()) + firstOffset;
-//        final double tEndMt0 = cycleDuration;
-
+        
         final ScheduledManeuver[] tuned;
         final AdapterPropagator adapterPropagator = new AdapterPropagator(reference);
         if (iteration == 0) {
             // we need to first define the number of maneuvers and their initial settings
-
-            // use the quadratic longitude model to compute the initial semi-major axis offset
-            // needed to achieve a longitude at next cycle first maneuver which will be exactly
-            // at the start of a centered parabola
-            final double aMas   = (lEnd - l0) / (dlDotDa * tEndMt0) - 0.5 * aDot * tEndMt0;
-
-            // compute the in plane maneuver required to get this initial semi-major axis offset
-            final double deltaA       = aMas - a0Mas;
-            final double mu           = fitStart.getMu();
-            final double a            = fitStart.getA();
-            final double totalDeltaV  = thrustSignVelocity(fitStart,getModel()) *
-                                        FastMath.sqrt(mu * (2 / a - 1 / (a + deltaA))) - FastMath.sqrt(mu / a);
+            final double totalDeltaV  = computeRequiredDV();
 
             // compute the number of maneuvers required
             final TunableManeuver model = getModel();
@@ -340,20 +317,7 @@ public class ParabolicLongitude extends AbstractSKControl {
         } else {
 
             // adjust the existing maneuvers
-
-            // compute the achieved longitude at cycle end
-            final double achievedEnd = l0 + dlDotDa * (a0Mas + 0.5 * aDot * tEndMt0) * tEndMt0;
-
-            // compute initial semi major axis offset needed to reach target longitude end
-            final double deltaL = lEnd - achievedEnd;
-            final double deltaA = deltaL / (dlDotDa * tEndMt0);
-
-
-            // compute the in plane maneuver required to get this initial semi-major axis offset
-            final double mu           = fitStart.getMu();
-            final double a            = fitStart.getA();
-            final double deltaVChange = thrustSignVelocity(fitStart,getModel()) *
-                                        FastMath.sqrt(mu * (2 / a - 1 / (a + deltaA))) - FastMath.sqrt(mu / a);
+            double deltaVChange = computeDVChange();
 
             // distribute the change over all maneuvers
             tuned = tunables.clone();
@@ -452,6 +416,82 @@ public class ParabolicLongitude extends AbstractSKControl {
 
         }
 
+    }
+    
+    /** Compute the initial guess of the Delta V required to perform the maneuver.
+     * @return Delta V required to perform the maneuver
+     * @throws OrekitException
+     */
+    public double computeRequiredDV() throws OrekitException
+    {
+        // Compute time until the end of the cycle and longitude at the end of the cycle
+        final double lEnd    = computeLEnd();
+        final double tEndMt0 = computeTEndMt0();
+
+        // use the quadratic longitude model to compute the initial semi-major axis offset
+        // needed to achieve a longitude at next cycle first maneuver which will be exactly
+        // at the start of a centered parabola
+        final double aMas   = (lEnd - l0) / (dlDotDa * tEndMt0) - 0.5 * aDot * tEndMt0;
+
+        // compute the in plane maneuver required to get this initial semi-major axis offset
+        final double deltaA       = aMas - a0Mas;
+        final double mu           = fitStart.getMu();
+        final double a            = fitStart.getA();
+        final double totalDeltaV  = thrustSignVelocity(fitStart,getModel()) *
+                                    FastMath.sqrt(mu * (2 / a - 1 / (a + deltaA))) - FastMath.sqrt(mu / a);
+        return totalDeltaV;        
+    }
+    
+    /** Compute the change on the Delta V of the maneuver to achieve the target 
+     * at the end of the cycle longitude.
+     * @return Change on Delta V
+     * @throws OrekitException
+     */
+    public double computeDVChange() throws OrekitException
+    {
+        // Compute time until the end of the cycle and longitude at the end of the cycle
+        final double lEnd    = computeLEnd();
+        final double tEndMt0 = computeTEndMt0();
+        
+        // compute the achieved longitude at cycle end
+        final double achievedEnd = l0 + dlDotDa * (a0Mas + 0.5 * aDot * tEndMt0) * tEndMt0;
+
+        // compute initial semi major axis offset needed to reach target longitude end
+        final double deltaL = lEnd - achievedEnd;
+        final double deltaA = deltaL / (dlDotDa * tEndMt0);
+
+
+        // compute the in plane maneuver required to get this initial semi-major axis offset
+        final double mu           = fitStart.getMu();
+        final double a            = fitStart.getA();
+        double deltaVChange = thrustSignVelocity(fitStart,getModel()) *
+                                    FastMath.sqrt(mu * (2 / a - 1 / (a + deltaA))) - FastMath.sqrt(mu / a);
+        return deltaVChange;
+    }
+    
+    /** Compute the target longitude at the end of the cycle.
+     * @return longitude at the end of the cycle
+     */
+    private double computeLEnd()
+    {
+        // longitude excursion when the cycle is centered from tPeak - cycleDuration/2
+        // to tPeak + cycleDuration/2 where tPeak is the date at which peak longitude
+        // is achieved (i.e. dl/dt = 0)
+        final double cycleDuration      = end.durationFrom(start);
+        final double longitudeExcursion = -dlDotDa * aDot * cycleDuration * cycleDuration / 8;
+
+        // we want to achieve a longitude at next cycle first maneuver which will be
+        // exactly at the start of a centered parabola
+        return center - 0.5 * longitudeExcursion;       
+    }
+    
+    /** Compute the time elapsed until the end of the cycle.
+     * @return time until the end of the cycle
+     */
+    private double computeTEndMt0()
+    {
+        return end.durationFrom(fitStart.getDate()) + firstOffset;
+        // tEndMt0 = cycleDuration;
     }
 
 }

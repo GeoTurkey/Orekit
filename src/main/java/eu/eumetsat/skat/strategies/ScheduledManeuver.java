@@ -43,10 +43,14 @@ public class ScheduledManeuver {
     private double eclipseRatio; 
     
     /** Lost eclipse ratio. This is only used for out-of-plane maneuvers. */
-    private double lostEclipseRatio; 
-    
-    /** DV epsilon. Used to avoid numerical errors when checking if a maneuver is saturated. */
+    private double lostEclipseRatio;
+
+	/** DV epsilon. Used to avoid numerical errors when checking if a maneuver is saturated. */
     private final double dV_epsilon = 1e-15;
+    
+    /** Yaw angle of the maneuver w.r.t its reference direction. This is only 
+     * applies to mixed longitude-inclination maneuvers. */
+    private double yawAngle; 
     
     /** Simple constructor.
      * @param model tunable model of the maneuver
@@ -70,6 +74,7 @@ public class ScheduledManeuver {
         this.replanned  = replanned;
         this.eclipseRatio     = -1;
         this.lostEclipseRatio = -1;
+        this.yawAngle         = 0.0;
     }
 
     /** Get the maneuver name.
@@ -220,13 +225,13 @@ public class ScheduledManeuver {
      * @return true if the two maneuvers share the same model and both their dates
      * and velocity increment are within the model convergence thresholds
      */
-    public boolean isWithinThreshold(final ScheduledManeuver maneuver) {
-        return (model == maneuver.model) &&
+    public boolean isWithinThreshold(final ScheduledManeuver maneuver) {        
+        return (model.equals(maneuver.model)) &&
                (date.durationFrom(maneuver.date) <= model.getDTConvergence()) &&
                (deltaV.subtract(maneuver.deltaV).getNorm() <= model.getDVConvergence());
     }
     
-    /** Check if a maneuver is saturated.
+	/** Check if a maneuver is saturated.
      * @param dV Delta V used to check whether the maneuver is saturated or not
      * @return true if the maneuver is saturated
      */
@@ -235,6 +240,20 @@ public class ScheduledManeuver {
         final boolean isSatInf = dV < 0 && this.getSignedDeltaV() - dV_epsilon > this.getModel().getCurrentDVInf();
         final boolean isSatSup = dV > 0 && this.getSignedDeltaV() + dV_epsilon < this.getModel().getCurrentDVSup();
         return !(isSatInf || isSatSup);
+    }
+
+    /** Get the yaw angle of the maneuver.
+    * @return yaw angle
+    */
+    public double getYawAngle() {
+        return yawAngle;
+    }
+    
+    /** Get the yaw angle of the maneuver.
+    * @param angle yaw angle
+    */
+    public void setYawAngle(final double angle) {
+        this.yawAngle = angle;
     }
 
 }

@@ -27,6 +27,7 @@ import eu.eumetsat.skat.strategies.TunableManeuver;
 import eu.eumetsat.skat.strategies.geo.EccentricityCircle;
 import eu.eumetsat.skat.strategies.geo.InclinationVector;
 import eu.eumetsat.skat.strategies.geo.ParabolicLongitude;
+import eu.eumetsat.skat.strategies.geo.InclinationAndLongitude;
 import eu.eumetsat.skat.strategies.leo.GridPoint;
 import eu.eumetsat.skat.strategies.leo.InPlaneGroundTrackGrid;
 import eu.eumetsat.skat.strategies.leo.MeanLocalSolarTime;
@@ -146,6 +147,49 @@ public enum SupportedControlLaw {
             return new InclinationVector(name, controlled, skat.getSpacecraftIndex(controlled),
                                          model, yawFlipSequence, firstOffset, maxManeuvers, orbitsSeparation,
                                          referenceHx, referenceHy, limitInclination, sampling, horizon, isPairedManeuvers);
+        }
+
+    },
+    
+    /** Constant for inclination vector and longitude. */
+    INCLINATION_AND_LONGITUDE() {
+
+        /** {@inheritDoc} */
+        public SKControl parse(final SkatFileParser parser, final Tree node,
+                               final String controlled, final Skat skat)
+            throws OrekitException, SkatException {
+            final String name             = parser.getString(node, ParameterKey.CONTROL_NAME);
+            final double sampling         = parser.getDouble(node, ParameterKey.CONTROL_SAMPLING);
+            final double horizon          = parser.getDouble(node, ParameterKey.CONTROL_HORIZON);
+            TunableManeuver[] model;
+            final Tree namesArrayNode   = parser.getValue(node, ParameterKey.CONTROL_MANEUVER_NAME);
+            if(namesArrayNode.getType() == SkatParser.ARRAY){
+            	model = new TunableManeuver[parser.getElementsNumber(namesArrayNode)];
+            	for (int i = 0; i < model.length; ++i) {
+            		model[i] = skat.getManeuver(parser.getElement(namesArrayNode, i).getText());
+            	}
+            }
+            else{
+            	model    = new TunableManeuver[1];
+            	model[0] = skat.getManeuver(parser.getString(node, ParameterKey.CONTROL_MANEUVER_NAME));
+            }
+            int[][] emptyArray = {};
+            final int[][] yawFlipSequence =  
+                    parser.containsKey(node, ParameterKey.CONTROL_YAW_FLIP_SEQUENCE) ? 
+                    parser.getIntArray2(node, ParameterKey.CONTROL_YAW_FLIP_SEQUENCE) : emptyArray;
+            final int maxManeuvers        = parser.getInt(node,    ParameterKey.CONTROL_MAX_MANEUVERS);
+            final int orbitsSeparation    = parser.getInt(node,    ParameterKey.CONTROL_MANEUVERS_ORBITS_SEPARATION);
+            final double firstOffset      = parser.getDouble(node, ParameterKey.CONTROL_INCLINATION_VECTOR_FIRST_OFFSET);
+            final double referenceHx      = parser.getDouble(node, ParameterKey.CONTROL_INCLINATION_VECTOR_REFERENCE_HX);
+            final double referenceHy      = parser.getDouble(node, ParameterKey.CONTROL_INCLINATION_VECTOR_REFERENCE_HY);
+            final double limitInclination = parser.getAngle(node, ParameterKey.CONTROL_INCLINATION_LIMIT_INCLINATION_ANGLE);
+            final boolean isPairedManeuvers = parser.containsKey(node, ParameterKey.CONTROL_INCLINATION_IS_PAIRED_MANEUVERS) ? parser.getBoolean(node,ParameterKey.CONTROL_INCLINATION_IS_PAIRED_MANEUVERS) : false;
+            final double lEast             = parser.getAngle(node,  ParameterKey.CONTROL_PARABOLIC_LONGITUDE_EAST);
+            final double lWest             = parser.getAngle(node,  ParameterKey.CONTROL_PARABOLIC_LONGITUDE_WEST);
+            return new InclinationAndLongitude(name, controlled, skat.getSpacecraftIndex(controlled),
+                             model, yawFlipSequence, firstOffset, maxManeuvers, orbitsSeparation,
+                             referenceHx, referenceHy, lEast, lWest,skat.getEarth(),
+                             limitInclination, sampling, horizon, isPairedManeuvers);            
         }
 
     },
