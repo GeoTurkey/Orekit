@@ -244,11 +244,11 @@ public class InclinationAndLongitude extends AbstractSKControl{
             final TunableManeuver firstManModel  = newModels[idx_firstManModel];
             final TunableManeuver secondManModel = newModels[idx_secManModel]; 
             
-            ScheduledManeuver[] tuned = new ScheduledManeuver[2*FastMath.min(maxManeuvers,nPairsReq)];
+            final int nManPairs = FastMath.min(maxManeuvers, nPairsReq);
+            ScheduledManeuver[] tuned = new ScheduledManeuver[2*nManPairs];
             if (nPairsReq > maxManeuvers) {
-                
-                
-                for (int i_pair = 0; i_pair < maxManeuvers; i_pair++)
+                // Rotate the saturated maneuvers
+                for (int i_pair = 0; i_pair < nManPairs; i_pair++)
                 {
                     tuned[2*i_pair] = new ScheduledManeuver(firstManModel, firstMan.shiftedBy(i_pair * separation),
                                                             new Vector3D(firstManModel.getCurrentDVSup(), firstManModel.getDirection()),
@@ -270,7 +270,7 @@ public class InclinationAndLongitude extends AbstractSKControl{
                 final double firstDV  = totalDV[idx_firstManModel].getNorm()/nPairsReq;
                 final double secondDV = totalDV[idx_secManModel].getNorm()/nPairsReq;
                 
-                for (int i_pair = 0; i_pair < maxManeuvers; i_pair++)
+                for (int i_pair = 0; i_pair < nManPairs; i_pair++)
                 {
                     tuned[2*i_pair] = new ScheduledManeuver(firstManModel, firstMan.shiftedBy(i_pair * separation),
                                                             new Vector3D(firstDV, firstManModel.getDirection()),
@@ -363,31 +363,27 @@ public class InclinationAndLongitude extends AbstractSKControl{
         }        
 
         // Create the new models for the maneuvers
-        TunableManeuver[] newModels = new TunableManeuver[currentModels.length];
-        for (int i_model = 0; i_model < currentModels.length; i_model++) { 
+        final TunableManeuver[] newModels = new TunableManeuver[currentModels.length];
+        for (int iMdl = 0; iMdl < currentModels.length; iMdl++) { 
+            final Vector3D dvDir;
             if (nbMan > maxManeuvers) {
                 // Compute the direction of the saturated maneuver preserving the AV of the longitude control
-                final double incDVsign = FastMath.signum(currentModels[i_model].getDirection().getY());
-                final double satVy     = incDVsign*FastMath.sqrt(FastMath.pow(currentModels[i_model].getCurrentDVSup()*maxManeuvers,2) 
-                                                - FastMath.pow(totalDV[i_model].getX(),2) - FastMath.pow(totalDV[i_model].getZ(),2));
-                final Vector3D satDir  = new Vector3D(totalDV[i_model].getX(),satVy,totalDV[i_model].getZ());
-                
-                // Check if the yaw angle is with in range
-                if (FastMath.abs(getYawAngle(satDir,currentModels[i_model])) > maxYaw) {
-                     newModels[i_model]     = new TunableManeuver(currentModels[i_model],getMaxYawManeuver(satDir,currentModels[i_model]));
-                } else {
-                    // Use the direction of the saturated maneuver
-                    newModels[i_model]     = new TunableManeuver(currentModels[i_model],satDir);
-                }
-
+                final double incDVsign = FastMath.signum(currentModels[iMdl].getDirection().getY());
+                final double satVy     = incDVsign
+                        * FastMath.sqrt(FastMath.pow(currentModels[iMdl].getCurrentDVSup()*maxManeuvers, 2) 
+                                      - FastMath.pow(totalDV[iMdl].getX(), 2) - FastMath.pow(totalDV[iMdl].getZ(), 2));
+                dvDir  = new Vector3D(totalDV[iMdl].getX(), satVy, totalDV[iMdl].getZ());
             } else {
-                // Check if the yaw angle is with in range
-                if (FastMath.abs(getYawAngle(totalDV[i_model],currentModels[i_model])) > maxYaw) {
-                     newModels[i_model] = new TunableManeuver(currentModels[i_model],getMaxYawManeuver(totalDV[i_model],currentModels[i_model]));
-                } else {
-                    // Use the direction of totalDV
-                    newModels[i_model] = new TunableManeuver(currentModels[i_model],totalDV[i_model]);
-                }
+                dvDir = totalDV[iMdl];
+            }
+                
+            // Check if the yaw angle is with in range
+            if (FastMath.abs(getYawAngle(dvDir, currentModels[iMdl])) > maxYaw) {
+                newModels[iMdl] = new TunableManeuver(currentModels[iMdl], 
+                        getMaxYawManeuver(dvDir, currentModels[iMdl]));
+            } else {
+                // Valid yaw, use the desired direction
+                newModels[iMdl] = new TunableManeuver(currentModels[iMdl], dvDir);
             }
         }        
         return newModels;
