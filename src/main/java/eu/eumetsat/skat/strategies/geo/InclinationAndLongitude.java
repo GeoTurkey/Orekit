@@ -369,9 +369,13 @@ public class InclinationAndLongitude extends AbstractSKControl{
             if (nbMan > maxManeuvers) {
                 // Compute the direction of the saturated maneuver preserving the AV of the longitude control
                 final double incDVsign = FastMath.signum(currentModels[iMdl].getDirection().getY());
-                final double satVy     = incDVsign
+                double satVy           = incDVsign
                         * FastMath.sqrt(FastMath.pow(currentModels[iMdl].getCurrentDVSup()*maxManeuvers, 2) 
                                       - FastMath.pow(totalDV[iMdl].getX(), 2) - FastMath.pow(totalDV[iMdl].getZ(), 2));
+                if (Double.isNaN(satVy)) {
+                    // New direction with high yaw (will be corrected after)
+                    satVy = incDVsign*FastMath.abs(totalDV[iMdl].getX());
+                }
                 dvDir  = new Vector3D(totalDV[iMdl].getX(), satVy, totalDV[iMdl].getZ());
             } else {
                 dvDir = totalDV[iMdl];
