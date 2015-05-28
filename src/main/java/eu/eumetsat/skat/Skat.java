@@ -165,7 +165,7 @@ public class Skat {
      * @param args program arguments (unused here)
      */
     public static void main(String[] args) {
-
+ 
         Skat stationKeeping = null;
         try {
 
@@ -284,7 +284,7 @@ public class Skat {
         maneuversOutput.println("# column 14: maneuver Isp (s)");
         maneuversOutput.println("# column 15: eclipse ratio (if no eclipse constraint, -1)");
         maneuversOutput.println("# column 16: lost eclipse ratio (if no eclipse constraint, -1)");
-        maneuversOutput.println("# column 17: yaw angle (rad)");
+        maneuversOutput.println("# column 17: yaw angle (deg)");
         maneuversOutput.println("# column 18: replanned flag (if not replanned, empty column)");
         maneuversOutput.println("#");
 

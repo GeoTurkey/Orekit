@@ -334,51 +334,62 @@ public class Scenario implements ScenarioComponent {
             previous = date.shiftedBy(-outputstep);
         }
 
+        // The maneuver output format is all "%s" fields, so String.valueOf is
+        // called on the primitive types with auto selection of precision.
+        final int N_OUT_FIELDS = 18;
+        final String SEP = " "; // Field separator in output
+        final String MAN_OUT_FMT = String.join(SEP, 
+                java.util.Collections.nCopies(N_OUT_FIELDS, "%s"));
+        
         for (int i = 0; i < states.length; ++i) {
-            if (states[i].getManeuvers() != null) {
-                for (final ScheduledManeuver maneuver : states[i].getManeuvers()) {
+            if (states[i].getManeuvers() == null) {
+                continue; // Skip states w/o maneuvers
+            }
+            
+            for (final ScheduledManeuver maneuver : states[i].getManeuvers()) {
 
-                    final AbsoluteDate maneuverDate = maneuver.getDate();
+                final AbsoluteDate maneuverDate = maneuver.getDate();
 
-                    if ((maneuverDate.compareTo(previous) > 0) && (maneuverDate.compareTo(date) <= 0)) {
+                if ((maneuverDate.compareTo(previous) > 0) && (maneuverDate.compareTo(date) <= 0)) {
 
-                        // the maneuver occurred during last step, take it into account
-                        final double dv      = maneuver.getDeltaV().getNorm();
-                        final int    number  = states[i].getManeuversNumber(maneuver.getName())  + 1;
-                        final double cycleDV = states[i].getManeuversCycleDV(maneuver.getName()) + dv;
-                        final double totalDV = states[i].getManeuversTotalDV(maneuver.getName()) + dv;
+                    // the maneuver occurred during last step, take it into account
+                    final double dv      = maneuver.getDeltaV().getNorm();
+                    final int    number  = states[i].getManeuversNumber(maneuver.getName())  + 1;
+                    final double cycleDV = states[i].getManeuversCycleDV(maneuver.getName()) + dv;
+                    final double totalDV = states[i].getManeuversTotalDV(maneuver.getName()) + dv;
 
-                        // update the state
-                        states[i] = states[i].updateManeuverStats(maneuver.getName(),
-                                                                  number, cycleDV, totalDV);
+                    // update the state
+                    states[i] = states[i].updateManeuverStats(maneuver.getName(),
+                                                              number, cycleDV, totalDV);
 
-                        // monitor maneuver
-                        SimpleMonitorable monitorable = maneuversMonitorables.get(maneuver.getName());
-                        monitorable.setSampledValue(maneuverDate,
-                                                    new double[] {
-                                                      number, cycleDV, totalDV
-                                                    });
+                    // monitor maneuver
+                    SimpleMonitorable monitorable = maneuversMonitorables.get(maneuver.getName());
+                    monitorable.setSampledValue(maneuverDate,
+                                                new double[] {
+                                                  number, cycleDV, totalDV
+                                                });
 
-                        // print the maneuver
-                        maneuversOutput.println(states[i].getName()             + " " +
-                        						maneuver.getName()              + " " +
-                        						maneuver.getDate()              + " " +
-                                                maneuver.getDeltaV().getX()     + " " +
-                                                maneuver.getDeltaV().getY()     + " " +
-                                                maneuver.getDeltaV().getZ()     + " " +
-                                                maneuver.getDeltaV().getNorm()  + " " +
-                                                maneuver.getDuration(maneuver.getStateBefore().getMass()) + " " +
-                                                maneuver.getStateBefore().getMass() + " " +
-                                                maneuver.getStateAfter().getMass() + " " +
-                                                maneuver.getModel().getCurrentThrust() + " " +
-                                                maneuver.getModel().getCurrentISP() + " " +
-                                                maneuver.getThrust()            + " " +
-                                                maneuver.getIsp()               + " " +
-                                                maneuver.getEclipseRatio()      + " " +
-                                                maneuver.getLostEclipseRatio()  + " " +
-                                                maneuver.getYawAngle()          + " " +                                                
-                                                (maneuver.isReplanned() ? "replanned" : ""));
-                    }
+                    // print the maneuver
+                    maneuversOutput.printf(MAN_OUT_FMT, 
+                                           states[i].getName(),
+                                           maneuver.getName(),
+                                           maneuver.getDate(),
+                                           maneuver.getDeltaV().getX(),
+                                           maneuver.getDeltaV().getY(),
+                                           maneuver.getDeltaV().getZ(),
+                                           maneuver.getDeltaV().getNorm(),
+                                           maneuver.getDuration(maneuver.getStateBefore().getMass()),
+                                           maneuver.getStateBefore().getMass(),
+                                           maneuver.getStateAfter().getMass(),
+                                           maneuver.getModel().getCurrentThrust(),
+                                           maneuver.getModel().getCurrentISP(),
+                                           maneuver.getThrust(),
+                                           maneuver.getIsp(),
+                                           maneuver.getEclipseRatio(),
+                                           maneuver.getLostEclipseRatio(),
+                                           FastMath.toDegrees(maneuver.getYawAngle()),
+                                           maneuver.isReplanned() ? "replanned" : "");
+                    maneuversOutput.println();
                 }
             }
         }
