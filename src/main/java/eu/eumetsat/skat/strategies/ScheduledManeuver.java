@@ -48,11 +48,11 @@ public class ScheduledManeuver {
 	/** DV epsilon. Used to avoid numerical errors when checking if a maneuver is saturated. */
     private final double dV_epsilon = 1e-15;
     
-    /** Yaw angle of the maneuver w.r.t its reference direction. This is only 
+    /** Yaw angle of the maneuver w.r.t its reference direction (rad). This only 
      * applies to mixed longitude-inclination maneuvers. */
     private double yawAngle; 
     
-    /** Simple constructor.
+    /** Simple constructor for maneuvers with zero yaw angle.
      * @param model tunable model of the maneuver
      * @param date maneuver date
      * @param deltaV velocity increment in spacecraft frame
@@ -75,6 +75,32 @@ public class ScheduledManeuver {
         this.eclipseRatio     = -1;
         this.lostEclipseRatio = -1;
         this.yawAngle         = 0.0;
+    }
+	
+	/** Simple constructor.
+     * @param model tunable model of the maneuver
+     * @param date maneuver date
+     * @param deltaV velocity increment in spacecraft frame
+     * @param thrust engine thrust
+     * @param isp engine specific impulse (s)
+     * @param trajectory trajectory to which this maneuver belongs
+     * @param replanned if true, the maneuver was missed and has been replanned
+	 * @param yaw angle of the maneuver (rad)
+     */
+    public ScheduledManeuver(final TunableManeuver model,
+                             final AbsoluteDate date, final Vector3D deltaV,
+                             final double thrust, final double isp, final AdapterPropagator trajectory,
+                             final boolean replanned, final double yawAngle) {
+        this.model      = model;
+        this.date       = date;
+        this.deltaV     = deltaV;
+        this.thrust     = thrust;
+        this.isp        = isp;
+        this.trajectory = trajectory;
+        this.replanned  = replanned;
+        this.eclipseRatio     = -1;
+        this.lostEclipseRatio = -1;
+        this.yawAngle         = yawAngle;
     }
 
     /** Get the maneuver name.
@@ -248,12 +274,4 @@ public class ScheduledManeuver {
     public double getYawAngle() {
         return yawAngle;
     }
-    
-    /** Get the yaw angle of the maneuver.
-    * @param angle yaw angle
-    */
-    public void setYawAngle(final double angle) {
-        this.yawAngle = angle;
-    }
-
 }

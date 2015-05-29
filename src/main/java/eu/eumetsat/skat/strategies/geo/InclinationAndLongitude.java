@@ -203,11 +203,10 @@ public class InclinationAndLongitude extends AbstractSKControl{
             if (nManReq > maxManeuvers) {                
                 // Schedule the maneuvers
                 for (int i_man = 0; i_man < maxManeuvers; i_man++) {
-                    tuned[i_man] = new ScheduledManeuver(model, firstMan.shiftedBy(i_man * separation),
-                                                            new Vector3D(model.getCurrentDVSup(), model.getDirection()),
-                                                            model.getCurrentThrust(), model.getCurrentISP(),
-                                                            adapterPropagator, false);
-                    tuned[i_man].setYawAngle(getYawAngle(tuned[i_man].getDeltaV(), currentModels[0]));
+					final Vector3D dV = new Vector3D(model.getCurrentDVSup(), model.getDirection());
+                    tuned[i_man] 	  = new ScheduledManeuver(model, firstMan.shiftedBy(i_man * separation),
+                                                            dV, model.getCurrentThrust(), model.getCurrentISP(),
+                                                            adapterPropagator, false, getYawAngle(dV, currentModels[0]));
                 }
                 
             } else {    
@@ -215,10 +214,10 @@ public class InclinationAndLongitude extends AbstractSKControl{
                 firstMan = firstMan.shiftedBy(dT);
                 final double DV = totalDV.getNorm()/nManReq;
                 for (int i_man = 0; i_man < nManReq; i_man++) {
+					final Vector3D dV = new Vector3D(DV, model.getDirection());
                     tuned[i_man] = new ScheduledManeuver(model, firstMan.shiftedBy(i_man * separation),
-                                                            new Vector3D(DV, model.getDirection()),
-                                                            model.getCurrentThrust(), model.getCurrentISP(),
-                                                            adapterPropagator, false);
+                                                            dV, model.getCurrentThrust(), model.getCurrentISP(),
+                                                            adapterPropagator, false, getYawAngle(dV, currentModels[0]));
                 }
             }
             return tuned;
@@ -250,19 +249,15 @@ public class InclinationAndLongitude extends AbstractSKControl{
                 // Rotate the saturated maneuvers
                 for (int i_pair = 0; i_pair < nManPairs; i_pair++)
                 {
-                    tuned[2*i_pair] = new ScheduledManeuver(firstManModel, firstMan.shiftedBy(i_pair * separation),
-                                                            new Vector3D(firstManModel.getCurrentDVSup(), firstManModel.getDirection()),
-                                                            firstManModel.getCurrentThrust(), firstManModel.getCurrentISP(),
-                                                            adapterPropagator, false);
+					final Vector3D dV1 = new Vector3D(firstManModel.getCurrentDVSup(), firstManModel.getDirection());
+                    tuned[2*i_pair]    = new ScheduledManeuver(firstManModel, firstMan.shiftedBy(i_pair * separation),
+                                                            dV1, firstManModel.getCurrentThrust(), firstManModel.getCurrentISP(),
+                                                            adapterPropagator, false, getYawAngle(dV1, currentModels[idx_firstManModel]));
                     
-                    tuned[2*i_pair].setYawAngle(getYawAngle(tuned[2*i_pair].getDeltaV(), currentModels[idx_firstManModel]));
-                    
-                    tuned[2*i_pair+1] = new ScheduledManeuver(secondManModel, firstMan.shiftedBy(i_pair * separation+ Constants.JULIAN_DAY / 2),
-                                                            new Vector3D(secondManModel.getCurrentDVSup(), secondManModel.getDirection()),
-                                                            secondManModel.getCurrentThrust(), secondManModel.getCurrentISP(),
-                                                            adapterPropagator, false);
-                    
-                    tuned[2*i_pair+1].setYawAngle(getYawAngle(tuned[2*i_pair+1].getDeltaV(), currentModels[idx_secManModel]));
+                    final Vector3D dV2 = new Vector3D(secondManModel.getCurrentDVSup(), secondManModel.getDirection());                    
+                    tuned[2*i_pair+1]  = new ScheduledManeuver(secondManModel, firstMan.shiftedBy(i_pair * separation+ Constants.JULIAN_DAY / 2),
+                                                            dV2, secondManModel.getCurrentThrust(), secondManModel.getCurrentISP(),
+                                                            adapterPropagator, false, getYawAngle(dV2, currentModels[idx_secManModel]));                    
                 }
             } else {
                 // Shift the non-saturated maneuvers
@@ -271,16 +266,16 @@ public class InclinationAndLongitude extends AbstractSKControl{
                 final double secondDV = totalDV[idx_secManModel].getNorm()/nPairsReq;
                 
                 for (int i_pair = 0; i_pair < nManPairs; i_pair++)
-                {
-                    tuned[2*i_pair] = new ScheduledManeuver(firstManModel, firstMan.shiftedBy(i_pair * separation),
-                                                            new Vector3D(firstDV, firstManModel.getDirection()),
-                                                            firstManModel.getCurrentThrust(), firstManModel.getCurrentISP(),
-                                                            adapterPropagator, false);
+                {	
+					final Vector3D dV1 = new Vector3D(firstDV, firstManModel.getDirection());
+                    tuned[2*i_pair]    = new ScheduledManeuver(firstManModel, firstMan.shiftedBy(i_pair * separation),
+                                                            dV1, firstManModel.getCurrentThrust(), firstManModel.getCurrentISP(),
+                                                            adapterPropagator, false, getYawAngle(dV1, currentModels[idx_firstManModel]));
                     
-                    tuned[2*i_pair+1] = new ScheduledManeuver(secondManModel, firstMan.shiftedBy(i_pair * separation+ Constants.JULIAN_DAY / 2),
-                                                            new Vector3D(secondDV, secondManModel.getDirection()),
-                                                            secondManModel.getCurrentThrust(), secondManModel.getCurrentISP(),
-                                                            adapterPropagator, false);
+					final Vector3D dV2 = new Vector3D(secondDV, secondManModel.getDirection());
+                    tuned[2*i_pair+1]  = new ScheduledManeuver(secondManModel, firstMan.shiftedBy(i_pair * separation+ Constants.JULIAN_DAY / 2),
+                                                            dV2, secondManModel.getCurrentThrust(), secondManModel.getCurrentISP(),
+                                                            adapterPropagator, false, getYawAngle(dV2, currentModels[idx_secManModel]));
                 }
             }
             return tuned;
