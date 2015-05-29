@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>int.eumetsat</groupId>
   <artifactId>skat</artifactId>
-  <version>3.3</version>
+  <version>3.3.1</version>
   <packaging>jar</packaging>
   <name>Station Keeping Analysis Tool</name>
 
@@ -47,7 +47,7 @@
     <dependency>
   		<groupId>org.orekit</groupId>
   		<artifactId>orekit</artifactId>
-  		<version>7.0</version>
+  		<version>7.0X</version>
   		<type>jar</type>
         <optional>false</optional>
   	</dependency>
