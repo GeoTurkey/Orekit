@@ -370,8 +370,8 @@ public class InclinationVector extends AbstractSKControl {
             // Maybe there is such little time that no maneuver at all is necessary
             // We are here because the H-vector has been found to exit the circle before
             // the end of the next control cycle, but not before the end of the simulation...
-            final double endRadius = FastMath.hypot(xModel.osculatingValue(simulationEnd), 
-                                                            yModel.osculatingValue(simulationEnd));
+            final double endRadius = FastMath.hypot(xModel.osculatingValue(simulationEnd) - referenceHx, 
+                                                            yModel.osculatingValue(simulationEnd) - referenceHy);
             if(endRadius < innerRadius){
                     nbMan = 0;
                     return tunables;
