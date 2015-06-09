@@ -117,6 +117,21 @@ public class InclinationVector extends AbstractSKControl {
 
     /** Flag indicating whether maneuvers must be paired (2 maneuvers separated by 12 hours) or not. */
     private boolean isPairedManeuvers;
+    
+    /** Number of cycles ahead of the current one that will be scanned by the 
+     * control law looking for violations. During the look ahead cycles, the 
+     * maneuvers cannot be scheduled. 
+     */
+    private int lookAheadCycles;
+    
+    /** Look ahead time plus the duration of the current cycle. */
+    private double scanningTime;
+    
+    /** Flag indicating whether maneuvers can be planned during this cycle or not. */
+    private boolean scheduleManeuvers;
+    
+    /** .*/
+    private int cyclesWithManeuver;
 
     /** Simple constructor.
      * @param name name of the control law
@@ -132,26 +147,32 @@ public class InclinationVector extends AbstractSKControl {
      * @param limitInclination limit inclination angle
      * @param samplingStep step to use for sampling throughout propagation
      * @param horizon time horizon duration
+     * @param isPairedManeuvers flag indicating whether maneuvers must be paired
+     * @param lookAheadCycles number of cycles ahead of the current one that will be scanned by the control law looking for violations
+     * @param cycleWithManeuver cycle when the maneuvers can be performed
      */
     public InclinationVector(final String name, final String controlledName, final int controlledIndex,
                              final TunableManeuver[] model, int[][] yawFlipSequence, final double firstOffset,
                              final int maxManeuvers, final int orbitsSeparation,
                              final double referenceHx, final double referenceHy,
-                             final double limitInclination, final double samplingStep, final double horizon, final boolean isPairedManeuvers) {
+                             final double limitInclination, final double samplingStep, 
+                             final double horizon, final boolean isPairedManeuvers, final int lookAheadCycles, final int cycleWithManeuver) {
 
         super(name, model, yawFlipSequence, controlledName, controlledIndex, null, -1,
               0.0, innerRadius(referenceHx, referenceHy, limitInclination),
               horizon * Constants.JULIAN_DAY);
 
-        this.stephandler       = new Handler();
-        this.firstOffset       = firstOffset;
-        this.maxManeuvers      = maxManeuvers;
-        this.orbitsSeparation  = orbitsSeparation;
-        this.referenceHx       = referenceHx;
-        this.referenceHy       = referenceHy;
-        this.samplingStep      = samplingStep;
-        this.innerRadius       = innerRadius(referenceHx, referenceHy, limitInclination);
-        this.isPairedManeuvers = isPairedManeuvers;
+        this.stephandler        = new Handler();
+        this.firstOffset        = firstOffset;
+        this.maxManeuvers       = maxManeuvers;
+        this.orbitsSeparation   = orbitsSeparation;
+        this.referenceHx        = referenceHx;
+        this.referenceHy        = referenceHy;
+        this.samplingStep       = samplingStep;
+        this.innerRadius        = innerRadius(referenceHx, referenceHy, limitInclination);
+        this.isPairedManeuvers  = isPairedManeuvers;
+        this.lookAheadCycles    = lookAheadCycles;
+        this.cyclesWithManeuver = cycleWithManeuver % (lookAheadCycles+1);
 
         xModel = new SecularAndHarmonic(1, new double[] { SUN_PULSATION, MOON_PULSATION });
         yModel = new SecularAndHarmonic(1, new double[] { SUN_PULSATION, MOON_PULSATION });
@@ -184,7 +205,7 @@ public class InclinationVector extends AbstractSKControl {
 
     /** {@inheritDoc} 
      * @throws OrekitException */
-    public void initializeRun(final int iteration, final ScheduledManeuver[] maneuvers,
+    public void initializeRun(final int iteration, final int cycle, final ScheduledManeuver[] maneuvers,
                               final Propagator propagator, final List<ScheduledManeuver> fixedManeuvers,
                               final AbsoluteDate start, final AbsoluteDate end)
         throws OrekitException {
@@ -215,6 +236,14 @@ public class InclinationVector extends AbstractSKControl {
             yModel.fit();
 
         }
+        
+        if (lookAheadCycles == 0) {
+            // No restriction at all
+            scheduleManeuvers = true;
+        } else {
+            // Only during some cycles the manoeuvres can be scheduled
+            scheduleManeuvers = (cycle % (lookAheadCycles+1)) == cyclesWithManeuver;
+        }
 
     }
 
@@ -229,7 +258,7 @@ public class InclinationVector extends AbstractSKControl {
 
         if (iteration == 0) {
 
-            if (getMargins() >= 0) {
+            if (getMargins() >= 0 || !scheduleManeuvers) {
                 // no constraints violations, we don't perform any maneuvers
                 nbMan = 0;
                 return tunables;
@@ -317,7 +346,7 @@ public class InclinationVector extends AbstractSKControl {
                 for (AbsoluteDate date = minDate; date.compareTo(maxDate) < 0; date = date.shiftedBy(samplingStep)) {
                     
                     // Check limits only during the current cycle
-                    if (date.durationFrom(cycleStart) <= InclinationVector.this.getCycleDuration() ) {
+                    if (date.durationFrom(cycleStart) <= InclinationVector.this.scanningTime ) {
                         interpolator.setInterpolatedDate(date);
                         final SpacecraftState state = interpolator.getInterpolatedState();
 
@@ -647,6 +676,17 @@ public class InclinationVector extends AbstractSKControl {
         {
             this.deltaT = deltaT;
             this.deltaV = deltaV;
+        }
+    }
+    
+    /** {@inheritDoc} */
+    @Override
+    public void setCycleDuration(final double cycleDuration) throws SkatException {
+        super.setCycleDuration(cycleDuration);        
+        // Check that the scanning time is smaller than the horizon of the control
+        this.scanningTime = (lookAheadCycles + 1) * getCycleDuration();
+        if (this.scanningTime > super.getTimeHorizon()) {
+            throw new SkatException(SkatMessages.WRONG_LOOK_AHEAD_TIME);
         }
     }
 }

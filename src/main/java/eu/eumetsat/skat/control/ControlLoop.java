@@ -68,6 +68,9 @@ public class ControlLoop implements ScenarioComponent {
     
     /** Cycle duration. */
     private double cycleDuration;
+    
+    /** Cycle number. */
+    private int cycleNumber;
 
     /** Simple constructor.
      * <p>
@@ -119,8 +122,9 @@ public class ControlLoop implements ScenarioComponent {
 
         ScenarioState[] updated = originals.clone();
         final ScenarioState original = originals[spacecraftIndex];
+        this.cycleNumber = original.getCyclesNumber();     
 
-        if ((original.getCyclesNumber() >= firstCycle) && (original.getCyclesNumber() <= lastCycle)) {
+        if ((cycleNumber >= firstCycle) && (cycleNumber <= lastCycle)) {
 
             if (original.getEstimatedState() == null) {
                 throw new SkatException(SkatMessages.NO_ESTIMATED_STATE,
@@ -269,7 +273,7 @@ public class ControlLoop implements ScenarioComponent {
 
         // prepare run
         for (final SKControl control : controls) {
-            control.initializeRun(iteration, maneuvers, propagator, fixedManeuvers, start,
+            control.initializeRun(iteration, cycleNumber, maneuvers, propagator, fixedManeuvers, start,
                                   start.shiftedBy(control.getTimeHorizon()));
         }
 

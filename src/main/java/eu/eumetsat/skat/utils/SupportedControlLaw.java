@@ -121,6 +121,21 @@ public enum SupportedControlLaw {
             final String name             = parser.getString(node, ParameterKey.CONTROL_NAME);
             final double sampling         = parser.getDouble(node, ParameterKey.CONTROL_SAMPLING);
             final double horizon          = parser.getDouble(node, ParameterKey.CONTROL_HORIZON);
+            
+            final int lookAheadCycles;            
+            if (parser.containsKey(node, ParameterKey.CONTROL_INCLINATION_LOOK_AHEAD_CYCLES)) {
+                lookAheadCycles = parser.getInt(node, ParameterKey.CONTROL_INCLINATION_LOOK_AHEAD_CYCLES);
+            } else {
+                lookAheadCycles = 0;
+            }
+            
+            final int cycleWithManeuver;
+            if (parser.containsKey(node, ParameterKey.CONTROL_INCLINATION_CYCLE_WITH_MANEUVER)) {
+                cycleWithManeuver = parser.getInt(node, ParameterKey.CONTROL_INCLINATION_CYCLE_WITH_MANEUVER);
+            } else {
+                cycleWithManeuver = 1;
+            }
+            
             TunableManeuver[] model;
             final Tree namesArrayNode   = parser.getValue(node, ParameterKey.CONTROL_MANEUVER_NAME);
             if(namesArrayNode.getType() == SkatParser.ARRAY){
@@ -146,7 +161,7 @@ public enum SupportedControlLaw {
             final boolean isPairedManeuvers = parser.containsKey(node, ParameterKey.CONTROL_INCLINATION_IS_PAIRED_MANEUVERS) ? parser.getBoolean(node,ParameterKey.CONTROL_INCLINATION_IS_PAIRED_MANEUVERS) : false;
             return new InclinationVector(name, controlled, skat.getSpacecraftIndex(controlled),
                                          model, yawFlipSequence, firstOffset, maxManeuvers, orbitsSeparation,
-                                         referenceHx, referenceHy, limitInclination, sampling, horizon, isPairedManeuvers);
+                                         referenceHx, referenceHy, limitInclination, sampling, horizon, isPairedManeuvers, lookAheadCycles, cycleWithManeuver);
         }
 
     },

@@ -92,7 +92,7 @@ public class InclinationAndLongitude extends AbstractSKControl{
                                                     lEast, lWest, samplingStep, horizon, earth);
         inclinationVector  = new InclinationVector(name, controlledName, controlledIndex, model, yawFlipSequence,
                                                    firstOffset, maxManeuvers, orbitsSeparation, referenceHx, 
-                                                   referenceHy, limitInclination, samplingStep, horizon, isPairedManeuvers); 
+                                                   referenceHy, limitInclination, samplingStep, horizon, isPairedManeuvers, 0, 1); 
         
         // Use longitude control step handler
         this.stephandler       = parabolicLongitude.getStepHandler();
@@ -109,13 +109,13 @@ public class InclinationAndLongitude extends AbstractSKControl{
     }
     
     /** {@inheritDoc} */
-    public void initializeRun(final int iteration, final ScheduledManeuver[] maneuvers,
+    public void initializeRun(final int iteration, final int cycle, final ScheduledManeuver[] maneuvers,
                               final Propagator propagator, final List<ScheduledManeuver> fixedManeuvers,
                               final AbsoluteDate start, final AbsoluteDate end) throws OrekitException
     {
         // Initialize longitude and inclination control laws
-        parabolicLongitude.initializeRun(iteration, maneuvers, propagator, fixedManeuvers, start, end);
-        inclinationVector.initializeRun(iteration, maneuvers, propagator, fixedManeuvers, start, end);
+        parabolicLongitude.initializeRun(iteration, cycle, maneuvers, propagator, fixedManeuvers, start, end);
+        inclinationVector.initializeRun(iteration, cycle, maneuvers, propagator, fixedManeuvers, start, end);
         this.iteration = iteration;
     }
     

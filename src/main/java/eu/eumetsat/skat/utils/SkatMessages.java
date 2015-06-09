@@ -72,7 +72,8 @@ public enum SkatMessages implements Localizable {
     NO_BRACKETING("unable to find interval bracketing root"),
     NO_SUITABLE_NODE_FOR_MANEUVER("no suitable node found for maneuver between {0} and {1}"),
     CYCLE_DURATION_MODIFIED("Cycle duration has been changed twice"),
-    WRONG_CYCLE_DURATION("The cycle duration cannot be smaller that the time horizon of any control law");
+    WRONG_CYCLE_DURATION("The cycle duration cannot be smaller that the time horizon of any control law"),
+    WRONG_LOOK_AHEAD_TIME("The look ahead time plus the cycle duration cannot be greater than the horizon of the control");
 
     // CHECKSTYLE: resume JavadocVariable check
 

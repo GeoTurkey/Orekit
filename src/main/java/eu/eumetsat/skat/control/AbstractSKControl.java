@@ -522,8 +522,7 @@ public abstract class AbstractSKControl implements SKControl {
 
     }
     
-    /** {@inheritDoc}
-     * @throws eu.eumetsat.skat.utils.SkatException */
+    /** {@inheritDoc} */
     public void setCycleDuration(final double cycleDuration) throws SkatException {
         if (!this.cycleDurModified) {
             this.cycleDuration = cycleDuration;

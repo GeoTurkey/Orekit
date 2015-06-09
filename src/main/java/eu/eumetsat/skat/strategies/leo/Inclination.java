@@ -134,7 +134,7 @@ public class Inclination extends AbstractLeoSKControl {
     }
 
     /** {@inheritDoc} */
-    public void initializeRun(final int iteration,
+    public void initializeRun(final int iteration, final int cycle,
                               final ScheduledManeuver[] maneuvers,
                               final Propagator propagator,
                               final List<ScheduledManeuver> fixedManeuvers,

@@ -264,7 +264,7 @@ public class Scenario implements ScenarioComponent {
                             }
                         }
                     }
-                    controlLaw.initializeRun(0, maneuvers.toArray(new ScheduledManeuver[maneuvers.size()]),
+                    controlLaw.initializeRun(0, states[i].getCyclesNumber(), maneuvers.toArray(new ScheduledManeuver[maneuvers.size()]),
                                              propagator, new ArrayList<ScheduledManeuver>(), tMin, tMax);
 
                     // register the control law handlers to the propagator

@@ -205,7 +205,7 @@ public class ParabolicLongitude extends AbstractSKControl {
     }
 
     /** {@inheritDoc} */
-    public void initializeRun(final int iteration, final ScheduledManeuver[] maneuvers,
+    public void initializeRun(final int iteration, final int cycle, final ScheduledManeuver[] maneuvers,
                               final Propagator propagator, final List<ScheduledManeuver> fixedManeuvers,
                               final AbsoluteDate cycleStart, final AbsoluteDate timeHorizonEnd)
         throws OrekitException {

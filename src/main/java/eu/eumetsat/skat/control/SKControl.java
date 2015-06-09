@@ -83,6 +83,7 @@ public interface SKControl {
      * in the control law if needed.
      * </p>
      * @param iteration iteration number within the cycle
+     * @param cycle current cycle
      * @param maneuvers maneuvers scheduled for this control law
      * @param propagator propagator for the cycle (it already takes
      * the maneuvers into account, but <em>none</em> of the {@link #getEventDetector()
@@ -93,7 +94,7 @@ public interface SKControl {
      * @exception OrekitException if something weird occurs with the propagator
      * @exception SkatException if initialization fails
      */
-    void initializeRun(int iteration, ScheduledManeuver[] maneuvers,
+    void initializeRun(int iteration, int cycle, ScheduledManeuver[] maneuvers,
                        Propagator propagator, List<ScheduledManeuver> fixedManeuvers,
                        AbsoluteDate start, AbsoluteDate end)
         throws OrekitException, SkatException;
@@ -148,6 +149,7 @@ public interface SKControl {
     
     /** Set the cycle duration of the control law.
      * @param cycleDuration cycle duration
+     * @throws eu.eumetsat.skat.utils.SkatException
      */
     void setCycleDuration(final double cycleDuration) throws SkatException;
 
