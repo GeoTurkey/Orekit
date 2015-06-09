@@ -121,8 +121,8 @@ public class EccentricityCircle extends AbstractSKControl {
     /** Cycle start. */
     private AbsoluteDate cycleStart;
 
-    /** Cycle end. */
-    private AbsoluteDate cycleEnd;
+    /** Time horizon end. */
+    private AbsoluteDate timeHorizonEnd;
 
     /** Inclination control maneuver which X-coupling should be anticipated for. */
 	private TunableManeuver oopManeuver;
@@ -210,9 +210,9 @@ public class EccentricityCircle extends AbstractSKControl {
         // Search for new OOP maneuvers performed by any other control loop
         updateLastOopManeuverDate(fixedManeuvers);
 
-        fitStart   = propagator.propagate(freeInterval[0]);
-        cycleStart = start;
-        cycleEnd   = end;
+        fitStart       = propagator.propagate(freeInterval[0]);
+        cycleStart     = start;
+        timeHorizonEnd = end;
 
         if (iteration == 0) {
             // reconstruct eccentricity motion model only on first iteration
@@ -298,7 +298,7 @@ public class EccentricityCircle extends AbstractSKControl {
             	final int index = indices[1];
             	            	
                 // mean eccentricity at cycle middle time
-                final AbsoluteDate middleDate = cycleStart.shiftedBy(0.5 * (cycleEnd.durationFrom(cycleStart)));
+                final AbsoluteDate middleDate = cycleStart.shiftedBy(0.5 * getCycleDuration());
                 final double meanEx = xModel.meanValue(middleDate, 0, 1);
                 final double meanEy = yModel.meanValue(middleDate, 0, 1);
 
@@ -387,7 +387,7 @@ public class EccentricityCircle extends AbstractSKControl {
         	// eccentricity-related maneuver pair
         	
             // mean eccentricity at cycle middle time
-            final AbsoluteDate middleDate = cycleStart.shiftedBy(0.5 * (cycleEnd.durationFrom(cycleStart)));
+            final AbsoluteDate middleDate = cycleStart.shiftedBy(0.5 * getCycleDuration());
             final double meanEx = xModel.meanValue(middleDate, 0, 1);
             final double meanEy = yModel.meanValue(middleDate, 0, 1);
 
@@ -701,15 +701,19 @@ public class EccentricityCircle extends AbstractSKControl {
                 for (AbsoluteDate date = minDate; date.compareTo(maxDate) < 0; date = date.shiftedBy(samplingStep)) {
 
                     if (date.compareTo(fitStart.getDate()) >= 0) {
-                        // compute current eccentricity
-                        interpolator.setInterpolatedDate(date);
-                        final SpacecraftState state  = interpolator.getInterpolatedState();
-                        final EquinoctialOrbit orbit = (EquinoctialOrbit) OrbitType.EQUINOCTIAL.convertType(state.getOrbit());
+                        
+                        // Check limits only during the current cycle
+                        if (date.durationFrom(cycleStart) <= EccentricityCircle.this.getCycleDuration() ) {
+                            // compute current eccentricity
+                            interpolator.setInterpolatedDate(date);
+                            final SpacecraftState state  = interpolator.getInterpolatedState();
+                            final EquinoctialOrbit orbit = (EquinoctialOrbit) OrbitType.EQUINOCTIAL.convertType(state.getOrbit());
 
-                        // check limits
-                        checkMargins(date,
-                                     FastMath.hypot(orbit.getEquinoctialEx() - centerX,
-                                                    orbit.getEquinoctialEy() - centerY));
+                            // check limits
+                            checkMargins(date,
+                                         FastMath.hypot(orbit.getEquinoctialEx() - centerX,
+                                                        orbit.getEquinoctialEy() - centerY));
+                        }
 
                     } else {
                         // if step is too short, assume limits are not violated

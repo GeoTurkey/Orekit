@@ -124,10 +124,10 @@ public class ParabolicLongitude extends AbstractSKControl {
     private int iteration;
 
     /** Cycle start. */
-    private AbsoluteDate start;
+    private AbsoluteDate cycleStart;
 
     /** Cycle end. */
-    private AbsoluteDate end;
+    private AbsoluteDate cycleEnd;
 
     /** Date sample during station keeping cycle. */
     private List<Double> dateSample;
@@ -207,22 +207,22 @@ public class ParabolicLongitude extends AbstractSKControl {
     /** {@inheritDoc} */
     public void initializeRun(final int iteration, final ScheduledManeuver[] maneuvers,
                               final Propagator propagator, final List<ScheduledManeuver> fixedManeuvers,
-                              final AbsoluteDate start, final AbsoluteDate end)
+                              final AbsoluteDate cycleStart, final AbsoluteDate timeHorizonEnd)
         throws OrekitException {
 
-        this.iteration = iteration;
-        this.start     = start;
-        this.end       = end;
+        this.iteration  = iteration;
+        this.cycleStart = cycleStart;
+        this.cycleEnd   = cycleStart.shiftedBy(getCycleDuration());
         resetMarginsChecks();
 
         // select a long maneuver-free interval for fitting
-        final AbsoluteDate[] freeInterval = getManeuverFreeInterval(maneuvers, fixedManeuvers, start, end);
+        final AbsoluteDate[] freeInterval = getManeuverFreeInterval(maneuvers, fixedManeuvers, cycleStart, timeHorizonEnd);
 
         if (iteration == 0) {
             clearHistory();
             final double delta = orbitsSeparation * propagator.propagate(freeInterval[0]).getKeplerianPeriod();
             final AbsoluteDate date1 = freeInterval[0].shiftedBy(delta);
-            final AbsoluteDate date2 = start.shiftedBy(firstOffset);
+            final AbsoluteDate date2 = cycleStart.shiftedBy(firstOffset);
             AbsoluteDate fitStartDate = (date1.compareTo(date2) > 0) ? date1 : date2;
             if (fitStartDate.compareTo(freeInterval[1]) > 0) {
                 fitStartDate  = freeInterval[1];
@@ -400,8 +400,10 @@ public class ParabolicLongitude extends AbstractSKControl {
                     final double geogLongitude  = state.getPVCoordinates(earthFrame).getPosition().getAlpha();
                     final double meanLongitude  = getMeanLongitude(state);
 
-                    // check the limits
-                    checkMargins(date, FastMath.toDegrees(geogLongitude));
+                    // Check limits only during the current cycle
+                    if (date.durationFrom(cycleStart) <= ParabolicLongitude.this.getCycleDuration() ) {
+                        checkMargins(date, FastMath.toDegrees(geogLongitude));
+                    }
 
                     // add point to sample
                     final double dt = date.durationFrom(fitStart.getDate());
@@ -477,7 +479,7 @@ public class ParabolicLongitude extends AbstractSKControl {
         // longitude excursion when the cycle is centered from tPeak - cycleDuration/2
         // to tPeak + cycleDuration/2 where tPeak is the date at which peak longitude
         // is achieved (i.e. dl/dt = 0)
-        final double cycleDuration      = end.durationFrom(start);
+        final double cycleDuration      = super.getCycleDuration();
         final double longitudeExcursion = -dlDotDa * aDot * cycleDuration * cycleDuration / 8;
 
         // we want to achieve a longitude at next cycle first maneuver which will be
@@ -490,7 +492,7 @@ public class ParabolicLongitude extends AbstractSKControl {
      */
     private double computeTEndMt0()
     {
-        return end.durationFrom(fitStart.getDate()) + firstOffset;
+        return cycleEnd.durationFrom(fitStart.getDate()) + firstOffset;
         // tEndMt0 = cycleDuration;
     }
 

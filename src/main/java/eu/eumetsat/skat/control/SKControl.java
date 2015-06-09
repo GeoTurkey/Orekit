@@ -145,5 +145,10 @@ public interface SKControl {
      * @param monitoring if true, the law is in the monitoring phase
      */
     void setMonitoring(boolean monitoring);
+    
+    /** Set the cycle duration of the control law.
+     * @param cycleDuration cycle duration
+     */
+    void setCycleDuration(final double cycleDuration) throws SkatException;
 
 }

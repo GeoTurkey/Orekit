@@ -19,6 +19,8 @@ import org.orekit.time.TimeStamped;
 
 import eu.eumetsat.skat.strategies.ScheduledManeuver;
 import eu.eumetsat.skat.strategies.TunableManeuver;
+import eu.eumetsat.skat.utils.SkatException;
+import eu.eumetsat.skat.utils.SkatMessages;
 
 /**
  * Base implementation for station-keeping control laws.
@@ -69,6 +71,12 @@ public abstract class AbstractSKControl implements SKControl {
 
     /** Monitoring indicator. */
     private boolean monitoring;
+    
+    /** Cycle duration. */
+    private double cycleDuration;
+    
+    /** Indicator to avoid changing the duration of the cycle twice. */
+    private boolean cycleDurModified;
 
     /** Simple constructor.
      * @param name name of the control law
@@ -99,6 +107,8 @@ public abstract class AbstractSKControl implements SKControl {
         this.values           = new TreeSet<TimeStamped>(new ChronologicalComparator());
         this.history          = new ArrayList<double[]>();
         this.monitoring       = false;
+        this.cycleDurModified = false;
+        this.cycleDuration    = 0.0;
     }
 
     /** {@inheritDoc} */
@@ -510,5 +520,23 @@ public abstract class AbstractSKControl implements SKControl {
 
         }
 
+    }
+    
+    /** {@inheritDoc}
+     * @throws eu.eumetsat.skat.utils.SkatException */
+    public void setCycleDuration(final double cycleDuration) throws SkatException {
+        if (!this.cycleDurModified) {
+            this.cycleDuration = cycleDuration;
+            this.cycleDurModified = true;
+        } else {
+            throw new SkatException(SkatMessages.CYCLE_DURATION_MODIFIED,this.name);
+        }
+    }
+    
+    /** Get the duration of the cycle.     
+     * @return cycle duration
+     */
+    public double getCycleDuration() {
+        return this.cycleDuration;
     }
 }

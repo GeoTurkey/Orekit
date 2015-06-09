@@ -1,6 +1,7 @@
 /* Copyright 2011 Eumetsat */
 package eu.eumetsat.skat.scenario;
 
+import eu.eumetsat.skat.control.ControlLoop;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -127,8 +128,15 @@ public class Scenario implements ScenarioComponent {
     /** Set the cycle duration.
      * @param cycleDuration cycle duration
      */
-    public void setCycleDuration(final double cycleDuration) {
+    public void setCycleDuration(final double cycleDuration) throws SkatException {
         this.cycleDuration = (cycleDuration == 0.0) ? Double.POSITIVE_INFINITY : cycleDuration;
+        
+        // Set cycle duration in the control laws too
+        for (ScenarioComponent sc : components) {
+            if (sc instanceof ControlLoop) {
+                ((ControlLoop)sc).setCycleDuration(cycleDuration);
+            }
+        }
     }
 
     /** {@inheritDoc}

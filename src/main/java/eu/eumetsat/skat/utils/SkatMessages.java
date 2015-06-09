@@ -70,7 +70,9 @@ public enum SkatMessages implements Localizable {
     GRID_ON_EQUATORIAL_ORBIT("ground track grid cannot be used on equatorial orbits"),
     INVALID_OPPOSED_THRUSTERS("maneuvers indicated in inclination vector control law should have opposed directions for yaw-flip choice"),
     NO_BRACKETING("unable to find interval bracketing root"),
-    NO_SUITABLE_NODE_FOR_MANEUVER("no suitable node found for maneuver between {0} and {1}");
+    NO_SUITABLE_NODE_FOR_MANEUVER("no suitable node found for maneuver between {0} and {1}"),
+    CYCLE_DURATION_MODIFIED("Cycle duration has been changed twice"),
+    WRONG_CYCLE_DURATION("The cycle duration cannot be smaller that the time horizon of any control law");
 
     // CHECKSTYLE: resume JavadocVariable check
 

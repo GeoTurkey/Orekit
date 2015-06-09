@@ -136,6 +136,9 @@ public class Skat {
 
     /** Cycle duration. */
     private double cycleDuration;
+    
+    /** Cycle duration. */
+    private boolean inputCycleDuration; 
 
     /** Mono-spacecraft monitors. */
     private MonitorMono[] monitorsMono;
@@ -289,7 +292,12 @@ public class Skat {
         maneuversOutput.println("#");
 
         // get general data
-        cycleDuration = 0.0;
+        inputCycleDuration = parser.containsKey(simulationNode, ParameterKey.SIMULATION_CYCLE_DURATION);
+        if (inputCycleDuration) {
+            cycleDuration = parser.getDouble(simulationNode, ParameterKey.SIMULATION_CYCLE_DURATION)* Constants.JULIAN_DAY;
+        } else {
+            cycleDuration = Double.POSITIVE_INFINITY;
+        }        
         inertialFrame = parser.getInertialFrame(simulationNode, ParameterKey.SIMULATION_INERTIAL_FRAME);
         earth         = new OneAxisEllipsoid(Constants.WGS84_EARTH_EQUATORIAL_RADIUS,
                                              Constants.WGS84_EARTH_FLATTENING,
@@ -662,7 +670,14 @@ public class Skat {
     public void addControl(final SKControl controlLaw)
         throws SkatException {
 
-        cycleDuration = FastMath.max(cycleDuration, controlLaw.getTimeHorizon());
+        if (inputCycleDuration) {
+            // Check that the cycle duration is smaller than any time horizon
+            if (cycleDuration > controlLaw.getTimeHorizon()) {
+                throw new SkatException(SkatMessages.WRONG_CYCLE_DURATION);
+            }
+        } else {
+            cycleDuration = FastMath.min(cycleDuration, controlLaw.getTimeHorizon());
+        }
 
         final SimpleMonitorable monitorableValue =
                 new SimpleMonitorable(1, "control law value: " + controlLaw.getName());

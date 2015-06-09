@@ -65,6 +65,9 @@ public class ControlLoop implements ScenarioComponent {
 
     /** End date of the simulation. */
     AbsoluteDate simulationEndDate;
+    
+    /** Cycle duration. */
+    private double cycleDuration;
 
     /** Simple constructor.
      * <p>
@@ -124,12 +127,12 @@ public class ControlLoop implements ScenarioComponent {
                                         original.getName(), original.getCyclesNumber());
             }
             
-			if (original.getTargetCycleEnd().compareTo(simulationEndDate) == 0) {
-			    updated[spacecraftIndex] = original;
-			} else {
-	            updated[spacecraftIndex] =
-	                    original.updateTargetCycleEnd(original.getEstimatedState().getDate().shiftedBy(minTimeHorizon));
-			}
+            if (original.getTargetCycleEnd().compareTo(simulationEndDate) == 0) {
+                updated[spacecraftIndex] = original;
+            } else {
+                updated[spacecraftIndex] =
+                        original.updateTargetCycleEnd(original.getEstimatedState().getDate().shiftedBy(cycleDuration));
+            }
 
             // set the reference consumed mass for maneuvers
             for (TunableManeuver tunable: tunables) {
@@ -294,8 +297,17 @@ public class ControlLoop implements ScenarioComponent {
         }
 
         // perform propagation
-        propagator.propagate(start.shiftedBy(maxTimeHorizon));
+        propagator.propagate(start,start.shiftedBy(maxTimeHorizon));
 
     }
-
+    
+    /** Set the cycle duration of the control laws.
+     * @param cycleDuration cycle duration
+     */
+    public void setCycleDuration(final double cycleDuration) throws SkatException {
+        for (SKControl controlLaw : controls) {
+            controlLaw.setCycleDuration(cycleDuration);
+        }
+        this.cycleDuration = cycleDuration;
+    }
 }
