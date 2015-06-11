@@ -105,6 +105,9 @@ public class InclinationVector extends AbstractSKControl {
 
     /** Reference state at fitting start. */
     private SpacecraftState fitStart;
+    
+    /** Time horizon end. */
+    private AbsoluteDate timeHorizonEnd;
 
     /** Model for the x part. */
     private SecularAndHarmonic xModel;
@@ -218,6 +221,7 @@ public class InclinationVector extends AbstractSKControl {
 
         fitStart = propagator.propagate(freeInterval[0]);
         this.cycleStart = start;
+        this.timeHorizonEnd = end;
 
         if (iteration == 0) {
             // reconstruct inclination motion model only on first iteration
@@ -381,8 +385,8 @@ public class InclinationVector extends AbstractSKControl {
 
         // inclination vector evolution direction, considering only secular and Sun effects
         // we ignore Moon effects here since they have a too short period
-        final double dHXdT = xModel.meanDerivative(date, 1, 1);
-        final double dHYdT = yModel.meanDerivative(date, 1, 1);
+        final double dHXdT = (xModel.meanValue(timeHorizonEnd, 1, 1) - xModel.meanValue(date, 1, 1))/timeHorizonEnd.durationFrom(date);
+        final double dHYdT = (yModel.meanValue(timeHorizonEnd, 1, 1) - yModel.meanValue(date, 1, 1))/timeHorizonEnd.durationFrom(date);
         final double dHdT  = FastMath.hypot(dHXdT, dHYdT);
 
         // Distance traveled by H vector between now and end-of-life. Increase it a bit to have some margin
