@@ -275,6 +275,7 @@ public class SkatFileParser {
 	/**
 	 * Get an enumerate value.
 	 * 
+	 * @param <T> type of the enumeration, deduced from @a enumClass
 	 * @param node
 	 *            structure containing the parameter
 	 * @param key
@@ -285,8 +286,8 @@ public class SkatFileParser {
 	 * @exception IllegalArgumentException
 	 *                if node does not contains the key or it is not a string
 	 */
-	public Enum<?> getEnumerate(final Tree node, final ParameterKey key,
-			final Class<? extends Enum<?>> enumClass)
+	public <T extends Enum<T>> T getEnumerate(final Tree node, 
+                        final ParameterKey key, final Class<T> enumClass)
 			throws IllegalArgumentException {
 
 		// get the node
@@ -303,6 +304,7 @@ public class SkatFileParser {
 	/**
 	 * Get an enumerate value.
 	 * 
+	 * @param <T> type of the enumeration, deduced from @a enumClass
 	 * @param node
 	 *            array containing the parameter
 	 * @param index
@@ -313,8 +315,8 @@ public class SkatFileParser {
 	 * @exception IllegalArgumentException
 	 *                if node does not contains the key or it is not a string
 	 */
-	public Enum<?> getEnumerate(final Tree node, final int index,
-			final Class<? extends Enum<?>> enumClass)
+	public <T extends Enum<T>> T getEnumerate(final Tree node, final int index,
+			final Class<T> enumClass)
 			throws IllegalArgumentException {
 
 		// get the node
@@ -360,8 +362,6 @@ public class SkatFileParser {
 	 *            array containing the parameter
 	 * @param index
 	 *            index of the identifier in the array
-	 * @param enumClass
-	 *            enumerate class
 	 * @return enumerate value corresponding to the index
 	 * @exception IllegalArgumentException
 	 *                if node does not contains the key or it is not a string
@@ -845,8 +845,7 @@ public class SkatFileParser {
 			final TimeScale timeScale, final double mu) throws SkatException,
 			OrekitException {
 
-		switch ((OrbitType) getEnumerate(node, ParameterKey.ORBIT_TYPE,
-				OrbitType.class)) {
+		switch (getEnumerate(node, ParameterKey.ORBIT_TYPE, OrbitType.class)) {
 
 		case CARTESIAN:
 			return new CartesianOrbit(
@@ -864,7 +863,7 @@ public class SkatFileParser {
 					ParameterKey.ORBIT_KEPLERIAN_PA), getAngle(node,
 					ParameterKey.ORBIT_KEPLERIAN_RAAN), getAngle(node,
 					ParameterKey.ORBIT_KEPLERIAN_ANOMALY),
-					(PositionAngle) getEnumerate(node, ParameterKey.ANGLE_TYPE,
+					getEnumerate(node, ParameterKey.ANGLE_TYPE,
 							PositionAngle.class), inertialFrame, getDate(node,
 							ParameterKey.ORBIT_KEPLERIAN_DATE, timeScale), mu);
 		case CIRCULAR:
@@ -875,7 +874,7 @@ public class SkatFileParser {
 					ParameterKey.ORBIT_CIRCULAR_I), getAngle(node,
 					ParameterKey.ORBIT_CIRCULAR_RAAN), getAngle(node,
 					ParameterKey.ORBIT_CIRCULAR_LATITUDE_ARGUMENT),
-					(PositionAngle) getEnumerate(node, ParameterKey.ANGLE_TYPE,
+					getEnumerate(node, ParameterKey.ANGLE_TYPE,
 							PositionAngle.class), inertialFrame, getDate(node,
 							ParameterKey.ORBIT_CIRCULAR_DATE, timeScale), mu);
 		case EQUINOCTIAL:
@@ -886,7 +885,7 @@ public class SkatFileParser {
 					ParameterKey.ORBIT_EQUINOCTIAL_HX), getDouble(node,
 					ParameterKey.ORBIT_EQUINOCTIAL_HY), getAngle(node,
 					ParameterKey.ORBIT_EQUINOCTIAL_LONGITUDE_ARGUMENT),
-					(PositionAngle) getEnumerate(node, ParameterKey.ANGLE_TYPE,
+					getEnumerate(node, ParameterKey.ANGLE_TYPE,
 							PositionAngle.class), inertialFrame, getDate(node,
 							ParameterKey.ORBIT_EQUINOCTIAL_DATE, timeScale), mu);
 		default:
@@ -942,6 +941,7 @@ public class SkatFileParser {
 	/**
 	 * Parse an enumerate.
 	 * 
+	 * @param <T> type of the enumeration, deduced from @a enumClass
 	 * @param node
 	 *            tree node containing the enumerate identifier
 	 * @param enumClass
@@ -950,11 +950,11 @@ public class SkatFileParser {
 	 * @exception IllegalArgumentException
 	 *                if the identifier does not correspond to an enumerate
 	 */
-	private Enum<?> parseEnum(final Tree node,
-			final Class<? extends Enum<?>> enumClass) {
+	private <T extends Enum<T>> T parseEnum(final Tree node,
+			final Class<T> enumClass) {
 
 		// compare identifier with all allowed values
-		for (Enum<?> value : (Enum<?>[]) enumClass.getEnumConstants()) {
+		for (final T value : enumClass.getEnumConstants()) {
 			if (value.toString().equals(node.getText())) {
 				return value;
 			}
@@ -963,7 +963,7 @@ public class SkatFileParser {
 		// we did not find a match, build an extensive message reporting the
 		// problem
 		final StringBuilder supported = new StringBuilder();
-		for (final Enum<?> value : (Enum<?>[]) enumClass.getEnumConstants()) {
+		for (final T value : enumClass.getEnumConstants()) {
 			if (supported.length() > 0) {
 				supported.append(", ");
 			}

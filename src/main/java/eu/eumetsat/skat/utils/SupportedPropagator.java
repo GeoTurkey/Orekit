@@ -50,8 +50,8 @@ public enum SupportedPropagator {
             // Earth gravity field
             final int degree = parser.getInt(node, ParameterKey.NUMERICAL_PROPAGATOR_GRAVITY_FIELD_DEGREE);
             final int order  = parser.getInt(node, ParameterKey.NUMERICAL_PROPAGATOR_GRAVITY_FIELD_ORDER);
-            final ForceModel gravity = new HolmesFeatherstoneAttractionModel(skat.getEarth().getBodyFrame(),
-                                                                     GravityFieldFactory.getNormalizedProvider(degree, order));
+            final ForceModel gravity = new HolmesFeatherstoneAttractionModel(
+                    skat.getEarth().getBodyFrame(), GravityFieldFactory.getNormalizedProvider(degree, order));
             forceModels.add(gravity);
 
             // drag
@@ -83,7 +83,7 @@ public enum SupportedPropagator {
             if (parser.containsKey(node, ParameterKey.NUMERICAL_PROPAGATOR_THIRD_BODIES)){
                 final Tree thirdBodiesNode = parser.getValue(node, ParameterKey.NUMERICAL_PROPAGATOR_THIRD_BODIES);
                 for (int i = 0; i < parser.getElementsNumber(thirdBodiesNode); ++i) {
-                    switch ((ThirdBody) parser.getEnumerate(thirdBodiesNode, i, ThirdBody.class)) {
+                    switch (parser.getEnumerate(thirdBodiesNode, i, ThirdBody.class)) {
                     case SUN :
                         forceModels.add(new ThirdBodyAttraction(skat.getSun()));
                         break;
@@ -198,7 +198,7 @@ public enum SupportedPropagator {
             // third bodies
             final Tree thirdBodiesNode = parser.getValue(node, ParameterKey.DSST_PROPAGATOR_THIRD_BODIES);
             for (int i = 0; i < parser.getElementsNumber(thirdBodiesNode); ++i) {
-                switch ((ThirdBody) parser.getEnumerate(thirdBodiesNode, i, ThirdBody.class)) {
+                switch (parser.getEnumerate(thirdBodiesNode, i, ThirdBody.class)) {
                 case SUN :
                     forceModels.add(new DSSTThirdBody(skat.getSun()));
                     break;

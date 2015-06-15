@@ -50,8 +50,7 @@ public enum SupportedScenariocomponent {
             for (int j = 0; j < parser.getElementsNumber(scenarioNode); ++j) {
                 final Tree componentNode = parser.getElement(scenarioNode, j);
                 final SupportedScenariocomponent component =
-                        (SupportedScenariocomponent) parser.getEnumerate(componentNode, ParameterKey.COMPONENT_TYPE,
-                                                                         SupportedScenariocomponent.class);
+                        parser.getEnumerate(componentNode, ParameterKey.COMPONENT_TYPE, SupportedScenariocomponent.class);
                 scenario.addComponent(component.parse(parser, componentNode, skat));
             }
             scenario.setCycleDuration(skat.getCycleDuration());
@@ -79,8 +78,8 @@ public enum SupportedScenariocomponent {
             }
             return new OrbitDetermination(getIndices(parser, node, skat),
                                           matrix, standardDeviation,
-                                          (OrbitType) parser.getEnumerate(node, ParameterKey.ORBIT_TYPE, OrbitType.class),
-                                          (PositionAngle) parser.getEnumerate(node, ParameterKey.ANGLE_TYPE, PositionAngle.class),
+                                          parser.getEnumerate(node, ParameterKey.ORBIT_TYPE, OrbitType.class),
+                                          parser.getEnumerate(node, ParameterKey.ANGLE_TYPE, PositionAngle.class),
                                           parser.getDouble(node, ParameterKey.ORBIT_DETERMINATION_SMALL),
                                           skat.getGenerator());
         }
@@ -103,7 +102,7 @@ public enum SupportedScenariocomponent {
             // propagator
             final Tree propagatorNode = parser.getValue(node, ParameterKey.COMPONENT_CONTROL_LOOP_PROPAGATOR);
             final  SupportedPropagator sp =
-                    (SupportedPropagator) parser.getEnumerate(propagatorNode, ParameterKey.COMPONENT_PROPAGATION_METHOD,
+                    parser.getEnumerate(propagatorNode, ParameterKey.COMPONENT_PROPAGATION_METHOD,
                                                               SupportedPropagator.class);
             final  PropagatorRandomizer propagator =
                     sp.parse(parser, propagatorNode, skat, spacecraftIndex);
@@ -118,8 +117,7 @@ public enum SupportedScenariocomponent {
             for (int i = 0; i < parser.getElementsNumber(controlsNode); ++i) {
                 final Tree control = parser.getElement(controlsNode, i);
                 final SupportedControlLaw sc =
-                        (SupportedControlLaw) parser.getEnumerate(control, ParameterKey.CONTROL_TYPE,
-                                                                  SupportedControlLaw.class);
+                        parser.getEnumerate(control, ParameterKey.CONTROL_TYPE, SupportedControlLaw.class);
                 final SKControl controlLaw = sc.parse(parser, control, controlled, skat);
                 skat.addControl(controlLaw);
                 loop.addControl(controlLaw);
@@ -311,7 +309,7 @@ public enum SupportedScenariocomponent {
                 // build the propagator randomizer for the selected spacecraft
                 final Tree propagatorNode = parser.getValue(node, ParameterKey.COMPONENT_PROPAGATION_PROPAGATOR);
                 final SupportedPropagator sp =
-                        (SupportedPropagator) parser.getEnumerate(propagatorNode, ParameterKey.COMPONENT_PROPAGATION_METHOD,
+                        parser.getEnumerate(propagatorNode, ParameterKey.COMPONENT_PROPAGATION_METHOD,
                                                                   SupportedPropagator.class);
                 randomizers[i] = sp.parse(parser, propagatorNode, skat, i);
 

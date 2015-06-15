@@ -308,9 +308,9 @@ public class Skat {
 
         // atmospheric model
         final String supportedNames = "(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\\p{Digit}\\p{Digit}\\p{Digit}\\p{Digit}F10\\.(?:txt|TXT)";
-        final StrengthLevel strengthLevel = (StrengthLevel) parser.getEnumerate(simulationNode,
-                                                                                ParameterKey.SIMULATION_SOLAR_ACTIVITY_STRENGTH,
-                                                                                StrengthLevel.class);
+        final StrengthLevel strengthLevel = parser.getEnumerate(simulationNode,
+                                                                ParameterKey.SIMULATION_SOLAR_ACTIVITY_STRENGTH,
+                                                                StrengthLevel.class);
         MarshallSolarActivityFutureEstimation msafe = new MarshallSolarActivityFutureEstimation(supportedNames, strengthLevel);
         DataProvidersManager.getInstance().feed(msafe.getSupportedNames(), msafe);
         atmosphere = new DTM2000(msafe, sun, earth);
@@ -465,7 +465,7 @@ public class Skat {
             final Tree monitoringNode = parser.getValue(root, ParameterKey.MONITORING_MONO);
             for (int i = 0; i < parser.getElementsNumber(monitoringNode); ++i) {
                 MonitorableMonoSKData monitorable =
-                        (MonitorableMonoSKData) parser.getEnumerate(monitoringNode, i, MonitorableMonoSKData.class);
+                        parser.getEnumerate(monitoringNode, i, MonitorableMonoSKData.class);
                 for (int j = 0; j < configuredStates.length; ++j) {
                     monitorable.register(configuredStates.length, monitorsMono[j]);
                 }
@@ -477,7 +477,7 @@ public class Skat {
             final Tree monitoringNode = parser.getValue(root, ParameterKey.MONITORING_DUO);
             for (int i = 0; i < parser.getElementsNumber(monitoringNode); ++i) {
                 MonitorableDuoSKData monitorable =
-                        (MonitorableDuoSKData) parser.getEnumerate(monitoringNode, i, MonitorableDuoSKData.class);
+                        parser.getEnumerate(monitoringNode, i, MonitorableDuoSKData.class);
                 for (int j = 0; j < configuredStates.length - 1; ++j) {
                     for (int k = j + 1; k < configuredStates.length; ++k) {
                         monitorable.register(configuredStates.length, monitorsDuo[j][k]);
