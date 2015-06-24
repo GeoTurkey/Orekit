@@ -394,7 +394,8 @@ public class Scenario implements ScenarioComponent {
                                            maneuver.getThrust(),
                                            maneuver.getIsp(),
                                            maneuver.getEclipseRatio(),
-                                           maneuver.getLostEclipseRatio(),
+                                           maneuver.getLostEclipseRatio(),                                           
+                                           maneuver.getEclipseFlag() ? 1.0:0.0,
                                            FastMath.toDegrees(maneuver.getYawAngle()),
                                            maneuver.isReplanned() ? "replanned" : "");
                     maneuversOutput.println();
