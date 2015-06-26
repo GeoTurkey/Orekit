@@ -332,7 +332,7 @@ public class Scenario implements ScenarioComponent {
     // The maneuver output format is all "%s" fields, so String.valueOf is
     // called on the primitive types with auto selection of precision.
     /** Number of maneuver output format fields */
-    private static final int N_MAN_OUT_FIELDS = 18;
+    private static final int N_MAN_OUT_FIELDS = 19;
     /** Maneuver output file line format */
     private static final String MAN_OUT_FMT   = 
             new String(new char[N_MAN_OUT_FIELDS]).replace("\0", "%s ") + "%n";
