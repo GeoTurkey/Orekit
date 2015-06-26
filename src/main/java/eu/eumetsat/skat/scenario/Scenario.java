@@ -329,6 +329,13 @@ public class Scenario implements ScenarioComponent {
 
     }
 
+    // The maneuver output format is all "%s" fields, so String.valueOf is
+    // called on the primitive types with auto selection of precision.
+    /** Number of maneuver output format fields */
+    private static final int N_MAN_OUT_FIELDS = 18;
+    /** Maneuver output file line format */
+    private static final String MAN_OUT_FMT   = 
+            new String(new char[N_MAN_OUT_FIELDS]).replace("\0", "%s ") + "%n";
     /** Update the maneuvers state up to current date.
      * @param date current date
      * @param states states array to update
@@ -342,13 +349,6 @@ public class Scenario implements ScenarioComponent {
             previous = date.shiftedBy(-outputstep);
         }
 
-        // The maneuver output format is all "%s" fields, so String.valueOf is
-        // called on the primitive types with auto selection of precision.
-        final int N_OUT_FIELDS = 18;
-        final String SEP = " "; // Field separator in output
-        final String MAN_OUT_FMT = String.join(SEP, 
-                java.util.Collections.nCopies(N_OUT_FIELDS, "%s"));
-        
         for (int i = 0; i < states.length; ++i) {
             if (states[i].getManeuvers() == null) {
                 continue; // Skip states w/o maneuvers
@@ -398,7 +398,6 @@ public class Scenario implements ScenarioComponent {
                                            maneuver.getEclipseFlag() ? 1.0:0.0,
                                            FastMath.toDegrees(maneuver.getYawAngle()),
                                            maneuver.isReplanned() ? "replanned" : "");
-                    maneuversOutput.println();
                 }
             }
         }
