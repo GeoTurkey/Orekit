@@ -329,11 +329,10 @@ public class Scenario implements ScenarioComponent {
 
     }
 
-    // The maneuver output format is all "%s" fields, so String.valueOf is
-    // called on the primitive types with auto selection of precision.
     /** Number of maneuver output format fields */
     private static final int N_MAN_OUT_FIELDS = 19;
-    /** Maneuver output file line format */
+    /** Maneuver output file line format. The format is all "%s" fields, so 
+     * String.valueOf is called on primitive types with auto precision selection. */
     private static final String MAN_OUT_FMT   = 
             new String(new char[N_MAN_OUT_FIELDS]).replace("\0", "%s ") + "%n";
     /** Update the maneuvers state up to current date.
@@ -395,7 +394,7 @@ public class Scenario implements ScenarioComponent {
                                            maneuver.getIsp(),
                                            maneuver.getEclipseRatio(),
                                            maneuver.getLostEclipseRatio(),                                           
-                                           maneuver.getEclipseFlag() ? 1.0:0.0,
+                                           maneuver.isManWithinEclipse()? 1 : 0,
                                            FastMath.toDegrees(maneuver.getYawAngle()),
                                            maneuver.isReplanned() ? "replanned" : "");
                 }

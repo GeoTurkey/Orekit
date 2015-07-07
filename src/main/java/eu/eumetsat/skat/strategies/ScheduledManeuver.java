@@ -105,7 +105,7 @@ public class ScheduledManeuver {
      * @param isp engine specific impulse (s)
      * @param trajectory trajectory to which this maneuver belongs
      * @param replanned if true, the maneuver was missed and has been replanned
-	 * @param yaw angle of the maneuver (rad)
+	 * @param yawAngle angle of the maneuver (rad)
      */
     public ScheduledManeuver(final TunableManeuver model,
                              final AbsoluteDate date, final Vector3D deltaV,
@@ -298,23 +298,20 @@ public class ScheduledManeuver {
     /** Returns a boolean indicating whether the maneuver is performed during eclipse or not.
      * It returns true if the spacecraft enters the umbra region of the eclipse during the maneuver
      * @return eclipse flag 
+     * @throws OrekitException If the previous state cannot be obtained, or a propagation is required but fails.
      */
-    public boolean getEclipseFlag() throws OrekitException {
-        return this.isManWithinEclipse();
-    }
-                
-    private boolean isManWithinEclipse() throws PropagationException, OrekitException {
+    public boolean isManWithinEclipse() throws OrekitException {
         // Reset entry and exit of the eclipse selector
-        this.eclipseSelector.resetParameters();
+        eclipseSelector.resetParameters();
         
         // Check first if at the start of the maneuver the spacecraft is already in eclipse
-        if (this.eclipseSelector.isInEclipse(this.getStateBefore())) {
+        if (eclipseSelector.isInEclipse(this.getStateBefore())) {
             return true;
         }
         
         // Atach the eclipse selector to the maneuver trayectory and propagate
         final Propagator tmpPropagator = new AdapterPropagator(this.getTrajectory());
-        tmpPropagator.addEventDetector(this.eclipseSelector);
+        tmpPropagator.addEventDetector(eclipseSelector);
         final double duration = this.getDuration(this.getStateBefore().getMass());
         tmpPropagator.propagate(this.getDate(),this.getDate().shiftedBy(duration));
         
@@ -323,7 +320,7 @@ public class ScheduledManeuver {
     }   
     
     /** Selector for eclipse close to a specified date. */
-    private static class EclipseSelector extends EclipseDetector {
+    private static final class EclipseSelector extends EclipseDetector {
 
         /** Entry of the eclipse closest to central date. */
         private AbsoluteDate entry;
