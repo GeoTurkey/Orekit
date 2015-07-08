@@ -12,6 +12,7 @@ import org.orekit.propagation.SpacecraftState;
 import org.orekit.propagation.analytical.AdapterPropagator;
 import org.orekit.propagation.events.EclipseDetector;
 import org.orekit.propagation.events.handlers.EventHandler;
+import org.orekit.propagation.events.handlers.StopOnEvent;
 import org.orekit.time.AbsoluteDate;
 import org.orekit.utils.Constants;
 import org.orekit.utils.PVCoordinates;
@@ -61,12 +62,16 @@ public class ScheduledManeuver {
      * applies to mixed longitude-inclination maneuvers. */
     private double yawAngle;
     
-    /** Eclipse detector.*/
-    private static final EclipseSelector eclipseSelector;
+    /** Eclipse detector, shared among instances. */
+    private static final EclipseDetector eclipseDet;
     
     static {
         try {
-            eclipseSelector = new EclipseSelector();
+            // Without additional parameters, this detector will find umbral 
+            // eclipses only. It is TBC that this is the intended result.
+            eclipseDet = new EclipseDetector(
+                    CelestialBodyFactory.getSun(),  Constants.SUN_RADIUS,
+                    CelestialBodyFactory.getEarth(),Constants.WGS84_EARTH_EQUATORIAL_RADIUS);
         } catch (OrekitException ex){
             throw new ExceptionInInitializerError(ex);
         }
@@ -301,89 +306,23 @@ public class ScheduledManeuver {
      * @throws OrekitException If the previous state cannot be obtained, or a propagation is required but fails.
      */
     public boolean isManWithinEclipse() throws OrekitException {
-        // Reset entry and exit of the eclipse selector
-        eclipseSelector.resetParameters();
         
         // Check first if at the start of the maneuver the spacecraft is already in eclipse
-        if (eclipseSelector.isInEclipse(this.getStateBefore())) {
+        if (eclipseDet.g(this.getStateBefore()) < 0) {
             return true;
         }
         
-        // Atach the eclipse selector to the maneuver trayectory and propagate
-        final Propagator tmpPropagator = new AdapterPropagator(this.getTrajectory());
-        tmpPropagator.addEventDetector(eclipseSelector);
+        // Atach the eclipse detector to the maneuver trayectory and propagate.
         final double duration = this.getDuration(this.getStateBefore().getMass());
-        tmpPropagator.propagate(this.getDate(),this.getDate().shiftedBy(duration));
+        final AbsoluteDate endDate = this.getDate().shiftedBy(duration);
+        final Propagator tmpPropagator = new AdapterPropagator(this.getTrajectory());
+        tmpPropagator.addEventDetector(eclipseDet.withHandler(new StopOnEvent<EclipseDetector>()));
         
-        // Check whether an eclipse has been detected
-        return (eclipseSelector.getEntry() != null) || (eclipseSelector.getExit() != null);
+        final SpacecraftState endStv = tmpPropagator.propagate(this.getDate(), endDate);
+        
+        // If the propagation stopped before the final date, the S/C switched
+        // eclipse state (lighted to/from eclipsed) in the middle.
+        return FastMath.abs(endDate.durationFrom(endStv.getDate())) > 1;
     }   
     
-    /** Selector for eclipse close to a specified date. */
-    private static final class EclipseSelector extends EclipseDetector {
-
-        /** Entry of the eclipse closest to central date. */
-        private AbsoluteDate entry;
-
-        /** Exit of the eclipse closest to central date. */
-        private AbsoluteDate exit;
-
-        /** Simple constructor.
-         * @param earthCenteredFrame Earth centered inertial frame
-         * @param central central date expected to be close to eclipse
-         */
-        private EclipseSelector() throws OrekitException {
-            super(CelestialBodyFactory.getSun(), Constants.SUN_RADIUS,
-                    CelestialBodyFactory.getEarth(),Constants.WGS84_EARTH_EQUATORIAL_RADIUS);
-            super.withUmbra();
-            this.resetParameters();
-        }
-
-        /** {@inheritDoc} */
-        @Override
-        public EventHandler.Action eventOccurred(final SpacecraftState s, final boolean increasing) {
-
-            if (increasing) {
-                // this is an eclipse exit                
-                exit = s.getDate();
-            } else {
-                // this is an eclipse entry                
-                entry = s.getDate();
-            }
-
-            // Stop propagation: an eclipse has been detected
-            return EventHandler.Action.STOP;
-
-        }
-
-        /** Get the entry of the eclipse closest to central date.
-         * @return eclipse entry (null if none found)
-         */
-        public AbsoluteDate getEntry() {
-            return entry;
-        }
-
-        /** Get exit of the eclipse closest to central date.
-         * @return eclipse exit (null if none found)
-         */
-        public AbsoluteDate getExit() {
-            return exit;
-        }
-        
-        /** Set the values of entry and exit to null.
-         */
-        public void resetParameters() {
-            this.entry   = null;
-            this.exit    = null;
-        } 
-        
-        /** Checks if the spacecraft is within the eclipse region
-         * @param state Spacecraft state
-         * @throws OrekitException
-         */
-        public boolean isInEclipse(final SpacecraftState state) throws OrekitException {
-            return super.g(state) < 0;
-        }
-
-    }
 }
