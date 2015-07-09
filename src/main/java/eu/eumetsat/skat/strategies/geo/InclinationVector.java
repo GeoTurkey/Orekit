@@ -27,6 +27,10 @@ import eu.eumetsat.skat.strategies.ScheduledManeuver;
 import eu.eumetsat.skat.strategies.TunableManeuver;
 import eu.eumetsat.skat.utils.SkatException;
 import eu.eumetsat.skat.utils.SkatMessages;
+import java.util.Arrays;
+import org.orekit.time.DateComponents;
+import org.orekit.time.DateTimeComponents;
+import org.orekit.time.TimeScalesFactory;
 
 /**
  * Station-keeping control for inclination vector.
@@ -117,6 +121,9 @@ public class InclinationVector extends AbstractSKControl {
 
     /** Cycle start. */
     private AbsoluteDate cycleStart;
+    
+    /** Cycle end. */
+    private AbsoluteDate cycleEnd;
 
     /** Flag indicating whether maneuvers must be paired (2 maneuvers separated by 12 hours) or not. */
     private boolean isPairedManeuvers;
@@ -133,8 +140,24 @@ public class InclinationVector extends AbstractSKControl {
     /** Flag indicating whether maneuvers can be planned during this cycle or not. */
     private boolean scheduleManeuvers;
     
-    /** .*/
+    /** Cycle when the maneuvers can be performed.*/
     private int cyclesWithManeuver;
+    
+    /** Maneuvers Day Of Year. */
+    private final int[] maneuversDoy;
+    
+    /** Dates when the maneuvers can be performed. */
+    private AbsoluteDate[] maneuversDates = null;
+    
+    /** Index of the date of the last maneuver scheduled. */
+    private int manDateCache = 0;
+    
+    /** Maneuvers Day Of Year mode active. */
+    private final boolean DoyMode; 
+    
+    /** Maneuvers that were planned during a cycle but after its end date. 
+     It is used only in DoyMode. */
+    private boolean toDoManeuver; 
 
     /** Simple constructor.
      * @param name name of the control law
@@ -153,13 +176,15 @@ public class InclinationVector extends AbstractSKControl {
      * @param isPairedManeuvers flag indicating whether maneuvers must be paired
      * @param lookAheadCycles number of cycles ahead of the current one that will be scanned by the control law looking for violations
      * @param cycleWithManeuver cycle when the maneuvers can be performed
+     * @param maneuversDoy days of the year when the maneuvers are to occur
      */
     public InclinationVector(final String name, final String controlledName, final int controlledIndex,
                              final TunableManeuver[] model, int[][] yawFlipSequence, final double firstOffset,
                              final int maxManeuvers, final int orbitsSeparation,
                              final double referenceHx, final double referenceHy,
                              final double limitInclination, final double samplingStep, 
-                             final double horizon, final boolean isPairedManeuvers, final int lookAheadCycles, final int cycleWithManeuver) {
+                             final double horizon, final boolean isPairedManeuvers, 
+                             final int lookAheadCycles, final int cycleWithManeuver, final int[] maneuversDoy) {
 
         super(name, model, yawFlipSequence, controlledName, controlledIndex, null, -1,
               0.0, innerRadius(referenceHx, referenceHy, limitInclination),
@@ -176,6 +201,9 @@ public class InclinationVector extends AbstractSKControl {
         this.isPairedManeuvers  = isPairedManeuvers;
         this.lookAheadCycles    = lookAheadCycles;
         this.cyclesWithManeuver = cycleWithManeuver % (lookAheadCycles+1);
+        Arrays.sort(maneuversDoy);
+        this.maneuversDoy       = maneuversDoy.clone();
+        this.DoyMode            = this.maneuversDoy != null;
 
         xModel = new SecularAndHarmonic(1, new double[] { SUN_PULSATION, MOON_PULSATION });
         yModel = new SecularAndHarmonic(1, new double[] { SUN_PULSATION, MOON_PULSATION });
@@ -215,13 +243,52 @@ public class InclinationVector extends AbstractSKControl {
 
         this.iteration = iteration;
         resetMarginsChecks();
-
-        // select a long maneuver-free interval for fitting
-        final AbsoluteDate[] freeInterval = getManeuverFreeInterval(maneuvers, fixedManeuvers, start, end);
-
-        fitStart = propagator.propagate(freeInterval[0]);
+        
         this.cycleStart = start;
+        this.cycleEnd   = start.shiftedBy(super.getCycleDuration());
         this.timeHorizonEnd = end;
+        final AbsoluteDate[] freeInterval;
+        
+        // If the scheduling in certain days is on, look for the days
+        if (this.DoyMode && iteration == 0) {            
+            
+            // Get the dates of the maneuvers
+            if (maneuversDates == null) {
+                this.getManeuverDates(cycleStart);
+            }
+            
+            // Get the date of the maneuver corresponding to this cycle
+            AbsoluteDate currManDate = getCurrentManeuverDate();
+            scheduleManeuvers = currManDate != null;
+            
+            // If there are maneuvers to do from the past cycle, schedule them as soon as possible
+            if (toDoManeuver) {
+                scheduleManeuvers = true;
+                currManDate       = cycleStart;
+            }
+            
+            if (scheduleManeuvers) {
+                // Use this date as the cycle start
+                freeInterval = getManeuverFreeInterval(maneuvers, fixedManeuvers, currManDate, timeHorizonEnd);
+                fitStart     = propagator.propagate(freeInterval[0]);     
+            } else {
+                // No maneuver will be planned during this cycle
+                return;
+            }
+            
+        } else {            
+            // select a long maneuver-free interval for fitting
+            freeInterval = getManeuverFreeInterval(maneuvers, fixedManeuvers, cycleStart, timeHorizonEnd);
+            fitStart     = propagator.propagate(freeInterval[0]);     
+            
+            if (lookAheadCycles == 0) {
+                // No restriction at all
+                scheduleManeuvers = true;
+            } else {
+                // Only during some cycles the manoeuvres can be scheduled
+                scheduleManeuvers = (cycle % (lookAheadCycles+1)) == cyclesWithManeuver;
+            }
+        }         
 
         if (iteration == 0) {
             // reconstruct inclination motion model only on first iteration
@@ -240,15 +307,6 @@ public class InclinationVector extends AbstractSKControl {
             yModel.fit();
 
         }
-        
-        if (lookAheadCycles == 0) {
-            // No restriction at all
-            scheduleManeuvers = true;
-        } else {
-            // Only during some cycles the manoeuvres can be scheduled
-            scheduleManeuvers = (cycle % (lookAheadCycles+1)) == cyclesWithManeuver;
-        }
-
     }
 
     /** {@inheritDoc} 
@@ -262,13 +320,14 @@ public class InclinationVector extends AbstractSKControl {
 
         if (iteration == 0) {
 
-            if (getMargins() >= 0 || !scheduleManeuvers) {
+            if ((getMargins() >= 0 && !DoyMode) || !scheduleManeuvers) {
                 // no constraints violations, we don't perform any maneuvers
                 nbMan = 0;
                 return tunables;
             }
             
-            tuned = computeManeuers(tunables,adapterPropagator);
+            tuned = computeManeuvers(tunables,adapterPropagator);            
+            toDoManeuver = false;
             if (nbMan == 0) {
                 // Do not finalize propagator
                 return tuned;
@@ -282,7 +341,7 @@ public class InclinationVector extends AbstractSKControl {
             }
             
             // Compute the modifications on the manoeuvres
-            final ManeuverChangedValues maneuverChangedValues = computeManeuvresChange(tunables, nbMan);
+            final ManeuverChangedValues maneuverChangedValues = computeManeuversChange(tunables, nbMan);
 
             // distribute the change over all maneuvers
             tuned = tunables.clone();
@@ -296,6 +355,10 @@ public class InclinationVector extends AbstractSKControl {
             adapterPropagator.addEffect(new SmallManeuverAnalyticalModel(maneuver.getStateBefore(),
                                                                          maneuver.getDeltaV(),
                                                                          maneuver.getIsp()));
+            // Check if the manoeuvres are in the current cycle
+            if (DoyMode) {
+                toDoManeuver = maneuver.getDate().compareTo(cycleEnd) >= 0;
+            }
         }
 
         return tuned;
@@ -373,51 +436,18 @@ public class InclinationVector extends AbstractSKControl {
      * @return maneuvers required to control the inclination
      * @throws OrekitException
      */
-    public ScheduledManeuver[] computeManeuers(final ScheduledManeuver[] tunables,
+    public ScheduledManeuver[] computeManeuvers(final ScheduledManeuver[] tunables,
                                              final AdapterPropagator adapterPropagator) throws OrekitException, SkatException
     {
         final ScheduledManeuver[] tuned;
         
         // inclination vector at maneuver time
-        AbsoluteDate date = cycleStart.shiftedBy(firstOffset);
+        AbsoluteDate date = fitStart.getDate().shiftedBy(firstOffset);
         startHx = xModel.osculatingValue(date);
         startHy = yModel.osculatingValue(date);
 
-        // inclination vector evolution direction, considering only secular and Sun effects
-        // we ignore Moon effects here since they have a too short period
-        final double dHXdT = (xModel.meanValue(timeHorizonEnd, 1, 1) - xModel.meanValue(date, 1, 1))/timeHorizonEnd.durationFrom(date);
-        final double dHYdT = (yModel.meanValue(timeHorizonEnd, 1, 1) - yModel.meanValue(date, 1, 1))/timeHorizonEnd.durationFrom(date);
-        final double dHdT  = FastMath.hypot(dHXdT, dHYdT);
-
-        // Distance traveled by H vector between now and end-of-life. Increase it a bit to have some margin
-        final double margin      = .5;
-        final AbsoluteDate simulationEnd = getModel().getEndDate();
-        final double deltaHToEnd = dHdT * simulationEnd.durationFrom(fitStart.getDate()) * (1+margin);
-
-        // Check for end of life: is there enough time left to travel the entire circle before EoL?
-        if (deltaHToEnd >= 2 * innerRadius) {
-            // Normal OOP maneuver: there is time
-            // Target a point on the limit circle
-            // such that trajectory crosses the circle radially 
-            targetHx = referenceHx + dHXdT / dHdT * (-innerRadius);
-            targetHy = referenceHy + dHYdT / dHdT * (-innerRadius);
-        } else {
-            // End-of-life case: there is no time
-            // Maybe there is such little time that no maneuver at all is necessary
-            // We are here because the H-vector has been found to exit the circle before
-            // the end of the next control cycle, but not before the end of the simulation...
-            final double endRadius = FastMath.hypot(xModel.osculatingValue(simulationEnd) - referenceHx, 
-                                                            yModel.osculatingValue(simulationEnd) - referenceHy);
-            if(endRadius < innerRadius){
-                    nbMan = 0;
-                    return tunables;
-            }
-
-            // If a maneuver is necessary, do not go back all the way to the lower edge of
-            // the circle, leave just enough distance to finish life within the inner circle.
-            targetHx = referenceHx + dHXdT / dHdT * (innerRadius - deltaHToEnd);
-            targetHy = referenceHy + dHYdT / dHdT * (innerRadius - deltaHToEnd);                  
-        }
+        // Compute maneuver target
+        computeManeuverTarget(date);
 
         // Compute the out of plane maneuver required to get this inclination offset
         final double deltaHx     = targetHx - startHx;
@@ -610,7 +640,7 @@ public class InclinationVector extends AbstractSKControl {
      * @return Change on Delta V and date
      * @throws OrekitException
      */
-    public ManeuverChangedValues computeManeuvresChange(ScheduledManeuver[] tunables, int nbMan) throws PropagationException
+    public ManeuverChangedValues computeManeuversChange(ScheduledManeuver[] tunables, int nbMan) throws PropagationException
     {
         // adjust the existing maneuvers
         final TunableManeuver[] models = getModels();
@@ -693,4 +723,144 @@ public class InclinationVector extends AbstractSKControl {
             throw new SkatException(SkatMessages.WRONG_LOOK_AHEAD_TIME);
         }
     }
+    
+    /** Transform maneuversDoy into an array of AbsoluteDate.
+     * @param simulationStart date
+     * @throws OrekitException
+     */
+    private void getManeuverDates(final AbsoluteDate simulationStart) throws OrekitException
+    {   
+        // Get minimum and maximum years of the simulation
+        final int startYear = 
+                simulationStart.getComponents(TimeScalesFactory.getUTC()).getDate().getYear();
+        final int endYear   = 
+                getModel().getEndDate().getComponents(TimeScalesFactory.getUTC()).getDate().getYear();
+                       
+        // Look for the first compliant maneuver DOY
+        int idx_date = 0;
+        maneuversDates = new AbsoluteDate[(endYear-startYear+1)*maneuversDoy.length];
+        for(int year = startYear; year <= endYear; year++) {
+            for(int manDoy : maneuversDoy) {
+                maneuversDates[idx_date] = new AbsoluteDate(new DateComponents(year, manDoy),TimeScalesFactory.getUTC());
+                idx_date++;
+            }
+        }        
+    }
+    
+    /** Get the date of the maneuver corresponding to the current cycle.
+     * @return date of the maneuver. Null if no maneuver is foreseen for this cycle
+     */
+    private AbsoluteDate getCurrentManeuverDate() {
+        // Check for a date within the current cycle 
+        for( int idx = manDateCache; idx < maneuversDates.length; idx++) {
+            if (maneuversDates[idx].compareTo(cycleStart) >= 0 && 
+                    maneuversDates[idx].compareTo(cycleEnd) < 0) {
+                manDateCache = idx;
+                return maneuversDates[idx];
+            }
+        }
+        
+        // Return null if the date is not found
+        return null;
+    }
+    
+    /** Get the date of the first maneuver corresponding to the next cycle.
+     * @return date of the maneuver.
+     */
+    private AbsoluteDate getNextManeuverDate() {
+        for( int idx = manDateCache+1; idx < maneuversDates.length; idx++) {
+            if (maneuversDates[idx].compareTo(cycleEnd) >= 0) {
+                return maneuversDates[idx];
+            }
+        }
+        
+        // Return null if no maneuver is found
+        return null;
+    }
+    
+    /** Get the time elapsed until the next maneuver.
+     * @param  currManDate date when the current maneuver is scheduled.
+     * @return time until the next maneuver. If the current maneuver is the last 
+     *          one, then the time until the end of the simulation is returned.
+     */
+    private double getTimeUntilNextManeuver(final AbsoluteDate currManDate) {
+        // Check if the current manoeuvre is the last one
+        if (manDateCache == maneuversDates.length - 1) {
+            return getModel().getEndDate().durationFrom(currManDate);
+        } else {
+            return FastMath.min(getNextManeuverDate().durationFrom(currManDate),
+                    getModel().getEndDate().durationFrom(currManDate));
+        }        
+    }
+    
+    /** Compute the maneuver target when DOY mode is active.
+     * @param  currManDate date when the current maneuver is scheduled.
+     */
+    private void computeManeuverTarget(final AbsoluteDate currManDate) {
+        // Get time until next maneuver
+        final double margin;
+        final double At;
+        if (DoyMode) {
+            At = getTimeUntilNextManeuver(currManDate);
+            // The margin increases as the time horizon decreases
+            margin = 0.01 + FastMath.max(0.0,(1 - timeHorizonEnd.durationFrom(currManDate)/(At+firstOffset))/5);
+        } else {
+            At = getModel().getEndDate().durationFrom(currManDate);
+            margin = 0.5; 
+            // TODO: check if this margin can be reduced, since the current 
+            // estimation of the inclination drift with the mean value is more accurate
+        }
+        
+        // inclination vector evolution direction, considering only secular and Sun effects
+        // we ignore Moon effects here since they have a too short period
+        final double dHXdT = (xModel.meanValue(timeHorizonEnd, 1, 1) - xModel.meanValue(currManDate, 1, 1))/timeHorizonEnd.durationFrom(currManDate);
+        final double dHYdT = (yModel.meanValue(timeHorizonEnd, 1, 1) - yModel.meanValue(currManDate, 1, 1))/timeHorizonEnd.durationFrom(currManDate);
+        final double dHdT  = FastMath.hypot(dHXdT, dHYdT);
+        
+         // Distance traveled by H vector between now and end-of-life. Increase it a bit to have some margin
+        final double AHX   = dHXdT*At*(1+margin);
+        final double AHY   = dHYdT*At*(1+margin);
+        final double AH    = FastMath.hypot(AHX,AHY);
+        
+        // Check if by the inclination vector will be out of the circle when the next manoeuvre is performed 
+        final boolean isOut;
+        if (DoyMode) {
+            isOut = FastMath.hypot(AHX + startHx - referenceHx, 
+                                    AHY + startHy - referenceHy) > innerRadius;
+        } else {
+            if (AH > 2*innerRadius) {
+                // Is not the end of life case
+                isOut = true;
+            } else {
+                // End-of-life case: there is no time
+                // Maybe there is such little time that no maneuver at all is necessary
+                // We are here because the H-vector has been found to exit the circle before
+                // the end of the next control cycle, but not before the end of the simulation...
+                final AbsoluteDate simulationEnd = getModel().getEndDate();
+                final double endRadius = FastMath.hypot(xModel.osculatingValue(simulationEnd) - referenceHx, 
+                                                yModel.osculatingValue(simulationEnd) - referenceHy);
+                isOut = endRadius >= innerRadius;
+            }
+            
+        } 
+        
+        // Get the target of the maneuver
+        if (isOut) {
+            if (AH > 2*innerRadius) {
+                // Normal OOP maneuver: there is time
+                // Target a point on the limit circle
+                // such that trajectory crosses the circle radially                 
+                targetHx = referenceHx + dHXdT / dHdT * (-innerRadius);
+                targetHy = referenceHy + dHYdT / dHdT * (-innerRadius);
+            } else {
+                // If a maneuver is necessary, do not go back all the way to the lower edge of
+                // the circle, leave just enough distance to finish within the inner circle.
+                targetHx = referenceHx + dHXdT / dHdT * (innerRadius - AH);
+                targetHy = referenceHy + dHYdT / dHdT * (innerRadius - AH);
+            }
+        } else {
+            // No maneuver is necessary
+            nbMan = 0;
+        }
+    };
 }

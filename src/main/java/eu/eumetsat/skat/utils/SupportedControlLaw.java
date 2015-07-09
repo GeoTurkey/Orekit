@@ -136,6 +136,25 @@ public enum SupportedControlLaw {
                 cycleWithManeuver = 1;
             }
             
+            int[] maneuversDoy;
+            // The default value of maneuversDoy is 0
+            if (parser.containsKey(node, ParameterKey.CONTROL_INCLINATION_VECTOR_MANEUVERS_DOY)) {
+                maneuversDoy = parser.getIntArray1(node, ParameterKey.CONTROL_INCLINATION_VECTOR_MANEUVERS_DOY);
+                if (maneuversDoy.length == 0) {
+                    maneuversDoy = null;
+                }
+            } else {
+                maneuversDoy = null;
+            }
+            
+            // Check if the inputs are compatible
+            if (maneuversDoy != null && lookAheadCycles != 0) {
+                throw new SkatException(SkatMessages.WRONG_INCLINATION_VECTOR_INPUTS);
+            }
+            
+            // Set the flag to check if the time horizons of the control laws are long enough
+            skat.SetCheckTimeHorizons(maneuversDoy != null);
+                        
             TunableManeuver[] model;
             final Tree namesArrayNode   = parser.getValue(node, ParameterKey.CONTROL_MANEUVER_NAME);
             if(namesArrayNode.getType() == SkatParser.ARRAY){
@@ -161,7 +180,8 @@ public enum SupportedControlLaw {
             final boolean isPairedManeuvers = parser.containsKey(node, ParameterKey.CONTROL_INCLINATION_IS_PAIRED_MANEUVERS) ? parser.getBoolean(node,ParameterKey.CONTROL_INCLINATION_IS_PAIRED_MANEUVERS) : false;
             return new InclinationVector(name, controlled, skat.getSpacecraftIndex(controlled),
                                          model, yawFlipSequence, firstOffset, maxManeuvers, orbitsSeparation,
-                                         referenceHx, referenceHy, limitInclination, sampling, horizon, isPairedManeuvers, lookAheadCycles, cycleWithManeuver);
+                                         referenceHx, referenceHy, limitInclination, sampling, horizon, isPairedManeuvers, 
+                                         lookAheadCycles, cycleWithManeuver, maneuversDoy);
         }
 
     },

@@ -307,11 +307,21 @@ public class ControlLoop implements ScenarioComponent {
     
     /** Set the cycle duration of the control laws.
      * @param cycleDuration cycle duration
+     * @param checkTimeHorizons flag to check if, for all the control laws, the 
+     *                          time horizon to cycle duration ratio is at least timeHor2cycleDur
+     * @param timeHor2cycleDur minimum time horizon to cycle duration ratio allowed
      */
-    public void setCycleDuration(final double cycleDuration) throws SkatException {
+    public void setCycleDuration(final double cycleDuration, final boolean checkTimeHorizons, final double timeHor2cycleDur) throws SkatException {
         for (SKControl controlLaw : controls) {
             controlLaw.setCycleDuration(cycleDuration);
-        }
+            
+            // Check time horizon / cycle duration condition
+            if (checkTimeHorizons) {
+                if (timeHor2cycleDur > controlLaw.getTimeHorizon()/cycleDuration) {
+                    throw new SkatException(SkatMessages.WRONG_TIME_HORIZON_TO_CYCLE_DURATION_RATIO,controlLaw.getName(),timeHor2cycleDur);
+                }
+            }  
+        }                 
         this.cycleDuration = cycleDuration;
     }
 }

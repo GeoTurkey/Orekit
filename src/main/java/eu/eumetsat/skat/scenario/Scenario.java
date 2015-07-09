@@ -72,7 +72,7 @@ public class Scenario implements ScenarioComponent {
 
     /** Cycle duration. */
     private double cycleDuration;
-
+    
     /** Previous date for maneuvers output. */
     private AbsoluteDate previous;
 
@@ -127,14 +127,17 @@ public class Scenario implements ScenarioComponent {
 
     /** Set the cycle duration.
      * @param cycleDuration cycle duration
+     * @param checkTimeHorizons flag to check if, for all the control laws, the 
+     *                          time horizon to cycle duration ratio is at least timeHor2cycleDur
+     * @param timeHor2cycleDur minimum time horizon to cycle duration ratio allowed
      */
-    public void setCycleDuration(final double cycleDuration) throws SkatException {
+    public void setCycleDuration(final double cycleDuration, final boolean checkTimeHorizons, final double timeHor2cycleDur) throws SkatException {
         this.cycleDuration = (cycleDuration == 0.0) ? Double.POSITIVE_INFINITY : cycleDuration;
         
         // Set cycle duration in the control laws too
         for (ScenarioComponent sc : components) {
             if (sc instanceof ControlLoop) {
-                ((ControlLoop)sc).setCycleDuration(cycleDuration);
+                ((ControlLoop)sc).setCycleDuration(cycleDuration, checkTimeHorizons, timeHor2cycleDur);
             }
         }
     }

@@ -53,7 +53,9 @@ public enum SupportedScenariocomponent {
                         parser.getEnumerate(componentNode, ParameterKey.COMPONENT_TYPE, SupportedScenariocomponent.class);
                 scenario.addComponent(component.parse(parser, componentNode, skat));
             }
-            scenario.setCycleDuration(skat.getCycleDuration());
+            // Set cycle duration and check (if necessary) the time horizon to cycle duration ratio
+            final double timeHor2cycleDur = 2.0;
+            scenario.setCycleDuration(skat.getCycleDuration(),skat.getCheckTimemHorizons(),timeHor2cycleDur);
             return scenario;
         }
     },

@@ -107,6 +107,7 @@ public enum ParameterKey {
     CONTROL_INCLINATION_IS_PAIRED_MANEUVERS("is_paired_maneuvers"),
     CONTROL_INCLINATION_LOOK_AHEAD_CYCLES("look_ahead_cycles"),
     CONTROL_INCLINATION_CYCLE_WITH_MANEUVER("cycle_with_maneuver"),
+    CONTROL_INCLINATION_VECTOR_MANEUVERS_DOY("maneuvers_doy"),
     // Local solar time
     CONTROL_SOLAR_TIME_FIRST_OFFSET("offset_first_maneuver"),
     CONTROL_SOLAR_TIME_LATITUDE("latitude"),

@@ -73,7 +73,9 @@ public enum SkatMessages implements Localizable {
     NO_SUITABLE_NODE_FOR_MANEUVER("no suitable node found for maneuver between {0} and {1}"),
     CYCLE_DURATION_MODIFIED("Cycle duration has been changed twice"),
     WRONG_CYCLE_DURATION("The cycle duration cannot be smaller that the time horizon of any control law"),
-    WRONG_LOOK_AHEAD_TIME("The look ahead time plus the cycle duration cannot be greater than the horizon of the control");
+    WRONG_LOOK_AHEAD_TIME("The look ahead time plus the cycle duration cannot be greater than the horizon of the control"),
+    WRONG_INCLINATION_VECTOR_INPUTS("The look ahead cycles must be 0 if the maneuvers_doy is not empty"),
+    WRONG_TIME_HORIZON_TO_CYCLE_DURATION_RATIO("Time horizon to cycle duration ratio of {0} control law must be at least {1}");
 
     // CHECKSTYLE: resume JavadocVariable check
 

@@ -92,7 +92,7 @@ public class InclinationAndLongitude extends AbstractSKControl{
                                                     lEast, lWest, samplingStep, horizon, earth);
         inclinationVector  = new InclinationVector(name, controlledName, controlledIndex, model, yawFlipSequence,
                                                    firstOffset, maxManeuvers, orbitsSeparation, referenceHx, 
-                                                   referenceHy, limitInclination, samplingStep, horizon, isPairedManeuvers, 0, 1); 
+                                                   referenceHy, limitInclination, samplingStep, horizon, isPairedManeuvers, 0, 1, null); 
         
         // Use longitude control step handler
         this.stephandler       = parabolicLongitude.getStepHandler();
@@ -133,7 +133,7 @@ public class InclinationAndLongitude extends AbstractSKControl{
         {
             // Compute first the inclination maneuvers and get them
             ScheduledManeuver[] dummyTunables = new ScheduledManeuver[0];
-            final ScheduledManeuver[] tunedInclination = inclinationVector.computeManeuers(dummyTunables, adapterPropagator);
+            final ScheduledManeuver[] tunedInclination = inclinationVector.computeManeuvers(dummyTunables, adapterPropagator);
             
             // Get the DV of the longitude manoeuvres
             final double longitudeDV = parabolicLongitude.computeRequiredDV();
@@ -153,7 +153,7 @@ public class InclinationAndLongitude extends AbstractSKControl{
             
             // Compute inclination DV and date change
             final InclinationVector.ManeuverChangedValues maneuverChangedValues = 
-                    inclinationVector.computeManeuvresChange(tunables, tunables.length);
+                    inclinationVector.computeManeuversChange(tunables, tunables.length);
             
             // Get change apply changes to the inclination + longitude maneuvers
             tuned = distributeManeuversEvenly(tunables, adapterPropagator,  
