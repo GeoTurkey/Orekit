@@ -141,7 +141,7 @@ public class Skat {
     private boolean inputCycleDuration;
     
     /** If true, check that the cycle duration is at least half the minimum time horizon */
-    private boolean checkTimemHorizons = false;
+    private boolean checkTimeHorizons = false;
 
     /** Mono-spacecraft monitors. */
     private MonitorMono[] monitorsMono;
@@ -626,15 +626,15 @@ public class Skat {
     /** Get the checkTimemHorizons flag.
      * @return checkTimemHorizons flag
      */
-    public boolean getCheckTimemHorizons() {
-        return checkTimemHorizons;
+    public boolean getCheckTimeHorizons() {
+        return checkTimeHorizons;
     }
     
     /** Set the checkTimeHorizons flag.
      * @param newValue for the checkTimemHorizons flag
      */
     public void SetCheckTimeHorizons(final boolean newValue) {
-        checkTimemHorizons = newValue;
+        checkTimeHorizons = newValue;
     }
 
 

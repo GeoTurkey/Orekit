@@ -55,7 +55,7 @@ public enum SupportedScenariocomponent {
             }
             // Set cycle duration and check (if necessary) the time horizon to cycle duration ratio
             final double timeHor2cycleDur = 2.0;
-            scenario.setCycleDuration(skat.getCycleDuration(),skat.getCheckTimemHorizons(),timeHor2cycleDur);
+            scenario.setCycleDuration(skat.getCycleDuration(),skat.getCheckTimeHorizons(),timeHor2cycleDur);
             return scenario;
         }
     },

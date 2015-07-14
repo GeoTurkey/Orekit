@@ -153,7 +153,7 @@ public class InclinationVector extends AbstractSKControl {
     private int manDateCache = 0;
     
     /** Maneuvers Day Of Year mode active. */
-    private final boolean DoyMode; 
+    private final boolean doyMode; 
     
     /** Maneuvers that were planned during a cycle but after its end date. 
      It is used only in DoyMode. */
@@ -201,9 +201,9 @@ public class InclinationVector extends AbstractSKControl {
         this.isPairedManeuvers  = isPairedManeuvers;
         this.lookAheadCycles    = lookAheadCycles;
         this.cyclesWithManeuver = cycleWithManeuver % (lookAheadCycles+1);
-        Arrays.sort(maneuversDoy);
-        this.maneuversDoy       = maneuversDoy.clone();
-        this.DoyMode            = this.maneuversDoy != null;
+        this.doyMode            = maneuversDoy != null;
+        this.maneuversDoy       = doyMode ? maneuversDoy.clone() : new int[0];
+        Arrays.sort(this.maneuversDoy);
 
         xModel = new SecularAndHarmonic(1, new double[] { SUN_PULSATION, MOON_PULSATION });
         yModel = new SecularAndHarmonic(1, new double[] { SUN_PULSATION, MOON_PULSATION });
@@ -236,6 +236,7 @@ public class InclinationVector extends AbstractSKControl {
 
     /** {@inheritDoc} 
      * @throws OrekitException */
+    @Override
     public void initializeRun(final int iteration, final int cycle, final ScheduledManeuver[] maneuvers,
                               final Propagator propagator, final List<ScheduledManeuver> fixedManeuvers,
                               final AbsoluteDate start, final AbsoluteDate end)
@@ -250,7 +251,7 @@ public class InclinationVector extends AbstractSKControl {
         final AbsoluteDate[] freeInterval;
         
         // If the scheduling in certain days is on, look for the days
-        if (this.DoyMode && iteration == 0) {            
+        if (this.doyMode && iteration == 0) {            
             
             // Get the dates of the maneuvers
             if (maneuversDates == null) {
@@ -311,6 +312,7 @@ public class InclinationVector extends AbstractSKControl {
 
     /** {@inheritDoc} 
      * @throws SkatException */
+    @Override
     public ScheduledManeuver[] tuneManeuvers(final ScheduledManeuver[] tunables,
                                              final BoundedPropagator reference)
         throws OrekitException, SkatException {
@@ -320,7 +322,7 @@ public class InclinationVector extends AbstractSKControl {
 
         if (iteration == 0) {
 
-            if ((getMargins() >= 0 && !DoyMode) || !scheduleManeuvers) {
+            if ((getMargins() >= 0 && !doyMode) || !scheduleManeuvers) {
                 // no constraints violations, we don't perform any maneuvers
                 nbMan = 0;
                 return tunables;
@@ -356,7 +358,7 @@ public class InclinationVector extends AbstractSKControl {
                                                                          maneuver.getDeltaV(),
                                                                          maneuver.getIsp()));
             // Check if the manoeuvres are in the current cycle
-            if (DoyMode) {
+            if (doyMode) {
                 toDoManeuver = maneuver.getDate().compareTo(cycleEnd) >= 0;
             }
         }
@@ -378,11 +380,13 @@ public class InclinationVector extends AbstractSKControl {
     }
     
     /** {@inheritDoc} */
+    @Override
     public EventDetector getEventDetector() {
         return null;
     }
 
     /** {@inheritDoc} */
+    @Override
     public OrekitStepHandler getStepHandler() {
         return stephandler;
     }
@@ -394,10 +398,12 @@ public class InclinationVector extends AbstractSKControl {
         private static final long serialVersionUID = 8803174499877772678L;
 
         /** {@inheritDoc} */
+        @Override
         public void init(final SpacecraftState s0, final AbsoluteDate t) {
         }
 
         /** {@inheritDoc} */
+        @Override
         public void handleStep(OrekitStepInterpolator interpolator, boolean isLast)
             throws PropagationException {
 
@@ -640,7 +646,7 @@ public class InclinationVector extends AbstractSKControl {
      * @return Change on Delta V and date
      * @throws OrekitException
      */
-    public ManeuverChangedValues computeManeuversChange(ScheduledManeuver[] tunables, int nbMan) throws PropagationException
+    ManeuverChangedValues computeManeuversChange(ScheduledManeuver[] tunables, int nbMan) throws PropagationException
     {
         // adjust the existing maneuvers
         final TunableManeuver[] models = getModels();
@@ -800,7 +806,7 @@ public class InclinationVector extends AbstractSKControl {
         // Get time until next maneuver
         final double margin;
         final double At;
-        if (DoyMode) {
+        if (doyMode) {
             At = getTimeUntilNextManeuver(currManDate);
             // The margin increases as the time horizon decreases
             margin = 0.01 + FastMath.max(0.0,(1 - timeHorizonEnd.durationFrom(currManDate)/(At+firstOffset))/5);
@@ -824,7 +830,7 @@ public class InclinationVector extends AbstractSKControl {
         
         // Check if by the inclination vector will be out of the circle when the next manoeuvre is performed 
         final boolean isOut;
-        if (DoyMode) {
+        if (doyMode) {
             isOut = FastMath.hypot(AHX + startHx - referenceHx, 
                                     AHY + startHy - referenceHy) > innerRadius;
         } else {
