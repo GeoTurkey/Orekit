@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>int.eumetsat</groupId>
   <artifactId>skat</artifactId>
-  <version>3.3.3</version>
+  <version>3.4</version>
   <packaging>jar</packaging>
   <name>Station Keeping Analysis Tool</name>
 
