@@ -72,9 +72,9 @@ class ApsideDetectionAdaptableIntervalFactoryTest {
         final SpacecraftState terminalState = propagator.propagate(targetDate);
         // THEN
         Assertions.assertNotEquals(targetDate, terminalState.getDate());
-        final int countWithDefaultAdaptableInterval = countWithConstantAdaptableInterval(initialOrbit, targetDate,
+        final int countWithConstantAdaptableInterval = countWithConstantAdaptableInterval(initialOrbit, targetDate,
                 periapsisDetector);
-        Assertions.assertTrue(countWithDefaultAdaptableInterval > forwardAdaptableIntervalWithCounter.count);
+        Assertions.assertTrue(countWithConstantAdaptableInterval > forwardAdaptableIntervalWithCounter.count);
     }
 
     @Test
@@ -93,9 +93,9 @@ class ApsideDetectionAdaptableIntervalFactoryTest {
         final SpacecraftState terminalState = propagator.propagate(targetDate);
         // THEN
         Assertions.assertNotEquals(targetDate, terminalState.getDate());
-        final int countWithDefaultAdaptableInterval = countWithConstantAdaptableInterval(initialOrbit, targetDate,
+        final int countWithConstantAdaptableInterval = countWithConstantAdaptableInterval(initialOrbit, targetDate,
                 periapsisDetector);
-        Assertions.assertTrue(countWithDefaultAdaptableInterval > backwardAdaptableIntervalWithCounter.count);
+        Assertions.assertTrue(countWithConstantAdaptableInterval > backwardAdaptableIntervalWithCounter.count);
     }
 
     @Test
@@ -114,9 +114,9 @@ class ApsideDetectionAdaptableIntervalFactoryTest {
         final SpacecraftState terminalState = propagator.propagate(targetDate);
         // THEN
         Assertions.assertNotEquals(targetDate, terminalState.getDate());
-        final int countWithDefaultAdaptableInterval = countWithConstantAdaptableInterval(initialOrbit, targetDate,
+        final int countWithConstantAdaptableInterval = countWithConstantAdaptableInterval(initialOrbit, targetDate,
                 apoapsisDetector);
-        Assertions.assertTrue(countWithDefaultAdaptableInterval > forwardAdaptableIntervalWithCounter.count);
+        Assertions.assertTrue(countWithConstantAdaptableInterval > forwardAdaptableIntervalWithCounter.count);
     }
 
     @Test
@@ -135,9 +135,9 @@ class ApsideDetectionAdaptableIntervalFactoryTest {
         final SpacecraftState terminalState = propagator.propagate(targetDate);
         // THEN
         Assertions.assertNotEquals(targetDate, terminalState.getDate());
-        final int countWithDefaultAdaptableInterval = countWithConstantAdaptableInterval(initialOrbit, targetDate,
+        final int countWithConstantAdaptableInterval = countWithConstantAdaptableInterval(initialOrbit, targetDate,
                 apoapsisDetector);
-        Assertions.assertTrue(countWithDefaultAdaptableInterval > backwardAdaptableIntervalWithCounter.count);
+        Assertions.assertTrue(countWithConstantAdaptableInterval > backwardAdaptableIntervalWithCounter.count);
     }
 
 
