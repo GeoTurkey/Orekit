@@ -51,7 +51,7 @@ abstract class AbstractHarmonicsBasedOrbitalState extends AbstractAveragedOrbita
     }
 
     /**
-     * Getter for spherical harmonics provider
+     * Getter for spherical harmonics provider.
      * @return harmonics provider
      */
     public UnnormalizedSphericalHarmonicsProvider getHarmonicsProvider() {

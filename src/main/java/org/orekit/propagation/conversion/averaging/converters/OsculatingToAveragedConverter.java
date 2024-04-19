@@ -34,6 +34,6 @@ public interface OsculatingToAveragedConverter<T extends AveragedOrbitalState> {
      * @param osculatingOrbit osculating orbit
      * @return averaged orbital state
      */
-    T convertToAveraged(final Orbit osculatingOrbit);
+    T convertToAveraged(Orbit osculatingOrbit);
 
 }

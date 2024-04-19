@@ -48,12 +48,12 @@ public class AveragedEquinoctialWithMeanAngle implements AveragedOrbitalElements
      * @param averagedHy hy
      * @param averagedMeanLongitudeArgument mean longitude argument
      */
-    public AveragedEquinoctialWithMeanAngle(double averagedSemiMajorAxis,
-                                            double averagedEquinoctialEx,
-                                            double averagedEquinoctialEy,
-                                            double averagedHx,
-                                            double averagedHy,
-                                            double averagedMeanLongitudeArgument) {
+    public AveragedEquinoctialWithMeanAngle(final double averagedSemiMajorAxis,
+                                            final double averagedEquinoctialEx,
+                                            final double averagedEquinoctialEy,
+                                            final double averagedHx,
+                                            final double averagedHy,
+                                            final double averagedMeanLongitudeArgument) {
         this.averagedSemiMajorAxis = averagedSemiMajorAxis;
         this.averagedEquinoctialEx = averagedEquinoctialEx;
         this.averagedEquinoctialEy = averagedEquinoctialEy;
@@ -65,10 +65,8 @@ public class AveragedEquinoctialWithMeanAngle implements AveragedOrbitalElements
     /** {@inheritDoc} */
     @Override
     public double[] toArray() {
-        return new double[] {
-                averagedSemiMajorAxis, averagedEquinoctialEx, averagedEquinoctialEy,
-                averagedHx, averagedHy, averagedMeanLongitudeArgument
-        };
+        return new double[] { averagedSemiMajorAxis, averagedEquinoctialEx, averagedEquinoctialEy,
+            averagedHx, averagedHy, averagedMeanLongitudeArgument };
     }
 
     /**
@@ -96,7 +94,7 @@ public class AveragedEquinoctialWithMeanAngle implements AveragedOrbitalElements
     }
 
     /**
-     * Getter for the averaged hx
+     * Getter for the averaged hx.
      * @return hx
      */
     public double getAveragedHx() {
@@ -104,7 +102,7 @@ public class AveragedEquinoctialWithMeanAngle implements AveragedOrbitalElements
     }
 
     /**
-     * Getter for the averaged hy
+     * Getter for the averaged hy.
      * @return hy
      */
     public double getAveragedHy() {

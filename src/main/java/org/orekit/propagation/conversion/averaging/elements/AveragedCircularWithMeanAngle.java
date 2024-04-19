@@ -48,12 +48,12 @@ public class AveragedCircularWithMeanAngle implements AveragedOrbitalElements {
      * @param averagedRightAscensionOfTheAscendingNode averaged RAAN
      * @param averagedMeanLatitudeArgument averaged mean latitude argument
      */
-    public AveragedCircularWithMeanAngle(double averagedSemiMajorAxis,
-                                         double averagedCircularEx,
-                                         double averagedCircularEy,
-                                         double averagedInclination,
-                                         double averagedRightAscensionOfTheAscendingNode,
-                                         double averagedMeanLatitudeArgument) {
+    public AveragedCircularWithMeanAngle(final double averagedSemiMajorAxis,
+                                         final double averagedCircularEx,
+                                         final double averagedCircularEy,
+                                         final double averagedInclination,
+                                         final double averagedRightAscensionOfTheAscendingNode,
+                                         final double averagedMeanLatitudeArgument) {
         this.averagedSemiMajorAxis = averagedSemiMajorAxis;
         this.averagedCircularEx = averagedCircularEx;
         this.averagedCircularEy = averagedCircularEy;
@@ -65,10 +65,8 @@ public class AveragedCircularWithMeanAngle implements AveragedOrbitalElements {
     /** {@inheritDoc} */
     @Override
     public double[] toArray() {
-        return new double[] {
-                averagedSemiMajorAxis, averagedCircularEx, averagedCircularEy, averagedInclination,
-                averagedRightAscensionOfTheAscendingNode, averagedMeanLatitudeArgument
-        };
+        return new double[] { averagedSemiMajorAxis, averagedCircularEx, averagedCircularEy,
+            averagedInclination, averagedRightAscensionOfTheAscendingNode, averagedMeanLatitudeArgument };
     }
 
     /**

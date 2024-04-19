@@ -75,7 +75,7 @@ public abstract class FixedPointOsculatingToAveragedConverter<T extends Averaged
     }
 
     /**
-     * Setter for maximum number of iterations
+     * Setter for maximum number of iterations.
      * @param maxIterations maximum iterations
      */
     public void setMaxIterations(final int maxIterations) {
