@@ -32,8 +32,17 @@ public interface FieldAdaptableInterval<T extends CalculusFieldElement<T>> {
 
     /** Get the current value of maximal time interval between events handler checks.
      * @param state current state
+     * @param forward true if an only if propagation if forward
      * @return current value of maximal time interval between events handler checks (only as a double)
      */
-    double currentInterval(FieldSpacecraftState<T> state);
+    double currentInterval(FieldSpacecraftState<T> state, boolean forward);
 
+    /** Get the current value of maximal time interval between events handler checks.
+     * @param state current state
+     * @return current value of maximal time interval between events handler checks (only as a double)
+     */
+    @Deprecated
+    default double currentInterval(FieldSpacecraftState<T> state) {
+        return currentInterval(state, true);
+    }
 }

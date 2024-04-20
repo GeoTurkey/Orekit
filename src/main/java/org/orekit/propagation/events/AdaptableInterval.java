@@ -30,9 +30,19 @@ import org.orekit.propagation.SpacecraftState;
 public interface AdaptableInterval {
 
     /** Get the current value of maximal time interval between events handler checks.
+     * @param state current state@
+     * @param forward true if an only if propagation if forward
+     * @return current value of maximal time interval between events handler checks
+     */
+    double currentInterval(SpacecraftState state, boolean forward);
+
+    /** Get the current value of maximal time interval between events handler checks.
      * @param state current state
      * @return current value of maximal time interval between events handler checks
      */
-    double currentInterval(SpacecraftState state);
+    @Deprecated
+    default double currentInterval(SpacecraftState state) {
+        return currentInterval(state, true);
+    }
 
 }

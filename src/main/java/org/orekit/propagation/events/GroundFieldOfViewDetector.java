@@ -64,7 +64,7 @@ public class GroundFieldOfViewDetector extends AbstractDetector<GroundFieldOfVie
      */
     public GroundFieldOfViewDetector(final Frame frame,
                                      final FieldOfView fov) {
-        this(s -> DEFAULT_MAXCHECK, DEFAULT_THRESHOLD, DEFAULT_MAX_ITER,
+        this((state, forward) -> DEFAULT_MAXCHECK, DEFAULT_THRESHOLD, DEFAULT_MAX_ITER,
              new StopOnIncreasing(),
              frame, fov);
     }

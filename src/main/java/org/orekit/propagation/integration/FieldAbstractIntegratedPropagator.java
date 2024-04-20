@@ -902,7 +902,7 @@ public abstract class FieldAbstractIntegratedPropagator<T extends CalculusFieldE
         /** {@inheritDoc} */
         @Override
         public FieldAdaptableInterval<T> getMaxCheckInterval() {
-            return s -> detector.getMaxCheckInterval().currentInterval(convert(s));
+            return s -> detector.getMaxCheckInterval().currentInterval(convert(s), s.getTime().subtract(lastT).getReal() >= 0.);
         }
 
         /** {@inheritDoc} */

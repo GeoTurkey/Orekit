@@ -55,7 +55,7 @@ public class LatitudeCrossingDetector extends AbstractDetector<LatitudeCrossingD
      */
     public LatitudeCrossingDetector(final double maxCheck, final double threshold,
                                     final OneAxisEllipsoid body, final double latitude) {
-        this(s -> maxCheck, threshold, DEFAULT_MAX_ITER, new StopOnIncreasing(),
+        this((state, forward) -> maxCheck, threshold, DEFAULT_MAX_ITER, new StopOnIncreasing(),
              body, latitude);
     }
 

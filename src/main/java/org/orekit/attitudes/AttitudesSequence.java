@@ -169,7 +169,7 @@ public class AttitudesSequence implements AttitudeProvider {
                 /** {@inheritDoc} */
                 @Override
                 public FieldAdaptableInterval<T> getMaxCheckInterval() {
-                    return s -> sw.getMaxCheckInterval().currentInterval(s.toSpacecraftState());
+                    return (state, forward) -> sw.getMaxCheckInterval().currentInterval(state.toSpacecraftState(), forward);
                 }
 
                 /** {@inheritDoc} */

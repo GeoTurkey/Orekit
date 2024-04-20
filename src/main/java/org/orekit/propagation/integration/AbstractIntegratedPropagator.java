@@ -901,7 +901,7 @@ public abstract class AbstractIntegratedPropagator extends AbstractPropagator {
         /** {@inheritDoc} */
         @Override
         public AdaptableInterval getMaxCheckInterval() {
-            return s -> detector.getMaxCheckInterval().currentInterval(convert(s));
+            return s -> detector.getMaxCheckInterval().currentInterval(convert(s), s.getTime() >= lastT);
         }
 
         /** {@inheritDoc} */

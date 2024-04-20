@@ -82,7 +82,7 @@ public class EventHandlerTest {
 
         @Override
         public AdaptableInterval getMaxCheckInterval() {
-            return s -> 0;
+            return (state, forward) -> 0;
         }
 
         @Override

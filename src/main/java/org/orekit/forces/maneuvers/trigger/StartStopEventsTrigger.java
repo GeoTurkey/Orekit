@@ -201,7 +201,8 @@ public abstract class StartStopEventsTrigger<A extends AbstractDetector<A>, O ex
      */
     private <D extends FieldAbstractDetector<D, S>, S extends CalculusFieldElement<S>> D convertAndSetUpStartHandler(final Field<S> field) {
         final FieldAbstractDetector<D, S> converted = convertStartDetector(field, startDetector);
-        final FieldAdaptableInterval<S>   maxCheck  = s -> startDetector.getMaxCheckInterval().currentInterval(s.toSpacecraftState());
+        final FieldAdaptableInterval<S>   maxCheck  = (state, forward) -> startDetector.getMaxCheckInterval()
+                .currentInterval(state.toSpacecraftState(), forward);
         return converted.
                withMaxCheck(maxCheck).
                withThreshold(field.getZero().newInstance(startDetector.getThreshold())).
@@ -220,7 +221,8 @@ public abstract class StartStopEventsTrigger<A extends AbstractDetector<A>, O ex
      */
     private <D extends FieldAbstractDetector<D, S>, S extends CalculusFieldElement<S>> D convertAndSetUpStopHandler(final Field<S> field) {
         final FieldAbstractDetector<D, S> converted = convertStopDetector(field, stopDetector);
-        final FieldAdaptableInterval<S>   maxCheck  = s -> stopDetector.getMaxCheckInterval().currentInterval(s.toSpacecraftState());
+        final FieldAdaptableInterval<S>   maxCheck  = (state, forward) -> stopDetector.getMaxCheckInterval()
+                .currentInterval(state.toSpacecraftState(), forward);
         return converted.
                withMaxCheck(maxCheck).
                withThreshold(field.getZero().newInstance(stopDetector.getThreshold())).

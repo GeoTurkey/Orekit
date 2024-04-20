@@ -59,7 +59,7 @@ public class FieldApsideDetector<T extends CalculusFieldElement<T>> extends Fiel
      * @param orbit initial orbit
      */
     public FieldApsideDetector(final T threshold, final FieldOrbit<T> orbit) {
-        super(s -> orbit.getKeplerianPeriod().divide(3).getReal(), threshold,
+        super((state, forward) -> orbit.getKeplerianPeriod().divide(3).getReal(), threshold,
               DEFAULT_MAX_ITER, new FieldStopOnIncreasing<>());
     }
 

@@ -133,10 +133,10 @@ public class BooleanDetector extends AbstractDetector<BooleanDetector> {
 
         return new BooleanDetector(new ArrayList<>(detectors), // copy for immutability
                 Operator.AND,
-                s -> {
+                (state, forward) -> {
                     double minInterval = Double.POSITIVE_INFINITY;
                     for (final EventDetector detector : detectors) {
-                        minInterval = FastMath.min(minInterval, detector.getMaxCheckInterval().currentInterval(s));
+                        minInterval = FastMath.min(minInterval, detector.getMaxCheckInterval().currentInterval(state, forward));
                     }
                     return minInterval;
                 },
@@ -191,10 +191,10 @@ public class BooleanDetector extends AbstractDetector<BooleanDetector> {
 
         return new BooleanDetector(new ArrayList<>(detectors), // copy for immutability
                 Operator.OR,
-                s -> {
+                (state, forward) -> {
                     double minInterval = Double.POSITIVE_INFINITY;
                     for (final EventDetector detector : detectors) {
-                        minInterval = FastMath.min(minInterval, detector.getMaxCheckInterval().currentInterval(s));
+                        minInterval = FastMath.min(minInterval, detector.getMaxCheckInterval().currentInterval(state, forward));
                     }
                     return minInterval;
                 },

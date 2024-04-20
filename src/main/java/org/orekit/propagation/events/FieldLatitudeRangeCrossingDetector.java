@@ -70,7 +70,7 @@ public class FieldLatitudeRangeCrossingDetector <T extends CalculusFieldElement<
                                               final OneAxisEllipsoid body,
                                               final double fromLatitude,
                                               final double toLatitude) {
-        this(s -> DEFAULT_MAXCHECK,
+        this((state, forward) -> DEFAULT_MAXCHECK,
             field.getZero().add(DEFAULT_THRESHOLD),
             DEFAULT_MAX_ITER,
             new FieldStopOnIncreasing<>(),
@@ -90,7 +90,7 @@ public class FieldLatitudeRangeCrossingDetector <T extends CalculusFieldElement<
      */
     public FieldLatitudeRangeCrossingDetector(final T maxCheck, final T threshold,
                                               final OneAxisEllipsoid body, final double fromLatitude, final double toLatitude) {
-        this(s -> maxCheck.getReal(), threshold, DEFAULT_MAX_ITER, new FieldStopOnIncreasing<>(),
+        this((state, forward) -> maxCheck.getReal(), threshold, DEFAULT_MAX_ITER, new FieldStopOnIncreasing<>(),
             body, fromLatitude, toLatitude);
     }
 

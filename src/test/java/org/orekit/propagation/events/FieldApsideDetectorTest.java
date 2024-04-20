@@ -58,7 +58,7 @@ class FieldApsideDetectorTest {
                                          withThreshold(field.getZero().newInstance(1.0e-12)).
                                          withHandler(new FieldContinueOnEvent<T>());
 
-        Assertions.assertEquals(600.0, detector.getMaxCheckInterval().currentInterval(null), 1.0e-15);
+        Assertions.assertEquals(600.0, detector.getMaxCheckInterval().currentInterval(null, true), 1.0e-15);
         Assertions.assertEquals(1.0e-12, detector.getThreshold().getReal(), 1.0e-15);
         Assertions.assertEquals(AbstractDetector.DEFAULT_MAX_ITER, detector.getMaxIterationCount());
 
@@ -78,14 +78,14 @@ class FieldApsideDetectorTest {
 
     @Test
     void testFixedMaxCheck() {
-        doTestMaxcheck(Binary64Field.getInstance(), s -> 20.0, 4687);
+        doTestMaxcheck(Binary64Field.getInstance(), (state, forward) -> 20.0, 4687);
     }
 
     @Test
     void testAnomalyAwareMaxCheck() {
         final AdaptableInterval adaptableInterval = ApsideDetectionAdaptableIntervalFactory
-                .getForwardApsideDetectionAdaptableInterval();
-        doTestMaxcheck(Binary64Field.getInstance(), state -> adaptableInterval.currentInterval(state.toSpacecraftState()),
+                .getApsideDetectionAdaptableInterval();
+        doTestMaxcheck(Binary64Field.getInstance(), (state, forward) -> adaptableInterval.currentInterval(state.toSpacecraftState(), forward),
                 643);
     }
 

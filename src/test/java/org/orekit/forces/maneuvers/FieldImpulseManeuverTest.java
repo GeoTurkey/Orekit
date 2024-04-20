@@ -236,7 +236,7 @@ class FieldImpulseManeuverTest {
         final EventDetector detector = impulseManeuver.getTrigger();
         final int maxIter = detector.getMaxIterationCount();
         final FieldAdaptableInterval<T>
-            fieldMaxCheck = s -> detector.getMaxCheckInterval().currentInterval(s.toSpacecraftState());
+            fieldMaxCheck = (state, forward) -> detector.getMaxCheckInterval().currentInterval(state.toSpacecraftState(), forward);
         final T fieldThreshold = field.getZero().add(detector.getThreshold());
         FieldAbstractDetector<?, T> fieldDetector;
         if (detector instanceof DateDetector) {

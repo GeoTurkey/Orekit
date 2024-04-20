@@ -47,7 +47,7 @@ public class FieldNegateDetectorTest {
         //setup
         @SuppressWarnings("unchecked")
         FieldEventDetector<T> a = Mockito.mock(FieldEventDetector.class);
-        Mockito.when(a.getMaxCheckInterval()).thenReturn(s -> AbstractDetector.DEFAULT_MAXCHECK);
+        Mockito.when(a.getMaxCheckInterval()).thenReturn((state, forward) -> AbstractDetector.DEFAULT_MAXCHECK);
         Mockito.when(a.getThreshold()).thenReturn(field.getZero().newInstance(AbstractDetector.DEFAULT_THRESHOLD));
         @SuppressWarnings("unchecked")
         FieldEventHandler<T> c = Mockito.mock(FieldEventHandler.class);
@@ -77,7 +77,7 @@ public class FieldNegateDetectorTest {
         //setup
         @SuppressWarnings("unchecked")
         FieldEventDetector<T> a = Mockito.mock(FieldEventDetector.class);
-        Mockito.when(a.getMaxCheckInterval()).thenReturn(s -> AbstractDetector.DEFAULT_MAXCHECK);
+        Mockito.when(a.getMaxCheckInterval()).thenReturn((state, forward) -> AbstractDetector.DEFAULT_MAXCHECK);
         Mockito.when(a.getThreshold()).thenReturn(field.getZero().newInstance(AbstractDetector.DEFAULT_THRESHOLD));
         FieldNegateDetector<T> detector = new FieldNegateDetector<>(a);
         @SuppressWarnings("unchecked")
@@ -101,7 +101,7 @@ public class FieldNegateDetectorTest {
         //setup
         @SuppressWarnings("unchecked")
         FieldEventDetector<T> a = Mockito.mock(FieldEventDetector.class);
-        Mockito.when(a.getMaxCheckInterval()).thenReturn(s -> AbstractDetector.DEFAULT_MAXCHECK);
+        Mockito.when(a.getMaxCheckInterval()).thenReturn((state, forward) ->AbstractDetector.DEFAULT_MAXCHECK);
         Mockito.when(a.getThreshold()).thenReturn(field.getZero().newInstance(AbstractDetector.DEFAULT_THRESHOLD));
         FieldNegateDetector<T> detector = new FieldNegateDetector<>(a);
 
@@ -109,7 +109,7 @@ public class FieldNegateDetectorTest {
         FieldNegateDetector<T> actual = detector.withMaxCheck(100);
 
         //verify
-        MatcherAssert.assertThat(actual.getMaxCheckInterval().currentInterval(null), CoreMatchers.is(100.0));
+        MatcherAssert.assertThat(actual.getMaxCheckInterval().currentInterval(null, true), CoreMatchers.is(100.0));
         Assertions.assertTrue(actual.getOriginal() == a);
     }
 }
