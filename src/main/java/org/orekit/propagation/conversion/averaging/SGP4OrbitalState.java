@@ -17,6 +17,7 @@
 package org.orekit.propagation.conversion.averaging;
 
 import org.hipparchus.util.FastMath;
+import org.orekit.annotation.DefaultDataContext;
 import org.orekit.data.DataContext;
 import org.orekit.frames.Frame;
 import org.orekit.orbits.Orbit;
@@ -60,6 +61,17 @@ public class SGP4OrbitalState extends AbstractAveragedOrbitalState {
                             final DataContext dataContext) {
         this(date, elements, dataContext.getFrames().getTEME(),
                 dataContext.getTimeScales().getUTC());
+    }
+
+    /**
+     * Constructor with default data context.
+     * @param date epoch
+     * @param elements averaged orbital elements
+     */
+    @DefaultDataContext
+    public SGP4OrbitalState(final AbsoluteDate date,
+                            final AveragedKeplerianWithMeanAngle elements) {
+        this(date, elements, DataContext.getDefault());
     }
 
     /**
