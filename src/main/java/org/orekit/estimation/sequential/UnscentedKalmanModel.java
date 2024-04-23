@@ -543,10 +543,14 @@ public class UnscentedKalmanModel implements KalmanEstimation, UnscentedProcess<
         }
 
         // Corrected measurement
-        correctedMeasurement = observedMeasurement.estimate(currentMeasurementNumber,
+        final EstimatedMeasurementBase correctedMeasurementBase = observedMeasurement.estimateWithoutDerivatives(currentMeasurementNumber,
                                                             currentMeasurementNumber,
                                                             KalmanEstimatorUtil.filterRelevant(observedMeasurement,
-                                                                                               getCorrectedSpacecraftStates()));
+                                                            getCorrectedSpacecraftStates()));
+        correctedMeasurement = new EstimatedMeasurement<>(correctedMeasurementBase.getObservedMeasurement(),
+            correctedMeasurementBase.getIteration(), correctedMeasurementBase.getCount(),
+            correctedMeasurementBase.getStates(), correctedMeasurementBase.getParticipants());
+        correctedMeasurement.setEstimatedValue(correctedMeasurementBase.getEstimatedValue());
     }
 
     /** Get the propagators estimated with the values set in the propagators builders.
